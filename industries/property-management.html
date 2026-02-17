@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI for Property Management | SolveWorks</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="AI agents that handle tenant communications, triage maintenance requests, track lease renewals, and coordinate vendors — so you can manage more doors with less stress.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #0A1628 !important; }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.15), transparent); }
+        .glow-accent { box-shadow: 0 0 60px rgba(14, 165, 233, 0.3), 0 0 100px rgba(14, 165, 233, 0.1); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-hover:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(14, 165, 233, 0.3); }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .card-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .stat-number { background: linear-gradient(180deg, #fff 0%, #7dd3fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .grid-bg { background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .float { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(14, 165, 233, 0.3); } 50% { box-shadow: 0 0 40px rgba(14, 165, 233, 0.6); } }
+        html { scroll-behavior: smooth; }
+    </style>
+    <script data-goatcounter="https://solveworks.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body class="bg-dark-950 text-gray-100 font-sans antialiased">
+    <!-- Navigation -->
+    <nav class="fixed w-full top-0 z-50 glass">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-2xl font-bold tracking-tight">
+                    <span class="text-white">Solve</span><span class="text-gradient">Works</span>
+                </a>
+                <div class="hidden md:flex items-center gap-10">
+                    <a href="/" class="text-gray-400 hover:text-white transition text-sm font-medium">Home</a>
+                    <a href="/industries/" class="text-gray-400 hover:text-white transition text-sm font-medium">Industries</a>
+                    <a href="/blog/" class="text-gray-400 hover:text-white transition text-sm font-medium">Blog</a>
+                    <a href="/case-studies/" class="text-gray-400 hover:text-white transition text-sm font-medium">Case Studies</a>
+                </div>
+                <a href="https://calendly.com/brody1schofield/30min" target="_blank" rel="noopener" class="bg-accent-500 hover:bg-accent-400 text-white px-6 py-2.5 rounded-full font-semibold text-sm transition transform hover:scale-105 glow-accent">
+                    Book a Call
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="min-h-[80vh] flex items-center pt-24 pb-16 px-4 hero-gradient grid-bg relative overflow-hidden">
+        <div class="absolute top-1/4 right-1/4 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl float"></div>
+        <div class="max-w-6xl mx-auto w-full relative z-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="inline-flex items-center gap-2 glass rounded-full px-5 py-2.5 mb-8">
+                    <span class="text-lg">🏢</span>
+                    <span class="text-sm text-gray-300 font-medium">AI for Property Management</span>
+                </div>
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] mb-8 tracking-tight">
+                    Manage More Doors.<br>
+                    <span class="text-gradient">With Less Chaos.</span>
+                </h1>
+                <p class="text-xl sm:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto font-light">
+                    Your AI agent handles tenant messages at midnight, triages maintenance requests, tracks lease renewals, and coordinates vendors — so you can <span class="text-white font-medium">scale your portfolio, not your headcount.</span>
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="https://calendly.com/brody1schofield/30min" target="_blank" rel="noopener" class="bg-white text-dark-900 px-8 py-4 rounded-full font-bold text-lg transition transform hover:scale-105 hover:shadow-2xl hover:shadow-white/20">
+                        Book Free Strategy Call →
+                    </a>
+                    <a href="#use-cases" class="glass glass-hover px-8 py-4 rounded-full font-semibold text-lg transition">
+                        See Use Cases
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="py-12 px-4 border-y border-dark-700/50">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="text-4xl sm:text-5xl font-black stat-number mb-2">20+</div>
+                    <div class="text-gray-500 text-sm font-medium">Hours Saved Per Week</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl sm:text-5xl font-black stat-number mb-2">90%</div>
+                    <div class="text-gray-500 text-sm font-medium">Faster Maintenance Response</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl sm:text-5xl font-black stat-number mb-2">0</div>
+                    <div class="text-gray-500 text-sm font-medium">Missed Lease Renewals</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl sm:text-5xl font-black stat-number mb-2">24/7</div>
+                    <div class="text-gray-500 text-sm font-medium">Tenant Communication</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section id="use-cases" class="py-24 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-5xl font-bold mb-6">What OpenClaw Does For <span class="text-gradient">Property Managers</span></h2>
+                <p class="text-xl text-gray-400 max-w-2xl mx-auto">The repetitive, time-consuming work that keeps you stuck in reactive mode — handled automatically.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass rounded-2xl p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">💬</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Tenant Communication</h3>
+                    <p class="text-gray-400">Tenant texts at 11pm about a lease question? AI answers instantly with accurate info from their lease. Maintenance request? Logged, categorized, and acknowledged before you even see it.</p>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">🔧</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Maintenance Triage & Vendor Dispatch</h3>
+                    <p class="text-gray-400">AI categorizes requests by urgency — burst pipe gets escalated immediately, squeaky door goes to the queue. Automatically contacts the right vendor based on issue type and property location.</p>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">📋</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Lease Renewal Tracking</h3>
+                    <p class="text-gray-400">90-day, 60-day, 30-day reminders sent automatically. AI drafts renewal offers based on market rates, tracks responses, and flags tenants who haven't replied so you can follow up personally.</p>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">🤝</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Vendor Coordination & Invoicing</h3>
+                    <p class="text-gray-400">AI sends work orders to vendors, follows up on completion, collects invoices, and matches them to the right property and owner account. No more chasing contractors for paperwork.</p>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">🔍</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Tenant Screening Assistance</h3>
+                    <p class="text-gray-400">AI collects application info, runs preliminary checks against your criteria, organizes documents, and flags incomplete applications — before you spend time reviewing them.</p>
+                </div>
+
+                <div class="glass rounded-2xl p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <span class="text-2xl">📊</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Financial Reporting & Owner Updates</h3>
+                    <p class="text-gray-400">Monthly owner reports generated automatically — rent collected, expenses, maintenance completed, occupancy rates. Owners get professional updates without you spending hours in spreadsheets.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Day With vs Without -->
+    <section class="py-24 px-4 relative">
+        <div class="absolute inset-0 hero-gradient"></div>
+        <div class="max-w-6xl mx-auto relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-5xl font-bold mb-6">A Day <span class="text-gradient">With vs Without</span> OpenClaw</h2>
+                <p class="text-xl text-gray-400">Same portfolio. Same team size. Completely different experience.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="glass rounded-3xl p-10 card-lift">
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
+                            <span class="text-red-400 text-xl">✕</span>
+                        </div>
+                        <h3 class="text-2xl font-bold">Without OpenClaw</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">7:00am</span><span class="text-gray-400">14 tenant emails overnight. A pipe burst at Unit 4B at 2am — nobody noticed until morning</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">8:30am</span><span class="text-gray-400">Scramble to call plumber. All your regular guys are booked. Start cold-calling.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">10:00am</span><span class="text-gray-400">Three lease renewals due this week — haven't sent offers yet</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">11:30am</span><span class="text-gray-400">Angry owner calls — "Where's my monthly report?" It's 5 days late.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">1:00pm</span><span class="text-gray-400">Tenant screening docs are incomplete. Chase applicant for missing pay stubs.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">3:00pm</span><span class="text-gray-400">Vendor invoice doesn't match the work order. 30 min sorting it out.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">6:00pm</span><span class="text-gray-400">Still responding to tenant messages. Considering hiring another admin.</span></div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-3xl p-10 card-lift" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), transparent); border: 1px solid rgba(14, 165, 233, 0.15);">
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-12 h-12 bg-accent-500/10 rounded-xl flex items-center justify-center">
+                            <span class="text-accent-400 text-xl">✓</span>
+                        </div>
+                        <h3 class="text-2xl font-bold">With OpenClaw</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">2:00am</span><span class="text-gray-300">Pipe burst reported. AI flagged it URGENT, called emergency plumber from your vendor list, texted you a summary</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">7:00am</span><span class="text-gray-300">Wake up to: plumber en route, tenant informed, 11 other messages already handled</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">9:00am</span><span class="text-gray-300">Lease renewal offers went out last week automatically. Two signed. One flagged for your attention.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">10:00am</span><span class="text-gray-300">Owner reports generated and sent on the 1st — every month, on time, professional</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">11:00am</span><span class="text-gray-300">New applicant submitted docs. AI flagged missing pay stub, requested it, applicant uploaded it already</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">1:00pm</span><span class="text-gray-300">Vendor invoice matched to work order and property. Discrepancy flagged before you approved it.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">3:00pm</span><span class="text-gray-300">Thinking about adding 20 more doors to the portfolio. You have the capacity now.</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-24 px-4 relative overflow-hidden">
+        <div class="absolute inset-0 hero-gradient"></div>
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-500/10 rounded-full blur-3xl"></div>
+        <div class="max-w-3xl mx-auto text-center relative z-10">
+            <h2 class="text-3xl sm:text-5xl font-bold mb-6">Ready to Scale Your <span class="text-gradient">Portfolio?</span></h2>
+            <p class="text-xl text-gray-400 mb-10 max-w-xl mx-auto">30-minute call. We'll show you how AI can help you manage more doors with less stress. No pressure, no jargon.</p>
+            <a href="https://calendly.com/brody1schofield/30min" target="_blank" rel="noopener" class="inline-block bg-white text-dark-900 px-10 py-5 rounded-full font-bold text-xl transition transform hover:scale-105 hover:shadow-2xl hover:shadow-white/20">
+                Book Your Free Strategy Call →
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 border-t border-dark-700/50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <a href="/" class="text-xl font-bold"><span class="text-white">Solve</span><span class="text-gradient">Works</span></a>
+            <div class="flex gap-8 text-sm text-gray-500">
+                <a href="/industries/" class="hover:text-white transition">All Industries</a>
+                <a href="/industries/real-estate.html" class="hover:text-white transition">Real Estate</a>
+                <a href="/industries/accounting.html" class="hover:text-white transition">Accounting</a>
+                <a href="/industries/shopify-retail.html" class="hover:text-white transition">Shopify Retail</a>
+            </div>
+            <p class="text-gray-600 text-sm">© 2026 SolveWorks</p>
+        </div>
+    </footer>
+</body>
+</html>
