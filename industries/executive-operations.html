@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI for Executive Operations | SolveWorks</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="A personal AI chief of staff for the C-suite — daily briefings, inbox management, deal flow tracking, board prep, and travel coordination. Always on, always sharp.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        html, body { overflow-x: hidden; }
+        body { background-color: #0A1628 !important; }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.15), transparent); }
+        .glow-accent { box-shadow: 0 0 60px rgba(14, 165, 233, 0.3), 0 0 100px rgba(14, 165, 233, 0.1); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-hover:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(14, 165, 233, 0.3); }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .card-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card-lift:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        .stat-number { background: linear-gradient(180deg, #fff 0%, #7dd3fc 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .grid-bg { background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .float { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        html { scroll-behavior: smooth; }
+        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; }
+        .chat-user { background: #0ea5e9; color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+        .chat-agent { background: rgba(255,255,255,0.08); color: #e2e8f0; border-bottom-left-radius: 4px; }
+    </style>
+    <script data-goatcounter="https://solveworks.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body class="bg-dark-950 text-gray-100 font-sans antialiased">
+    <nav class="fixed w-full top-0 z-50 glass">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex justify-between items-center">
+                <a href="/" class="text-2xl font-bold tracking-tight"><span class="text-white">Solve</span><span class="text-gradient">Works</span></a>
+                <div class="hidden md:flex items-center gap-10">
+                    <a href="/" class="text-gray-400 hover:text-white transition text-sm font-medium">Home</a>
+                    <a href="/industries/" class="text-gray-400 hover:text-white transition text-sm font-medium">Industries</a>
+                    <a href="/blog/" class="text-gray-400 hover:text-white transition text-sm font-medium">Blog</a>
+                    <a href="/#results" class="text-gray-400 hover:text-white transition text-sm font-medium">Results</a>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="/audit/" class="bg-accent-500 hover:bg-accent-400 text-white px-5 py-2.5 rounded-full font-semibold text-sm transition glow-accent hidden sm:inline-block">Free AI Audit</a>
+                    <button class="md:hidden text-gray-400 hover:text-white transition p-2" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden px-4 pb-4 pt-2 border-t border-white/5">
+            <div class="flex flex-col gap-1">
+                <a href="/" class="text-gray-400 hover:text-white transition text-sm font-medium py-3">Home</a>
+                <a href="/industries/" class="text-gray-400 hover:text-white transition text-sm font-medium py-3">Industries</a>
+                <a href="/blog/" class="text-gray-400 hover:text-white transition text-sm font-medium py-3">Blog</a>
+                <a href="/#results" class="text-gray-400 hover:text-white transition text-sm font-medium py-3">Results</a>
+                <a href="/audit/" class="bg-accent-500 hover:bg-accent-400 text-white text-center px-5 py-3 rounded-full font-semibold text-sm transition mt-2">Take the Free AI Audit →</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="min-h-[80vh] flex items-center pt-24 pb-16 px-4 hero-gradient grid-bg relative overflow-hidden">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-500/10 rounded-full blur-3xl float"></div>
+        <div class="max-w-6xl mx-auto w-full relative z-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <div class="inline-flex items-center gap-2 glass rounded-full px-5 py-2.5 mb-8">
+                    <span class="text-lg">👔</span>
+                    <span class="text-sm text-gray-300 font-medium">AI for Executive Operations</span>
+                </div>
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] mb-8 tracking-tight">
+                    Your Time Is the Most Expensive<br>
+                    <span class="text-gradient">Asset in the Company.</span>
+                </h1>
+                <p class="text-xl sm:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto font-light">
+                    A personal AI operator that handles your daily briefing, inbox triage, deal tracking, board prep, and travel — so every hour you spend is <span class="text-white font-medium">high-leverage.</span>
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="/audit/" class="bg-white text-dark-900 px-8 py-4 rounded-full font-bold text-lg w-full sm:w-auto text-center transition transform hover:scale-105 hover:shadow-2xl hover:shadow-white/20">
+                        Take the Free AI Audit →
+                    </a>
+                    <a href="#use-cases" class="glass glass-hover px-8 py-4 rounded-full font-semibold text-lg transition">
+                        See Use Cases
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 sm:py-20 px-4">
+        <div class="max-w-3xl mx-auto text-center mb-10">
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">No Dashboards. No New Software. <span class="text-gradient">Just Text.</span></h2>
+            <p class="text-gray-400 text-lg">Your AI chief of staff lives in your messaging app. Brief you in the morning, handle tasks all day, debrief at night.</p>
+        </div>
+        <div class="max-w-lg mx-auto glass rounded-3xl p-6 sm:p-8">
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-white/10">
+                <div class="w-10 h-10 rounded-full bg-accent-500/20 flex items-center justify-center text-lg">👔</div>
+                <div><div class="text-white font-semibold text-sm">Your AI Agent</div><div class="text-gray-500 text-xs">Online</div></div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <div class="chat-bubble chat-agent">Good morning. Here's your brief for Thursday, Feb 20:<br><br>📅 <strong>Today:</strong> 10am board prep call with CFO. 1pm lunch with David Chen (potential acquisition). 3:30pm quarterly review.<br><br>📧 <strong>Inbox:</strong> 47 new emails overnight. 4 need you — term sheet from Meridian (review by Friday), investor update draft from Sarah, two board member replies about the March agenda. Rest handled or delegated.<br><br>📊 <strong>Numbers:</strong> Revenue tracking 12% above plan. Cash position strong. One AR flag — Coastal Partners 60+ days, controller following up.<br><br>🎯 <strong>Open items:</strong> David Chen meeting — I prepped a one-pager on their company, recent news, and your talking points. Want me to send it?</div>
+                <div class="chat-bubble chat-user">Send the one-pager. Also, push the quarterly review to 4pm and tell Sarah I'll review the investor draft tonight</div>
+                <div class="chat-bubble chat-agent">Done ✓<br>• One-pager sent to your email<br>• Quarterly review moved to 4pm, attendees notified<br>• Sarah notified — she'll have the latest version in your inbox by 5pm<br><br>Anything else before the board prep call?</div>
+                <div class="chat-bubble chat-user">Book me a flight to Seattle next Tuesday, back Thursday. Usual preferences.</div>
+                <div class="chat-bubble chat-agent">Found 3 options on Alaska Airlines (your preferred). Best fit: Depart 7:15am Tue, return 6:45pm Thu. Direct both ways, business class. $1,240. Hotel: booked The Edgewater (your usual), 2 nights. Want me to confirm and add to your calendar?</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 px-4 border-y border-dark-700/50">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center"><div class="text-2xl sm:text-4xl lg:text-5xl font-black stat-number mb-2">3+</div><div class="text-gray-500 text-sm font-medium">Hours Reclaimed Per Day</div></div>
+                <div class="text-center"><div class="text-2xl sm:text-4xl lg:text-5xl font-black stat-number mb-2">90%</div><div class="text-gray-500 text-sm font-medium">Of Inbox Handled By AI</div></div>
+                <div class="text-center"><div class="text-2xl sm:text-4xl lg:text-5xl font-black stat-number mb-2">0</div><div class="text-gray-500 text-sm font-medium">Meetings Without Prep</div></div>
+                <div class="text-center"><div class="text-2xl sm:text-4xl lg:text-5xl font-black stat-number mb-2">24/7</div><div class="text-gray-500 text-sm font-medium">Personal Operations Running</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases" class="py-12 sm:py-24 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-8 sm:mb-16">
+                <h2 class="text-2xl sm:text-3xl lg:text-5xl font-bold mb-6">What Your Agent Does For <span class="text-gradient">Your Day</span></h2>
+                <p class="text-xl text-gray-400 max-w-2xl mx-auto">Think of it as a chief of staff who knows everything about your business, never sleeps, and never needs managing.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="glass rounded-2xl p-5 sm:p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span class="text-2xl">☀️</span></div>
+                    <h3 class="text-xl font-bold mb-3">Daily Briefings</h3>
+                    <p class="text-gray-400">Every morning: your calendar, priority emails, key metrics, open items, and what needs your decision today. In one text, before your first coffee.</p>
+                </div>
+                <div class="glass rounded-2xl p-5 sm:p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span class="text-2xl">📧</span></div>
+                    <h3 class="text-xl font-bold mb-3">Inbox Management</h3>
+                    <p class="text-gray-400">AI reads every email, categorizes, responds to routine ones, drafts replies for important ones, and surfaces only what needs your eyes. Your inbox becomes manageable.</p>
+                </div>
+                <div class="glass rounded-2xl p-5 sm:p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span class="text-2xl">💼</span></div>
+                    <h3 class="text-xl font-bold mb-3">Deal Flow & Pipeline</h3>
+                    <p class="text-gray-400">Track opportunities, prep for meetings with prospects, follow up on proposals, and keep your deal pipeline moving. Never lose momentum on a potential win.</p>
+                </div>
+                <div class="glass rounded-2xl p-5 sm:p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span class="text-2xl">📋</span></div>
+                    <h3 class="text-xl font-bold mb-3">Board & Investor Prep</h3>
+                    <p class="text-gray-400">Board decks, investor updates, committee materials — AI compiles data, drafts narratives, and preps you for every governance interaction. Show up sharp every time.</p>
+                </div>
+                <div class="glass rounded-2xl p-5 sm:p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span class="text-2xl">✈️</span></div>
+                    <h3 class="text-xl font-bold mb-3">Travel Coordination</h3>
+                    <p class="text-gray-400">Flights, hotels, restaurants, ground transport — booked to your preferences. Itinerary changes handled in real-time. Travel becomes seamless, not stressful.</p>
+                </div>
+                <div class="glass rounded-2xl p-5 sm:p-8 card-lift glass-hover group">
+                    <div class="w-14 h-14 bg-gradient-to-br from-accent-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"><span class="text-2xl">🎯</span></div>
+                    <h3 class="text-xl font-bold mb-3">Meeting Prep & Follow-Through</h3>
+                    <p class="text-gray-400">Before every meeting: who you're meeting, context, your last conversation, suggested agenda. After: action items captured and tracked. Nothing falls through.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 sm:py-24 px-4 relative">
+        <div class="absolute inset-0 hero-gradient"></div>
+        <div class="max-w-6xl mx-auto relative z-10">
+            <div class="text-center mb-8 sm:mb-16">
+                <h2 class="text-2xl sm:text-3xl lg:text-5xl font-bold mb-6">A Day <span class="text-gradient">With vs Without</span> Your Agent</h2>
+                <p class="text-xl text-gray-400">Same executive. Same calendar. Completely different leverage.</p>
+            </div>
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="glass rounded-3xl p-6 sm:p-10 card-lift">
+                    <div class="flex items-center gap-3 mb-8"><div class="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center"><span class="text-red-400 text-xl">✕</span></div><h3 class="text-2xl font-bold">Without Your Agent</h3></div>
+                    <div class="space-y-4">
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">6:30am</span><span class="text-gray-400">Wake up to 83 emails. Spend 45 minutes just figuring out what's important.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">9:00am</span><span class="text-gray-400">Meeting with investor. Scramble to pull together the latest numbers and talking points in the Uber on the way.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">12:00pm</span><span class="text-gray-400">Lunch meeting — can't remember the last conversation with this person. Wing it.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">3:00pm</span><span class="text-gray-400">EA asks about travel next week. Back-and-forth on preferences, options, timing. 30 minutes gone.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-gray-600 text-sm mt-1 w-16 flex-shrink-0">7:00pm</span><span class="text-gray-400">Home. Still need to review the board deck. Action items from today's meetings? Scattered across notebooks and mental notes.</span></div>
+                    </div>
+                </div>
+                <div class="glass rounded-3xl p-6 sm:p-10 card-lift" style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.05), transparent); border: 1px solid rgba(14, 165, 233, 0.15);">
+                    <div class="flex items-center gap-3 mb-8"><div class="w-12 h-12 bg-accent-500/10 rounded-xl flex items-center justify-center"><span class="text-accent-400 text-xl">✓</span></div><h3 class="text-2xl font-bold">With Your Agent</h3></div>
+                    <div class="space-y-4">
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">6:30am</span><span class="text-gray-300">Morning brief waiting: 4 emails need you, rest handled. Today's prep done. Calendar optimized.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">9:00am</span><span class="text-gray-300">Investor meeting: one-pager with latest metrics, talking points, and their recent portfolio moves waiting in your inbox since 7am. You walk in prepared.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">12:00pm</span><span class="text-gray-300">Lunch meeting: AI texted you the context — last met in October, discussed partnership on logistics, they just raised a Series B. You pick up right where you left off.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">3:00pm</span><span class="text-gray-300">Travel next week already booked to your preferences. Itinerary in your calendar. One text to confirm.</span></div>
+                        <div class="flex gap-3 items-start"><span class="text-accent-400/60 text-sm mt-1 w-16 flex-shrink-0">7:00pm</span><span class="text-gray-300">Home. Action items from today already captured and assigned. Board deck draft reviewed and comments sent. Tomorrow's brief is being prepared.</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-12 sm:py-24 px-4 relative overflow-hidden">
+        <div class="absolute inset-0 hero-gradient"></div>
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent-500/10 rounded-full blur-3xl"></div>
+        <div class="max-w-3xl mx-auto text-center relative z-10">
+            <h2 class="text-2xl sm:text-3xl lg:text-5xl font-bold mb-6">Get Your Time Back. <span class="text-gradient">All of It.</span></h2>
+            <p class="text-xl text-gray-400 mb-10 max-w-xl mx-auto">See how an AI chief of staff can transform your daily operations. 30 minutes, no pressure.</p>
+            <a href="/audit/" class="inline-block bg-white text-dark-900 px-10 py-5 rounded-full font-bold text-xl transition transform hover:scale-105 hover:shadow-2xl hover:shadow-white/20">
+                Take the Free AI Audit →
+            </a>
+        </div>
+    </section>
+
+    <footer class="py-12 px-4 border-t border-dark-700/50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <a href="/" class="text-xl font-bold"><span class="text-white">Solve</span><span class="text-gradient">Works</span></a>
+            <div class="flex gap-8 text-sm text-gray-500">
+                <a href="/industries/" class="hover:text-white transition">All Industries</a>
+                <a href="/blog/" class="hover:text-white transition">Blog</a>
+                <a href="/#results" class="hover:text-white transition">Results</a>
+            </div>
+            <p class="text-gray-600 text-sm">Powered by <a href="https://openclaw.com" class="hover:text-gray-400 transition">OpenClaw</a> · © 2026 SolveWorks</p>
+        </div>
+    </footer>
+</body>
+</html>
