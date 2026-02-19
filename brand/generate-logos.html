@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head><style>body{margin:0;background:#000;display:flex;gap:20px;padding:20px;flex-wrap:wrap}</style></head>
+<body>
+<canvas id="c1" width="512" height="512"></canvas>
+<canvas id="c2" width="512" height="512"></canvas>
+<canvas id="c3" width="512" height="512"></canvas>
+<script>
+// V1: Bold geometric SW
+function drawV1(ctx, s) {
+  ctx.fillStyle = '#050507';
+  ctx.fillRect(0, 0, s, s);
+  ctx.fillStyle = '#0ea5e9';
+  ctx.font = 'bold 220px "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.letterSpacing = '-8px';
+  ctx.fillText('SW', s/2, s/2 + 8);
+}
+
+// V2: Lighter weight, slightly smaller with subtle ring
+function drawV2(ctx, s) {
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, s, s);
+  // Subtle circle border
+  ctx.beginPath();
+  ctx.arc(s/2, s/2, 210, 0, Math.PI * 2);
+  ctx.strokeStyle = '#0ea5e920';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#0ea5e9';
+  ctx.font = '500 180px "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('SW', s/2, s/2 + 6);
+}
+
+// V3: Stacked/overlapping with thin line accent
+function drawV3(ctx, s) {
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, s, s);
+  ctx.fillStyle = '#0ea5e9';
+  ctx.font = 'bold 240px "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', s/2 - 60, s/2 + 10);
+  ctx.globalAlpha = 0.7;
+  ctx.fillText('W', s/2 + 60, s/2 + 10);
+  ctx.globalAlpha = 1;
+  // Bottom accent line
+  ctx.fillRect(s/2 - 100, s/2 + 130, 200, 3);
+}
+
+const c1 = document.getElementById('c1');
+const c2 = document.getElementById('c2');
+const c3 = document.getElementById('c3');
+drawV1(c1.getContext('2d'), 512);
+drawV2(c2.getContext('2d'), 512);
+drawV3(c3.getContext('2d'), 512);
+
+// Export as data URLs for extraction
+window.v1Data = c1.toDataURL('image/png');
+window.v2Data = c2.toDataURL('image/png');
+window.v3Data = c3.toDataURL('image/png');
+</script>
+</body>
+</html>
