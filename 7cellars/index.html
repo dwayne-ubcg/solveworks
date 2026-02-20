@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7 Cellars — Partner Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#FAFAF8;--surface:#FFFFFF;--surface2:#F5F5F3;--surface3:#EEEEEC;
+--border:#E5E5E5;--text:#1A1A1A;--text2:#6B6B6B;--accent:#0D1B2A;
+--accent-light:#1a3050;--navy:#0D1B2A;
+--yellow:#D4A017;--green:#2D8B57;--blue:#2E5090;--red:#C0392B;
+--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+a{color:var(--blue);text-decoration:none}
+::selection{background:var(--accent);color:#fff}
+
+/* Sidebar */
+.sidebar{width:250px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;height:100vh}
+.sidebar-brand{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-brand h1{font-size:22px;font-weight:700;color:#fff;letter-spacing:.5px}
+.sidebar-brand p{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;text-transform:uppercase;letter-spacing:1.5px}
+.nav{flex:1;padding:16px 12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;transition:all .15s;position:relative;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.9)}
+.nav-item.active{background:rgba(255,255,255,.12);color:#fff}
+.nav-item svg{width:18px;height:18px;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{position:absolute;right:10px;font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:2px 8px;border-radius:10px;min-width:24px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.2);color:#fff}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.1)}
+.btn-logout{width:100%;padding:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:rgba(255,255,255,.5);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-logout:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.8)}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:32px 40px;padding-bottom:60px;position:relative}
+.section{display:none}
+.section.active{display:block}
+
+/* Login */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+#login.hidden{display:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px;width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.login-box h1{font-size:28px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.login-box p{color:var(--text2);font-size:13px;margin-bottom:28px}
+.login-box input{width:100%;padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.login-box input:focus{border-color:var(--navy)}
+.login-box button{width:100%;padding:14px;margin-top:12px;background:var(--navy);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.login-box button:hover{background:#162840}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* Page */
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px;color:var(--navy)}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.clock{font-size:13px;color:var(--text2);margin-bottom:24px;font-variant-numeric:tabular-nums}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.stat-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:600}
+.stat-card .value{font-size:28px;font-weight:700}
+.stat-card .value.yellow{color:var(--yellow)}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.blue{color:var(--blue)}
+.stat-card .value.red{color:var(--red)}
+
+/* Dashboard hero */
+.dash-hero{background:linear-gradient(135deg,#0D1B2A 0%,#1a3050 100%);border-radius:var(--radius);padding:32px;margin-bottom:28px;color:#fff}
+.dash-hero h2{font-size:28px;font-weight:700;margin-bottom:6px}
+.dash-hero p{font-size:14px;opacity:.7;line-height:1.6}
+
+/* Recent activity on dashboard */
+.recent-activity{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.recent-activity h3{font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.recent-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.recent-item:last-child{border-bottom:none}
+.recent-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:6px}
+.recent-text{font-size:13px;line-height:1.5}
+.recent-text strong{font-weight:600}
+.recent-time{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* ===== KANBAN BOARD ===== */
+.kanban-filters{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text2);pointer-events:none}
+.search-input{padding:9px 14px 9px 36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;width:240px;transition:border-color .15s}
+.search-input:focus{border-color:var(--navy)}
+.filter-chip{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:6px}
+.filter-chip:hover{background:var(--surface2);color:var(--text)}
+.filter-chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+.kanban-board{display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;min-height:calc(100vh - 240px)}
+.kanban-col{flex:1;min-width:260px;max-width:340px;background:var(--surface2);border-radius:var(--radius);display:flex;flex-direction:column}
+.kanban-col-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.kanban-col-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.kanban-col-count{font-size:11px;font-weight:700;background:var(--border);color:var(--text2);padding:2px 8px;border-radius:10px}
+.kanban-col-add{width:28px;height:28px;border-radius:6px;border:1px dashed var(--border);background:transparent;color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.kanban-col-add:hover{border-color:var(--navy);color:var(--navy);background:var(--surface)}
+.kanban-col-body{flex:1;padding:8px;overflow-y:auto;min-height:80px}
+.kanban-col-body.drag-over{background:rgba(13,27,42,.06);border-radius:0 0 var(--radius) var(--radius)}
+
+/* Kanban cards */
+.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;cursor:grab;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kanban-card:hover{border-color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.kanban-card.dragging{opacity:.4;transform:rotate(2deg)}
+.kanban-card-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:8px;color:var(--text)}
+.kanban-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.priority-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.priority-tag.urgent{background:#fde8e8;color:#c0392b}
+.priority-tag.high{background:#fef3e2;color:#d4a017}
+.priority-tag.medium{background:#e8f0fe;color:#2e5090}
+.priority-tag.low{background:#e8f5e9;color:#2d8b57}
+.kanban-card-due{font-size:11px;color:var(--text2)}
+.kanban-card-due.overdue{color:var(--red);font-weight:600}
+.kanban-card-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.kanban-card-comments{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
+
+/* Avatar */
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff;letter-spacing:.5px}
+.avatar.sm{width:22px;height:22px;font-size:9px}
+
+/* ===== TASK DETAIL MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(2px)}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:560px;max-width:92vw;max-height:85vh;overflow-y:auto;transform:translateY(20px);transition:transform .2s;box-shadow:0 16px 48px rgba(0,0,0,.12)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--navy)}
+.modal label{display:block;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:16px}
+.modal label:first-of-type{margin-top:0}
+.modal input[type="text"],.modal input[type="date"],.modal textarea,.modal select{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.modal input:focus,.modal textarea:focus,.modal select:focus{border-color:var(--navy)}
+.modal textarea{resize:vertical;min-height:60px}
+.modal select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B6B6B' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.modal-btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.modal-btn.primary{background:var(--navy);color:#fff}
+.modal-btn.primary:hover{background:#162840}
+.modal-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.modal-btn.secondary:hover{background:var(--surface3);color:var(--text)}
+.modal-btn.danger{background:#fde8e8;color:var(--red);border:1px solid #f5c6c6}
+.modal-btn.danger:hover{background:#fbd0d0}
+
+/* Move buttons */
+.move-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.move-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:inherit;transition:all .15s}
+.move-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.move-btn.current{background:var(--navy);color:#fff;border-color:var(--navy);pointer-events:none}
+
+/* Comments */
+.comments-section{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+.comments-section h3{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px}
+.comment{display:flex;gap:10px;margin-bottom:12px}
+.comment-body{flex:1}
+.comment-author{font-size:12px;font-weight:600;color:var(--text)}
+.comment-time{font-size:11px;color:var(--text2);margin-left:8px;font-weight:400}
+.comment-text{font-size:13px;color:var(--text);line-height:1.5;margin-top:2px}
+.comment-input-wrap{display:flex;gap:8px;margin-top:12px}
+.comment-input-wrap select{width:120px;padding:8px 10px;font-size:12px}
+.comment-input-wrap input{flex:1;padding:8px 12px;font-size:13px}
+.comment-input-wrap button{padding:8px 16px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+
+/* Activity Feed */
+.feed-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;gap:14px;align-items:flex-start}
+.feed-icon{width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.feed-body{flex:1}
+.feed-action{font-size:14px;font-weight:600;margin-bottom:2px}
+.feed-detail{font-size:13px;color:var(--text2);line-height:1.5}
+.feed-time{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* Documents */
+.doc-category{margin-bottom:16px}
+.doc-category-header{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.doc-category-header .arrow{transition:transform .2s;font-size:10px}
+.doc-category-header.open .arrow{transform:rotate(90deg)}
+.doc-grid{display:none}
+.doc-grid.open{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:4px 0 12px}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+.doc-card:hover{border-color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,.06);transform:translateY(-1px)}
+
+/* Team */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.team-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .15s}
+.team-card:hover{border-color:#ccc;transform:translateY(-1px)}
+.team-card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.team-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.team-name{font-size:16px;font-weight:700}
+.team-role{font-size:13px;color:var(--text2)}
+.team-stats{display:flex;gap:20px}
+.team-stat{text-align:center}
+.team-stat .num{font-size:20px;font-weight:700}
+.team-stat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;border-radius:8px;padding:10px 24px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.15);opacity:0;transition:all .3s;z-index:60;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Sync footer */
+.sync-footer{position:fixed;bottom:0;left:250px;right:0;padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;z-index:10}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sync-dot.fresh{background:var(--green)}
+
+/* Mobile toggle */
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;z-index:40;transition:left .2s}
+  .sidebar.open{left:0}
+  .menu-toggle{display:block}
+  .main{padding:20px 16px;padding-top:56px;padding-bottom:48px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .kanban-board{flex-direction:column}
+  .kanban-col{max-width:100%;min-width:0}
+  .sync-footer{left:0}
+  .team-grid{grid-template-columns:1fr}
+  .doc-grid.open{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h1>7 Cellars</h1>
+    <p>Partner Dashboard</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <h1>7 Cellars</h1>
+    <p>Partner Dashboard</p>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-section="tasks" onclick="showSection('tasks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+      Tasks <span class="nav-badge" id="tasks-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="activity" onclick="showSection('activity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity
+    </div>
+    <div class="nav-item" data-section="documents" onclick="showSection('documents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Documents <span class="nav-badge" id="docs-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="team" onclick="showSection('team')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Team
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">← Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- Dashboard -->
+  <div class="section active" id="sec-dashboard">
+    <div class="clock" id="clock"></div>
+    <div class="dash-hero">
+      <h2>7 Cellars</h2>
+      <p>Premium wine importing & distribution — Grand Cayman</p>
+    </div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="label">To Do</div><div class="value blue" id="stat-todo">—</div></div>
+      <div class="stat-card"><div class="label">In Progress</div><div class="value yellow" id="stat-progress">—</div></div>
+      <div class="stat-card"><div class="label">Waiting</div><div class="value red" id="stat-waiting">—</div></div>
+      <div class="stat-card"><div class="label">Done</div><div class="value green" id="stat-done">—</div></div>
+    </div>
+    <div class="recent-activity" id="dash-recent">
+      <h3>Recent Activity</h3>
+      <div id="dash-recent-items"></div>
+    </div>
+  </div>
+
+  <!-- Tasks (Kanban) -->
+  <div class="section" id="sec-tasks">
+    <h1 class="page-title">Tasks</h1>
+    <p class="page-sub">Drag cards between columns to update status</p>
+    <div class="kanban-filters">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="task-search" placeholder="Search tasks..." oninput="renderKanban()">
+      </div>
+      <div id="filter-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="kanban-board" id="kanban-board">
+      <div class="kanban-col" data-col="todo">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title">📋 To Do <span class="kanban-col-count" id="count-todo">0</span></span>
+          <button class="kanban-col-add" onclick="openNewTask('todo')">+</button>
+        </div>
+        <div class="kanban-col-body" id="col-todo"></div>
+      </div>
+      <div class="kanban-col" data-col="inprogress">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title">🔄 In Progress <span class="kanban-col-count" id="count-inprogress">0</span></span>
+          <button class="kanban-col-add" onclick="openNewTask('inprogress')">+</button>
+        </div>
+        <div class="kanban-col-body" id="col-inprogress"></div>
+      </div>
+      <div class="kanban-col" data-col="waiting">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title">⏳ Waiting <span class="kanban-col-count" id="count-waiting">0</span></span>
+          <button class="kanban-col-add" onclick="openNewTask('waiting')">+</button>
+        </div>
+        <div class="kanban-col-body" id="col-waiting"></div>
+      </div>
+      <div class="kanban-col" data-col="done">
+        <div class="kanban-col-header">
+          <span class="kanban-col-title">✅ Done <span class="kanban-col-count" id="count-done">0</span></span>
+          <button class="kanban-col-add" onclick="openNewTask('done')">+</button>
+        </div>
+        <div class="kanban-col-body" id="col-done"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity -->
+  <div class="section" id="sec-activity">
+    <h1 class="page-title">Activity Feed</h1>
+    <p class="page-sub">Recent actions and updates</p>
+    <div id="activity-feed"></div>
+  </div>
+
+  <!-- Documents -->
+  <div class="section" id="sec-documents">
+    <h1 class="page-title">Documents</h1>
+    <p class="page-sub">SOPs, research, templates, and meeting summaries</p>
+    <div class="kanban-filters" style="margin-bottom:16px">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="doc-search" placeholder="Search documents..." oninput="renderDocs()">
+      </div>
+    </div>
+    <div id="docs-list"></div>
+  </div>
+
+  <!-- Team -->
+  <div class="section" id="sec-team">
+    <h1 class="page-title">Team</h1>
+    <p class="page-sub">7 Cellars team members</p>
+    <div class="team-grid" id="team-grid"></div>
+  </div>
+</div>
+
+<!-- New/Edit Task Modal -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <h2 id="modal-task-title">New Task</h2>
+    <label>Title</label>
+    <input type="text" id="mt-title" placeholder="What needs to be done?">
+    <label>Description</label>
+    <textarea id="mt-desc" placeholder="Details..." rows="3"></textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label>Assignee</label><select id="mt-assignee"></select></div>
+      <div><label>Priority</label><select id="mt-priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select></div>
+    </div>
+    <label>Due Date</label>
+    <input type="date" id="mt-due">
+    <div id="mt-move-section" style="display:none">
+      <label>Move to Column</label>
+      <div class="move-btns" id="mt-move-btns"></div>
+    </div>
+    <!-- Comments in edit mode -->
+    <div class="comments-section" id="mt-comments-section" style="display:none">
+      <h3>Comments</h3>
+      <div id="mt-comments"></div>
+      <div class="comment-input-wrap">
+        <select id="mt-comment-author" style="width:110px"></select>
+        <input type="text" id="mt-comment-text" placeholder="Add a comment...">
+        <button onclick="addComment()">Post</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn danger" id="mt-delete" onclick="deleteTask()" style="display:none;margin-right:auto">Delete</button>
+      <button class="modal-btn secondary" onclick="closeModal('modal-task')">Cancel</button>
+      <button class="modal-btn primary" id="mt-save" onclick="saveTask()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Document View Modal -->
+<div class="modal-overlay" id="modal-doc">
+  <div class="modal" style="width:640px">
+    <h2 id="modal-doc-title"></h2>
+    <div id="modal-doc-content" style="font-size:14px;line-height:1.7"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('modal-doc')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="sync-footer"><span class="sync-dot fresh"></span> <span>7 Cellars Partner Dashboard</span></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== CONFIG ===== */
+const TEAM = [
+  { name: 'Dwayne', initials: 'DS', color: '#0D1B2A' },
+  { name: 'Darryl', initials: 'DM', color: '#2E5090' },
+  { name: 'Kyle', initials: 'KW', color: '#4A7C59' },
+  { name: 'Roberto', initials: 'RL', color: '#8B4513' },
+  { name: 'Tallyn', initials: 'TN', color: '#6B4C8A' },
+  { name: 'Mika', initials: 'AI', color: '#FF6B35' }
+];
+const HASH = '68e5f9dd988d6c20319da2838813f63b3b9f7926231ad1897da400a6d8023923';
+const COLS = ['todo','inprogress','waiting','done'];
+const COL_LABELS = { todo:'To Do', inprogress:'In Progress', waiting:'Waiting', done:'Done' };
+
+/* ===== STATE ===== */
+let tasks = [];
+let activeFilter = 'all';
+let editingTaskId = null;
+let newTaskCol = 'todo';
+
+/* ===== AUTH ===== */
+async function sha256(s){const d=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+async function tryLogin(){
+  if(await sha256(document.getElementById('pw').value)===HASH){
+    localStorage.setItem('7c_auth','1');
+    document.getElementById('login').classList.add('hidden');
+    init();
+  } else {
+    document.getElementById('login-error').style.display='block';
+  }
+}
+function logout(){localStorage.removeItem('7c_auth');location.reload()}
+
+/* ===== NAV ===== */
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+}
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' — '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ===== UTILS ===== */
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')})});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'))});
+function avatarHTML(name,size){
+  const m=TEAM.find(t=>t.name===name);
+  if(!m) return `<span class="avatar" style="background:#999;width:${size||26}px;height:${size||26}px;font-size:${(size||26)*.38}px">?</span>`;
+  return `<span class="avatar" style="background:${m.color};width:${size||26}px;height:${size||26}px;font-size:${(size||26)*.38}px">${m.initials}</span>`;
+}
+function saveTasks(){localStorage.setItem('7cellars-tasks',JSON.stringify(tasks))}
+function loadTasks(){try{tasks=JSON.parse(localStorage.getItem('7cellars-tasks'));if(!Array.isArray(tasks))tasks=null}catch(e){tasks=null}}
+function genId(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function fmtDate(d){if(!d)return '';const dt=new Date(d);return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function isOverdue(d){if(!d)return false;return new Date(d)<new Date(new Date().toDateString())}
+
+/* ===== KANBAN RENDER ===== */
+function renderKanban(){
+  const search=(document.getElementById('task-search').value||'').toLowerCase();
+  const counts={todo:0,inprogress:0,waiting:0,done:0};
+  COLS.forEach(col=>{
+    const container=document.getElementById('col-'+col);
+    const filtered=tasks.filter(t=>{
+      if(t.status!==col)return false;
+      if(search && !(t.title||'').toLowerCase().includes(search) && !(t.description||'').toLowerCase().includes(search))return false;
+      if(activeFilter!=='all' && t.assignee!==activeFilter)return false;
+      return true;
+    });
+    counts[col]=filtered.length;
+    container.innerHTML=filtered.map(t=>{
+      const overdue=isOverdue(t.dueDate);
+      return `<div class="kanban-card" draggable="true" data-id="${t.id}" onclick="openEditTask('${t.id}')"
+        ondragstart="onDragStart(event)" ondragend="onDragEnd(event)">
+        <div class="kanban-card-title">${esc(t.title)}</div>
+        <div class="kanban-card-meta">
+          ${t.priority?`<span class="priority-tag ${t.priority}">${t.priority}</span>`:''}
+          ${t.dueDate?`<span class="kanban-card-due ${overdue?'overdue':''}">${overdue?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
+        </div>
+        <div class="kanban-card-bottom">
+          ${t.assignee?avatarHTML(t.assignee,24):'<span class="avatar" style="background:#ddd;width:24px;height:24px;font-size:9px;color:#999">?</span>'}
+          ${(t.comments||[]).length?`<span class="kanban-card-comments">💬 ${t.comments.length}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  });
+  COLS.forEach(c=>document.getElementById('count-'+c).textContent=counts[c]);
+  document.getElementById('tasks-badge').textContent=counts.todo+counts.inprogress+counts.waiting;
+  // Dashboard stats
+  document.getElementById('stat-todo').textContent=counts.todo;
+  document.getElementById('stat-progress').textContent=counts.inprogress;
+  document.getElementById('stat-waiting').textContent=counts.waiting;
+  document.getElementById('stat-done').textContent=counts.done;
+}
+
+/* ===== DRAG & DROP ===== */
+let dragId=null;
+function onDragStart(e){
+  dragId=e.target.dataset.id;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function onDragEnd(e){e.target.classList.remove('dragging');dragId=null}
+document.querySelectorAll('.kanban-col-body').forEach(col=>{
+  col.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';col.classList.add('drag-over')});
+  col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+  col.addEventListener('drop',e=>{
+    e.preventDefault();col.classList.remove('drag-over');
+    if(!dragId)return;
+    const newStatus=col.id.replace('col-','');
+    const task=tasks.find(t=>t.id===dragId);
+    if(task && task.status!==newStatus){
+      task.status=newStatus;
+      saveTasks();renderKanban();
+      toast(`Moved to ${COL_LABELS[newStatus]}`);
+    }
+  });
+});
+
+/* ===== FILTERS ===== */
+function buildFilters(){
+  let html='<div class="filter-chip active" onclick="setFilter(\'all\',this)">All</div>';
+  TEAM.forEach(m=>{html+=`<div class="filter-chip" onclick="setFilter('${m.name}',this)">${avatarHTML(m.name,18)} ${m.name}</div>`});
+  document.getElementById('filter-chips').innerHTML=html;
+}
+function setFilter(v,el){
+  activeFilter=v;
+  document.querySelectorAll('#filter-chips .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderKanban();
+}
+
+/* ===== TASK MODAL ===== */
+function populateAssigneeDropdown(selId){
+  const sel=document.getElementById(selId);
+  sel.innerHTML='<option value="">Unassigned</option>';
+  TEAM.forEach(m=>{sel.innerHTML+=`<option value="${m.name}">${m.name}</option>`});
+}
+function openNewTask(col){
+  editingTaskId=null;newTaskCol=col;
+  document.getElementById('modal-task-title').textContent='New Task';
+  document.getElementById('mt-title').value='';
+  document.getElementById('mt-desc').value='';
+  document.getElementById('mt-due').value='';
+  document.getElementById('mt-priority').value='medium';
+  populateAssigneeDropdown('mt-assignee');
+  document.getElementById('mt-assignee').value='';
+  document.getElementById('mt-move-section').style.display='none';
+  document.getElementById('mt-comments-section').style.display='none';
+  document.getElementById('mt-delete').style.display='none';
+  document.getElementById('mt-save').textContent='Create';
+  openModal('modal-task');
+  setTimeout(()=>document.getElementById('mt-title').focus(),100);
+}
+function openEditTask(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  editingTaskId=id;
+  document.getElementById('modal-task-title').textContent='Edit Task';
+  document.getElementById('mt-title').value=t.title||'';
+  document.getElementById('mt-desc').value=t.description||'';
+  document.getElementById('mt-due').value=t.dueDate||'';
+  document.getElementById('mt-priority').value=t.priority||'medium';
+  populateAssigneeDropdown('mt-assignee');
+  document.getElementById('mt-assignee').value=t.assignee||'';
+  // Move buttons
+  document.getElementById('mt-move-section').style.display='block';
+  document.getElementById('mt-move-btns').innerHTML=COLS.map(c=>
+    `<button class="move-btn ${t.status===c?'current':''}" onclick="moveTask('${id}','${c}')">${COL_LABELS[c]}</button>`
+  ).join('');
+  // Comments
+  document.getElementById('mt-comments-section').style.display='block';
+  renderComments(t);
+  populateAssigneeDropdown('mt-comment-author');
+  document.getElementById('mt-comment-text').value='';
+  document.getElementById('mt-delete').style.display='inline-block';
+  document.getElementById('mt-save').textContent='Save';
+  openModal('modal-task');
+}
+function renderComments(t){
+  const el=document.getElementById('mt-comments');
+  if(!(t.comments||[]).length){el.innerHTML='<p style="color:var(--text2);font-size:13px">No comments yet</p>';return}
+  el.innerHTML=t.comments.map(c=>`<div class="comment">
+    ${avatarHTML(c.author,28)}
+    <div class="comment-body">
+      <span class="comment-author">${esc(c.author)}<span class="comment-time">${fmtDate(c.time)}</span></span>
+      <div class="comment-text">${esc(c.text)}</div>
+    </div>
+  </div>`).join('');
+}
+function addComment(){
+  if(!editingTaskId)return;
+  const t=tasks.find(x=>x.id===editingTaskId);if(!t)return;
+  const text=document.getElementById('mt-comment-text').value.trim();if(!text)return;
+  const author=document.getElementById('mt-comment-author').value||'Unknown';
+  if(!t.comments)t.comments=[];
+  t.comments.push({author,text,time:new Date().toISOString()});
+  saveTasks();renderComments(t);renderKanban();
+  document.getElementById('mt-comment-text').value='';
+  toast('Comment added');
+}
+function moveTask(id,col){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  t.status=col;saveTasks();renderKanban();
+  // Update move buttons
+  document.getElementById('mt-move-btns').innerHTML=COLS.map(c=>
+    `<button class="move-btn ${t.status===c?'current':''}" onclick="moveTask('${id}','${c}')">${COL_LABELS[c]}</button>`
+  ).join('');
+  toast(`Moved to ${COL_LABELS[col]}`);
+}
+function saveTask(){
+  const title=document.getElementById('mt-title').value.trim();
+  if(!title){toast('Title required');return}
+  if(editingTaskId){
+    const t=tasks.find(x=>x.id===editingTaskId);if(!t)return;
+    t.title=title;
+    t.description=document.getElementById('mt-desc').value.trim();
+    t.assignee=document.getElementById('mt-assignee').value;
+    t.priority=document.getElementById('mt-priority').value;
+    t.dueDate=document.getElementById('mt-due').value;
+    toast('Task updated ✓');
+  } else {
+    tasks.push({
+      id:genId(),title,
+      description:document.getElementById('mt-desc').value.trim(),
+      status:newTaskCol,
+      assignee:document.getElementById('mt-assignee').value,
+      priority:document.getElementById('mt-priority').value,
+      dueDate:document.getElementById('mt-due').value,
+      comments:[]
+    });
+    toast('Task created ✓');
+  }
+  saveTasks();renderKanban();closeModal('modal-task');
+}
+function deleteTask(){
+  if(!editingTaskId)return;
+  if(!confirm('Delete this task?'))return;
+  tasks=tasks.filter(t=>t.id!==editingTaskId);
+  saveTasks();renderKanban();closeModal('modal-task');
+  toast('Task deleted');
+}
+
+/* ===== ACTIVITY ===== */
+let activityData=[];
+function renderActivity(){
+  const icons={'Task completed':'✅','Inventory synced':'📦','Images uploaded':'🖼️','Collections created':'📁','Products synced':'🛒','Cin7 upload':'📤','Security blueprint sent':'🔒','Image search started':'🔍','Dashboard launched':'🚀'};
+  let html=activityData.map(a=>`<div class="feed-item">
+    <div class="feed-icon">${icons[a.action]||'📌'}</div>
+    <div class="feed-body">
+      <div class="feed-action">${esc(a.action)}</div>
+      <div class="feed-detail">${esc(a.detail)}</div>
+      <div class="feed-time">${a.who} · ${fmtDate(a.time)}</div>
+    </div>
+  </div>`).join('');
+  document.getElementById('activity-feed').innerHTML=html||'<p style="color:var(--text2)">No activity yet</p>';
+}
+function renderDashRecent(){
+  const recent=activityData.slice(0,5);
+  document.getElementById('dash-recent-items').innerHTML=recent.map(a=>`<div class="recent-item">
+    <span class="recent-dot"></span>
+    <div><div class="recent-text"><strong>${esc(a.action)}</strong> — ${esc(a.detail)}</div>
+    <div class="recent-time">${a.who} · ${fmtDate(a.time)}</div></div>
+  </div>`).join('')||'<p style="color:var(--text2)">No recent activity</p>';
+}
+
+/* ===== DOCUMENTS ===== */
+let docsData=[];
+function renderDocs(){
+  const search=(document.getElementById('doc-search').value||'').toLowerCase();
+  let totalFiles=0;
+  let html=docsData.map((cat,i)=>{
+    const files=(cat.files||[]).filter(f=>!search||f.name.toLowerCase().includes(search)||cat.category.toLowerCase().includes(search));
+    totalFiles+=files.length;
+    if(!files.length&&search)return '';
+    const id='dcat-'+i;
+    return `<div class="doc-category">
+      <div class="doc-category-header open" onclick="this.classList.toggle('open');document.getElementById('${id}').classList.toggle('open')">
+        <span class="arrow">▶</span> ${esc(cat.category)} <span style="color:var(--text2);font-size:12px;margin-left:8px">(${files.length})</span>
+      </div>
+      <div class="doc-grid open" id="${id}">
+        ${files.map(f=>`<div class="doc-card" onclick="viewDoc('${esc(f.name)}')">📄 ${esc(f.name)}</div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('docs-list').innerHTML=html||'<p style="color:var(--text2)">No documents found</p>';
+  document.getElementById('docs-badge').textContent=totalFiles;
+}
+function viewDoc(name){
+  document.getElementById('modal-doc-title').textContent=name;
+  document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">Document preview coming soon. This document is available in the 7 Cellars shared files.</p>';
+  openModal('modal-doc');
+}
+
+/* ===== TEAM ===== */
+function renderTeam(){
+  const roles={'Dwayne':'Strategy & Systems','Darryl':'Finance','Kyle':'Operations — Cayman','Roberto':'Sales & Sommelier','Tallyn':'Admin','Mika':'AI Assistant'};
+  document.getElementById('team-grid').innerHTML=TEAM.map(m=>{
+    const assigned=tasks.filter(t=>t.assignee===m.name && t.status!=='done').length;
+    const completed=tasks.filter(t=>t.assignee===m.name && t.status==='done').length;
+    return `<div class="team-card">
+      <div class="team-card-top">
+        <div class="team-avatar" style="background:${m.color}">${m.initials}</div>
+        <div><div class="team-name">${m.name}</div><div class="team-role">${roles[m.name]||''}</div></div>
+      </div>
+      <div class="team-stats">
+        <div class="team-stat"><div class="num">${assigned}</div><div class="lbl">Active</div></div>
+        <div class="team-stat"><div class="num">${completed}</div><div class="lbl">Done</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== INIT ===== */
+async function loadJSON(p){try{const r=await fetch(p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+async function init(){
+  updateClock();setInterval(updateClock,30000);
+  buildFilters();
+
+  // Load tasks: localStorage first, fall back to JSON
+  loadTasks();
+  if(!tasks){
+    const j=await loadJSON('data/tasks.json');
+    tasks=j||[];
+    saveTasks();
+  }
+  renderKanban();
+
+  // Activity
+  const act=await loadJSON('data/activity.json');
+  if(act){activityData=act;renderActivity();renderDashRecent()}
+
+  // Documents
+  const docs=await loadJSON('data/documents.json');
+  if(docs){docsData=docs;renderDocs()}
+
+  // Team
+  renderTeam();
+}
+
+if(localStorage.getItem('7c_auth')==='1'){document.getElementById('login').classList.add('hidden');init()}
+</script>
+</body>
+</html>
