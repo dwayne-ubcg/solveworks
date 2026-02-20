@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — SolveWorks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#22222e;
+--border:#2a2a3a;--text:#e4e4e8;--text2:#8888a0;--accent:#0D1B2A;
+--accent-light:#1a3050;--yellow:#f0c040;--green:#40c080;--blue:#4080f0;
+--red:#f04060;--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+a{color:var(--blue);text-decoration:none}
+
+/* Sidebar */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh}
+.sidebar-logo{padding:20px;font-size:15px;font-weight:700;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border)}
+.sidebar-logo span{color:var(--text)}
+.nav{flex:1;padding:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .15s}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:#fff}
+.nav-item svg{width:18px;height:18px;opacity:.6}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.btn-logout{width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{background:var(--surface3);color:var(--text)}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:32px 40px}
+.section{display:none}
+.section.active{display:block}
+
+/* Login */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+#login.hidden{display:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px;width:360px;text-align:center}
+.login-box h1{font-size:20px;margin-bottom:8px}
+.login-box p{color:var(--text2);font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.login-box input:focus{border-color:var(--blue)}
+.login-box button{width:100%;padding:12px;margin-top:12px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.login-box button:hover{background:var(--accent-light)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* Dashboard */
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.mission-statement{background:linear-gradient(135deg,var(--accent),#162840);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:28px}
+.mission-statement h2{font-size:14px;color:var(--text2);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.mission-statement p{font-size:18px;font-weight:500;line-height:1.6}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.stat-card .label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-card .value{font-size:28px;font-weight:700}
+.stat-card .value.yellow{color:var(--yellow)}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.blue{color:var(--blue)}
+.clock{font-size:13px;color:var(--text2);margin-bottom:24px;font-variant-numeric:tabular-nums}
+
+/* Activity Feed */
+.feed-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.feed-item .feed-date{font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.feed-item .feed-content{font-size:14px;line-height:1.7;color:var(--text)}
+.feed-item .feed-content h1,.feed-item .feed-content h2,.feed-item .feed-content h3{margin:12px 0 6px;font-size:15px}
+.feed-item .feed-content ul{padding-left:20px;margin:6px 0}
+.feed-item .feed-content code{background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:12px}
+.feed-item .feed-content pre{background:var(--surface2);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;margin:8px 0}
+
+/* Tasks */
+.task-section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.task-section-title:first-child{margin-top:0}
+.task{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.badge.in-progress{background:rgba(240,192,64,.15);color:var(--yellow)}
+.badge.completed{background:rgba(64,192,128,.15);color:var(--green)}
+.badge.waiting{background:rgba(64,128,240,.15);color:var(--blue)}
+.task-name{font-size:14px;font-weight:500}
+
+/* Documents */
+.doc-folder{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.doc-folder-header{padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500}
+.doc-folder-header:hover{background:var(--surface2)}
+.doc-folder-header .arrow{transition:transform .2s;color:var(--text2);font-size:12px}
+.doc-folder-header.open .arrow{transform:rotate(90deg)}
+.doc-files{display:none;padding:0 18px 14px;margin-left:28px}
+.doc-files.open{display:block}
+.doc-file{padding:6px 0;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border)}
+.doc-file:last-child{border:none}
+
+/* Agents */
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.agent-card .agent-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.agent-card .agent-role{font-size:13px;color:var(--text2);margin-bottom:14px}
+.agent-card .agent-desc{font-size:14px;line-height:1.6;color:var(--text)}
+.agent-status{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.agent-status.active{background:rgba(64,192,128,.15);color:var(--green)}
+.agent-status.standby{background:rgba(64,128,240,.15);color:var(--blue)}
+
+/* Mobile */
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;z-index:40;transition:left .2s}
+  .sidebar.open{left:0}
+  .menu-toggle{display:block}
+  .main{padding:20px 16px;padding-top:56px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .agents-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h1>Mission Control</h1>
+    <p>SolveWorks — Autonomous Operations</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><span>SOLVE</span>WORKS</div>
+  <div class="nav">
+    <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-section="activity" onclick="showSection('activity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity Feed
+    </div>
+    <div class="nav-item" data-section="tasks" onclick="showSection('tasks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Tasks
+    </div>
+    <div class="nav-item" data-section="documents" onclick="showSection('documents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Documents
+    </div>
+    <div class="nav-item" data-section="agents" onclick="showSection('agents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+      Agents
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">← Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- Dashboard -->
+  <div class="section active" id="sec-dashboard">
+    <h1 class="page-title">Dashboard</h1>
+    <div class="clock" id="clock"></div>
+    <div class="mission-statement">
+      <h2>Mission</h2>
+      <p>Build an autonomous organization of AI agents that does work for me and produces value 24/7</p>
+    </div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="label">In Progress</div><div class="value yellow" id="stat-progress">—</div></div>
+      <div class="stat-card"><div class="label">Completed</div><div class="value green" id="stat-completed">—</div></div>
+      <div class="stat-card"><div class="label">Waiting</div><div class="value blue" id="stat-waiting">—</div></div>
+      <div class="stat-card"><div class="label">Active Agents</div><div class="value" id="stat-agents">3</div></div>
+    </div>
+  </div>
+
+  <!-- Activity -->
+  <div class="section" id="sec-activity">
+    <h1 class="page-title">Activity Feed</h1>
+    <p class="page-sub">Recent daily logs and updates</p>
+    <div id="activity-feed"></div>
+  </div>
+
+  <!-- Tasks -->
+  <div class="section" id="sec-tasks">
+    <h1 class="page-title">Tasks</h1>
+    <p class="page-sub">Current task board</p>
+    <div id="tasks-list"></div>
+  </div>
+
+  <!-- Documents -->
+  <div class="section" id="sec-documents">
+    <h1 class="page-title">Documents</h1>
+    <p class="page-sub">Research &amp; operational documents</p>
+    <div id="docs-list"></div>
+  </div>
+
+  <!-- Agents -->
+  <div class="section" id="sec-agents">
+    <h1 class="page-title">Agents</h1>
+    <p class="page-sub">Autonomous team members</p>
+    <div class="agents-grid" id="agents-grid"></div>
+  </div>
+</div>
+
+<script>
+const HASH='4682315e5aeba932c7d9afbdac4001f02ca4190212fca8ef72c9c18dc83b50be';
+
+async function sha256(s){const d=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+
+async function tryLogin(){
+  const pw=document.getElementById('pw').value;
+  if(await sha256(pw)===HASH){
+    localStorage.setItem('mc_auth','1');
+    document.getElementById('login').classList.add('hidden');
+    init();
+  } else {
+    document.getElementById('login-error').style.display='block';
+  }
+}
+
+function logout(){localStorage.removeItem('mc_auth');location.reload()}
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' — '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+async function loadJSON(path){try{const r=await fetch(path);if(!r.ok)return null;return r.json()}catch(e){return null}}
+
+async function init(){
+  updateClock();setInterval(updateClock,1000);
+
+  // Tasks
+  const tasks=await loadJSON('data/tasks.json');
+  if(tasks){
+    const groups={inProgress:[],completed:[],waiting:[]};
+    (tasks.tasks||tasks||[]).forEach(t=>{
+      const s=(t.status||'').toLowerCase();
+      if(s.includes('progress'))groups.inProgress.push(t);
+      else if(s.includes('complet')||s.includes('done'))groups.completed.push(t);
+      else groups.waiting.push(t);
+    });
+    document.getElementById('stat-progress').textContent=groups.inProgress.length;
+    document.getElementById('stat-completed').textContent=groups.completed.length;
+    document.getElementById('stat-waiting').textContent=groups.waiting.length;
+
+    let html='';
+    if(groups.inProgress.length){html+='<div class="task-section-title">In Progress</div>';groups.inProgress.forEach(t=>{html+=`<div class="task"><span class="badge in-progress">In Progress</span><span class="task-name">${esc(t.name||t.title||t.task||'')}</span></div>`})}
+    if(groups.waiting.length){html+='<div class="task-section-title">Waiting</div>';groups.waiting.forEach(t=>{html+=`<div class="task"><span class="badge waiting">Waiting</span><span class="task-name">${esc(t.name||t.title||t.task||'')}</span></div>`})}
+    if(groups.completed.length){html+='<div class="task-section-title">Completed</div>';groups.completed.forEach(t=>{html+=`<div class="task"><span class="badge completed">Completed</span><span class="task-name">${esc(t.name||t.title||t.task||'')}</span></div>`})}
+    document.getElementById('tasks-list').innerHTML=html||'<p style="color:var(--text2)">No tasks found</p>';
+  }
+
+  // Activity
+  const mem=await loadJSON('data/memory-recent.json');
+  if(mem){
+    const entries=mem.entries||mem;
+    let html='';
+    (Array.isArray(entries)?entries:[]).forEach(e=>{
+      html+=`<div class="feed-item"><div class="feed-date">${esc(e.date||e.file||'')}</div><div class="feed-content">${marked.parse(e.content||e.text||'')}</div></div>`;
+    });
+    document.getElementById('activity-feed').innerHTML=html||'<p style="color:var(--text2)">No recent activity</p>';
+  }
+
+  // Documents
+  const docs=await loadJSON('data/documents.json');
+  if(docs){
+    const folders=docs.folders||docs;
+    let html='';
+    (Array.isArray(folders)?folders:[]).forEach(f=>{
+      const id='doc-'+Math.random().toString(36).slice(2,8);
+      html+=`<div class="doc-folder"><div class="doc-folder-header" onclick="toggleFolder('${id}',this)"><span class="arrow">▶</span> 📁 ${esc(f.name||f.folder||'')}</div><div class="doc-files" id="${id}">`;
+      (f.files||[]).forEach(file=>{html+=`<div class="doc-file">📄 ${esc(typeof file==='string'?file:file.name||file.file||'')}</div>`});
+      html+='</div></div>';
+    });
+    document.getElementById('docs-list').innerHTML=html||'<p style="color:var(--text2)">No documents found</p>';
+  }
+
+  // Agents
+  const agents=await loadJSON('data/agents.json');
+  if(agents){
+    let html='';
+    (agents.agents||agents||[]).forEach(a=>{
+      const status=a.status||'active';
+      html+=`<div class="agent-card"><span class="agent-status ${status==='active'?'active':'standby'}">${esc(status)}</span><div class="agent-name">${esc(a.name||'')}</div><div class="agent-role">${esc(a.role||'')}</div><div class="agent-desc">${esc(a.description||a.desc||'')}</div></div>`;
+    });
+    document.getElementById('agents-grid').innerHTML=html||'<p style="color:var(--text2)">No agents configured</p>';
+    document.getElementById('stat-agents').textContent=(agents.agents||agents||[]).length;
+  }
+}
+
+function toggleFolder(id,el){el.classList.toggle('open');document.getElementById(id).classList.toggle('open')}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+if(localStorage.getItem('mc_auth')==='1'){document.getElementById('login').classList.add('hidden');init()}
+</script>
+</body>
+</html>
