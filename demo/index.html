@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolveWorks — Demo Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#F8FAFC;--surface:#FFFFFF;--surface2:#F1F5F9;--surface3:#E2E8F0;
+--border:#E2E8F0;--text:#0F172A;--text2:#64748B;--accent:#2563EB;
+--accent-light:#3B82F6;--navy:#0F172A;
+--yellow:#D97706;--green:#059669;--blue:#2563EB;--red:#DC2626;
+--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+a{color:var(--blue);text-decoration:none}
+::selection{background:var(--accent);color:#fff}
+
+/* Sidebar */
+.sidebar{width:250px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;height:100vh}
+.sidebar-brand{padding:24px 20px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:14px}
+.sidebar-logo{width:36px;height:36px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:-.5px}
+.sidebar-brand-text h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.3px}
+.sidebar-brand-text p{font-size:10px;color:rgba(255,255,255,.45);margin-top:2px;text-transform:uppercase;letter-spacing:1.5px}
+.nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;transition:all .15s;position:relative;margin-bottom:2px}
+.nav-item:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.9)}
+.nav-item.active{background:rgba(37,99,235,.3);color:#fff}
+.nav-item svg{width:18px;height:18px;opacity:.7;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.nav-badge{position:absolute;right:10px;font-size:11px;font-weight:700;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);padding:2px 8px;border-radius:10px;min-width:24px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(37,99,235,.4);color:#fff}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.1);text-align:center}
+.sidebar-footer a{color:rgba(255,255,255,.4);font-size:11px;text-decoration:none;transition:color .15s}
+.sidebar-footer a:hover{color:rgba(255,255,255,.7)}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:32px 40px;padding-bottom:60px;position:relative}
+.section{display:none;animation:fadeIn .25s ease}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Demo banner */
+.demo-banner{background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:1px solid #BFDBFE;border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:13px;color:#1E40AF;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.demo-banner .icon{font-size:16px}
+
+/* Page */
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px;color:var(--navy)}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.clock{font-size:13px;color:var(--text2);margin-bottom:24px;font-variant-numeric:tabular-nums}
+
+/* CTA */
+.section-cta{margin-top:32px;padding:20px;background:linear-gradient(135deg,#0F172A,#1E293B);border-radius:var(--radius);text-align:center;color:#fff}
+.section-cta p{font-size:15px;margin-bottom:8px;opacity:.9}
+.section-cta a{display:inline-block;padding:10px 24px;background:var(--accent);color:#fff;border-radius:8px;font-weight:600;font-size:14px;transition:background .15s;text-decoration:none}
+.section-cta a:hover{background:var(--accent-light)}
+
+/* Loading / Empty */
+.loading-state{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text2);gap:12px;font-size:14px}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-state .icon{font-size:48px;margin-bottom:12px;opacity:.5}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:transform .15s}
+.stat-card:hover{transform:translateY(-1px)}
+.stat-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;font-weight:600}
+.stat-card .value{font-size:28px;font-weight:700}
+.stat-card .value.yellow{color:var(--yellow)}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.blue{color:var(--blue)}
+.stat-card .value.red{color:var(--red)}
+
+/* Dashboard hero */
+.dash-hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 50%,#2563EB 100%);border-radius:var(--radius);padding:32px;margin-bottom:28px;color:#fff;position:relative;overflow:hidden}
+.dash-hero::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;background:rgba(37,99,235,.2);border-radius:50%;pointer-events:none}
+.dash-hero h2{font-size:28px;font-weight:700;margin-bottom:6px}
+.dash-hero p{font-size:14px;opacity:.7;line-height:1.6}
+
+/* Dashboard grid */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.dash-card h3{font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.dash-card-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start;font-size:13px}
+.dash-card-item:last-child{border-bottom:none}
+
+/* ===== KANBAN ===== */
+.kanban-filters{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text2);pointer-events:none}
+.search-input{padding:9px 14px 9px 36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;width:240px;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent)}
+.filter-chip{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:6px}
+.filter-chip:hover{background:var(--surface2);color:var(--text)}
+.filter-chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+.kanban-board{display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;min-height:calc(100vh - 280px)}
+.kanban-col{flex:1;min-width:260px;max-width:340px;background:var(--surface2);border-radius:var(--radius);display:flex;flex-direction:column}
+.kanban-col-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.kanban-col-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.kanban-col-count{font-size:11px;font-weight:700;background:var(--border);color:var(--text2);padding:2px 8px;border-radius:10px}
+.kanban-col-body{flex:1;padding:8px;overflow-y:auto;min-height:80px}
+.kanban-col-body.drag-over{background:rgba(37,99,235,.06)}
+
+/* Kanban cards */
+.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;cursor:grab;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kanban-card:hover{border-color:var(--accent-light);box-shadow:0 2px 8px rgba(37,99,235,.1)}
+.kanban-card.dragging{opacity:.4;transform:rotate(2deg)}
+.kanban-card-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:8px}
+.kanban-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.priority-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.priority-tag.urgent{background:#fde8e8;color:#dc2626}
+.priority-tag.high{background:#fef3e2;color:#d97706}
+.priority-tag.medium{background:#e8f0fe;color:#2563eb}
+.priority-tag.low{background:#e8f5e9;color:#059669}
+.kanban-card-due{font-size:11px;color:var(--text2)}
+.kanban-card-due.overdue{color:var(--red);font-weight:600}
+.kanban-card-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.kanban-card-comments{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
+
+/* Avatar */
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff;letter-spacing:.5px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(2px)}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:560px;max-width:92vw;max-height:85vh;overflow-y:auto;transform:translateY(20px);transition:transform .2s;box-shadow:0 16px 48px rgba(0,0,0,.12)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--navy)}
+.modal label{display:block;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:16px}
+.modal label:first-of-type{margin-top:0}
+.modal input[type="text"],.modal input[type="date"],.modal textarea,.modal select{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.modal input:focus,.modal textarea:focus,.modal select:focus{border-color:var(--accent)}
+.modal textarea{resize:vertical;min-height:60px}
+.modal select{appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748B' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.modal-btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.modal-btn.primary{background:var(--accent);color:#fff}
+.modal-btn.primary:hover{background:var(--accent-light)}
+.modal-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.modal-btn.secondary:hover{background:var(--surface3);color:var(--text)}
+.modal-btn.danger{background:#fde8e8;color:var(--red);border:1px solid #f5c6c6}
+
+/* Move buttons */
+.move-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.move-btn{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:inherit;transition:all .15s}
+.move-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.move-btn.current{background:var(--accent);color:#fff;border-color:var(--accent);pointer-events:none}
+
+/* Comments */
+.comments-section{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+.comments-section h3{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px}
+.comment{display:flex;gap:10px;margin-bottom:12px}
+.comment-body{flex:1}
+.comment-author{font-size:12px;font-weight:600}
+.comment-time{font-size:11px;color:var(--text2);margin-left:8px;font-weight:400}
+.comment-text{font-size:13px;line-height:1.5;margin-top:2px}
+.comment-input-wrap{display:flex;gap:8px;margin-top:12px}
+.comment-input-wrap select{width:120px;padding:8px 10px;font-size:12px}
+.comment-input-wrap input{flex:1;padding:8px 12px;font-size:13px}
+.comment-input-wrap button{padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+
+/* Activity Feed */
+.feed-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);display:flex;gap:14px;align-items:flex-start}
+.feed-icon{width:36px;height:36px;border-radius:50%;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.feed-body{flex:1}
+.feed-action{font-size:14px;font-weight:600;margin-bottom:2px}
+.feed-detail{font-size:13px;color:var(--text2);line-height:1.5}
+.feed-time{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* Meetings */
+.meeting-list{display:flex;flex-direction:column;gap:10px}
+.meeting-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:16px}
+.meeting-card:hover{border-color:var(--accent-light);box-shadow:0 2px 8px rgba(37,99,235,.08);transform:translateY(-1px)}
+.meeting-date{font-size:12px;font-weight:700;color:var(--accent);min-width:80px;flex-shrink:0}
+.meeting-title{font-size:14px;font-weight:500;flex:1}
+
+/* Rendered doc content */
+.doc-rendered h1,.doc-rendered h2,.doc-rendered h3{margin:18px 0 8px;color:var(--navy)}
+.doc-rendered h1{font-size:20px}.doc-rendered h2{font-size:17px}.doc-rendered h3{font-size:15px}
+.doc-rendered p{margin:6px 0}.doc-rendered ul,.doc-rendered ol{margin:6px 0 6px 20px}
+.doc-rendered code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:13px}
+.doc-rendered pre{background:var(--surface2);padding:14px;border-radius:8px;overflow-x:auto;margin:10px 0}
+.doc-rendered pre code{background:none;padding:0}
+.doc-rendered table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+.doc-rendered th,.doc-rendered td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+.doc-rendered th{background:var(--surface2);font-weight:600}
+.doc-rendered blockquote{border-left:3px solid var(--accent);padding-left:14px;color:var(--text2);margin:10px 0}
+
+/* Inventory & Orders table */
+.inv-table,.orders-table{width:100%;border-collapse:collapse;font-size:13px}
+.inv-table th,.inv-table td,.orders-table th,.orders-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.inv-table th,.orders-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);background:var(--surface2);position:sticky;top:0}
+.inv-table tr:hover,.orders-table tr:hover{background:var(--surface2)}
+.inv-table .low-stock{color:var(--red);font-weight:600}
+.fulfillment-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.fulfillment-badge.fulfilled{background:#e8f5e9;color:#059669}
+.fulfillment-badge.unfulfilled{background:#fde8e8;color:#dc2626}
+.fulfillment-badge.pending{background:#fef3e2;color:#d97706}
+
+/* Team */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.team-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04);transition:all .15s}
+.team-card:hover{border-color:var(--accent-light);transform:translateY(-1px)}
+.team-card-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.team-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff}
+.team-name{font-size:16px;font-weight:700}
+.team-role{font-size:13px;color:var(--text2)}
+.team-stats{display:flex;gap:20px}
+.team-stat{text-align:center}
+.team-stat .num{font-size:20px;font-weight:700}
+.team-stat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+
+/* Toast */
+.toast{position:fixed;bottom:48px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;border-radius:8px;padding:10px 24px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.15);opacity:0;transition:all .3s;z-index:60;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Sync footer */
+.sync-footer{position:fixed;bottom:0;left:250px;right:0;padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;z-index:10}
+.sync-footer-left{display:flex;align-items:center;gap:8px}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;background:var(--green)}
+
+/* Mobile */
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
+
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;z-index:40;transition:left .2s}
+  .sidebar.open{left:0}
+  .menu-toggle{display:block}
+  .main{padding:20px 16px;padding-top:56px;padding-bottom:48px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .kanban-board{flex-direction:column}
+  .kanban-col{max-width:100%;min-width:0}
+  .sync-footer{left:0}
+  .team-grid{grid-template-columns:1fr}
+  .dash-grid{grid-template-columns:1fr}
+  .meeting-card{flex-direction:column;gap:6px}
+  .meeting-date{min-width:auto}
+}
+</style>
+</head>
+<body>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">SW</div>
+    <div class="sidebar-brand-text">
+      <h1>Acme Co.</h1>
+      <p>Powered by SolveWorks</p>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-section="tasks" onclick="showSection('tasks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg>
+      Tasks <span class="nav-badge" id="tasks-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="sales" onclick="showSection('sales')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Sales
+    </div>
+    <div class="nav-item" data-section="inventory" onclick="showSection('inventory')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Inventory <span class="nav-badge" id="inv-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="meetings" onclick="showSection('meetings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Meetings <span class="nav-badge" id="meetings-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="activity" onclick="showSection('activity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity
+    </div>
+    <div class="nav-item" data-section="team" onclick="showSection('team')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Team
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <a href="https://solveworks.io" target="_blank">solveworks.io</a>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- Dashboard -->
+  <div class="section active" id="sec-dashboard">
+    <div class="demo-banner">
+      <span class="icon">🔒</span>
+      <span>This is a demo dashboard with sample data. Your real data stays private on your own secure instance.</span>
+    </div>
+    <div class="clock" id="clock"></div>
+    <div class="dash-hero">
+      <h2>Acme Co.</h2>
+      <p>Gourmet food distribution — powered by SolveWorks AI</p>
+    </div>
+    <div class="stats-grid" id="commerce-stats">
+      <div class="stat-card"><div class="label">This Week</div><div class="value green">$12,450</div></div>
+      <div class="stat-card"><div class="label">This Month</div><div class="value green">$48,200</div></div>
+      <div class="stat-card"><div class="label">Total Revenue</div><div class="value green">$284,500</div></div>
+      <div class="stat-card"><div class="label">Products In Stock</div><div class="value blue" id="stat-skus">—</div></div>
+      <div class="stat-card"><div class="label">Low Stock Alerts</div><div class="value red" id="stat-lowstock">—</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">Retail Revenue</div><div class="value" style="font-size:22px;color:var(--accent)">$112,400</div><div style="font-size:11px;color:var(--text2);margin-top:4px">39% of total</div></div>
+      <div class="stat-card"><div class="label">Wholesale Revenue</div><div class="value" style="font-size:22px;color:var(--green)">$172,100</div><div style="font-size:11px;color:var(--text2);margin-top:4px">61% of total</div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">To Do</div><div class="value blue" id="stat-todo">—</div></div>
+      <div class="stat-card"><div class="label">In Progress</div><div class="value yellow" id="stat-progress">—</div></div>
+      <div class="stat-card"><div class="label">Waiting</div><div class="value red" id="stat-waiting">—</div></div>
+      <div class="stat-card"><div class="label">Done</div><div class="value green" id="stat-done">—</div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <h3>Recent Orders</h3>
+        <div id="dash-orders"></div>
+      </div>
+      <div class="dash-card">
+        <h3>Recent Activity</h3>
+        <div id="dash-activity"></div>
+      </div>
+    </div>
+    <div class="section-cta">
+      <p>Want this dashboard for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+
+  <!-- Tasks -->
+  <div class="section" id="sec-tasks">
+    <h1 class="page-title">Tasks</h1>
+    <p class="page-sub">Drag cards between columns to update status</p>
+    <div class="kanban-filters">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="task-search" placeholder="Search tasks..." oninput="renderKanban()">
+      </div>
+      <div id="filter-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="kanban-board" id="kanban-board">
+      <div class="kanban-col" data-col="todo">
+        <div class="kanban-col-header"><span class="kanban-col-title">📋 To Do <span class="kanban-col-count" id="count-todo">0</span></span></div>
+        <div class="kanban-col-body" id="col-todo"></div>
+      </div>
+      <div class="kanban-col" data-col="inprogress">
+        <div class="kanban-col-header"><span class="kanban-col-title">🔄 In Progress <span class="kanban-col-count" id="count-inprogress">0</span></span></div>
+        <div class="kanban-col-body" id="col-inprogress"></div>
+      </div>
+      <div class="kanban-col" data-col="waiting">
+        <div class="kanban-col-header"><span class="kanban-col-title">⏳ Waiting <span class="kanban-col-count" id="count-waiting">0</span></span></div>
+        <div class="kanban-col-body" id="col-waiting"></div>
+      </div>
+      <div class="kanban-col" data-col="done">
+        <div class="kanban-col-header"><span class="kanban-col-title">✅ Done <span class="kanban-col-count" id="count-done">0</span></span></div>
+        <div class="kanban-col-body" id="col-done"></div>
+      </div>
+    </div>
+    <div class="section-cta">
+      <p>Want this for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+
+  <!-- Sales -->
+  <div class="section" id="sec-sales">
+    <h1 class="page-title">Sales</h1>
+    <p class="page-sub">Revenue from retail and wholesale channels</p>
+    <div class="kanban-filters" style="margin-bottom:20px">
+      <div class="filter-chip active" onclick="setSalesFilter('all',this)">All</div>
+      <div class="filter-chip" onclick="setSalesFilter('Retail',this)">🛒 Retail</div>
+      <div class="filter-chip" onclick="setSalesFilter('Wholesale',this)">📦 Wholesale</div>
+    </div>
+    <div class="stats-grid" id="sales-stats"></div>
+    <div style="margin-top:20px">
+      <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Recent Orders</h3>
+      <div id="orders-list"></div>
+    </div>
+    <div class="section-cta">
+      <p>Want this for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+
+  <!-- Inventory -->
+  <div class="section" id="sec-inventory">
+    <h1 class="page-title">Inventory</h1>
+    <p class="page-sub">Real-time stock levels across all products</p>
+    <div class="kanban-filters" style="margin-bottom:16px">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="inv-search" placeholder="Search inventory..." oninput="renderInventory()">
+      </div>
+      <div class="filter-chip active" onclick="setInvFilter('all',this)">All</div>
+      <div class="filter-chip" onclick="setInvFilter('instock',this)">In Stock</div>
+      <div class="filter-chip" onclick="setInvFilter('low',this)" style="color:var(--red)">⚠ Low Stock</div>
+      <div class="filter-chip" onclick="setInvFilter('out',this)">Out of Stock</div>
+    </div>
+    <div id="inventory-list"></div>
+    <div class="section-cta">
+      <p>Want this for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+
+  <!-- Meetings -->
+  <div class="section" id="sec-meetings">
+    <h1 class="page-title">Meetings</h1>
+    <p class="page-sub">AI-generated meeting summaries and notes</p>
+    <div class="kanban-filters" style="margin-bottom:16px">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="meeting-search" placeholder="Search meetings..." oninput="renderMeetings()">
+      </div>
+    </div>
+    <div class="meeting-list" id="meetings-list"></div>
+    <div class="section-cta">
+      <p>Want this for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+
+  <!-- Activity -->
+  <div class="section" id="sec-activity">
+    <h1 class="page-title">Activity Feed</h1>
+    <p class="page-sub">Recent actions by your team and AI assistant</p>
+    <div id="activity-feed"></div>
+    <div class="section-cta">
+      <p>Want this for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+
+  <!-- Team -->
+  <div class="section" id="sec-team">
+    <h1 class="page-title">Team</h1>
+    <p class="page-sub">Your team members and AI assistant</p>
+    <div class="team-grid" id="team-grid"></div>
+    <div class="section-cta">
+      <p>Want this for your business?</p>
+      <a href="https://solveworks.io" target="_blank">Get Started → solveworks.io</a>
+    </div>
+  </div>
+</div>
+
+<!-- Task Detail Modal -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal">
+    <h2 id="modal-task-title">Task Details</h2>
+    <div id="modal-task-body"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('modal-task')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Document/Meeting View Modal -->
+<div class="modal-overlay" id="modal-doc">
+  <div class="modal" style="width:720px;max-height:90vh">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 id="modal-doc-title" style="margin-bottom:0"></h2>
+      <button class="modal-btn secondary" onclick="closeModal('modal-doc')" style="padding:6px 14px;font-size:18px;line-height:1">×</button>
+    </div>
+    <div id="modal-doc-content" class="doc-rendered" style="font-size:14px;line-height:1.7"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('modal-doc')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="sync-footer">
+  <div class="sync-footer-left"><span class="sync-dot"></span> <span>Demo Dashboard · Powered by <a href="https://solveworks.io" target="_blank" style="color:var(--accent);text-decoration:underline;font-weight:600">SolveWorks.io</a></span></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== DATA ===== */
+let TEAM=[], tasks=[], orders=[], inventory=[], meetings=[], activityData=[];
+let activeFilter='all', invFilter='all', salesFilter='all';
+const COLS=['todo','inprogress','waiting','done'];
+const COL_LABELS={todo:'To Do',inprogress:'In Progress',waiting:'Waiting',done:'Done'};
+
+/* ===== UTILS ===== */
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')})});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'))});
+function avatarHTML(name,size){
+  const m=TEAM.find(t=>t.name===name);
+  if(!m)return`<span class="avatar" style="background:#94a3b8;width:${size||26}px;height:${size||26}px;font-size:${(size||26)*.38}px">?</span>`;
+  return`<span class="avatar" style="background:${m.color};width:${size||26}px;height:${size||26}px;font-size:${(size||26)*.38}px">${m.initials}</span>`;
+}
+function fmtDate(d){if(!d)return'';return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function fmtDateLong(d){if(!d)return'';return new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}
+function isOverdue(d){if(!d)return false;return new Date(d)<new Date(new Date().toDateString())}
+function fmtMoney(n){return'$'+n.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})}
+
+/* ===== NAV ===== */
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+}
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' — '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ===== KANBAN ===== */
+function renderKanban(){
+  const search=(document.getElementById('task-search')?.value||'').toLowerCase();
+  const counts={todo:0,inprogress:0,waiting:0,done:0};
+  COLS.forEach(col=>{
+    const container=document.getElementById('col-'+col);
+    const filtered=tasks.filter(t=>{
+      if(t.status!==col)return false;
+      if(search&&!(t.title||'').toLowerCase().includes(search)&&!(t.description||'').toLowerCase().includes(search))return false;
+      if(activeFilter!=='all'&&t.assignee!==activeFilter)return false;
+      return true;
+    });
+    counts[col]=filtered.length;
+    container.innerHTML=filtered.map(t=>{
+      const overdue=isOverdue(t.dueDate);
+      return`<div class="kanban-card" draggable="true" data-id="${t.id}" onclick="openTask('${t.id}')"
+        ondragstart="onDragStart(event)" ondragend="onDragEnd(event)">
+        <div class="kanban-card-title">${esc(t.title)}</div>
+        <div class="kanban-card-meta">
+          ${t.priority?`<span class="priority-tag ${t.priority}">${t.priority}</span>`:''}
+          ${t.dueDate?`<span class="kanban-card-due ${overdue?'overdue':''}">${overdue?'⚠ ':''}${fmtDate(t.dueDate)}</span>`:''}
+        </div>
+        <div class="kanban-card-bottom">
+          ${t.assignee?avatarHTML(t.assignee,24):''}
+          ${(t.comments||[]).length?`<span class="kanban-card-comments">💬 ${t.comments.length}</span>`:''}
+        </div>
+      </div>`;
+    }).join('');
+  });
+  COLS.forEach(c=>document.getElementById('count-'+c).textContent=counts[c]);
+  document.getElementById('tasks-badge').textContent=counts.todo+counts.inprogress+counts.waiting;
+  document.getElementById('stat-todo').textContent=counts.todo;
+  document.getElementById('stat-progress').textContent=counts.inprogress;
+  document.getElementById('stat-waiting').textContent=counts.waiting;
+  document.getElementById('stat-done').textContent=counts.done;
+}
+
+function openTask(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  document.getElementById('modal-task-title').textContent=t.title;
+  let html=`<p style="color:var(--text2);margin-bottom:16px">${esc(t.description||'No description')}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div><strong style="font-size:11px;color:var(--text2);text-transform:uppercase">Assignee</strong><br>${t.assignee?avatarHTML(t.assignee,22)+' <span style="font-size:13px">'+esc(t.assignee)+'</span>':'Unassigned'}</div>
+      <div><strong style="font-size:11px;color:var(--text2);text-transform:uppercase">Priority</strong><br><span class="priority-tag ${t.priority}">${t.priority}</span></div>
+      <div><strong style="font-size:11px;color:var(--text2);text-transform:uppercase">Status</strong><br>${COL_LABELS[t.status]}</div>
+      <div><strong style="font-size:11px;color:var(--text2);text-transform:uppercase">Due</strong><br>${t.dueDate?fmtDateLong(t.dueDate):'No due date'}</div>
+    </div>`;
+  if((t.comments||[]).length){
+    html+=`<div class="comments-section"><h3>Comments</h3>`;
+    t.comments.forEach(c=>{
+      html+=`<div class="comment">${avatarHTML(c.author,28)}<div class="comment-body"><span class="comment-author">${esc(c.author)}<span class="comment-time">${fmtDate(c.time)}</span></span><div class="comment-text">${esc(c.text)}</div></div></div>`;
+    });
+    html+=`</div>`;
+  }
+  document.getElementById('modal-task-body').innerHTML=html;
+  openModal('modal-task');
+}
+
+/* Drag & Drop */
+let dragId=null;
+function onDragStart(e){dragId=e.target.dataset.id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
+function onDragEnd(e){e.target.classList.remove('dragging');dragId=null}
+document.querySelectorAll('.kanban-col-body').forEach(col=>{
+  col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-over')});
+  col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+  col.addEventListener('drop',e=>{
+    e.preventDefault();col.classList.remove('drag-over');
+    if(!dragId)return;
+    const newStatus=col.id.replace('col-','');
+    const task=tasks.find(t=>t.id===dragId);
+    if(task&&task.status!==newStatus){task.status=newStatus;renderKanban();toast(`Moved to ${COL_LABELS[newStatus]}`);}
+  });
+});
+
+/* Filters */
+function buildFilters(){
+  let html='<div class="filter-chip active" onclick="setFilter(\'all\',this)">All</div>';
+  TEAM.forEach(m=>{html+=`<div class="filter-chip" onclick="setFilter('${m.name}',this)">${avatarHTML(m.name,18)} ${m.name}</div>`});
+  document.getElementById('filter-chips').innerHTML=html;
+}
+function setFilter(v,el){
+  activeFilter=v;
+  document.querySelectorAll('#filter-chips .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderKanban();
+}
+
+/* ===== SALES ===== */
+function setSalesFilter(v,el){
+  salesFilter=v;
+  document.querySelectorAll('#sec-sales .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderSales();
+}
+
+function renderSales(){
+  const filtered=salesFilter==='all'?orders:orders.filter(o=>o.source===salesFilter);
+  const weekAgo=new Date(Date.now()-7*86400000);
+  const monthStart=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+  const weekRev=filtered.filter(o=>new Date(o.date)>=weekAgo).reduce((s,o)=>s+o.total,0);
+  const monthRev=filtered.filter(o=>new Date(o.date)>=monthStart).reduce((s,o)=>s+o.total,0);
+  const totalRev=filtered.reduce((s,o)=>s+o.total,0);
+
+  document.getElementById('sales-stats').innerHTML=`
+    <div class="stat-card"><div class="label">This Week</div><div class="value green">${fmtMoney(weekRev)}</div></div>
+    <div class="stat-card"><div class="label">This Month</div><div class="value green">${fmtMoney(monthRev)}</div></div>
+    <div class="stat-card"><div class="label">All Orders Total</div><div class="value green">${fmtMoney(totalRev)}</div></div>
+    <div class="stat-card"><div class="label">Orders</div><div class="value blue">${filtered.length}</div></div>`;
+
+  document.getElementById('orders-list').innerHTML=`<div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order</th><th>Source</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>`+
+    filtered.map(o=>{
+      const cls=o.status==='fulfilled'?'fulfilled':o.status==='pending'?'pending':'unfulfilled';
+      return`<tr><td><strong>#${o.id}</strong></td><td><span style="font-size:12px">${o.source==='Retail'?'🛒 Retail':'📦 Wholesale'}</span></td><td>${fmtDate(o.date)}</td><td>${esc(o.customer)}</td><td>${fmtMoney(o.total)}</td><td><span class="fulfillment-badge ${cls}">${o.status}</span></td></tr>`;
+    }).join('')+`</tbody></table></div>`;
+}
+
+/* ===== INVENTORY ===== */
+function setInvFilter(v,el){
+  invFilter=v;
+  document.querySelectorAll('#sec-inventory .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderInventory();
+}
+
+function renderInventory(){
+  const search=(document.getElementById('inv-search')?.value||'').toLowerCase();
+  let items=inventory.filter(i=>{
+    if(search&&!i.name.toLowerCase().includes(search)&&!i.category.toLowerCase().includes(search))return false;
+    if(invFilter==='low')return i.stock>0&&i.stock<10;
+    if(invFilter==='out')return i.stock<=0;
+    if(invFilter==='instock')return i.stock>0;
+    return true;
+  });
+  items.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const lowCount=inventory.filter(i=>i.stock>0&&i.stock<10).length;
+  const inStockCount=inventory.filter(i=>i.stock>0).length;
+  document.getElementById('stat-skus').textContent=inStockCount;
+  document.getElementById('stat-lowstock').textContent=lowCount;
+  document.getElementById('inv-badge').textContent=inventory.length;
+
+  document.getElementById('inventory-list').innerHTML=`<div style="overflow-x:auto"><table class="inv-table"><thead><tr><th>Product</th><th>Category</th><th>SKU</th><th>Stock</th><th>Price</th></tr></thead><tbody>`+
+    items.map(i=>`<tr><td><strong>${esc(i.name)}</strong></td><td style="color:var(--text2)">${esc(i.category)}</td><td style="font-family:monospace;font-size:12px;color:var(--text2)">${esc(i.sku)}</td><td class="${i.stock<10?'low-stock':''}">${i.stock<=0?'Out of stock':i.stock<10?'⚠ '+i.stock:i.stock}</td><td>$${i.price.toFixed(2)}</td></tr>`).join('')+
+    `</tbody></table></div>`;
+}
+
+/* ===== MEETINGS ===== */
+function renderMeetings(){
+  const search=(document.getElementById('meeting-search')?.value||'').toLowerCase();
+  const filtered=meetings.filter(m=>!search||m.title.toLowerCase().includes(search));
+  document.getElementById('meetings-badge').textContent=meetings.length;
+  document.getElementById('meetings-list').innerHTML=filtered.map((m,i)=>`<div class="meeting-card" onclick="viewMeeting(${i})">
+    <span class="meeting-date">${fmtDateLong(m.date)}</span>
+    <span class="meeting-title">${esc(m.title)}</span>
+  </div>`).join('')||'<div class="empty-state"><div class="icon">📅</div><p>No meetings found.</p></div>';
+}
+function viewMeeting(i){
+  const m=meetings[i];if(!m)return;
+  document.getElementById('modal-doc-title').textContent=m.title;
+  try{document.getElementById('modal-doc-content').innerHTML=marked.parse(m.content||'')}
+  catch(e){document.getElementById('modal-doc-content').textContent=m.content}
+  openModal('modal-doc');
+}
+
+/* ===== ACTIVITY ===== */
+function renderActivity(){
+  const icons={'Inventory synced':'📦','Report generated':'📊','Tasks updated':'✏️','Order processed':'✅','Email sent':'📧','Meeting summary':'📝','Price update':'💰','New customer':'🤝','Inventory alert':'🚨','Shipping negotiated':'🚛','Task completed':'✅','Budget submitted':'💳','Supplier contact':'🏭','Dashboard launched':'🚀'};
+  const el=document.getElementById('activity-feed');
+  el.innerHTML=activityData.map(a=>`<div class="feed-item">
+    <div class="feed-icon">${icons[a.action]||'📌'}</div>
+    <div class="feed-body">
+      <div class="feed-action">${esc(a.action)}</div>
+      <div class="feed-detail">${esc(a.detail)}</div>
+      <div class="feed-time">${esc(a.who)} · ${fmtDate(a.time)}</div>
+    </div>
+  </div>`).join('');
+
+  // Dashboard recent activity
+  document.getElementById('dash-activity').innerHTML=activityData.slice(0,5).map(a=>`<div class="dash-card-item">
+    <span style="font-size:16px">${icons[a.action]||'📌'}</span>
+    <div><div style="font-weight:500;font-size:13px">${esc(a.action)}</div><div style="font-size:12px;color:var(--text2)">${esc(a.who)} · ${fmtDate(a.time)}</div></div>
+  </div>`).join('');
+}
+
+/* ===== TEAM ===== */
+function renderTeam(){
+  document.getElementById('team-grid').innerHTML=TEAM.map(m=>{
+    const active=tasks.filter(t=>t.assignee===m.name&&t.status!=='done').length;
+    const done=tasks.filter(t=>t.assignee===m.name&&t.status==='done').length;
+    return`<div class="team-card">
+      <div class="team-card-top">
+        <div class="team-avatar" style="background:${m.color}">${m.initials}</div>
+        <div><div class="team-name">${esc(m.name)}</div><div class="team-role">${esc(m.role)}</div></div>
+      </div>
+      <div class="team-stats">
+        <div class="team-stat"><div class="num">${active}</div><div class="lbl">Active</div></div>
+        <div class="team-stat"><div class="num">${done}</div><div class="lbl">Done</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== DASHBOARD ORDERS ===== */
+function renderDashOrders(){
+  document.getElementById('dash-orders').innerHTML=orders.slice(0,5).map(o=>`<div class="dash-card-item" style="justify-content:space-between">
+    <div><strong>#${o.id}</strong> · ${esc(o.customer)} <span style="font-size:11px;color:var(--text2)">${o.source==='Retail'?'🛒':'📦'}</span></div>
+    <span style="font-weight:600;color:var(--green)">${fmtMoney(o.total)}</span>
+  </div>`).join('');
+}
+
+/* ===== INIT ===== */
+async function loadJSON(p){try{const r=await fetch(p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+async function init(){
+  updateClock();setInterval(updateClock,30000);
+
+  const [teamData,taskData,orderData,invData,meetData,actData]=await Promise.all([
+    loadJSON('data/team.json'),loadJSON('data/tasks.json'),loadJSON('data/orders.json'),
+    loadJSON('data/inventory.json'),loadJSON('data/meetings.json'),loadJSON('data/activity.json')
+  ]);
+
+  TEAM=teamData||[];
+  tasks=taskData||[];
+  orders=orderData||[];
+  inventory=invData||[];
+  meetings=meetData||[];
+  activityData=actData||[];
+
+  buildFilters();
+  renderKanban();
+  renderSales();
+  renderInventory();
+  renderMeetings();
+  renderActivity();
+  renderTeam();
+  renderDashOrders();
+}
+init();
+</script>
+</body>
+</html>
