@@ -291,7 +291,7 @@ a{color:var(--blue);text-decoration:none}
 
 <nav class="sidebar">
   <div class="sidebar-brand">
-    <div class="sidebar-logo">🍷</div>
+    <div class="sidebar-logo" style="background:none"><img src="logo-bottle.png" alt="7 Cellars" style="width:32px;height:auto;filter:brightness(0) invert(1)"></div>
     <div class="sidebar-brand-text">
       <h1>7 Cellars</h1>
       <p>Partner Dashboard</p>
@@ -345,8 +345,9 @@ a{color:var(--blue);text-decoration:none}
       <p>Premium wine importing & distribution — Grand Cayman</p>
     </div>
     <div class="stats-grid" id="commerce-stats">
-      <div class="stat-card"><div class="label">Revenue This Week</div><div class="value green" id="stat-revenue-week">—</div></div>
-      <div class="stat-card"><div class="label">Revenue This Month</div><div class="value green" id="stat-revenue-month">—</div></div>
+      <div class="stat-card"><div class="label">Retail Revenue (Shopify)</div><div class="value green" id="stat-revenue-retail">—</div></div>
+      <div class="stat-card"><div class="label">Wholesale Revenue (Cin7)</div><div class="value green" id="stat-revenue-wholesale">—</div></div>
+      <div class="stat-card"><div class="label">Total Revenue</div><div class="value green" id="stat-revenue-total">—</div></div>
       <div class="stat-card"><div class="label">Total SKUs In Stock</div><div class="value blue" id="stat-skus">—</div></div>
       <div class="stat-card"><div class="label">Low Stock Alerts</div><div class="value red" id="stat-lowstock">—</div></div>
     </div>
@@ -423,7 +424,12 @@ a{color:var(--blue);text-decoration:none}
   <!-- Sales -->
   <div class="section" id="sec-sales">
     <h1 class="page-title">Sales</h1>
-    <p class="page-sub">Shopify orders and revenue</p>
+    <p class="page-sub">Revenue from retail (Shopify) and wholesale (Cin7)</p>
+    <div class="kanban-filters" style="margin-bottom:20px">
+      <div class="filter-chip active" onclick="setSalesFilter('all',this)">All</div>
+      <div class="filter-chip" onclick="setSalesFilter('retail',this)">🛒 Retail (Shopify)</div>
+      <div class="filter-chip" onclick="setSalesFilter('wholesale',this)">📦 Wholesale (Cin7)</div>
+    </div>
     <div class="stats-grid" id="sales-stats"></div>
     <div style="margin-top:20px">
       <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Recent Orders</h3>
@@ -978,8 +984,16 @@ function renderTeam(){
 }
 
 /* ===== SALES & INVENTORY ===== */
-let shopifyOrders=null, shopifyInventory=null;
+let shopifyOrders=null, shopifyInventory=null, cin7Orders=null;
 let invFilter='all';
+let salesFilter='all';
+
+function setSalesFilter(v,el){
+  salesFilter=v;
+  document.querySelectorAll('#sec-sales .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderSales();
+}
 
 function setInvFilter(v,el){
   invFilter=v;
