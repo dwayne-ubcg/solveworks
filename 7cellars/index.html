@@ -195,6 +195,35 @@ a{color:var(--blue);text-decoration:none}
 .team-stat .num{font-size:20px;font-weight:700}
 .team-stat .lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
 
+/* Rendered doc content */
+.doc-rendered h1,.doc-rendered h2,.doc-rendered h3{margin:18px 0 8px;color:var(--navy)}
+.doc-rendered h1{font-size:20px}.doc-rendered h2{font-size:17px}.doc-rendered h3{font-size:15px}
+.doc-rendered p{margin:6px 0}.doc-rendered ul,.doc-rendered ol{margin:6px 0 6px 20px}
+.doc-rendered code{background:var(--surface2);padding:1px 5px;border-radius:4px;font-size:13px}
+.doc-rendered pre{background:var(--surface2);padding:14px;border-radius:8px;overflow-x:auto;margin:10px 0}
+.doc-rendered pre code{background:none;padding:0}
+.doc-rendered table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+.doc-rendered th,.doc-rendered td{border:1px solid var(--border);padding:8px 10px;text-align:left}
+.doc-rendered th{background:var(--surface2);font-weight:600}
+.doc-rendered blockquote{border-left:3px solid var(--navy);padding-left:14px;color:var(--text2);margin:10px 0}
+
+/* Inventory table */
+.inv-table{width:100%;border-collapse:collapse;font-size:13px}
+.inv-table th,.inv-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.inv-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);background:var(--surface2)}
+.inv-table tr:hover{background:var(--surface2)}
+.inv-table .low-stock{color:var(--red);font-weight:600}
+
+/* Orders table */
+.orders-table{width:100%;border-collapse:collapse;font-size:13px}
+.orders-table th,.orders-table td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.orders-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);background:var(--surface2)}
+.orders-table tr:hover{background:var(--surface2)}
+.fulfillment-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.fulfillment-badge.fulfilled{background:#e8f5e9;color:#2d8b57}
+.fulfillment-badge.unfulfilled{background:#fef3e2;color:#d4a017}
+.fulfillment-badge.partial{background:#e8f0fe;color:#2e5090}
+
 /* Toast */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;border-radius:8px;padding:10px 24px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.15);opacity:0;transition:all .3s;z-index:60;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -253,6 +282,14 @@ a{color:var(--blue);text-decoration:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       Activity
     </div>
+    <div class="nav-item" data-section="sales" onclick="showSection('sales')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Sales
+    </div>
+    <div class="nav-item" data-section="inventory" onclick="showSection('inventory')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Inventory
+    </div>
     <div class="nav-item" data-section="documents" onclick="showSection('documents')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       Documents <span class="nav-badge" id="docs-badge">0</span>
@@ -280,6 +317,12 @@ a{color:var(--blue);text-decoration:none}
       <div class="stat-card"><div class="label">In Progress</div><div class="value yellow" id="stat-progress">—</div></div>
       <div class="stat-card"><div class="label">Waiting</div><div class="value red" id="stat-waiting">—</div></div>
       <div class="stat-card"><div class="label">Done</div><div class="value green" id="stat-done">—</div></div>
+    </div>
+    <div class="stats-grid" id="commerce-stats">
+      <div class="stat-card"><div class="label">Revenue This Week</div><div class="value green" id="stat-revenue">—</div></div>
+      <div class="stat-card"><div class="label">Orders This Week</div><div class="value blue" id="stat-orders">—</div></div>
+      <div class="stat-card"><div class="label">Low Stock Items</div><div class="value red" id="stat-lowstock">—</div></div>
+      <div class="stat-card"><div class="label">Total SKUs</div><div class="value" id="stat-skus">—</div></div>
     </div>
     <div class="recent-activity" id="dash-recent">
       <h3>Recent Activity</h3>
@@ -335,6 +378,36 @@ a{color:var(--blue);text-decoration:none}
     <h1 class="page-title">Activity Feed</h1>
     <p class="page-sub">Recent actions and updates</p>
     <div id="activity-feed"></div>
+  </div>
+
+  <!-- Sales -->
+  <div class="section" id="sec-sales">
+    <h1 class="page-title">Sales</h1>
+    <p class="page-sub">Shopify orders and revenue</p>
+    <div class="stats-grid" id="sales-stats"></div>
+    <div style="margin-top:20px">
+      <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Recent Orders</h3>
+      <div id="orders-list" style="font-size:13px;color:var(--text2)">No order data yet</div>
+    </div>
+    <div style="margin-top:28px">
+      <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Top Selling Products</h3>
+      <div id="top-products" style="font-size:13px;color:var(--text2)">No data yet</div>
+    </div>
+  </div>
+
+  <!-- Inventory -->
+  <div class="section" id="sec-inventory">
+    <h1 class="page-title">Inventory</h1>
+    <p class="page-sub">Stock levels from Shopify &amp; Cin7</p>
+    <div class="kanban-filters" style="margin-bottom:16px">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="inv-search" placeholder="Search inventory..." oninput="renderInventory()">
+      </div>
+      <div class="filter-chip active" onclick="setInvFilter('all',this)">All</div>
+      <div class="filter-chip" onclick="setInvFilter('low',this)" style="color:var(--red)">⚠ Low Stock</div>
+    </div>
+    <div id="inventory-list" style="font-size:13px;color:var(--text2)">No inventory data yet</div>
   </div>
 
   <!-- Documents -->
@@ -396,9 +469,12 @@ a{color:var(--blue);text-decoration:none}
 
 <!-- Document View Modal -->
 <div class="modal-overlay" id="modal-doc">
-  <div class="modal" style="width:640px">
-    <h2 id="modal-doc-title"></h2>
-    <div id="modal-doc-content" style="font-size:14px;line-height:1.7"></div>
+  <div class="modal" style="width:720px;max-height:90vh">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 id="modal-doc-title" style="margin-bottom:0"></h2>
+      <button class="modal-btn secondary" onclick="closeModal('modal-doc')" style="padding:6px 14px;font-size:18px;line-height:1">×</button>
+    </div>
+    <div id="modal-doc-content" class="doc-rendered" style="font-size:14px;line-height:1.7"></div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeModal('modal-doc')">Close</button>
     </div>
@@ -705,7 +781,23 @@ function renderDocs(){
 }
 function viewDoc(name){
   document.getElementById('modal-doc-title').textContent=name;
-  document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">Document preview coming soon. This document is available in the 7 Cellars shared files.</p>';
+  // Find the document content from docsData
+  let content = null;
+  for(const cat of docsData){
+    const f = cat.files.find(f=>f.name===name);
+    if(f && f.content){content=f.content;break;}
+  }
+  if(content && content !== '[PDF file — open in shared files]'){
+    try{
+      document.getElementById('modal-doc-content').innerHTML=marked.parse(content);
+    }catch(e){
+      document.getElementById('modal-doc-content').innerHTML='<pre style="white-space:pre-wrap">'+esc(content)+'</pre>';
+    }
+  } else if(content === '[PDF file — open in shared files]'){
+    document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">📄 This is a PDF file. Please open it from the shared files.</p>';
+  } else {
+    document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">No content available for this document.</p>';
+  }
   openModal('modal-doc');
 }
 
@@ -726,6 +818,114 @@ function renderTeam(){
       </div>
     </div>`;
   }).join('');
+}
+
+/* ===== SALES & INVENTORY ===== */
+let shopifyOrders=null, shopifyInventory=null, cin7Data=null;
+let invFilter='all';
+
+function setInvFilter(v,el){
+  invFilter=v;
+  document.querySelectorAll('#sec-inventory .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderInventory();
+}
+
+function renderSales(){
+  const ordersEl=document.getElementById('orders-list');
+  const topEl=document.getElementById('top-products');
+  const statsEl=document.getElementById('sales-stats');
+
+  // Orders
+  const orders=(shopifyOrders?.data?.orders?.edges||[]).map(e=>e.node);
+  if(orders.length){
+    const now=new Date();
+    const weekAgo=new Date(now-7*86400000);
+    const todayStr=now.toDateString();
+    const weekOrders=orders.filter(o=>new Date(o.createdAt)>=weekAgo);
+    const todayOrders=orders.filter(o=>new Date(o.createdAt).toDateString()===todayStr);
+    const weekRev=weekOrders.reduce((s,o)=>s+parseFloat(o.totalPriceSet?.shopMoney?.amount||0),0);
+    const todayRev=todayOrders.reduce((s,o)=>s+parseFloat(o.totalPriceSet?.shopMoney?.amount||0),0);
+
+    statsEl.innerHTML=`
+      <div class="stat-card"><div class="label">Revenue Today</div><div class="value green">CI$${todayRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+      <div class="stat-card"><div class="label">Revenue This Week</div><div class="value green">CI$${weekRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+      <div class="stat-card"><div class="label">Orders This Week</div><div class="value blue">${weekOrders.length}</div></div>
+      <div class="stat-card"><div class="label">Total Orders</div><div class="value">${orders.length}</div></div>`;
+    document.getElementById('stat-revenue').textContent='CI$'+weekRev.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+    document.getElementById('stat-orders').textContent=weekOrders.length;
+
+    ordersEl.innerHTML=`<table class="orders-table"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>`+
+      orders.map(o=>{
+        const status=(o.displayFulfillmentStatus||'UNFULFILLED').toLowerCase();
+        const cls=status.includes('fulfilled')&&!status.includes('un')?'fulfilled':status.includes('partial')?'partial':'unfulfilled';
+        return `<tr><td><strong>${esc(o.name)}</strong></td><td>${fmtDate(o.createdAt)}</td><td>${esc((o.customer?.firstName||'')+' '+(o.customer?.lastName||''))}</td><td>CI$${parseFloat(o.totalPriceSet?.shopMoney?.amount||0).toFixed(2)}</td><td><span class="fulfillment-badge ${cls}">${status.replace(/_/g,' ')}</span></td></tr>`;
+      }).join('')+`</tbody></table>`;
+
+    // Top products by quantity
+    const productMap={};
+    orders.forEach(o=>(o.lineItems?.edges||[]).forEach(li=>{
+      const t=li.node.title, q=li.node.quantity;
+      productMap[t]=(productMap[t]||0)+q;
+    }));
+    const top5=Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(top5.length){
+      topEl.innerHTML=top5.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span>${i+1}. ${esc(p[0])}</span><strong>${p[1]} units</strong></div>`).join('');
+    }
+  } else {
+    statsEl.innerHTML='';
+    document.getElementById('stat-revenue').textContent='—';
+    document.getElementById('stat-orders').textContent='—';
+    ordersEl.innerHTML='<p style="color:var(--text2)">No order data yet — order API scope may need to be enabled</p>';
+  }
+}
+
+function renderInventory(){
+  const el=document.getElementById('inventory-list');
+  const search=(document.getElementById('inv-search')?.value||'').toLowerCase();
+
+  // Combine Shopify + Cin7
+  let items=[];
+
+  // Shopify products
+  const shopProds=(shopifyInventory?.data?.products?.edges||[]).map(e=>e.node);
+  shopProds.forEach(p=>{
+    const v=p.variants?.edges?.[0]?.node;
+    items.push({name:p.title, stock:p.totalInventory||0, price:v?.price||'—', source:'Shopify'});
+  });
+
+  // Cin7 products
+  const cin7Prods=cin7Data?.Products||[];
+  cin7Prods.forEach(p=>{
+    // Skip if already in Shopify by similar name
+    items.push({name:p.Name, stock:Math.round(p.StockOnHand||0), price:p.PriceTier1||'—', source:'Cin7', reorder:p.MinimumBeforeReorder||0});
+  });
+
+  // Dedupe by name (prefer Cin7 for stock accuracy)
+  const seen=new Map();
+  items.forEach(i=>{
+    const key=i.name.toLowerCase().replace(/[^a-z0-9]/g,'');
+    if(!seen.has(key)||i.source==='Cin7') seen.set(key,i);
+  });
+  items=[...seen.values()];
+
+  // Filter
+  if(search) items=items.filter(i=>i.name.toLowerCase().includes(search));
+  if(invFilter==='low') items=items.filter(i=>i.stock<10);
+  items.sort((a,b)=>a.name.localeCompare(b.name));
+
+  const lowCount=items.filter(i=>i.stock<10).length;
+  document.getElementById('stat-lowstock').textContent=lowCount;
+  document.getElementById('stat-skus').textContent=seen.size;
+
+  if(!items.length){
+    el.innerHTML='<p style="color:var(--text2)">No inventory data yet</p>';
+    return;
+  }
+
+  el.innerHTML=`<table class="inv-table"><thead><tr><th>Product</th><th>Stock</th><th>Price</th><th>Source</th></tr></thead><tbody>`+
+    items.map(i=>`<tr><td>${esc(i.name)}</td><td class="${i.stock<10?'low-stock':''}">${i.stock<10?'⚠ ':''}${i.stock}</td><td>${typeof i.price==='number'?'CI$'+i.price.toFixed(2):(i.price!=='—'?'CI$'+i.price:i.price)}</td><td>${i.source}</td></tr>`).join('')+
+    `</tbody></table>`;
 }
 
 /* ===== INIT ===== */
@@ -750,6 +950,15 @@ async function init(){
   // Documents
   const docs=await loadJSON('data/documents.json');
   if(docs){docsData=docs;renderDocs()}
+
+  // Shopify
+  shopifyOrders=await loadJSON('data/shopify-orders.json');
+  shopifyInventory=await loadJSON('data/shopify-inventory.json');
+  renderSales();
+
+  // Cin7
+  cin7Data=await loadJSON('data/cin7-inventory.json');
+  renderInventory();
 
   // Team
   renderTeam();
