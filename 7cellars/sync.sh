@@ -170,8 +170,16 @@ if [ -n "$CIN7_ACCOUNT_ID" ] && [ -n "$CIN7_API_KEY" ]; then
     -H "api-auth-applicationkey: $CIN7_API_KEY" \
     > data/cin7-inventory.json 2>/dev/null
   echo "  ✅ cin7-inventory.json"
+
+  # Cin7 Sales Orders (wholesale)
+  curl -s "https://inventory.dearsystems.com/ExternalApi/v2/SaleList?limit=50&page=1" \
+    -H "api-auth-accountid: $CIN7_ACCOUNT_ID" \
+    -H "api-auth-applicationkey: $CIN7_API_KEY" \
+    > data/cin7-orders.json 2>/dev/null
+  echo "  ✅ cin7-orders.json"
 else
   echo "  ⚠️  No CIN7 credentials found, skipping"
+  echo '{"Total":0,"Page":1,"SaleList":[]}' > data/cin7-orders.json
 fi
 
 echo ""

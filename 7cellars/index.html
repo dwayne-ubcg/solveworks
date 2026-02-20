@@ -1007,47 +1007,98 @@ function renderSales(){
   const topEl=document.getElementById('top-products');
   const statsEl=document.getElementById('sales-stats');
 
-  const orders=(shopifyOrders?.data?.orders?.edges||[]).map(e=>e.node);
-  if(orders.length){
-    const now=new Date();
-    const weekAgo=new Date(now-7*86400000);
-    const monthAgo=new Date(now.getFullYear(),now.getMonth(),1);
-    const todayStr=now.toDateString();
-    const weekOrders=orders.filter(o=>new Date(o.createdAt)>=weekAgo);
-    const monthOrders=orders.filter(o=>new Date(o.createdAt)>=monthAgo);
-    const todayOrders=orders.filter(o=>new Date(o.createdAt).toDateString()===todayStr);
-    const weekRev=weekOrders.reduce((s,o)=>s+parseFloat(o.totalPriceSet?.shopMoney?.amount||0),0);
-    const monthRev=monthOrders.reduce((s,o)=>s+parseFloat(o.totalPriceSet?.shopMoney?.amount||0),0);
-    const todayRev=todayOrders.reduce((s,o)=>s+parseFloat(o.totalPriceSet?.shopMoney?.amount||0),0);
-    const allRev=orders.reduce((s,o)=>s+parseFloat(o.totalPriceSet?.shopMoney?.amount||0),0);
+  // Normalize retail orders
+  const retailOrders=(shopifyOrders?.data?.orders?.edges||[]).map(e=>({
+    name:e.node.name, date:e.node.createdAt,
+    customer:(e.node.customer?.firstName||'')+' '+(e.node.customer?.lastName||''),
+    total:parseFloat(e.node.totalPriceSet?.shopMoney?.amount||0),
+    status:(e.node.displayFulfillmentStatus||'UNFULFILLED').toLowerCase(),
+    lineItems:(e.node.lineItems?.edges||[]).map(li=>({title:li.node.title,quantity:li.node.quantity})),
+    source:'Retail'
+  }));
 
-    statsEl.innerHTML=`
-      <div class="stat-card"><div class="label">Revenue Today</div><div class="value green">CI$${todayRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
-      <div class="stat-card"><div class="label">Revenue This Week</div><div class="value green">CI$${weekRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
-      <div class="stat-card"><div class="label">Revenue This Month</div><div class="value green">CI$${monthRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+  // Normalize wholesale orders from Cin7
+  const cin7Sales=(cin7Orders?.SaleList||[]);
+  const wholesaleOrders=cin7Sales.map(s=>({
+    name:s.OrderNumber||s.SaleOrderNumber||'WH-'+s.SaleID,
+    date:s.OrderDate||s.SaleOrderDate||s.CreatedDate||'',
+    customer:s.CustomerName||s.Customer||'',
+    total:parseFloat(s.Total||s.TotalExTax||0),
+    status:(s.Status||s.FulfilmentStatus||'pending').toLowerCase(),
+    lineItems:(s.Lines||[]).map(l=>({title:l.ProductName||l.Name||'',quantity:l.Quantity||0})),
+    source:'Wholesale'
+  }));
+
+  // Combined
+  let allOrders=[...retailOrders,...wholesaleOrders].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let displayOrders=allOrders;
+  if(salesFilter==='retail') displayOrders=retailOrders.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(salesFilter==='wholesale') displayOrders=wholesaleOrders.sort((a,b)=>new Date(b.date)-new Date(a.date));
+
+  const now=new Date();
+  const monthAgo=new Date(now.getFullYear(),now.getMonth(),1);
+  const weekAgo=new Date(now-7*86400000);
+  const todayStr=now.toDateString();
+
+  const calcRev=(list,filter)=>list.filter(filter).reduce((s,o)=>s+o.total,0);
+  const retailMonthRev=calcRev(retailOrders,o=>new Date(o.date)>=monthAgo);
+  const wholesaleMonthRev=calcRev(wholesaleOrders,o=>new Date(o.date)>=monthAgo);
+  const retailAllRev=retailOrders.reduce((s,o)=>s+o.total,0);
+  const wholesaleAllRev=wholesaleOrders.reduce((s,o)=>s+o.total,0);
+  const retailWeekRev=calcRev(retailOrders,o=>new Date(o.date)>=weekAgo);
+  const wholesaleWeekRev=calcRev(wholesaleOrders,o=>new Date(o.date)>=weekAgo);
+  const todayRev=calcRev(allOrders,o=>new Date(o.date).toDateString()===todayStr);
+
+  // Dashboard home stats
+  document.getElementById('stat-revenue-retail').textContent='CI$'+retailMonthRev.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('stat-revenue-wholesale').textContent=wholesaleOrders.length?'CI$'+wholesaleMonthRev.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0}):'No data yet';
+  document.getElementById('stat-revenue-total').textContent='CI$'+(retailMonthRev+wholesaleMonthRev).toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+
+  if(displayOrders.length || salesFilter==='wholesale'){
+    // Stats cards based on filter
+    let fRetail=salesFilter!=='wholesale', fWholesale=salesFilter!=='retail';
+    let weekRev=(fRetail?retailWeekRev:0)+(fWholesale?wholesaleWeekRev:0);
+    let monthRev=(fRetail?retailMonthRev:0)+(fWholesale?wholesaleMonthRev:0);
+    let allRev=(fRetail?retailAllRev:0)+(fWholesale?wholesaleAllRev:0);
+
+    let statsHTML=`
+      <div class="stat-card"><div class="label">Retail Revenue (Shopify)</div><div class="value green">CI$${retailMonthRev.toLocaleString('en',{minimumFractionDigits:2})}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">This month</div></div>
+      <div class="stat-card"><div class="label">Wholesale Revenue (Cin7)</div><div class="value green">${wholesaleOrders.length?'CI$'+wholesaleMonthRev.toLocaleString('en',{minimumFractionDigits:2}):'No wholesale data'}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">This month</div></div>
+      <div class="stat-card"><div class="label">Total Revenue</div><div class="value green">CI$${monthRev.toLocaleString('en',{minimumFractionDigits:2})}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">This month</div></div>
       <div class="stat-card"><div class="label">All Time Revenue</div><div class="value">CI$${allRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>`;
-    document.getElementById('stat-revenue-week').textContent='CI$'+weekRev.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
-    document.getElementById('stat-revenue-month').textContent='CI$'+monthRev.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0});
+    statsEl.innerHTML=statsHTML;
 
-    ordersEl.innerHTML=`<div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>`+
-      orders.slice(0,30).map(o=>{
-        const status=(o.displayFulfillmentStatus||'UNFULFILLED').toLowerCase();
-        const cls=status.includes('fulfilled')&&!status.includes('un')?'fulfilled':status.includes('partial')?'partial':'unfulfilled';
-        return `<tr><td><strong>${esc(o.name)}</strong></td><td>${fmtDate(o.createdAt)}</td><td>${esc((o.customer?.firstName||'')+' '+(o.customer?.lastName||''))}</td><td>CI$${parseFloat(o.totalPriceSet?.shopMoney?.amount||0).toFixed(2)}</td><td><span class="fulfillment-badge ${cls}">${status.replace(/_/g,' ')}</span></td></tr>`;
-      }).join('')+`</tbody></table></div>`;
+    // Orders table with source column
+    if(displayOrders.length){
+      ordersEl.innerHTML=`<div style="overflow-x:auto"><table class="orders-table"><thead><tr><th>Order</th><th>Source</th><th>Date</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>`+
+        displayOrders.slice(0,30).map(o=>{
+          const cls=o.status.includes('fulfilled')&&!o.status.includes('un')?'fulfilled':o.status.includes('partial')?'partial':'unfulfilled';
+          const srcBadge=o.source==='Retail'?'🛒 Retail':'📦 Wholesale';
+          return `<tr><td><strong>${esc(o.name)}</strong></td><td><span style="font-size:12px">${srcBadge}</span></td><td>${fmtDate(o.date)}</td><td>${esc(o.customer)}</td><td>CI$${o.total.toFixed(2)}</td><td><span class="fulfillment-badge ${cls}">${o.status.replace(/_/g,' ')}</span></td></tr>`;
+        }).join('')+`</tbody></table></div>`;
+    } else {
+      ordersEl.innerHTML='<div class="empty-state"><div class="icon">📦</div><p>No wholesale orders yet.<br>Orders from Cin7 will appear here once sales are recorded.</p></div>';
+    }
 
-    // Dashboard recent orders
+    // Dashboard recent orders (all sources)
     const dashEl=document.getElementById('dash-orders');
-    dashEl.innerHTML=orders.slice(0,5).map(o=>`<div class="dash-card-item" style="justify-content:space-between">
-      <div><strong>${esc(o.name)}</strong> · ${esc((o.customer?.firstName||'')+' '+(o.customer?.lastName||''))}</div>
-      <span style="font-weight:600;color:var(--green)">CI$${parseFloat(o.totalPriceSet?.shopMoney?.amount||0).toFixed(2)}</span>
-    </div>`).join('');
+    const dashOrders=allOrders.slice(0,5);
+    if(dashOrders.length){
+      dashEl.innerHTML=dashOrders.map(o=>`<div class="dash-card-item" style="justify-content:space-between">
+        <div><strong>${esc(o.name)}</strong> · ${esc(o.customer)} <span style="font-size:11px;color:var(--text2)">${o.source==='Retail'?'🛒':'📦'}</span></div>
+        <span style="font-weight:600;color:var(--green)">CI$${o.total.toFixed(2)}</span>
+      </div>`).join('');
+    } else {
+      dashEl.innerHTML='<div class="empty-state"><p>No orders data yet.</p></div>';
+    }
 
-    // Top products
+    // Top products (retail only for now since wholesale may not have line items)
     const productMap={};
-    orders.forEach(o=>(o.lineItems?.edges||[]).forEach(li=>{
-      const t=li.node.title, q=li.node.quantity;
-      productMap[t]=(productMap[t]||0)+q;
+    retailOrders.forEach(o=>o.lineItems.forEach(li=>{
+      productMap[li.title]=(productMap[li.title]||0)+li.quantity;
+    }));
+    wholesaleOrders.forEach(o=>o.lineItems.forEach(li=>{
+      if(li.title) productMap[li.title]=(productMap[li.title]||0)+li.quantity;
     }));
     const top5=Object.entries(productMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
     if(top5.length){
@@ -1057,8 +1108,9 @@ function renderSales(){
     }
   } else {
     statsEl.innerHTML='';
-    document.getElementById('stat-revenue-week').textContent='—';
-    document.getElementById('stat-revenue-month').textContent='—';
+    document.getElementById('stat-revenue-retail').textContent='—';
+    document.getElementById('stat-revenue-wholesale').textContent='No data yet';
+    document.getElementById('stat-revenue-total').textContent='—';
     ordersEl.innerHTML='<div class="empty-state"><div class="icon">🛒</div><p>No order data available.<br>The Shopify orders API scope may need to be enabled.</p></div>';
     topEl.innerHTML='';
     document.getElementById('dash-orders').innerHTML='<div class="empty-state"><p>No orders data yet.</p></div>';
@@ -1141,9 +1193,10 @@ async function init(){
     document.getElementById('dash-meetings').innerHTML='<div class="empty-state"><p>No meetings yet.</p></div>';
   }
 
-  // Shopify
+  // Shopify + Cin7
   shopifyOrders=await loadJSON('data/shopify-orders.json');
   shopifyInventory=await loadJSON('data/shopify-inventory.json');
+  cin7Orders=await loadJSON('data/cin7-orders.json');
   renderSales();
   renderInventory();
 
