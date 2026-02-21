@@ -380,6 +380,117 @@ else
   echo "  ⚠️  No CIN7 credentials, skipping financials"
 fi
 
+# ===== CUSTOMERS CRM =====
+echo "👥 Building customers CRM data..."
+if [ -n "$CIN7_ACCOUNT_ID" ] && [ -n "$CIN7_API_KEY" ]; then
+python3 << 'CUSTEOF'
+import json, os, urllib.request, time
+from collections import defaultdict
+from datetime import datetime, timedelta
+
+acct = os.environ['CIN7_ACCOUNT_ID']
+key = os.environ['CIN7_API_KEY']
+headers = {'api-auth-accountid': acct, 'api-auth-applicationkey': key}
+
+def cin7_get(path):
+    req = urllib.request.Request(f'https://inventory.dearsystems.com/ExternalApi/v2/{path}', headers=headers)
+    with urllib.request.urlopen(req) as r:
+        return json.loads(r.read())
+
+# Fetch all sales (paginated)
+all_sales = []
+page = 1
+while True:
+    sl = cin7_get(f'SaleList?limit=50&page={page}')
+    all_sales.extend(sl.get('SaleList', []))
+    if len(all_sales) >= sl.get('Total', 0):
+        break
+    page += 1
+
+print(f"  {len(all_sales)} sales found, fetching details for CRM...")
+
+# Group by customer
+customers = defaultdict(lambda: {
+    'name': '', 'id': '', 'totalRevenue': 0, 'orderCount': 0,
+    'lastOrderDate': '', 'orders': []
+})
+
+for i, sale in enumerate(all_sales):
+    cname = sale.get('Customer', 'Unknown')
+    cid = sale.get('CustomerID', '')
+    order_date = sale.get('OrderDate', '')[:10]
+    order_num = sale.get('OrderNumber', '')
+    invoice_amt = float(sale.get('InvoiceAmount', 0) or sale.get('SaleInvoicesTotalAmount', 0) or 0)
+
+    c = customers[cid]
+    c['name'] = cname
+    c['id'] = cid
+    c['totalRevenue'] += invoice_amt
+    c['orderCount'] += 1
+    if order_date > c['lastOrderDate']:
+        c['lastOrderDate'] = order_date
+
+    # Fetch sale detail for line items
+    try:
+        detail = cin7_get(f'Sale?ID={sale["SaleID"]}')
+        order = detail.get('Order', {})
+        if not order.get('Lines'):
+            order = detail.get('Quote', {})
+        lines = order.get('Lines', [])
+        items = [{'name': l.get('Name', ''), 'qty': int(l.get('Quantity', 0)), 'price': round(float(l.get('Price', 0)), 2)} for l in lines]
+        order_total = float(order.get('Total', 0) or invoice_amt)
+    except Exception as e:
+        print(f"  ⚠️  Failed detail for {order_num}: {e}")
+        items = []
+        order_total = invoice_amt
+
+    c['orders'].append({
+        'orderNumber': order_num,
+        'date': order_date,
+        'total': round(order_total, 2),
+        'items': items
+    })
+
+    if i > 0 and i % 10 == 0:
+        time.sleep(1)
+
+# Calculate status and avg order value
+now = datetime.now()
+result = []
+for cid, c in customers.items():
+    c['avgOrderValue'] = round(c['totalRevenue'] / c['orderCount'], 2) if c['orderCount'] > 0 else 0
+    c['totalRevenue'] = round(c['totalRevenue'], 2)
+    c['orders'].sort(key=lambda o: o['date'], reverse=True)
+
+    # Status
+    if c['orderCount'] == 1:
+        c['status'] = 'new'
+    elif c['lastOrderDate']:
+        last = datetime.strptime(c['lastOrderDate'], '%Y-%m-%d')
+        days = (now - last).days
+        if days <= 30:
+            c['status'] = 'active'
+        elif days <= 60:
+            c['status'] = 'at-risk'
+        else:
+            c['status'] = 'inactive'
+    else:
+        c['status'] = 'inactive'
+
+    result.append(c)
+
+result.sort(key=lambda x: x['totalRevenue'], reverse=True)
+
+with open('data/customers.json', 'w') as f:
+    json.dump(result, f, indent=2)
+
+print(f"  ✅ customers.json: {len(result)} customers")
+CUSTEOF
+else
+  echo "  ⚠️  No CIN7 credentials, skipping customers"
+  echo '[]' > data/customers.json
+fi
+
 echo ""
 echo "📤 Committing and pushing..."
 cd "$(dirname "$0")/.."

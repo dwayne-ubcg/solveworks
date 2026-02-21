@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -282,6 +284,37 @@ a{color:var(--blue);text-decoration:none}
 .stat-card .trend.up{color:var(--green)}
 .stat-card .trend.down{color:var(--red)}
 
+/* Customers CRM */
+.customer-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.customer-row:hover{border-color:#ccc;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.customer-row-main{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.customer-name{font-size:14px;font-weight:600;min-width:180px;flex:1}
+.customer-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px}
+.customer-badge.active{background:#e8f5e9;color:#2d8b57}
+.customer-badge.at-risk{background:#fef3e2;color:#d4a017}
+.customer-badge.inactive{background:#fde8e8;color:#c0392b}
+.customer-badge.new{background:#e8f0fe;color:#2e5090}
+.customer-stat{font-size:13px;color:var(--text2);min-width:100px;text-align:right}
+.customer-stat strong{color:var(--text);display:block;font-size:14px}
+.customer-detail{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.customer-row.expanded .customer-detail{display:block}
+
+/* Quotes */
+.quote-builder{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.quote-builder h3{font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.quote-line{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.quote-line:last-child{border-bottom:none}
+.quote-input{padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;outline:none}
+.quote-input:focus{border-color:var(--navy)}
+.quote-total-bar{display:flex;justify-content:flex-end;align-items:center;gap:20px;padding:16px 0;font-size:18px;font-weight:700;color:var(--navy)}
+.quote-autocomplete{position:relative}
+.quote-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;max-height:200px;overflow-y:auto;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none}
+.quote-dropdown.show{display:block}
+.quote-dropdown-item{padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)}
+.quote-dropdown-item:hover{background:var(--surface2)}
+.quote-dropdown-item:last-child{border-bottom:none}
+.quote-history-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+
 /* Mobile toggle */
 .menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
 
@@ -336,6 +369,14 @@ a{color:var(--blue);text-decoration:none}
     <div class="nav-item" data-section="sales" onclick="showSection('sales')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
       Sales
+    </div>
+    <div class="nav-item" data-section="customers" onclick="showSection('customers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="9" cy="7" r="4"/><path d="M21 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Customers <span class="nav-badge" id="customers-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="quotes" onclick="showSection('quotes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Quotes
     </div>
     <div class="nav-item" data-section="financials" onclick="showSection('financials')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
@@ -469,6 +510,82 @@ a{color:var(--blue);text-decoration:none}
     <div style="margin-top:28px">
       <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Top Selling Products</h3>
       <div id="top-products"><div class="loading-state"><span class="spinner"></span> Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Customers CRM -->
+  <div class="section" id="sec-customers">
+    <h1 class="page-title">Customers</h1>
+    <p class="page-sub">Wholesale CRM — customer insights from Cin7 sales</p>
+    <div class="stats-grid" id="crm-stats"></div>
+    <div class="kanban-filters" style="margin-bottom:16px">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="crm-search" placeholder="Search customers..." oninput="renderCustomers()">
+      </div>
+      <div class="filter-chip active" onclick="setCrmFilter('all',this)">All</div>
+      <div class="filter-chip" onclick="setCrmFilter('active',this)" style="color:var(--green)">Active</div>
+      <div class="filter-chip" onclick="setCrmFilter('at-risk',this)" style="color:var(--yellow)">At Risk</div>
+      <div class="filter-chip" onclick="setCrmFilter('inactive',this)" style="color:var(--red)">Inactive</div>
+      <div class="filter-chip" onclick="setCrmFilter('new',this)" style="color:var(--blue)">New</div>
+    </div>
+    <div class="kanban-filters" style="margin-bottom:16px">
+      <span style="font-size:12px;color:var(--text2);font-weight:600">Sort:</span>
+      <div class="filter-chip active" onclick="setCrmSort('revenue',this)">Revenue</div>
+      <div class="filter-chip" onclick="setCrmSort('lastOrder',this)">Last Order</div>
+      <div class="filter-chip" onclick="setCrmSort('name',this)">Name</div>
+      <div class="filter-chip" onclick="setCrmSort('orders',this)">Order Count</div>
+    </div>
+    <div id="customers-list"><div class="loading-state"><span class="spinner"></span> Loading customers...</div></div>
+  </div>
+
+  <!-- Quotes -->
+  <div class="section" id="sec-quotes">
+    <h1 class="page-title">Quote Generator</h1>
+    <p class="page-sub">Create branded quotes for wholesale customers</p>
+    <div class="dash-grid">
+      <div class="quote-builder" style="grid-column:1/-1">
+        <h3>New Quote</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Customer</label>
+            <div class="quote-autocomplete">
+              <input type="text" class="quote-input" id="quote-customer" placeholder="Type customer name..." style="width:100%" oninput="showCustomerSuggestions()" onfocus="showCustomerSuggestions()">
+              <div class="quote-dropdown" id="quote-customer-dropdown"></div>
+            </div>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Pricing Tier</label>
+            <select class="quote-input" id="quote-tier" style="width:100%" onchange="updateQuoteLines()">
+              <option value="1">Tier 1 (Retail)</option>
+              <option value="2" selected>Tier 2 (Wholesale)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Add Product</label>
+          <div class="quote-autocomplete">
+            <input type="text" class="quote-input" id="quote-product-search" placeholder="Search wines by name or SKU..." style="width:100%" oninput="showProductSuggestions()" onfocus="showProductSuggestions()">
+            <div class="quote-dropdown" id="quote-product-dropdown"></div>
+          </div>
+        </div>
+        <div id="quote-lines" style="margin-bottom:16px"></div>
+        <div class="quote-total-bar">
+          <span>Subtotal: <span id="quote-subtotal">$0.00</span></span>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Notes</label>
+          <textarea class="quote-input" id="quote-notes" placeholder="Special terms, delivery instructions..." style="width:100%;min-height:60px;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+          <button class="modal-btn secondary" onclick="clearQuote()">Clear</button>
+          <button class="modal-btn primary" onclick="generateQuotePDF()">📄 Generate PDF</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px">
+      <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Quote History</h3>
+      <div id="quote-history"></div>
     </div>
   </div>
 
@@ -1373,6 +1490,256 @@ async function init(){
 
   // Team
   renderTeam();
+
+  // Customers & Quotes
+  await initCustomersAndQuotes();
+}
+
+/* ===== CUSTOMERS CRM ===== */
+let customersData=[];
+let crmFilter='all';
+let crmSort='revenue';
+
+function setCrmFilter(v,el){
+  crmFilter=v;
+  document.querySelectorAll('#sec-customers .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderCustomers();
+}
+function setCrmSort(v,el){
+  crmSort=v;
+  document.querySelectorAll('#sec-customers .kanban-filters:nth-child(4) .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderCustomers();
+}
+
+function renderCustomers(){
+  const search=(document.getElementById('crm-search')?.value||'').toLowerCase();
+  let list=[...customersData];
+
+  if(search) list=list.filter(c=>c.name.toLowerCase().includes(search));
+  if(crmFilter!=='all') list=list.filter(c=>c.status===crmFilter);
+
+  switch(crmSort){
+    case 'revenue': list.sort((a,b)=>b.totalRevenue-a.totalRevenue); break;
+    case 'lastOrder': list.sort((a,b)=>(b.lastOrderDate||'').localeCompare(a.lastOrderDate||'')); break;
+    case 'name': list.sort((a,b)=>a.name.localeCompare(b.name)); break;
+    case 'orders': list.sort((a,b)=>b.orderCount-a.orderCount); break;
+  }
+
+  // Stats
+  const active=customersData.filter(c=>c.status==='active').length;
+  const atRisk=customersData.filter(c=>c.status==='at-risk').length;
+  const totalRev=customersData.reduce((s,c)=>s+c.totalRevenue,0);
+  document.getElementById('crm-stats').innerHTML=`
+    <div class="stat-card"><div class="label">Total Customers</div><div class="value blue">${customersData.length}</div></div>
+    <div class="stat-card"><div class="label">Active</div><div class="value green">${active}</div></div>
+    <div class="stat-card"><div class="label">At Risk</div><div class="value yellow">${atRisk}</div></div>
+    <div class="stat-card"><div class="label">Total Wholesale Revenue</div><div class="value green">$${totalRev.toLocaleString('en',{minimumFractionDigits:2})}</div></div>`;
+  document.getElementById('customers-badge').textContent=customersData.length;
+
+  const el=document.getElementById('customers-list');
+  if(!list.length){
+    el.innerHTML='<div class="empty-state"><div class="icon">👥</div><p>No customers match your filter.</p></div>';
+    return;
+  }
+
+  el.innerHTML=list.map((c,i)=>`<div class="customer-row" onclick="this.classList.toggle('expanded')">
+    <div class="customer-row-main">
+      <span class="customer-name">${esc(c.name)}</span>
+      <span class="customer-badge ${c.status}">${c.status==='at-risk'?'At Risk':c.status.charAt(0).toUpperCase()+c.status.slice(1)}</span>
+      <div class="customer-stat"><strong>$${c.totalRevenue.toLocaleString('en',{minimumFractionDigits:2})}</strong>Revenue</div>
+      <div class="customer-stat"><strong>${c.orderCount}</strong>Orders</div>
+      <div class="customer-stat"><strong>${fmtDate(c.lastOrderDate)}</strong>Last Order</div>
+      <div class="customer-stat"><strong>$${c.avgOrderValue.toFixed(2)}</strong>Avg Order</div>
+    </div>
+    <div class="customer-detail">
+      <h4 style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text2)">Order History</h4>
+      <table class="orders-table" style="font-size:12px"><thead><tr><th>Order</th><th>Date</th><th>Items</th><th>Total</th></tr></thead><tbody>
+        ${(c.orders||[]).map(o=>`<tr><td><strong>${esc(o.orderNumber)}</strong></td><td>${fmtDate(o.date)}</td><td>${(o.items||[]).map(it=>esc(it.name)+' ×'+it.qty).join(', ')||'—'}</td><td>$${o.total.toFixed(2)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>
+  </div>`).join('');
+}
+
+/* ===== QUOTE GENERATOR ===== */
+let cin7Products=[];
+let quoteLines=[];
+
+function showCustomerSuggestions(){
+  const v=(document.getElementById('quote-customer')?.value||'').toLowerCase();
+  const dd=document.getElementById('quote-customer-dropdown');
+  if(!v){dd.classList.remove('show');return;}
+  const matches=customersData.filter(c=>c.name.toLowerCase().includes(v)).slice(0,8);
+  if(!matches.length){dd.classList.remove('show');return;}
+  dd.innerHTML=matches.map(c=>`<div class="quote-dropdown-item" onmousedown="selectQuoteCustomer('${esc(c.name).replace(/'/g,"\\'")}')">${esc(c.name)} <span style="color:var(--text2);font-size:11px">· ${c.orderCount} orders</span></div>`).join('');
+  dd.classList.add('show');
+}
+function selectQuoteCustomer(name){
+  document.getElementById('quote-customer').value=name;
+  document.getElementById('quote-customer-dropdown').classList.remove('show');
+}
+
+function showProductSuggestions(){
+  const v=(document.getElementById('quote-product-search')?.value||'').toLowerCase();
+  const dd=document.getElementById('quote-product-dropdown');
+  if(!v){dd.classList.remove('show');return;}
+  const tier=document.getElementById('quote-tier').value;
+  const matches=cin7Products.filter(p=>(p.Name||'').toLowerCase().includes(v)||(p.SKU||'').toLowerCase().includes(v)).slice(0,10);
+  if(!matches.length){dd.classList.remove('show');return;}
+  dd.innerHTML=matches.map(p=>{
+    const price=tier==='2'?(p.PriceTier2||p.PriceTier1||0):(p.PriceTier1||0);
+    return `<div class="quote-dropdown-item" onmousedown="addQuoteLine('${p.ID}')"><strong>${esc(p.Name)}</strong><br><span style="color:var(--text2);font-size:11px">${esc(p.SKU)} · T1: $${(p.PriceTier1||0).toFixed(2)} · T2: $${(p.PriceTier2||0).toFixed(2)}</span></div>`;
+  }).join('');
+  dd.classList.add('show');
+}
+
+function addQuoteLine(productId){
+  const p=cin7Products.find(x=>x.ID===productId);
+  if(!p)return;
+  const existing=quoteLines.find(l=>l.productId===productId);
+  if(existing){existing.qty++;updateQuoteLines();return;}
+  const tier=document.getElementById('quote-tier').value;
+  const price=tier==='2'?(p.PriceTier2||p.PriceTier1||0):(p.PriceTier1||0);
+  quoteLines.push({productId,name:p.Name,sku:p.SKU||'',qty:1,price,priceTier1:p.PriceTier1||0,priceTier2:p.PriceTier2||0});
+  document.getElementById('quote-product-search').value='';
+  document.getElementById('quote-product-dropdown').classList.remove('show');
+  updateQuoteLines();
+}
+
+function updateQuoteLines(){
+  const tier=document.getElementById('quote-tier').value;
+  quoteLines.forEach(l=>{l.price=tier==='2'?(l.priceTier2||l.priceTier1):l.priceTier1});
+  const el=document.getElementById('quote-lines');
+  if(!quoteLines.length){el.innerHTML='<p style="color:var(--text2);font-size:13px;padding:10px 0">No products added yet. Search above to add wines.</p>';document.getElementById('quote-subtotal').textContent='$0.00';return;}
+  el.innerHTML=`<div style="display:grid;grid-template-columns:2fr 1fr 80px 100px 100px 40px;gap:8px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;padding:8px 0;border-bottom:1px solid var(--border)"><span>Product</span><span>SKU</span><span>Qty</span><span>Unit Price</span><span>Total</span><span></span></div>`+
+    quoteLines.map((l,i)=>`<div style="display:grid;grid-template-columns:2fr 1fr 80px 100px 100px 40px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+      <span>${esc(l.name)}</span>
+      <span style="color:var(--text2)">${esc(l.sku)}</span>
+      <input type="number" class="quote-input" value="${l.qty}" min="1" style="width:70px;padding:6px 8px" onchange="quoteLines[${i}].qty=parseInt(this.value)||1;updateQuoteLines()">
+      <span>$${l.price.toFixed(2)}</span>
+      <span style="font-weight:600">$${(l.price*l.qty).toFixed(2)}</span>
+      <button onclick="quoteLines.splice(${i},1);updateQuoteLines()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">×</button>
+    </div>`).join('');
+  const subtotal=quoteLines.reduce((s,l)=>s+l.price*l.qty,0);
+  document.getElementById('quote-subtotal').textContent='$'+subtotal.toFixed(2);
+}
+
+function clearQuote(){
+  quoteLines=[];
+  document.getElementById('quote-customer').value='';
+  document.getElementById('quote-notes').value='';
+  updateQuoteLines();
+}
+
+function generateQuotePDF(){
+  const customer=document.getElementById('quote-customer').value.trim();
+  if(!customer){toast('Please enter a customer name');return;}
+  if(!quoteLines.length){toast('Please add at least one product');return;}
+
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const navy=[13,27,42];
+  const now=new Date();
+  const dateStr=now.toISOString().slice(0,10);
+
+  // Quote number
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]');
+  const todayQuotes=history.filter(q=>q.date===dateStr);
+  const seq=String(todayQuotes.length+1).padStart(3,'0');
+  const quoteNum=`Q-${dateStr}-${seq}`;
+
+  // Header
+  doc.setFillColor(...navy);
+  doc.rect(0,0,210,40,  'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica','bold');
+  doc.text('7 Cellars',20,22);
+  doc.setFontSize(10);
+  doc.setFont('helvetica','normal');
+  doc.text('Premium Wine Importing & Distribution',20,30);
+  doc.text(quoteNum,190,22,{align:'right'});
+  doc.text(dateStr,190,30,{align:'right'});
+
+  // Customer
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(12);
+  doc.setFont('helvetica','bold');
+  doc.text('Quote For:',20,55);
+  doc.setFont('helvetica','normal');
+  doc.text(customer,20,62);
+
+  // Table
+  const tableData=quoteLines.map(l=>[l.name,l.sku,String(l.qty),'$'+l.price.toFixed(2),'$'+(l.price*l.qty).toFixed(2)]);
+  const subtotal=quoteLines.reduce((s,l)=>s+l.price*l.qty,0);
+
+  doc.autoTable({
+    startY:72,
+    head:[['Wine','SKU','Qty','Unit Price','Total']],
+    body:tableData,
+    foot:[['','','','Subtotal','$'+subtotal.toFixed(2)]],
+    headStyles:{fillColor:navy,fontSize:10},
+    footStyles:{fillColor:[245,245,243],textColor:[0,0,0],fontStyle:'bold',fontSize:11},
+    styles:{fontSize:9,cellPadding:5},
+    columnStyles:{0:{cellWidth:70},4:{halign:'right'},3:{halign:'right'}},
+    margin:{left:20,right:20}
+  });
+
+  // Notes
+  const notes=document.getElementById('quote-notes').value.trim();
+  let finalY=doc.lastAutoTable.finalY+15;
+  if(notes){
+    doc.setFontSize(10);
+    doc.setFont('helvetica','bold');
+    doc.text('Notes:',20,finalY);
+    doc.setFont('helvetica','normal');
+    const lines=doc.splitTextToSize(notes,170);
+    doc.text(lines,20,finalY+7);
+    finalY+=7+lines.length*5;
+  }
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(150,150,150);
+  doc.text('7 Cellars | Grand Cayman | www.7cellars.ky',105,285,{align:'center'});
+
+  doc.save(`${quoteNum}.pdf`);
+  toast('Quote PDF generated!');
+
+  // Save to history
+  history.push({quoteNum,date:dateStr,customer,subtotal:subtotal.toFixed(2),lineCount:quoteLines.length});
+  localStorage.setItem('7c-quotes',JSON.stringify(history));
+  renderQuoteHistory();
+}
+
+function renderQuoteHistory(){
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]').reverse();
+  const el=document.getElementById('quote-history');
+  if(!history.length){el.innerHTML='<div class="empty-state"><div class="icon">📄</div><p>No quotes generated yet.</p></div>';return;}
+  el.innerHTML=history.slice(0,20).map(q=>`<div class="quote-history-item">
+    <div><strong>${esc(q.quoteNum)}</strong> · ${esc(q.customer)} · ${q.lineCount} items</div>
+    <div style="font-weight:600;color:var(--green)">$${q.subtotal}</div>
+  </div>`).join('');
+}
+
+// Close dropdowns on click outside
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.quote-autocomplete')){
+    document.querySelectorAll('.quote-dropdown').forEach(d=>d.classList.remove('show'));
+  }
+});
+
+/* ===== INIT CUSTOMERS & QUOTES ===== */
+async function initCustomersAndQuotes(){
+  const cdata=await loadJSON('data/customers.json');
+  if(cdata&&Array.isArray(cdata)){customersData=cdata;renderCustomers();}
+  else{document.getElementById('customers-list').innerHTML='<div class="empty-state"><div class="icon">👥</div><p>No customer data yet. Run sync to populate.</p></div>';}
+
+  const inv=await loadJSON('data/cin7-inventory.json');
+  if(inv&&inv.Products){cin7Products=inv.Products;}
+  updateQuoteLines();
+  renderQuoteHistory();
 }
 
 if(localStorage.getItem('7c_auth')==='1'){document.getElementById('login').classList.add('hidden');init()}
