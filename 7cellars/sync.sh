@@ -182,6 +182,195 @@ else
   echo '{"Total":0,"Page":1,"SaleList":[]}' > data/cin7-orders.json
 fi
 
+# ===== FINANCIALS CALCULATION =====
+echo "📊 Calculating financials..."
+if [ -n "$CIN7_ACCOUNT_ID" ] && [ -n "$CIN7_API_KEY" ]; then
+python3 << 'FINEOF'
+import json, os, urllib.request, time
+from collections import defaultdict
+from datetime import datetime
+
+acct = os.environ['CIN7_ACCOUNT_ID']
+key = os.environ['CIN7_API_KEY']
+headers = {'api-auth-accountid': acct, 'api-auth-applicationkey': key}
+
+def cin7_get(path):
+    req = urllib.request.Request(f'https://inventory.dearsystems.com/ExternalApi/v2/{path}', headers=headers)
+    with urllib.request.urlopen(req) as r:
+        return json.loads(r.read())
+
+# Load product list to get legacy flags and categories
+print("  Loading products for legacy flags...")
+prods = cin7_get('Product?limit=250')
+prod_map = {}  # ProductID -> {legacy, category}
+for p in prods.get('Products', []):
+    prod_map[p['ID']] = {
+        'legacy': (p.get('AdditionalAttribute10') or '').strip().lower() == 'yes',
+        'category': p.get('Category', 'Other'),
+        'name': p.get('Name', 'Unknown'),
+        'sku': p.get('SKU', '')
+    }
+
+# Fetch all sales (paginated)
+print("  Loading all sales...")
+all_sales = []
+page = 1
+while True:
+    sl = cin7_get(f'SaleList?limit=50&page={page}')
+    all_sales.extend(sl.get('SaleList', []))
+    if len(all_sales) >= sl.get('Total', 0):
+        break
+    page += 1
+
+print(f"  {len(all_sales)} sales found, fetching details...")
+
+# Fetch each sale detail (with rate limiting)
+monthly = defaultdict(lambda: {'retail': 0, 'wholesale': 0, 'cogs': 0, 'revenue': 0})
+cat_data = defaultdict(lambda: {'revenue': 0, 'cogs': 0})
+legacy = {'unitsSold': 0, 'revenue': 0, 'cogs': 0}
+product_margins = {}  # sku -> {name, revenue, cogs}
+total_revenue = 0
+total_cogs = 0
+
+for i, sale in enumerate(all_sales):
+    sid = sale['SaleID']
+    try:
+        detail = cin7_get(f'Sale?ID={sid}')
+    except Exception as e:
+        print(f"  ⚠️  Failed to fetch {sale['OrderNumber']}: {e}")
+        continue
+
+    if i > 0 and i % 10 == 0:
+        time.sleep(1)  # rate limit
+
+    order_date = sale.get('OrderDate', '')[:10]
+    month_key = order_date[:7] if order_date else 'unknown'
+    is_retail = 'shopify' in sale.get('Customer', '').lower() or detail.get('SourceChannel', '').lower() == 'shopify'
+
+    order = detail.get('Order') or detail.get('Quote') or {}
+    lines = order.get('Lines', [])
+    order_total = order.get('Total', 0) or 0
+
+    sale_revenue = 0
+    sale_cogs = 0
+
+    for line in lines:
+        qty = line.get('Quantity', 0) or 0
+        line_total = line.get('Total', 0) or 0
+        avg_cost = line.get('AverageCost', 0) or 0
+        line_cogs = avg_cost * qty
+        pid = line.get('ProductID', '')
+
+        sale_revenue += line_total
+        sale_cogs += line_cogs
+
+        # Category margins
+        pinfo = prod_map.get(pid, {})
+        cat = pinfo.get('category', 'Other')
+        cat_data[cat]['revenue'] += line_total
+        cat_data[cat]['cogs'] += line_cogs
+
+        # Legacy tracking
+        if pinfo.get('legacy', False):
+            legacy['unitsSold'] += qty
+            legacy['revenue'] += line_total
+            legacy['cogs'] += line_cogs
+
+        # Product-level margins
+        sku = line.get('SKU', pid)
+        if sku not in product_margins:
+            product_margins[sku] = {'name': line.get('Name', 'Unknown'), 'revenue': 0, 'cogs': 0}
+        product_margins[sku]['revenue'] += line_total
+        product_margins[sku]['cogs'] += line_cogs
+
+    total_revenue += sale_revenue
+    total_cogs += sale_cogs
+
+    if is_retail:
+        monthly[month_key]['retail'] += sale_revenue
+    else:
+        monthly[month_key]['wholesale'] += sale_revenue
+    monthly[month_key]['revenue'] += sale_revenue
+    monthly[month_key]['cogs'] += sale_cogs
+
+print(f"  Revenue: ${total_revenue:,.2f} | COGS: ${total_cogs:,.2f}")
+
+# Build monthly array (sorted)
+monthly_arr = []
+for m in sorted(monthly.keys(), reverse=True):
+    d = monthly[m]
+    monthly_arr.append({
+        'month': m,
+        'retail': round(d['retail'], 2),
+        'wholesale': round(d['wholesale'], 2),
+        'cogs': round(d['cogs'], 2),
+        'expenses': 0  # manual entry until we have expense tracking
+    })
+
+# Category margins
+cat_arr = []
+for cat in sorted(cat_data.keys()):
+    d = cat_data[cat]
+    mpct = ((d['revenue'] - d['cogs']) / d['revenue'] * 100) if d['revenue'] > 0 else 0
+    cat_arr.append({
+        'category': cat,
+        'revenue': round(d['revenue'], 2),
+        'cogs': round(d['cogs'], 2),
+        'marginPct': round(mpct, 1)
+    })
+
+# Top/bottom margin products
+pm_list = []
+for sku, d in product_margins.items():
+    if d['revenue'] > 0:
+        mpct = (d['revenue'] - d['cogs']) / d['revenue'] * 100
+        pm_list.append({'product': d['name'], 'revenue': round(d['revenue'], 2), 'cogs': round(d['cogs'], 2), 'marginPct': round(mpct, 1)})
+
+pm_list.sort(key=lambda x: x['marginPct'], reverse=True)
+top5 = pm_list[:5]
+bottom5 = list(reversed(pm_list[-5:])) if len(pm_list) >= 5 else list(reversed(pm_list))
+
+# Legacy calcs
+legacy_profit = legacy['revenue'] - legacy['cogs']
+legacy['profit'] = round(legacy_profit, 2)
+legacy['robertoShare'] = round(legacy_profit * 0.5, 2) if legacy_profit > 0 else 0
+legacy['amountPaid'] = 0  # manual tracking
+legacy['amountOwed'] = legacy['robertoShare']
+legacy['unitsSold'] = int(legacy['unitsSold'])
+legacy['revenue'] = round(legacy['revenue'], 2)
+legacy['cogs'] = round(legacy['cogs'], 2)
+
+gross_margin = total_revenue - total_cogs
+gm_pct = (gross_margin / total_revenue * 100) if total_revenue > 0 else 0
+
+financials = {
+    'summary': {
+        'revenue': round(total_revenue, 2),
+        'revenuePrior': 0,
+        'cogs': round(total_cogs, 2),
+        'grossMargin': round(gross_margin, 2),
+        'grossMarginPct': round(gm_pct, 1),
+        'operatingExpenses': 0,
+        'netProfit': round(gross_margin, 2)  # same as gross until expenses entered
+    },
+    'monthly': monthly_arr,
+    'expenseBreakdown': {'salary': 0, 'rent': 0, 'utilities': 0, 'importDuties': 0, 'other': 0},
+    'categoryMargins': cat_arr,
+    'legacy': legacy,
+    'topMargin': top5,
+    'bottomMargin': bottom5,
+    'lastUpdated': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+}
+
+with open('data/financials.json', 'w') as f:
+    json.dump(financials, f, indent=2)
+
+print(f"  ✅ financials.json: ${total_revenue:,.2f} revenue across {len(all_sales)} orders")
+FINEOF
+else
+  echo "  ⚠️  No CIN7 credentials, skipping financials"
+fi
+
 echo ""
 echo "📤 Committing and pushing..."
 cd "$(dirname "$0")/.."
