@@ -586,6 +586,7 @@ a{color:var(--blue);text-decoration:none}
         <div style="display:flex;gap:10px;justify-content:flex-end">
           <button class="modal-btn secondary" onclick="clearQuote()">Clear</button>
           <button class="modal-btn primary" onclick="generateQuotePDF()">📄 Generate PDF</button>
+          <button class="modal-btn secondary" onclick="exportQuoteForPublishing()" style="background:#16A34A;color:#fff;border-color:#16A34A">🌐 Publish to 7cellars.ky</button>
         </div>
       </div>
     </div>
@@ -1727,6 +1728,33 @@ function generateQuotePDF(){
   });
   localStorage.setItem('7c-quotes',JSON.stringify(history));
   renderQuoteHistory();
+}
+
+function exportQuoteForPublishing(){
+  const customer=document.getElementById('quote-customer').value.trim();
+  if(!customer){toast('Please enter a customer name');return;}
+  if(!quoteLines.length){toast('Please add at least one product');return;}
+  const now=new Date();
+  const dateStr=now.toISOString().slice(0,10);
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]');
+  const todayQuotes=history.filter(q=>q.date===dateStr);
+  const seq=String(todayQuotes.length+1).padStart(3,'0');
+  const quoteNum=`Q-${dateStr}-${seq}`;
+  const notes=document.getElementById('quote-notes').value.trim();
+  const subtotal=quoteLines.reduce((s,l)=>s+l.price*l.qty,0);
+  const quoteData={
+    quoteNum,date:dateStr,customer,
+    tier:document.getElementById('quote-tier').value,
+    items:quoteLines.map(l=>({productId:l.productId,sku:l.sku,name:l.name,qty:l.qty,price:l.price})),
+    total:parseFloat(subtotal.toFixed(2)),
+    notes:notes,status:'pending'
+  };
+  const blob=new Blob([JSON.stringify(quoteData,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${quoteNum}.json`;
+  a.click();
+  toast('Quote exported! Place the JSON in ~/clawd/7cellars/quotes-outbox/ and run sync.');
 }
 
 function renderQuoteHistory(){

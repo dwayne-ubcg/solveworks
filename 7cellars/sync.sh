@@ -491,6 +491,10 @@ else
   echo '[]' > data/customers.json
 fi
 
+# ===== PUBLISH QUOTES TO SHOPIFY =====
+echo "📤 Publishing quotes to Shopify..."
+bash ~/clawd/7cellars/scripts/sync-quotes.sh
+
 # ===== PROCESS PENDING QUOTE-TO-ORDER CONVERSIONS =====
 if [ -f data/pending-orders.json ]; then
   echo "📋 Processing pending quote-to-order conversions..."
