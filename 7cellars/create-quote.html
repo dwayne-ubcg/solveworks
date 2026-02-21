@@ -106,13 +106,20 @@ body{font-family:'Inter',sans-serif;background:#FAFAF8;color:#1A1A1A;min-height:
       </div>
     </div>
 
-    <div class="form-group">
-      <label>Pricing Tier</label>
-      <select id="pricingTier" onchange="updateWineDropdown()">
-        <option value="1">Tier 1 (Retail)</option>
-        <option value="2" selected>Tier 2 (Wholesale)</option>
-      </select>
+    <div style="display:flex;gap:12px">
+      <div class="form-group" style="flex:1">
+        <label>Base Pricing</label>
+        <select id="pricingTier" onchange="updateWineDropdown()">
+          <option value="1">Tier 1 (Retail)</option>
+          <option value="2" selected>Tier 2 (Wholesale)</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Discount %</label>
+        <input type="number" id="discountPct" min="0" max="100" step="1" value="0" placeholder="0" onchange="applyDiscount()">
+      </div>
     </div>
+    <p style="font-size:11px;color:#888;margin:-8px 0 8px">Base price sets the default. You can edit each line item's price individually after adding.</p>
 
     <div class="form-group wine-selector">
       <label>Add Wine</label>
@@ -265,7 +272,9 @@ function filterWines() {
 
 function selectWine(wine) {
   const tier = document.getElementById('pricingTier').value;
-  const price = tier === '1' ? (wine.PriceTier1 || 0) : (wine.PriceTier2 || 0);
+  const basePrice = tier === '1' ? (wine.PriceTier1 || 0) : (wine.PriceTier2 || 0);
+  const pct = parseFloat(document.getElementById('discountPct').value) || 0;
+  const price = Math.round((basePrice * (1 - pct / 100)) * 100) / 100;
   
   lineItems.push({
     sku: wine.SKU,
@@ -318,6 +327,18 @@ function renderLineItems() {
 function updateQty(i, val) { lineItems[i].qty = parseInt(val) || 1; renderLineItems(); }
 function updatePrice(i, val) { lineItems[i].price = parseFloat(val) || 0; renderLineItems(); }
 function removeItem(i) { lineItems.splice(i, 1); renderLineItems(); }
+function applyDiscount() {
+  const pct = parseFloat(document.getElementById('discountPct').value) || 0;
+  const tier = document.getElementById('pricingTier').value;
+  lineItems.forEach(item => {
+    const wine = wines.find(w => w.SKU === item.sku);
+    if (wine) {
+      const base = tier === '1' ? (wine.PriceTier1 || 0) : (wine.PriceTier2 || 0);
+      item.price = Math.round((base * (1 - pct / 100)) * 100) / 100;
+    }
+  });
+  renderLineItems();
+}
 
 async function createQuote() {
   const customer = document.getElementById('customerName').value.trim();
