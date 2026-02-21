@@ -375,6 +375,34 @@ with open('data/financials.json', 'w') as f:
     json.dump(financials, f, indent=2)
 
 print(f"  ✅ financials.json: ${total_revenue:,.2f} revenue across {len(all_sales)} orders")
+
+# Enrich cin7-orders.json with totals and line items from detail calls
+enriched = {'Total': len(all_sales), 'Page': 1, 'SaleList': []}
+for sale in all_sales:
+    sid = sale['SaleID']
+    try:
+        detail = cin7_get(f'Sale?ID={sid}')
+        order = detail.get('Order', {})
+        if not order.get('Lines'):
+            order = detail.get('Quote', {})
+        lines = order.get('Lines', [])
+        sale_total = order.get('Total', 0) or 0
+        enriched['SaleList'].append({
+            'SaleID': sid,
+            'OrderNumber': sale.get('OrderNumber', ''),
+            'Status': sale.get('Status', ''),
+            'OrderDate': sale.get('OrderDate', ''),
+            'Customer': sale.get('Customer', ''),
+            'CustomerID': sale.get('CustomerID', ''),
+            'Total': sale_total,
+            'Lines': [{'Name': l.get('Name',''), 'Quantity': l.get('Quantity',0), 'Price': l.get('Price',0), 'Total': l.get('Total',0)} for l in lines]
+        })
+    except:
+        enriched['SaleList'].append(sale)
+
+with open('data/cin7-orders.json', 'w') as f:
+    json.dump(enriched, f, indent=2)
+print(f"  ✅ cin7-orders.json enriched with totals")
 FINEOF
 else
   echo "  ⚠️  No CIN7 credentials, skipping financials"

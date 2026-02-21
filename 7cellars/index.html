@@ -1217,13 +1217,13 @@ function renderSales(){
 
   // Normalize wholesale orders from Cin7
   const cin7Sales=(cin7Orders?.SaleList||[]);
-  const wholesaleOrders=cin7Sales.map(s=>({
+  const wholesaleOrders=cin7Sales.filter(s=>(s.Total||0)>0||(s.Lines&&s.Lines.length>0)).map(s=>({
     name:s.OrderNumber||s.SaleOrderNumber||'WH-'+s.SaleID,
     date:s.OrderDate||s.SaleOrderDate||s.CreatedDate||'',
     customer:s.CustomerName||s.Customer||'',
-    total:parseFloat(s.Total||s.TotalExTax||0),
-    status:(s.Status||s.FulfilmentStatus||'pending').toLowerCase(),
-    lineItems:(s.Lines||[]).map(l=>({title:l.ProductName||l.Name||'',quantity:l.Quantity||0})),
+    total:parseFloat(s.Total||0),
+    status:(s.Status||'pending').toLowerCase(),
+    lineItems:(s.Lines||[]).map(l=>({title:l.Name||l.ProductName||'',quantity:l.Quantity||0})),
     source:'Wholesale'
   }));
 
