@@ -314,6 +314,12 @@ a{color:var(--blue);text-decoration:none}
 .quote-dropdown-item:hover{background:var(--surface2)}
 .quote-dropdown-item:last-child{border-bottom:none}
 .quote-history-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.quote-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.quote-badge.pending{background:#fef3c7;color:#92400e}.quote-badge.submitted{background:#dbeafe;color:#1e40af}.quote-badge.converted{background:#d1fae5;color:#065f46}
+.quote-confirm-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:999}
+.quote-confirm-modal .modal-box{background:var(--surface);border-radius:12px;padding:28px;max-width:420px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.quote-confirm-modal h3{margin:0 0 12px;font-size:16px}.quote-confirm-modal p{font-size:13px;color:var(--text2);margin:0 0 20px}
+.quote-confirm-modal .actions{display:flex;gap:10px;justify-content:flex-end}
 
 /* Mobile toggle */
 .menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
@@ -584,7 +590,10 @@ a{color:var(--blue);text-decoration:none}
       </div>
     </div>
     <div style="margin-top:20px">
-      <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">Quote History</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin:0">Quote History</h3>
+        <button class="modal-btn secondary" onclick="downloadPendingOrders()" style="font-size:11px;padding:4px 10px">⬇ Download Pending Orders</button>
+      </div>
       <div id="quote-history"></div>
     </div>
   </div>
@@ -1707,20 +1716,83 @@ function generateQuotePDF(){
   doc.save(`${quoteNum}.pdf`);
   toast('Quote PDF generated!');
 
-  // Save to history
-  history.push({quoteNum,date:dateStr,customer,subtotal:subtotal.toFixed(2),lineCount:quoteLines.length});
+  // Save to history (full data for order conversion)
+  history.push({
+    id:quoteNum,quoteNum,date:dateStr,customer,
+    tier:document.getElementById('quote-tier').value,
+    items:quoteLines.map(l=>({productId:l.productId,sku:l.sku,name:l.name,qty:l.qty,price:l.price})),
+    total:parseFloat(subtotal.toFixed(2)),
+    notes:notes,
+    status:'pending'
+  });
   localStorage.setItem('7c-quotes',JSON.stringify(history));
   renderQuoteHistory();
 }
 
 function renderQuoteHistory(){
-  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]').reverse();
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]').slice().reverse();
   const el=document.getElementById('quote-history');
   if(!history.length){el.innerHTML='<div class="empty-state"><div class="icon">📄</div><p>No quotes generated yet.</p></div>';return;}
-  el.innerHTML=history.slice(0,20).map(q=>`<div class="quote-history-item">
-    <div><strong>${esc(q.quoteNum)}</strong> · ${esc(q.customer)} · ${q.lineCount} items</div>
-    <div style="font-weight:600;color:var(--green)">$${q.subtotal}</div>
-  </div>`).join('');
+  el.innerHTML=history.slice(0,20).map(q=>{
+    const status=q.status||'pending';
+    const itemCount=q.items?q.items.length:q.lineCount||0;
+    const total=q.total!=null?q.total:q.subtotal;
+    const actions=status==='pending'?`<button class="modal-btn primary" style="font-size:11px;padding:4px 10px" onclick="confirmConvertToOrder('${esc(q.id||q.quoteNum)}')">Convert to Order</button>`:'';
+    return `<div class="quote-history-item">
+      <div><strong>${esc(q.quoteNum||q.id)}</strong> · ${esc(q.customer)} · ${itemCount} items</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="quote-badge ${status}">${status}</span>
+        <span style="font-weight:600;color:var(--green)">$${parseFloat(total).toFixed(2)}</span>
+        ${actions}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function confirmConvertToOrder(quoteId){
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]');
+  const q=history.find(x=>(x.id||x.quoteNum)===quoteId);
+  if(!q)return;
+  const itemCount=q.items?q.items.length:q.lineCount||0;
+  const total=q.total!=null?q.total:q.subtotal;
+  const modal=document.createElement('div');
+  modal.className='quote-confirm-modal';
+  modal.innerHTML=`<div class="modal-box">
+    <h3>Convert to Cin7 Order?</h3>
+    <p><strong>${esc(q.customer)}</strong> — $${parseFloat(total).toFixed(2)} — ${itemCount} items</p>
+    <div class="actions">
+      <button class="modal-btn secondary" onclick="this.closest('.quote-confirm-modal').remove()">Cancel</button>
+      <button class="modal-btn primary" onclick="convertToOrder('${esc(quoteId)}');this.closest('.quote-confirm-modal').remove()">Confirm</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function convertToOrder(quoteId){
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]');
+  const q=history.find(x=>(x.id||x.quoteNum)===quoteId);
+  if(!q)return;
+  q.status='submitted';
+  localStorage.setItem('7c-quotes',JSON.stringify(history));
+  renderQuoteHistory();
+  toast('Quote queued for Cin7. Order will be created on next sync.');
+}
+
+function downloadPendingOrders(){
+  const history=JSON.parse(localStorage.getItem('7c-quotes')||'[]');
+  const submitted=history.filter(q=>q.status==='submitted');
+  if(!submitted.length){toast('No submitted quotes to export');return;}
+  const orders=submitted.map(q=>({
+    quoteId:q.id||q.quoteNum,customer:q.customer,date:q.date,
+    items:(q.items||[]).map(i=>({productId:i.productId,sku:i.sku,name:i.name,qty:i.qty,price:i.price})),
+    total:q.total,notes:q.notes||'',status:'pending'
+  }));
+  const blob=new Blob([JSON.stringify(orders,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='pending-orders.json';
+  a.click();
+  toast(`Exported ${orders.length} pending order(s)`);
 }
 
 // Close dropdowns on click outside

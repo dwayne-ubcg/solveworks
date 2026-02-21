@@ -491,6 +491,12 @@ else
   echo '[]' > data/customers.json
 fi
 
+# ===== PROCESS PENDING QUOTE-TO-ORDER CONVERSIONS =====
+if [ -f data/pending-orders.json ]; then
+  echo "📋 Processing pending quote-to-order conversions..."
+  bash ~/clawd/7cellars/scripts/process-quotes.sh data/pending-orders.json
+fi
+
 echo ""
 echo "📤 Committing and pushing..."
 cd "$(dirname "$0")/.."
