@@ -354,9 +354,9 @@ financials = {
     'summary': {
         'revenue': round(total_revenue, 2),
         'revenuePrior': 0,
-        'cogs': round(total_cogs, 2) if costs_reliable else 0,
-        'grossMargin': round(gross_margin, 2) if costs_reliable else 0,
-        'grossMarginPct': round(gm_pct, 1) if costs_reliable else 0,
+        'cogs': 0 if not costs_reliable else round(total_cogs, 2),
+        'grossMargin': 0 if not costs_reliable else round(gross_margin, 2),
+        'grossMarginPct': 0 if not costs_reliable else round(gm_pct, 1),
         'operatingExpenses': 0,
         'netProfit': round(gross_margin, 2) if costs_reliable else 0
     },
