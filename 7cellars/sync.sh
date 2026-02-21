@@ -346,9 +346,9 @@ legacy['cogs'] = round(legacy['cogs'], 2)
 gross_margin = total_revenue - total_cogs
 gm_pct = (gross_margin / total_revenue * 100) if total_revenue > 0 else 0
 
-# COGS is only reliable once real landed costs are entered in Cin7
-# For now, flag as unreliable so dashboard hides margin/profit
-costs_reliable = total_cogs > 0 and total_revenue > total_cogs  # basic sanity check
+# COGS is NOT reliable — Cin7 has stale AverageCost values that aren't real landed costs
+# Set to False until Dwayne confirms Tallyn has entered actual landed costs
+costs_reliable = False  # TODO: flip to True once real landed costs are in Cin7
 
 financials = {
     'summary': {
