@@ -425,25 +425,25 @@ for i, sale in enumerate(all_sales):
     c = customers[cid]
     c['name'] = cname
     c['id'] = cid
-    c['totalRevenue'] += invoice_amt
     c['orderCount'] += 1
     if order_date > c['lastOrderDate']:
         c['lastOrderDate'] = order_date
 
-    # Fetch sale detail for line items
+    # Fetch sale detail for line items — use Quote if Order has no lines (ESTIMATED sales)
     try:
         detail = cin7_get(f'Sale?ID={sale["SaleID"]}')
         order = detail.get('Order', {})
         if not order.get('Lines'):
             order = detail.get('Quote', {})
         lines = order.get('Lines', [])
-        items = [{'name': l.get('Name', ''), 'qty': int(l.get('Quantity', 0)), 'price': round(float(l.get('Price', 0)), 2)} for l in lines]
-        order_total = float(order.get('Total', 0) or invoice_amt)
+        items = [{'name': l.get('Name', ''), 'qty': int(l.get('Quantity', 0)), 'price': round(float(l.get('Price', 0)), 2), 'total': round(float(l.get('Total', 0)), 2)} for l in lines]
+        order_total = float(order.get('Total', 0) or 0)
     except Exception as e:
         print(f"  ⚠️  Failed detail for {order_num}: {e}")
         items = []
-        order_total = invoice_amt
+        order_total = 0
 
+    c['totalRevenue'] += order_total
     c['orders'].append({
         'orderNumber': order_num,
         'date': order_date,
