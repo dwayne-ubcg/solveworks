@@ -343,16 +343,22 @@ legacy['cogs'] = round(legacy['cogs'], 2)
 gross_margin = total_revenue - total_cogs
 gm_pct = (gross_margin / total_revenue * 100) if total_revenue > 0 else 0
 
+# COGS is only reliable once real landed costs are entered in Cin7
+# For now, flag as unreliable so dashboard hides margin/profit
+costs_reliable = total_cogs > 0 and total_revenue > total_cogs  # basic sanity check
+
 financials = {
     'summary': {
         'revenue': round(total_revenue, 2),
         'revenuePrior': 0,
-        'cogs': round(total_cogs, 2),
-        'grossMargin': round(gross_margin, 2),
-        'grossMarginPct': round(gm_pct, 1),
+        'cogs': round(total_cogs, 2) if costs_reliable else 0,
+        'grossMargin': round(gross_margin, 2) if costs_reliable else 0,
+        'grossMarginPct': round(gm_pct, 1) if costs_reliable else 0,
         'operatingExpenses': 0,
-        'netProfit': round(gross_margin, 2)  # same as gross until expenses entered
+        'netProfit': round(gross_margin, 2) if costs_reliable else 0
     },
+    'costsReliable': costs_reliable,
+    'orderCount': len(all_sales),
     'monthly': monthly_arr,
     'expenseBreakdown': {'salary': 0, 'rent': 0, 'utilities': 0, 'importDuties': 0, 'other': 0},
     'categoryMargins': cat_arr,

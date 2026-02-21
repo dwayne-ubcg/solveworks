@@ -1249,67 +1249,81 @@ function renderFinancials(){
   }
   const emptyEl2=document.getElementById('fin-empty');
   if(emptyEl2)emptyEl2.style.display='none';
+  const hasCosts=s.cogs>0&&d.costsReliable;
   const trendPct=s.revenuePrior?((s.revenue-s.revenuePrior)/s.revenuePrior*100):0;
   const trendDir=trendPct>=0?'up':'down';
   const trendIcon=trendPct>=0?'↑':'↓';
 
-  // Summary cards
-  document.getElementById('fin-stats').innerHTML=`
-    <div class="stat-card"><div class="label">Revenue (MTD)</div><div class="value green">$${s.revenue.toLocaleString()}</div><div class="trend ${trendDir}">${trendIcon} ${Math.abs(trendPct).toFixed(1)}% vs last month</div></div>
-    <div class="stat-card"><div class="label">Cost of Goods Sold</div><div class="value red">$${s.cogs.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="label">Gross Margin</div><div class="value blue">$${s.grossMargin.toLocaleString()}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.grossMarginPct}%</div></div>
-    <div class="stat-card"><div class="label">Net Profit</div><div class="value ${s.netProfit>=0?'green':'red'}">$${s.netProfit.toLocaleString()}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${(s.netProfit/s.revenue*100).toFixed(1)}% margin</div></div>`;
+  // Summary cards — only show COGS/margin/profit when landed costs are entered
+  let cards=`<div class="stat-card"><div class="label">Revenue</div><div class="value green">$${s.revenue.toLocaleString()}</div>${s.revenuePrior?`<div class="trend ${trendDir}">${trendIcon} ${Math.abs(trendPct).toFixed(1)}% vs last month</div>`:''}</div>
+    <div class="stat-card"><div class="label">Orders</div><div class="value">${d.orderCount||0}</div></div>`;
+  if(hasCosts){
+    cards+=`<div class="stat-card"><div class="label">Cost of Goods Sold</div><div class="value red">$${s.cogs.toLocaleString()}</div></div>
+    <div class="stat-card"><div class="label">Gross Margin</div><div class="value blue">$${s.grossMargin.toLocaleString()}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.grossMarginPct}%</div></div>`;
+  } else {
+    cards+=`<div class="stat-card"><div class="label">Gross Margin</div><div class="value" style="color:var(--text2);font-size:16px">Awaiting landed costs</div></div>`;
+  }
+  document.getElementById('fin-stats').innerHTML=cards;
 
-  // P&L table
+  // P&L table — revenue-only view until landed costs are entered
   const months=d.monthly.slice(0,4);
   const monthNames=months.map(m=>{const[y,mo]=m.month.split('-');return new Date(y,mo-1).toLocaleDateString('en',{month:'short',year:'2-digit'})});
-  const exp=d.expenseBreakdown||{};
-  let pnl=`<div style="overflow-x:auto"><table class="pnl-table"><thead><tr><th></th>${monthNames.map(n=>`<th>${n}</th>`).join('')}</tr></thead><tbody>`;
-  pnl+=`<tr><td><strong>Revenue</strong></td>${months.map(m=>`<td>$${(m.retail+m.wholesale).toLocaleString()}</td>`).join('')}</tr>`;
-  pnl+=`<tr class="pnl-indent"><td>Retail (Shopify)</td>${months.map(m=>`<td>$${m.retail.toLocaleString()}</td>`).join('')}</tr>`;
-  pnl+=`<tr class="pnl-indent"><td>Wholesale (Cin7)</td>${months.map(m=>`<td>$${m.wholesale.toLocaleString()}</td>`).join('')}</tr>`;
-  pnl+=`<tr><td>Less: Cost of Goods Sold</td>${months.map(m=>`<td style="color:var(--red)">($${m.cogs.toLocaleString()})</td>`).join('')}</tr>`;
-  pnl+=`<tr class="pnl-subtotal"><td>= Gross Profit</td>${months.map(m=>`<td>$${(m.retail+m.wholesale-m.cogs).toLocaleString()}</td>`).join('')}</tr>`;
-  pnl+=`<tr><td><strong>Operating Expenses</strong></td>${months.map(m=>`<td style="color:var(--red)">($${m.expenses.toLocaleString()})</td>`).join('')}</tr>`;
-  if(exp.salary)pnl+=`<tr class="pnl-indent"><td>Roberto — Salary</td>${months.map(()=>`<td>$${exp.salary.toLocaleString()}</td>`).join('')}</tr>`;
-  if(exp.rent)pnl+=`<tr class="pnl-indent"><td>Rent</td>${months.map(()=>`<td>$${exp.rent.toLocaleString()}</td>`).join('')}</tr>`;
-  if(exp.utilities)pnl+=`<tr class="pnl-indent"><td>Utilities</td>${months.map(()=>`<td>$${exp.utilities.toLocaleString()}</td>`).join('')}</tr>`;
-  if(exp.importDuties)pnl+=`<tr class="pnl-indent"><td>Import Duties</td>${months.map(()=>`<td>$${exp.importDuties.toLocaleString()}</td>`).join('')}</tr>`;
-  if(exp.other)pnl+=`<tr class="pnl-indent"><td>Other</td>${months.map(()=>`<td>$${exp.other.toLocaleString()}</td>`).join('')}</tr>`;
-  pnl+=`<tr class="pnl-total"><td>= Net Profit</td>${months.map(m=>{const np=m.retail+m.wholesale-m.cogs-m.expenses;return`<td style="color:${np>=0?'var(--green)':'var(--red)'}">$${np.toLocaleString()}</td>`}).join('')}</tr>`;
-  pnl+=`</tbody></table></div>`;
-  document.getElementById('fin-pnl').innerHTML=pnl;
-
-  // Category margins
-  const maxMargin=Math.max(...d.categoryMargins.map(c=>c.marginPct),1);
-  document.getElementById('fin-categories').innerHTML=d.categoryMargins.map(c=>`
-    <div class="margin-bar-wrap">
-      <div class="margin-bar-label"><span class="cat-name">${esc(c.category)}</span><span class="cat-pct">${c.marginPct}%</span></div>
-      <div class="margin-bar-track"><div class="margin-bar-fill" style="width:${(c.marginPct/maxMargin*100).toFixed(0)}%"></div></div>
-      <div style="font-size:11px;color:var(--text2);margin-top:2px">Revenue: $${c.revenue.toLocaleString()} · COGS: $${c.cogs.toLocaleString()}</div>
-    </div>`).join('');
-
-  // Legacy split
-  const lg=d.legacy;
-  document.getElementById('fin-legacy').innerHTML=`
-    <div class="legacy-stat"><span class="leg-label">Units Sold</span><span class="leg-value">${lg.unitsSold}</span></div>
-    <div class="legacy-stat"><span class="leg-label">Revenue</span><span class="leg-value">$${lg.revenue.toLocaleString()}</span></div>
-    <div class="legacy-stat"><span class="leg-label">COGS</span><span class="leg-value">$${lg.cogs.toLocaleString()}</span></div>
-    <div class="legacy-stat"><span class="leg-label">Profit</span><span class="leg-value">$${lg.profit.toLocaleString()}</span></div>
-    <div class="legacy-stat"><span class="leg-label">Roberto's 50% Share</span><span class="leg-value">$${lg.robertoShare.toLocaleString()}</span></div>
-    <div class="legacy-stat"><span class="leg-label">Amount Paid</span><span class="leg-value paid">$${(lg.amountPaid||0).toLocaleString()}</span></div>
-    <div class="legacy-stat"><span class="leg-label">Amount Owed</span><span class="leg-value owed">$${(lg.amountOwed||0).toLocaleString()}</span></div>
-    <div style="font-size:11px;color:var(--text2);margin-top:8px">Legacy items identified by AdditionalAttribute10 = "Yes" in Cin7</div>`;
-
-  // Top/Bottom margin products
-  function renderMarginTable(el,items){
-    if(!items.length){el.innerHTML='<div class="empty-state"><p>No data yet</p></div>';return}
-    el.innerHTML=`<table class="fin-product-table"><thead><tr><th>Product</th><th>Revenue</th><th>Margin</th></tr></thead><tbody>`+
-      items.map(p=>`<tr><td>${esc(p.product)}</td><td>$${p.revenue.toLocaleString()}</td><td style="font-weight:700;color:${p.marginPct>=35?'var(--green)':p.marginPct>=25?'var(--yellow)':'var(--red)'}">${p.marginPct}%</td></tr>`).join('')+
-      `</tbody></table>`;
+  if(months.length){
+    let pnl=`<div style="overflow-x:auto"><table class="pnl-table"><thead><tr><th></th>${monthNames.map(n=>`<th>${n}</th>`).join('')}</tr></thead><tbody>`;
+    pnl+=`<tr><td><strong>Revenue</strong></td>${months.map(m=>`<td>$${(m.retail+m.wholesale).toLocaleString()}</td>`).join('')}</tr>`;
+    pnl+=`<tr class="pnl-indent"><td>Retail (Shopify)</td>${months.map(m=>`<td>$${m.retail.toLocaleString()}</td>`).join('')}</tr>`;
+    pnl+=`<tr class="pnl-indent"><td>Wholesale (Cin7)</td>${months.map(m=>`<td>$${m.wholesale.toLocaleString()}</td>`).join('')}</tr>`;
+    if(hasCosts){
+      const exp=d.expenseBreakdown||{};
+      pnl+=`<tr><td>Less: Cost of Goods Sold</td>${months.map(m=>`<td style="color:var(--red)">($${m.cogs.toLocaleString()})</td>`).join('')}</tr>`;
+      pnl+=`<tr class="pnl-subtotal"><td>= Gross Profit</td>${months.map(m=>`<td>$${(m.retail+m.wholesale-m.cogs).toLocaleString()}</td>`).join('')}</tr>`;
+      pnl+=`<tr><td><strong>Operating Expenses</strong></td>${months.map(m=>`<td style="color:var(--red)">($${m.expenses.toLocaleString()})</td>`).join('')}</tr>`;
+      pnl+=`<tr class="pnl-total"><td>= Net Profit</td>${months.map(m=>{const np=m.retail+m.wholesale-m.cogs-m.expenses;return`<td style="color:${np>=0?'var(--green)':'var(--red)'}">$${np.toLocaleString()}</td>`}).join('')}</tr>`;
+    } else {
+      pnl+=`<tr><td colspan="${monthNames.length+1}" style="color:var(--text2);font-size:12px;padding-top:12px;font-style:italic">COGS, margins, and profit will appear once landed costs are entered in Cin7</td></tr>`;
+    }
+    pnl+=`</tbody></table></div>`;
+    document.getElementById('fin-pnl').innerHTML=pnl;
+  } else {
+    document.getElementById('fin-pnl').innerHTML='<div class="empty-state"><p>No monthly data yet</p></div>';
   }
-  renderMarginTable(document.getElementById('fin-top-margin'),d.topMargin||[]);
-  renderMarginTable(document.getElementById('fin-bottom-margin'),d.bottomMargin||[]);
+
+  // Category margins, legacy split, top/bottom products — only show with reliable costs
+  if(hasCosts){
+    const maxMargin=Math.max(...d.categoryMargins.map(c=>c.marginPct),1);
+    document.getElementById('fin-categories').innerHTML=d.categoryMargins.map(c=>`
+      <div class="margin-bar-wrap">
+        <div class="margin-bar-label"><span class="cat-name">${esc(c.category)}</span><span class="cat-pct">${c.marginPct}%</span></div>
+        <div class="margin-bar-track"><div class="margin-bar-fill" style="width:${(c.marginPct/maxMargin*100).toFixed(0)}%"></div></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">Revenue: $${c.revenue.toLocaleString()} · COGS: $${c.cogs.toLocaleString()}</div>
+      </div>`).join('');
+
+    const lg=d.legacy;
+    document.getElementById('fin-legacy').innerHTML=`
+      <div class="legacy-stat"><span class="leg-label">Units Sold</span><span class="leg-value">${lg.unitsSold}</span></div>
+      <div class="legacy-stat"><span class="leg-label">Revenue</span><span class="leg-value">$${lg.revenue.toLocaleString()}</span></div>
+      <div class="legacy-stat"><span class="leg-label">COGS</span><span class="leg-value">$${lg.cogs.toLocaleString()}</span></div>
+      <div class="legacy-stat"><span class="leg-label">Profit</span><span class="leg-value">$${lg.profit.toLocaleString()}</span></div>
+      <div class="legacy-stat"><span class="leg-label">Roberto's 50% Share</span><span class="leg-value">$${lg.robertoShare.toLocaleString()}</span></div>
+      <div class="legacy-stat"><span class="leg-label">Amount Paid</span><span class="leg-value paid">$${(lg.amountPaid||0).toLocaleString()}</span></div>
+      <div class="legacy-stat"><span class="leg-label">Amount Owed</span><span class="leg-value owed">$${(lg.amountOwed||0).toLocaleString()}</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:8px">Legacy items identified by AdditionalAttribute10 = "Yes" in Cin7</div>`;
+
+    function renderMarginTable(el,items){
+      if(!items.length){el.innerHTML='<div class="empty-state"><p>No data yet</p></div>';return}
+      el.innerHTML=`<table class="fin-product-table"><thead><tr><th>Product</th><th>Revenue</th><th>Margin</th></tr></thead><tbody>`+
+        items.map(p=>`<tr><td>${esc(p.product)}</td><td>$${p.revenue.toLocaleString()}</td><td style="font-weight:700;color:${p.marginPct>=35?'var(--green)':p.marginPct>=25?'var(--yellow)':'var(--red)'}">${p.marginPct}%</td></tr>`).join('')+
+        `</tbody></table>`;
+    }
+    renderMarginTable(document.getElementById('fin-top-margin'),d.topMargin||[]);
+    renderMarginTable(document.getElementById('fin-bottom-margin'),d.bottomMargin||[]);
+  } else {
+    const awaitMsg='<div class="empty-state" style="padding:30px"><p style="font-size:13px;color:var(--text2)">Awaiting landed costs in Cin7</p></div>';
+    document.getElementById('fin-categories').innerHTML=awaitMsg;
+    document.getElementById('fin-legacy').innerHTML=awaitMsg;
+    if(document.getElementById('fin-top-margin'))document.getElementById('fin-top-margin').innerHTML=awaitMsg;
+    if(document.getElementById('fin-bottom-margin'))document.getElementById('fin-bottom-margin').innerHTML=awaitMsg;
+  }
 }
 
 /* ===== INIT ===== */
