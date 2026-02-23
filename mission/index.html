@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — SolveWorks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
+--border:#1e3048;--text:#e4e8ec;--text2:#8898b0;--accent:#0D1B2A;
+--accent-light:#1a3050;--yellow:#f0c040;--green:#40c080;--blue:#4080f0;
+--red:#f04060;--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+a{color:var(--blue);text-decoration:none}
+
+/* Sidebar */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh}
+.sidebar-logo{padding:20px;font-size:15px;font-weight:700;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border)}
+.sidebar-logo span{color:var(--text)}
+.nav{flex:1;padding:12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .15s;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:#fff}
+.nav-item svg{width:18px;height:18px;opacity:.6;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.nav-badge{position:absolute;right:10px;font-size:11px;font-weight:700;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px;min-width:24px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.15);color:#fff}
+.nav-divider{height:1px;background:var(--border);margin:8px 14px}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.btn-logout{width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{background:var(--surface3);color:var(--text)}
+
+/* Main */
+.main{flex:1;overflow-y:auto;padding:32px 40px;position:relative;padding-bottom:60px}
+.section{display:none}
+.section.active{display:block}
+
+/* Login */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+#login.hidden{display:none}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px;width:360px;text-align:center}
+.login-box h1{font-size:20px;margin-bottom:8px}
+.login-box p{color:var(--text2);font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.login-box input:focus{border-color:var(--blue)}
+.login-box button{width:100%;padding:12px;margin-top:12px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.login-box button:hover{background:var(--accent-light)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* Dashboard */
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.mission-statement{background:linear-gradient(135deg,var(--accent),#162840);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:28px}
+.mission-statement h2{font-size:14px;color:var(--text2);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.mission-statement p{font-size:18px;font-weight:500;line-height:1.6}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.stat-card .label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-card .value{font-size:28px;font-weight:700}
+.stat-card .value.yellow{color:var(--yellow)}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.blue{color:var(--blue)}
+.clock{font-size:13px;color:var(--text2);margin-bottom:24px;font-variant-numeric:tabular-nums}
+
+/* Activity Feed */
+.feed-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.feed-item .feed-date{font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.feed-item .feed-content{font-size:14px;line-height:1.7;color:var(--text)}
+.feed-item .feed-content h1,.feed-item .feed-content h2,.feed-item .feed-content h3{margin:12px 0 6px;font-size:15px}
+.feed-item .feed-content ul{padding-left:20px;margin:6px 0}
+.feed-item .feed-content code{background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:12px}
+.feed-item .feed-content pre{background:var(--surface2);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;margin:8px 0}
+
+/* Search/Filter bar */
+.filter-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.search-input{padding:9px 14px 9px 36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;width:260px;transition:border-color .15s}
+.search-input:focus{border-color:var(--blue)}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text2);pointer-events:none}
+.filter-chip{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;user-select:none}
+.filter-chip:hover{background:var(--surface2);color:var(--text)}
+.filter-chip.active{background:var(--accent-light);color:#fff;border-color:var(--accent-light)}
+
+/* Tasks */
+.task-section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.task-section-title:first-child{margin-top:0}
+.task{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:8px;transition:all .15s;cursor:default}
+.task:hover{border-color:#3a3a4a;transform:translateY(-1px)}
+.task-row{display:flex;align-items:center;gap:12px}
+.task.completed-local .task-name{text-decoration:line-through;opacity:.5}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.badge.in-progress{background:rgba(240,192,64,.15);color:var(--yellow)}
+.badge.completed{background:rgba(64,192,128,.15);color:var(--green)}
+.badge.waiting{background:rgba(64,128,240,.15);color:var(--blue)}
+.task-name{font-size:14px;font-weight:500;flex:1;min-width:0}
+.task-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.task-btn{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.task-btn:hover{background:var(--surface3);color:var(--text)}
+.task-btn.action{border-color:rgba(64,128,240,.3);color:var(--blue)}
+.task-btn.action:hover{background:rgba(64,128,240,.15)}
+.task-btn.done{border-color:rgba(64,192,128,.3);color:var(--green)}
+.task-btn.done:hover{background:rgba(64,192,128,.15)}
+.task-btn.done.is-done{background:rgba(64,192,128,.15);color:var(--green)}
+
+/* Assignee avatar */
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#fff;letter-spacing:.5px;cursor:pointer;transition:transform .15s}
+.avatar:hover{transform:scale(1.15)}
+.avatar.unassigned{background:var(--surface3);color:var(--text2);border:1px dashed var(--border)}
+
+/* Assignee dropdown */
+.assign-dropdown{position:absolute;top:100%;right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:160px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none}
+.assign-dropdown.open{display:block}
+.assign-option{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2);transition:background .1s}
+.assign-option:hover{background:var(--surface2);color:var(--text)}
+.assign-option .avatar{width:22px;height:22px;font-size:9px;cursor:default}
+.assign-pos{position:relative}
+
+/* Task notes */
+.task-note{margin-top:8px;padding:8px 12px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--text2);line-height:1.5}
+.task-note-input{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;font-family:inherit;outline:none;resize:none;margin-top:8px;display:none}
+.task-note-input:focus{border-color:var(--blue)}
+
+/* Documents */
+.doc-folder{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden}
+.doc-folder-header{padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;font-weight:500;transition:background .1s}
+.doc-folder-header:hover{background:var(--surface2)}
+.doc-folder-header .arrow{transition:transform .2s;color:var(--text2);font-size:12px}
+.doc-folder-header.open .arrow{transform:rotate(90deg)}
+.doc-files{display:none;padding:0 18px 14px;margin-left:28px}
+.doc-files.open{display:block}
+.doc-file{padding:6px 0;font-size:13px;color:var(--text2);border-bottom:1px solid var(--border)}
+.doc-file:last-child{border:none}
+
+/* Agents */
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .15s}
+.agent-card:hover{border-color:#3a3a4a;transform:translateY(-1px)}
+.agent-card .agent-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.agent-card .agent-role{font-size:13px;color:var(--text2);margin-bottom:14px}
+.agent-card .agent-desc{font-size:14px;line-height:1.6;color:var(--text)}
+.agent-status{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.agent-status.active{background:rgba(64,192,128,.15);color:var(--green)}
+.agent-status.standby{background:rgba(64,128,240,.15);color:var(--blue)}
+
+/* =====================================================
+   DEPLOY CHECKLIST
+   ===================================================== */
+.deploy-header{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.deploy-header input{padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;width:240px}
+.deploy-header input:focus{border-color:var(--blue)}
+.deploy-btn{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.deploy-btn.primary{background:var(--blue);color:#fff}
+.deploy-btn.primary:hover{background:#5090ff}
+.deploy-btn.success{background:var(--green);color:#fff}
+.deploy-btn.success:hover{background:#50d090}
+.deploy-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.deploy-btn.secondary:hover{background:var(--surface3);color:var(--text)}
+
+.deploy-progress{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px}
+.deploy-progress .progress-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px}
+.deploy-progress .progress-label span:first-child{color:var(--text2)}
+.deploy-progress .progress-label span:last-child{font-weight:700}
+.progress-bar{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:4px;transition:width .4s ease}
+
+.checklist{list-style:none}
+.checklist-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;transition:all .15s;overflow:hidden}
+.checklist-item.checked{border-color:rgba(64,192,128,.25)}
+.checklist-item.checked .cl-label{opacity:.6;text-decoration:line-through}
+.cl-row{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer}
+.cl-row:hover{background:var(--surface2)}
+.cl-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;border:2px solid var(--border);color:var(--text2);transition:all .2s}
+.checklist-item.checked .cl-num{background:var(--green);border-color:var(--green);color:#fff}
+.cl-label{font-size:14px;font-weight:500;flex:1}
+.cl-info{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;color:var(--text2);background:var(--surface2);border:1px solid var(--border);flex-shrink:0;transition:all .15s;position:relative}
+.cl-info:hover{color:var(--text);background:var(--surface3)}
+
+/* Tooltip */
+.cl-tooltip{position:absolute;right:40px;top:50%;transform:translateY(-50%);background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text);white-space:pre-wrap;max-width:400px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;line-height:1.5;pointer-events:none}
+.cl-tooltip code{background:var(--surface);padding:2px 6px;border-radius:4px;font-size:11px}
+.cl-info:hover .cl-tooltip{display:block}
+
+.no-deploy{text-align:center;padding:60px 20px;color:var(--text2)}
+.no-deploy svg{width:64px;height:64px;margin-bottom:16px;opacity:.3}
+.no-deploy p{margin-bottom:20px;font-size:15px}
+
+/* =====================================================
+   CLIENT HEALTH
+   ===================================================== */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.health-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .15s}
+.health-card:hover{border-color:#3a3a4a;transform:translateY(-2px)}
+.health-card-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.health-status-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.health-status-dot.green{background:var(--green);box-shadow:0 0 8px rgba(64,192,128,.5)}
+.health-status-dot.yellow{background:var(--yellow);box-shadow:0 0 8px rgba(240,192,64,.5)}
+.health-status-dot.red{background:var(--red);box-shadow:0 0 8px rgba(240,64,96,.5)}
+.health-status-dot.gray{background:var(--text2);opacity:.4}
+.health-card-header h3{font-size:16px;font-weight:700;flex:1}
+.health-card-header .health-agent{font-size:12px;color:var(--text2)}
+.billing-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:all .15s}
+.billing-badge.active{background:rgba(64,192,128,.15);color:var(--green)}
+.billing-badge.past-due{background:rgba(240,192,64,.15);color:var(--yellow)}
+.billing-badge.suspended{background:rgba(240,64,96,.15);color:var(--red)}
+.kill-switch{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.kill-switch-label{font-size:12px;color:var(--text2);flex:1}
+.kill-switch-label.suspended{color:var(--red)}
+.toggle{position:relative;width:44px;height:24px;border-radius:12px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.toggle.on{background:var(--green)}
+.toggle.off{background:var(--red)}
+.toggle .knob{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle.on .knob{left:22px}
+.toggle.off .knob{left:2px}
+.kill-confirm{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center}
+.kill-confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:400px;text-align:center}
+.kill-confirm-box h3{font-size:18px;margin-bottom:8px}
+.kill-confirm-box p{color:var(--text2);font-size:14px;margin-bottom:20px}
+.kill-confirm-box .btn-row{display:flex;gap:10px;justify-content:center}
+.kill-confirm-box button{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
+.kill-confirm-box .btn-danger{background:var(--red);color:#fff}
+.kill-confirm-box .btn-danger:hover{opacity:.9}
+.kill-confirm-box .btn-cancel{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.kill-confirm-box .btn-enable{background:var(--green);color:#fff}
+.kill-confirm-box .btn-enable:hover{opacity:.9}
+.health-detail{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.health-detail:last-child{border:none}
+.health-detail .hd-label{color:var(--text2)}
+.health-detail .hd-value{font-weight:500}
+.health-detail .hd-value.error{color:var(--red)}
+.health-link{display:inline-block;margin-top:14px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600;color:var(--blue);transition:all .15s}
+.health-link:hover{background:var(--surface3)}
+
+/* =====================================================
+   INSTALL HISTORY
+   ===================================================== */
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:16px}
+.history-item .hi-client{font-size:15px;font-weight:600;min-width:120px}
+.history-item .hi-date{font-size:12px;color:var(--text2);min-width:100px}
+.history-item .hi-who{font-size:13px;color:var(--text2);min-width:80px}
+.history-item .hi-notes{font-size:13px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-item .hi-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(64,192,128,.15);color:var(--green);flex-shrink:0}
+.history-empty{text-align:center;padding:40px;color:var(--text2);font-size:14px}
+
+/* FAB */
+.fab{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(64,128,240,.4);transition:all .2s;z-index:30;font-family:inherit}
+.fab:hover{transform:scale(1.1);box-shadow:0 6px 24px rgba(64,128,240,.5)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:480px;max-width:90vw;max-height:85vh;overflow-y:auto;transform:translateY(20px);transition:transform .2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:20px}
+.modal label{display:block;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:16px}
+.modal label:first-of-type{margin-top:0}
+.modal input[type="text"],.modal textarea,.modal select{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.modal input[type="text"]:focus,.modal textarea:focus,.modal select:focus{border-color:var(--blue)}
+.modal textarea{resize:vertical;min-height:60px}
+.modal select{appearance:none;cursor:pointer}
+.modal-actions{display:flex;gap:10px;margin-top:24px;justify-content:flex-end}
+.modal-btn{padding:10px 20px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.modal-btn.primary{background:var(--blue);color:#fff}
+.modal-btn.primary:hover{background:#5090ff}
+.modal-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.modal-btn.secondary:hover{background:var(--surface3);color:var(--text)}
+
+/* Sync footer */
+.sync-footer{position:fixed;bottom:0;left:240px;right:0;padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;z-index:10}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sync-dot.fresh{background:var(--green)}
+.sync-dot.stale{background:var(--yellow)}
+.sync-dot.old{background:var(--red)}
+
+/* Toast */
+.toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:all .3s;z-index:60;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Document modal */
+.doc-modal-content{font-size:14px;line-height:1.7;color:var(--text)}
+.doc-modal-content h1,.doc-modal-content h2,.doc-modal-content h3{margin:16px 0 8px}
+.doc-modal-content ul{padding-left:20px;margin:8px 0}
+.doc-modal-content code{background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:12px}
+.doc-modal-content pre{background:var(--surface2);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;margin:8px 0}
+
+/* Mobile */
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
+@media(max-width:768px){
+  .sidebar{position:fixed;left:-260px;z-index:40;transition:left .2s}
+  .sidebar.open{left:0}
+  .menu-toggle{display:block}
+  .main{padding:20px 16px;padding-top:56px;padding-bottom:48px}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .agents-grid{grid-template-columns:1fr}
+  .health-grid{grid-template-columns:1fr}
+  .sync-footer{left:0}
+  .fab{bottom:56px;right:16px}
+  .filter-bar{flex-direction:column;align-items:stretch}
+  .search-input{width:100%}
+  .deploy-header{flex-direction:column;align-items:stretch}
+  .deploy-header input{width:100%}
+  .cl-tooltip{right:auto;left:0;top:auto;bottom:40px;transform:none;max-width:280px}
+  .history-item{flex-direction:column;align-items:flex-start;gap:6px}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h1>Mission Control</h1>
+    <p>SolveWorks — Autonomous Operations</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-logo"><span>SOLVE</span>WORKS</div>
+  <div class="nav">
+    <div class="nav-item active" data-section="dashboard" onclick="showSection('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" data-section="activity" onclick="showSection('activity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity Feed
+    </div>
+    <div class="nav-item" data-section="tasks" onclick="showSection('tasks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Tasks <span class="nav-badge" id="tasks-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="documents" onclick="showSection('documents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Documents <span class="nav-badge" id="docs-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="agents" onclick="showSection('agents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+      Agents
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" data-section="deploy" onclick="showSection('deploy')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Deploy Checklist
+    </div>
+    <div class="nav-item" data-section="health" onclick="showSection('health')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Client Health
+    </div>
+    <div class="nav-item" data-section="history" onclick="showSection('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Install History
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">← Logout</button>
+  </div>
+</nav>
+
+<div class="main">
+  <!-- Dashboard -->
+  <div class="section active" id="sec-dashboard">
+    <h1 class="page-title">Dashboard</h1>
+    <div class="clock" id="clock"></div>
+    <div class="mission-statement">
+      <h2>Mission</h2>
+      <p>Build an autonomous organization of AI agents that does work for me and produces value 24/7</p>
+    </div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="label">In Progress</div><div class="value yellow" id="stat-progress">—</div></div>
+      <div class="stat-card"><div class="label">Completed</div><div class="value green" id="stat-completed">—</div></div>
+      <div class="stat-card"><div class="label">Waiting</div><div class="value blue" id="stat-waiting">—</div></div>
+      <div class="stat-card"><div class="label">Active Agents</div><div class="value" id="stat-agents">3</div></div>
+    </div>
+  </div>
+
+  <!-- Activity -->
+  <div class="section" id="sec-activity">
+    <h1 class="page-title">Activity Feed</h1>
+    <p class="page-sub">Recent daily logs and updates</p>
+    <div id="activity-feed"></div>
+  </div>
+
+  <!-- Tasks -->
+  <div class="section" id="sec-tasks">
+    <h1 class="page-title">Tasks</h1>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="task-search" placeholder="Search tasks..." oninput="renderTasks()">
+      </div>
+      <div id="task-filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div id="tasks-list"></div>
+  </div>
+
+  <!-- Documents -->
+  <div class="section" id="sec-documents">
+    <h1 class="page-title">Documents</h1>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="doc-search" placeholder="Search documents..." oninput="renderDocs()">
+      </div>
+    </div>
+    <div id="docs-list"></div>
+  </div>
+
+  <!-- Agents -->
+  <div class="section" id="sec-agents">
+    <h1 class="page-title">Agents</h1>
+    <p class="page-sub">Autonomous team members</p>
+    <div class="agents-grid" id="agents-grid"></div>
+  </div>
+
+  <!-- Deploy Checklist -->
+  <div class="section" id="sec-deploy">
+    <h1 class="page-title">Deploy Checklist</h1>
+    <p class="page-sub">Client installation pre-flight checklist</p>
+    <div id="deploy-content"></div>
+  </div>
+
+  <!-- Client Health -->
+  <div class="section" id="sec-health">
+    <h1 class="page-title">Client Health</h1>
+    <p class="page-sub">Active client deployment status</p>
+    <div class="health-grid" id="health-grid"></div>
+  </div>
+
+  <!-- Install History -->
+  <div class="section" id="sec-history">
+    <h1 class="page-title">Install History</h1>
+    <p class="page-sub">Completed client deployments</p>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="history-search" placeholder="Search installs..." oninput="renderHistory()">
+      </div>
+    </div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openNewTaskModal()" title="New Task">+</button>
+
+<!-- New Task Modal -->
+<div class="modal-overlay" id="modal-new-task">
+  <div class="modal">
+    <h2>New Task</h2>
+    <label>Task Name</label>
+    <input type="text" id="new-task-name" placeholder="What needs to be done?">
+    <label>Status</label>
+    <select id="new-task-status">
+      <option value="waiting">Waiting</option>
+      <option value="in-progress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select>
+    <label>Assign To</label>
+    <select id="new-task-assignee">
+      <option value="">Unassigned</option>
+    </select>
+    <label>Notes (optional)</label>
+    <textarea id="new-task-notes" placeholder="Any additional context..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('modal-new-task')">Cancel</button>
+      <button class="modal-btn primary" onclick="createTask()">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete Install Modal -->
+<div class="modal-overlay" id="modal-complete-install">
+  <div class="modal">
+    <h2>Complete Install</h2>
+    <label>Client Name</label>
+    <input type="text" id="complete-client-name" readonly>
+    <label>Installed By</label>
+    <select id="complete-who"></select>
+    <label>Notes</label>
+    <textarea id="complete-notes" placeholder="Any notes about this install..."></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('modal-complete-install')">Cancel</button>
+      <button class="modal-btn primary" onclick="finalizeInstall()">Save to History</button>
+    </div>
+  </div>
+</div>
+
+<!-- Document Modal -->
+<div class="modal-overlay" id="modal-doc">
+  <div class="modal" style="width:640px">
+    <h2 id="modal-doc-title"></h2>
+    <div class="doc-modal-content" id="modal-doc-content"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal('modal-doc')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sync Footer -->
+<div class="sync-footer" id="sync-footer">
+  <span class="sync-dot fresh" id="sync-dot"></span>
+  <span id="sync-text">Synced</span>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================
+   CONFIGURATION
+   ===================================================== */
+const TEAM_MEMBERS = [
+  { id: 'dwayne', name: 'Dwayne', initials: 'DW', color: '#4080f0' },
+  { id: 'brody',  name: 'Brody',  initials: 'BR', color: '#f0c040' },
+  { id: 'mika',   name: 'Mika',   initials: 'MK', color: '#40c080' },
+];
+
+const COMMAND_CENTRE_URL = 'https://t.me/c/3818796984/1';
+const HASH = '4682315e5aeba932c7d9afbdac4001f02ca4190212fca8ef72c9c18dc83b50be';
+
+/* =====================================================
+   DEPLOY CHECKLIST DATA
+   ===================================================== */
+const DEPLOY_STEPS = [
+  { label: 'Client: Mac Mini powered on and connected to internet', tip: 'Verify the Mac Mini has power and ethernet/WiFi. Check router if needed.' },
+  { label: 'Client: Tailscale downloaded and logged in', tip: 'Download from https://tailscale.com/download\nLog in with Dwayne\'s credentials.\nVerify IP appears in Tailscale admin console.' },
+  { label: 'Client: Remote Login enabled in System Settings', tip: 'System Settings → General → Sharing → Remote Login → ON\nEnsure current user is allowed.' },
+  { label: 'Verify SSH access', tip: 'ssh user@tailscale-ip\nReplace user and IP with actual values.\nAccept host key fingerprint.' },
+  { label: 'Enable passwordless sudo', tip: 'sudo visudo\nAdd line: username ALL=(ALL) NOPASSWD:ALL\nOr: echo "username ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/username' },
+  { label: 'Disable power saving', tip: 'sudo pmset -a displaysleep 0 sleep 0 disksleep 0 hibernatemode 0 autopoweroff 0 standby 0 womp 1 networkoversleep 0 powernap 1 tcpkeepalive 1' },
+  { label: 'Install Homebrew', tip: '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"\nFollow post-install instructions to add to PATH.' },
+  { label: 'Install Node.js', tip: 'brew install node\nVerify: node --version && npm --version' },
+  { label: 'Install OpenClaw', tip: 'npm install -g openclaw\nOr: pnpm add -g openclaw\nVerify: openclaw --version' },
+  { label: 'Configure gateway', tip: 'openclaw gateway install\nThis sets up the background service.\nVerify: openclaw gateway status' },
+  { label: 'Set up Anthropic auth (Claude Max)', tip: 'openclaw gateway setup-token\nFollow prompts to authenticate with Claude Max subscription.' },
+  { label: 'Set up Gemini fallback', tip: 'Add Gemini API key to gateway config.\nThis provides fallback when Claude is unavailable.' },
+  { label: 'Configure model (primary + fallback)', tip: 'Set primary model (e.g., claude-sonnet-4-20250514)\nSet fallback model (e.g., gemini-2.5-pro)\nEdit openclaw config.' },
+  { label: 'Create Telegram bot via BotFather', tip: 'Open @BotFather on Telegram\n/newbot → name it (e.g., "ClientName Agent")\nSave the bot token.' },
+  { label: 'Configure Telegram channel', tip: 'Add bot token and user ID to openclaw config.\nopenclaw channel add telegram\nSet bot token and allowed user IDs.' },
+  { label: 'Approve Telegram pairing', tip: 'Send /start to the bot on Telegram.\nApprove the pairing request in the gateway.' },
+  { label: 'Install skills', tip: 'Copy skills from Mac Mini:\nscp -r ~/clawd/skills/ user@tailscale-ip:~/clawd/skills/\nOr git clone the skills repo.' },
+  { label: 'Create workspace', tip: 'mkdir -p ~/clawd\nCreate: AGENTS.md, SOUL.md, USER.md, TOOLS.md, HEARTBEAT.md\nUse templates from existing installs.' },
+  { label: 'Load client context', tip: 'Copy master prompt, business docs, SOPs into ~/clawd/\nCustomize SOUL.md with client personality.\nUpdate USER.md with client details.' },
+  { label: 'Set up cron jobs', tip: 'crontab -e\nAdd:\n0 8 * * * openclaw run "morning briefing"\n0 22 * * * openclaw run "end of day journal"\n0 */6 * * * openclaw run "security check"\n0 12 * * * openclaw run "opportunity intel"' },
+  { label: 'Wire up calendar', tip: 'Option A: gcalcli (brew install gcalcli, oauth setup)\nOption B: ICS feed URL in agent config\nVerify agent can read upcoming events.' },
+  { label: 'Security hardening', tip: 'Edit AGENTS.md guardrails:\n- No config changes without permission\n- No installs without permission\n- No destructive commands\n- No exfiltration of private data' },
+  { label: 'Build client dashboard', tip: 'Create solveworks.io/<name>/\nCopy dashboard template.\nCustomize with client branding.' },
+  { label: 'Run sync.sh and verify dashboard populates', tip: 'cd ~/clawd/solveworks-site/mission && bash sync.sh\nCheck that data/*.json files are created.\nVerify dashboard shows data.' },
+  { label: 'Test: Send test message via Telegram', tip: 'Send "Hello, are you there?" via Telegram.\nVerify agent responds within 30 seconds.\nCheck for proper formatting.' },
+  { label: 'Test: Verify morning briefing cron fires', tip: 'Manually trigger: openclaw run "morning briefing"\nVerify output appears in Telegram.\nCheck cron log: grep CRON /var/log/syslog' },
+  { label: 'Client handoff', tip: 'Walk client through:\n- How to message their agent\n- What the morning briefing looks like\n- How to access their dashboard\n- Emergency contacts (Dwayne/Brody)' },
+];
+
+/* =====================================================
+   STATE
+   ===================================================== */
+let allTasks = [];
+let localTasks = [];
+let localState = {};
+let docsData = [];
+let activeFilter = 'all';
+let currentDeployClient = '';
+let deployChecks = {};
+let installHistory = [];
+let clientHealthData = [];
+let clientBilling = JSON.parse(localStorage.getItem('mc_billing')||'{}');
+// Default all clients to active
+function getBilling(name){return clientBilling[name]||'active'}
+function setBilling(name,status){clientBilling[name]=status;localStorage.setItem('mc_billing',JSON.stringify(clientBilling))}
+
+function showKillConfirm(clientName, ip, currentlyOn){
+  const existing=document.getElementById('kill-confirm-overlay');
+  if(existing)existing.remove();
+  const action=currentlyOn?'suspend':'enable';
+  const div=document.createElement('div');
+  div.id='kill-confirm-overlay';
+  div.className='kill-confirm';
+  div.innerHTML=`<div class="kill-confirm-box">
+    <h3>${currentlyOn?'⚠️ Suspend':'✅ Re-enable'} ${esc(clientName)}?</h3>
+    <p>${currentlyOn
+      ?'This will stop their gateway immediately. Their agent will go silent until re-enabled.'
+      :'This will restart their gateway and restore agent access.'}</p>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="document.getElementById('kill-confirm-overlay').remove()">Cancel</button>
+      <button class="${currentlyOn?'btn-danger':'btn-enable'}" onclick="executeKillSwitch('${esc(clientName)}','${esc(ip)}',${currentlyOn})">${currentlyOn?'Suspend Agent':'Re-enable Agent'}</button>
+    </div>
+  </div>`;
+  div.addEventListener('click',e=>{if(e.target===div)div.remove()});
+  document.body.appendChild(div);
+}
+
+async function executeKillSwitch(name, ip, suspend){
+  document.getElementById('kill-confirm-overlay').remove();
+  const action=suspend?'Suspending':'Re-enabling';
+  toast(action+' '+name+'...');
+  setBilling(name, suspend?'suspended':'active');
+  renderHealth();
+  // Note: actual SSH gateway stop/start would be triggered server-side
+  // For now this tracks billing state in localStorage
+  toast(suspend?name+' suspended ⛔':name+' re-enabled ✅');
+}
+
+/* =====================================================
+   AUTH
+   ===================================================== */
+async function sha256(s){const d=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+
+async function tryLogin(){
+  const pw=document.getElementById('pw').value;
+  if(await sha256(pw)===HASH){
+    localStorage.setItem('mc_auth','1');
+    document.getElementById('login').classList.add('hidden');
+    init();
+  } else {
+    document.getElementById('login-error').style.display='block';
+  }
+}
+function logout(){localStorage.removeItem('mc_auth');location.reload()}
+
+/* =====================================================
+   NAVIGATION
+   ===================================================== */
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' — '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+
+/* =====================================================
+   UTILITIES
+   ===================================================== */
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function taskKey(t){return 'task:'+btoa(unescape(encodeURIComponent(t.name||t.title||t.task||''))).slice(0,40)}
+
+function saveLocalState(){localStorage.setItem('mc_state',JSON.stringify(localState))}
+function loadLocalState(){try{localState=JSON.parse(localStorage.getItem('mc_state')||'{}')}catch(e){localState={}}}
+function saveLocalTasks(){localStorage.setItem('mc_local_tasks',JSON.stringify(localTasks))}
+function loadLocalTasks(){try{localTasks=JSON.parse(localStorage.getItem('mc_local_tasks')||'[]')}catch(e){localTasks=[]}}
+
+function saveDeployState(){localStorage.setItem('mc_deploy',JSON.stringify({client:currentDeployClient,checks:deployChecks}))}
+function loadDeployState(){
+  try{
+    const d=JSON.parse(localStorage.getItem('mc_deploy')||'{}');
+    currentDeployClient=d.client||'';
+    deployChecks=d.checks||{};
+  }catch(e){currentDeployClient='';deployChecks={}}
+}
+
+function saveInstallHistory(){localStorage.setItem('mc_install_history',JSON.stringify(installHistory))}
+function loadInstallHistory(){try{installHistory=JSON.parse(localStorage.getItem('mc_install_history')||'[]')}catch(e){installHistory=[]}}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+function avatarHTML(memberId, size){
+  if(!memberId) return `<span class="avatar unassigned" style="${size?'width:'+size+'px;height:'+size+'px;font-size:'+(size*0.38)+'px':''}">?</span>`;
+  const m=TEAM_MEMBERS.find(x=>x.id===memberId);
+  if(!m) return `<span class="avatar unassigned">${esc(memberId[0].toUpperCase())}</span>`;
+  return `<span class="avatar" style="background:${m.color};${size?'width:'+size+'px;height:'+size+'px;font-size:'+(size*0.38)+'px':''}">${m.initials}</span>`;
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+function openModal(id){document.getElementById(id).classList.add('open')}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'));
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.assign-pos')){
+    document.querySelectorAll('.assign-dropdown.open').forEach(d=>d.classList.remove('open'));
+  }
+});
+
+async function loadJSON(path){try{const r=await fetch(path+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+
+/* =====================================================
+   TASKS
+   ===================================================== */
+function buildFilterBar(){
+  let html='<div class="filter-chip active" data-filter="all" onclick="setFilter(\'all\',this)">All</div>';
+  TEAM_MEMBERS.forEach(m=>{
+    html+=`<div class="filter-chip" data-filter="${m.id}" onclick="setFilter('${m.id}',this)">${avatarHTML(m.id,18)} ${esc(m.name)}</div>`;
+  });
+  html+='<div class="filter-chip" data-filter="unassigned" onclick="setFilter(\'unassigned\',this)">Unassigned</div>';
+  document.getElementById('task-filters').innerHTML=html;
+}
+
+function setFilter(id,el){
+  activeFilter=id;
+  document.querySelectorAll('#task-filters .filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderTasks();
+}
+
+function getMergedTasks(){
+  const merged = allTasks.map(t=>({...t, _key:taskKey(t), _local:false}));
+  localTasks.forEach(t=>merged.push({...t, _key:taskKey(t), _local:true}));
+  return merged;
+}
+
+function renderTasks(){
+  const search=(document.getElementById('task-search').value||'').toLowerCase();
+  const tasks=getMergedTasks();
+  const groups={inProgress:[],waiting:[],completed:[]};
+
+  tasks.forEach(t=>{
+    const st=localState[t._key];
+    const name=(t.name||t.title||t.task||'').toLowerCase();
+    if(search && !name.includes(search)) return;
+    const assignee=st?.assignee||t.assignee||'';
+    if(activeFilter==='unassigned' && assignee) return;
+    if(activeFilter!=='all' && activeFilter!=='unassigned' && assignee!==activeFilter) return;
+
+    if(st?.done){groups.completed.push(t);return}
+    const s=(t.status||'').toLowerCase();
+    if(s.includes('progress'))groups.inProgress.push(t);
+    else if(s.includes('complet')||s.includes('done'))groups.completed.push(t);
+    else groups.waiting.push(t);
+  });
+
+  let html='';
+  if(groups.inProgress.length){
+    html+=`<div class="task-section-title">In Progress (${groups.inProgress.length})</div>`;
+    groups.inProgress.forEach(t=>html+=taskCardHTML(t));
+  }
+  if(groups.waiting.length){
+    html+=`<div class="task-section-title">Waiting (${groups.waiting.length})</div>`;
+    groups.waiting.forEach(t=>html+=taskCardHTML(t));
+  }
+  if(groups.completed.length){
+    html+=`<div class="task-section-title">Completed (${groups.completed.length})</div>`;
+    groups.completed.forEach(t=>html+=taskCardHTML(t));
+  }
+
+  document.getElementById('tasks-list').innerHTML=html||'<p style="color:var(--text2)">No tasks match your filters</p>';
+  document.getElementById('tasks-badge').textContent=groups.inProgress.length+groups.waiting.length;
+  document.getElementById('stat-progress').textContent=groups.inProgress.length;
+  document.getElementById('stat-completed').textContent=groups.completed.length;
+  document.getElementById('stat-waiting').textContent=groups.waiting.length;
+}
+
+function taskCardHTML(t){
+  const key=t._key;
+  const st=localState[key]||{};
+  const isDone=st.done;
+  const assignee=st.assignee||t.assignee||'';
+  const note=st.note||'';
+  const name=t.name||t.title||t.task||'';
+  const s=(t.status||'').toLowerCase();
+  let badgeClass='waiting', badgeText='Waiting';
+  if(isDone||s.includes('complet')||s.includes('done')){badgeClass='completed';badgeText='Completed'}
+  else if(s.includes('progress')){badgeClass='in-progress';badgeText='In Progress'}
+
+  const eKey=esc(key);
+  const eName=esc(name);
+
+  let actionBtn='';
+  if(badgeClass==='waiting'){
+    actionBtn=`<button class="task-btn action" onclick="actionTask('${eKey}','${eName.replace(/'/g,"\\'")}')">Action ⚡</button>`;
+  }
+
+  return `<div class="task ${isDone?'completed-local':''}" id="${eKey}">
+    <div class="task-row">
+      <span class="badge ${badgeClass}">${badgeText}</span>
+      <span class="task-name">${eName}</span>
+      <div class="task-actions">
+        ${actionBtn}
+        <button class="task-btn ${isDone?'done is-done':'done'}" onclick="toggleDone('${eKey}')">✓</button>
+        <button class="task-btn" onclick="toggleNote('${eKey}')" title="Add note">💬</button>
+        <div class="assign-pos">
+          <span onclick="toggleAssign('${eKey}')">${avatarHTML(assignee)}</span>
+          <div class="assign-dropdown" id="assign-${eKey}">
+            <div class="assign-option" onclick="assignTask('${eKey}','')">
+              <span class="avatar unassigned" style="width:22px;height:22px;font-size:9px">?</span> Unassigned
+            </div>
+            ${TEAM_MEMBERS.map(m=>`<div class="assign-option" onclick="assignTask('${eKey}','${m.id}')">
+              ${avatarHTML(m.id,22)} ${esc(m.name)}
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    ${note?`<div class="task-note">${esc(note)}</div>`:''}
+    <textarea class="task-note-input" id="note-${eKey}" placeholder="Add a note..." onblur="saveNote('${eKey}',this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.blur()}">${esc(note)}</textarea>
+  </div>`;
+}
+
+function toggleDone(key){
+  if(!localState[key])localState[key]={};
+  localState[key].done=!localState[key].done;
+  saveLocalState();renderTasks();
+  toast(localState[key].done?'Task marked complete ✓':'Task unmarked');
+}
+function toggleNote(key){
+  const el=document.getElementById('note-'+key);
+  if(!el)return;
+  const showing=el.style.display==='block';
+  el.style.display=showing?'none':'block';
+  if(!showing)el.focus();
+}
+function saveNote(key,el){
+  if(!localState[key])localState[key]={};
+  localState[key].note=el.value.trim();
+  saveLocalState();renderTasks();
+}
+function toggleAssign(key){
+  const dd=document.getElementById('assign-'+key);
+  if(!dd)return;
+  document.querySelectorAll('.assign-dropdown.open').forEach(d=>{if(d!==dd)d.classList.remove('open')});
+  dd.classList.toggle('open');
+}
+function assignTask(key,memberId){
+  if(!localState[key])localState[key]={};
+  localState[key].assignee=memberId;
+  saveLocalState();renderTasks();
+  const name=memberId?TEAM_MEMBERS.find(m=>m.id===memberId)?.name||memberId:'nobody';
+  toast(`Assigned to ${name}`);
+}
+function actionTask(key,name){
+  const text='Mika, action this task: '+name;
+  navigator.clipboard.writeText(text).then(()=>{
+    toast('Task copied — paste in Command Centre');
+    setTimeout(()=>window.open(COMMAND_CENTRE_URL,'_blank'),400);
+  }).catch(()=>{
+    window.open(COMMAND_CENTRE_URL,'_blank');
+    toast('Open Command Centre — paste task name');
+  });
+}
+
+/* =====================================================
+   NEW TASK
+   ===================================================== */
+function openNewTaskModal(){
+  const sel=document.getElementById('new-task-assignee');
+  sel.innerHTML='<option value="">Unassigned</option>';
+  TEAM_MEMBERS.forEach(m=>{sel.innerHTML+=`<option value="${m.id}">${m.name}</option>`});
+  document.getElementById('new-task-name').value='';
+  document.getElementById('new-task-status').value='waiting';
+  document.getElementById('new-task-notes').value='';
+  openModal('modal-new-task');
+  setTimeout(()=>document.getElementById('new-task-name').focus(),100);
+}
+function createTask(){
+  const name=document.getElementById('new-task-name').value.trim();
+  if(!name){toast('Task name required');return}
+  const status=document.getElementById('new-task-status').value;
+  const assignee=document.getElementById('new-task-assignee').value;
+  const notes=document.getElementById('new-task-notes').value.trim();
+  const task={name,status,assignee:assignee||''};
+  localTasks.push(task);
+  saveLocalTasks();
+  const key=taskKey(task);
+  if(assignee||notes){
+    localState[key]={assignee,note:notes,done:status.includes('complet')};
+    saveLocalState();
+  }
+  closeModal('modal-new-task');
+  renderTasks();
+  toast('Task created ✓');
+}
+
+/* =====================================================
+   DOCUMENTS
+   ===================================================== */
+function renderDocs(){
+  const search=(document.getElementById('doc-search').value||'').toLowerCase();
+  let html='';let count=0;
+  (docsData||[]).forEach(f=>{
+    const files=(f.files||[]).filter(file=>{
+      const n=typeof file==='string'?file:file.name||file.file||'';
+      return !search||n.toLowerCase().includes(search)||(f.name||f.folder||'').toLowerCase().includes(search);
+    });
+    if(search && !files.length && !(f.name||f.folder||'').toLowerCase().includes(search)) return;
+    const id='doc-'+Math.random().toString(36).slice(2,8);
+    count+=files.length;
+    html+=`<div class="doc-folder"><div class="doc-folder-header" onclick="toggleFolder('${id}',this)"><span class="arrow">▶</span> 📁 ${esc(f.name||f.folder||'')} <span style="color:var(--text2);font-size:12px;margin-left:auto">${files.length} files</span></div><div class="doc-files" id="${id}">`;
+    files.forEach(file=>{
+      const n=typeof file==='string'?file:file.name||file.file||'';
+      html+=`<div class="doc-file">📄 ${esc(n)}</div>`;
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('docs-list').innerHTML=html||'<p style="color:var(--text2)">No documents found</p>';
+  document.getElementById('docs-badge').textContent=count;
+}
+function toggleFolder(id,el){el.classList.toggle('open');document.getElementById(id).classList.toggle('open')}
+
+/* =====================================================
+   DEPLOY CHECKLIST
+   ===================================================== */
+function renderDeploy(){
+  const el=document.getElementById('deploy-content');
+  if(!currentDeployClient){
+    el.innerHTML=`
+      <div class="no-deploy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <p>No active deployment. Start a new client install.</p>
+        <div class="deploy-header" style="justify-content:center">
+          <input type="text" id="deploy-client-input" placeholder="Client name (e.g., Drew)">
+          <button class="deploy-btn primary" onclick="startDeploy()">Start New Install</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const checks=deployChecks[currentDeployClient]||{};
+  const done=DEPLOY_STEPS.reduce((n,_,i)=>n+(checks[i]?1:0),0);
+  const total=DEPLOY_STEPS.length;
+  const pct=Math.round(done/total*100);
+
+  let html=`
+    <div class="deploy-header">
+      <div style="font-size:18px;font-weight:700">Installing: ${esc(currentDeployClient)}</div>
+      <button class="deploy-btn secondary" onclick="resetDeploy()">Start New Install</button>
+      <button class="deploy-btn success" onclick="completeDeploy()" ${done<total?'disabled style="opacity:.4;cursor:not-allowed"':''}>Complete Install ✓</button>
+    </div>
+    <div class="deploy-progress">
+      <div class="progress-label"><span>Progress</span><span>${done} / ${total} — ${pct}%</span></div>
+      <div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    <ul class="checklist">`;
+
+  DEPLOY_STEPS.forEach((step,i)=>{
+    const checked=checks[i]?'checked':'';
+    html+=`
+      <li class="checklist-item ${checked}">
+        <div class="cl-row" onclick="toggleCheck(${i})">
+          <div class="cl-num">${checks[i]?'✓':(i+1)}</div>
+          <span class="cl-label">${esc(step.label)}</span>
+          <div class="cl-info" onclick="event.stopPropagation()">?<div class="cl-tooltip">${esc(step.tip)}</div></div>
+        </div>
+      </li>`;
+  });
+
+  html+='</ul>';
+  el.innerHTML=html;
+}
+
+function startDeploy(){
+  const input=document.getElementById('deploy-client-input');
+  const name=(input?input.value:'').trim();
+  if(!name){toast('Enter a client name');return}
+  currentDeployClient=name;
+  if(!deployChecks[name])deployChecks[name]={};
+  saveDeployState();
+  renderDeploy();
+  toast(`Deploy started for ${name}`);
+}
+
+function resetDeploy(){
+  currentDeployClient='';
+  saveDeployState();
+  renderDeploy();
+}
+
+function toggleCheck(i){
+  if(!deployChecks[currentDeployClient])deployChecks[currentDeployClient]={};
+  deployChecks[currentDeployClient][i]=!deployChecks[currentDeployClient][i];
+  saveDeployState();
+  renderDeploy();
+}
+
+function completeDeploy(){
+  const name=currentDeployClient;
+  document.getElementById('complete-client-name').value=name;
+  const sel=document.getElementById('complete-who');
+  sel.innerHTML='';
+  TEAM_MEMBERS.forEach(m=>{sel.innerHTML+=`<option value="${m.name}">${m.name}</option>`});
+  document.getElementById('complete-notes').value='';
+  openModal('modal-complete-install');
+}
+
+function finalizeInstall(){
+  const name=document.getElementById('complete-client-name').value;
+  const who=document.getElementById('complete-who').value;
+  const notes=document.getElementById('complete-notes').value.trim();
+  installHistory.unshift({
+    client:name,
+    date:new Date().toISOString().slice(0,10),
+    who:who,
+    notes:notes,
+    steps:DEPLOY_STEPS.length
+  });
+  saveInstallHistory();
+  // Clear the deploy
+  delete deployChecks[name];
+  currentDeployClient='';
+  saveDeployState();
+  closeModal('modal-complete-install');
+  renderDeploy();
+  renderHistory();
+  toast(`Install complete for ${name} ✓`);
+}
+
+/* =====================================================
+   CLIENT HEALTH
+   ===================================================== */
+function renderHealth(){
+  const grid=document.getElementById('health-grid');
+  if(!clientHealthData||!clientHealthData.length){
+    grid.innerHTML=`
+      <div class="health-card">
+        <div class="health-card-header"><div class="health-status-dot ${getBilling('Drew')==='suspended'?'red':'gray'}"></div><h3>Drew</h3><span class="billing-badge ${getBilling('Drew')}">${getBilling('Drew').replace('-',' ')}</span></div>
+        <div class="health-detail"><span class="hd-label">Agent</span><span class="hd-value">Drew's Agent</span></div>
+        <div class="health-detail"><span class="hd-label">Tailscale IP</span><span class="hd-value">100.124.57.91</span></div>
+        <div class="health-detail"><span class="hd-label">Status</span><span class="hd-value" style="color:var(--text2)">Awaiting sync</span></div>
+        <div class="kill-switch">
+          <span class="kill-switch-label ${getBilling('Drew')==='suspended'?'suspended':''}">Agent ${getBilling('Drew')==='suspended'?'Suspended':'Active'}</span>
+          <div class="toggle ${getBilling('Drew')==='suspended'?'off':'on'}" onclick="showKillConfirm('Drew','100.124.57.91',${getBilling('Drew')!=='suspended'})"><div class="knob"></div></div>
+        </div>
+      </div>
+      <div class="health-card">
+        <div class="health-card-header"><div class="health-status-dot ${getBilling('Darryl')==='suspended'?'red':'gray'}"></div><h3>Darryl</h3><span class="billing-badge ${getBilling('Darryl')}">${getBilling('Darryl').replace('-',' ')}</span></div>
+        <div class="health-detail"><span class="hd-label">Agent</span><span class="hd-value">Brit</span></div>
+        <div class="health-detail"><span class="hd-label">Tailscale IP</span><span class="hd-value">100.83.184.91</span></div>
+        <div class="health-detail"><span class="hd-label">Status</span><span class="hd-value" style="color:var(--text2)">Awaiting sync</span></div>
+        <a class="health-link" href="https://solveworks.io/darryl/" target="_blank">View Dashboard →</a>
+        <div class="kill-switch">
+          <span class="kill-switch-label ${getBilling('Darryl')==='suspended'?'suspended':''}">Agent ${getBilling('Darryl')==='suspended'?'Suspended':'Active'}</span>
+          <div class="toggle ${getBilling('Darryl')==='suspended'?'off':'on'}" onclick="showKillConfirm('Darryl','100.83.184.91',${getBilling('Darryl')!=='suspended'})"><div class="knob"></div></div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  let html='';
+  clientHealthData.forEach(c=>{
+    const statusColor=c.status==='healthy'?'green':c.status==='warning'?'yellow':c.status==='error'?'red':'gray';
+    const heartbeat=c.lastHeartbeat?timeAgo(c.lastHeartbeat):'Unknown';
+    const gwStatus=c.gatewayRunning?'<span style="color:var(--green)">Running</span>':'<span style="color:var(--red)">Down</span>';
+    html+=`
+      <div class="health-card">
+        <div class="health-card-header">
+          <div class="health-status-dot ${statusColor}"></div>
+          <h3>${esc(c.name||'')}</h3>
+          <span class="health-agent">${esc(c.agentName||'')}</span>
+        </div>
+        <div class="health-detail"><span class="hd-label">Tailscale IP</span><span class="hd-value">${esc(c.ip||'')}</span></div>
+        <div class="health-detail"><span class="hd-label">Gateway</span><span class="hd-value">${gwStatus}</span></div>
+        <div class="health-detail"><span class="hd-label">Last Heartbeat</span><span class="hd-value">${heartbeat}</span></div>
+        <div class="health-detail"><span class="hd-label">Uptime</span><span class="hd-value">${esc(c.uptime||'—')}</span></div>
+        <div class="health-detail"><span class="hd-label">Disk</span><span class="hd-value">${esc(c.disk||'—')}</span></div>
+        ${c.errors?`<div class="health-detail"><span class="hd-label">Errors</span><span class="hd-value error">${c.errors}</span></div>`:''}
+        ${c.dashboardUrl?`<a class="health-link" href="${esc(c.dashboardUrl)}" target="_blank">View Dashboard →</a>`:''}
+        <div class="kill-switch">
+          <span class="kill-switch-label ${getBilling(c.name)==='suspended'?'suspended':''}">Agent ${getBilling(c.name)==='suspended'?'Suspended':'Active'}</span>
+          <div class="toggle ${getBilling(c.name)==='suspended'?'off':'on'}" onclick="showKillConfirm('${esc(c.name)}','${esc(c.ip||'')}',${getBilling(c.name)!=='suspended'})"><div class="knob"></div></div>
+        </div>
+      </div>`;
+  });
+  grid.innerHTML=html;
+}
+
+function timeAgo(ts){
+  const diff=Date.now()-new Date(ts).getTime();
+  const mins=Math.floor(diff/60000);
+  if(mins<1)return 'Just now';
+  if(mins<60)return mins+'m ago';
+  const hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+
+/* =====================================================
+   INSTALL HISTORY
+   ===================================================== */
+function renderHistory(){
+  const search=(document.getElementById('history-search')?.value||'').toLowerCase();
+  const filtered=installHistory.filter(h=>
+    !search||h.client.toLowerCase().includes(search)||h.who.toLowerCase().includes(search)||(h.notes||'').toLowerCase().includes(search)
+  );
+  if(!filtered.length){
+    document.getElementById('history-list').innerHTML='<div class="history-empty">No completed installs yet</div>';
+    return;
+  }
+  let html='';
+  filtered.forEach(h=>{
+    html+=`<div class="history-item">
+      <span class="hi-badge">Complete</span>
+      <span class="hi-client">${esc(h.client)}</span>
+      <span class="hi-date">${esc(h.date)}</span>
+      <span class="hi-who">${esc(h.who)}</span>
+      <span class="hi-notes">${esc(h.notes||'—')}</span>
+    </div>`;
+  });
+  document.getElementById('history-list').innerHTML=html;
+}
+
+/* =====================================================
+   SYNC STATUS
+   ===================================================== */
+function updateSyncStatus(dashboardData){
+  const ts=dashboardData?.lastSync||dashboardData?.timestamp||dashboardData?.syncedAt;
+  const dot=document.getElementById('sync-dot');
+  const text=document.getElementById('sync-text');
+  if(!ts){text.textContent='Sync status unknown';dot.className='sync-dot stale';return}
+  const syncTime=new Date(ts);
+  const ago=Date.now()-syncTime.getTime();
+  const mins=Math.floor(ago/60000);
+  if(mins<10){dot.className='sync-dot fresh';text.textContent=`Synced ${mins<1?'just now':mins+'m ago'}`}
+  else if(mins<60){dot.className='sync-dot stale';text.textContent=`⚠ Data is ${mins}m old`}
+  else {dot.className='sync-dot old';text.textContent=`⚠ Data is ${Math.floor(mins/60)}h old — may be stale`}
+}
+
+/* =====================================================
+   INIT
+   ===================================================== */
+async function init(){
+  loadLocalState();
+  loadLocalTasks();
+  loadDeployState();
+  loadInstallHistory();
+  buildFilterBar();
+  updateClock();setInterval(updateClock,1000);
+
+  const dash=await loadJSON('data/dashboard.json');
+  if(dash) updateSyncStatus(dash);
+
+  const tasks=await loadJSON('data/tasks.json');
+  if(tasks) allTasks=tasks.tasks||tasks||[];
+  renderTasks();
+
+  const mem=await loadJSON('data/memory-recent.json');
+  if(mem){
+    const entries=mem.entries||mem;
+    let html='';
+    (Array.isArray(entries)?entries:[]).forEach(e=>{
+      html+=`<div class="feed-item"><div class="feed-date">${esc(e.date||e.file||'')}</div><div class="feed-content">${marked.parse(e.content||e.text||'')}</div></div>`;
+    });
+    document.getElementById('activity-feed').innerHTML=html||'<p style="color:var(--text2)">No recent activity</p>';
+  }
+
+  const docs=await loadJSON('data/documents.json');
+  if(docs){docsData=docs.folders||docs||[];renderDocs()}
+
+  const agents=await loadJSON('data/agents.json');
+  if(agents){
+    let html='';
+    (agents.agents||agents||[]).forEach(a=>{
+      const status=a.status||'active';
+      html+=`<div class="agent-card"><span class="agent-status ${status==='active'?'active':'standby'}">${esc(status)}</span><div class="agent-name">${esc(a.name||'')}</div><div class="agent-role">${esc(a.role||'')}</div><div class="agent-desc">${esc(a.description||a.desc||'')}</div></div>`;
+    });
+    document.getElementById('agents-grid').innerHTML=html||'<p style="color:var(--text2)">No agents configured</p>';
+    document.getElementById('stat-agents').textContent=(agents.agents||agents||[]).length;
+  }
+
+  // Client health
+  const health=await loadJSON('data/client-health.json');
+  if(health) clientHealthData=health.clients||health||[];
+  renderHealth();
+
+  // Deploy & History
+  renderDeploy();
+  renderHistory();
+}
+
+if(localStorage.getItem('mc_auth')==='1'){document.getElementById('login').classList.add('hidden');init()}
+</script>
+</body>
+</html>

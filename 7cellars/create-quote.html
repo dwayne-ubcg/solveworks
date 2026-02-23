@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7 Cellars — Create Quote</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#FAFAF8;color:#1A1A1A;min-height:100vh}
+.auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-box{background:#fff;border-radius:12px;padding:40px;max-width:360px;width:100%;box-shadow:0 2px 12px rgba(0,0,0,.08);text-align:center}
+.auth-box h1{font-size:24px;color:#0D1B2A;margin-bottom:4px}
+.auth-box p{color:#666;font-size:14px;margin-bottom:24px}
+.auth-box input{width:100%;padding:12px 16px;border:1px solid #E5E5E5;border-radius:8px;font-size:16px;margin-bottom:16px;font-family:inherit}
+.auth-box button{width:100%;padding:12px;background:#0D1B2A;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}
+.auth-box .error{color:#DC2626;font-size:13px;margin-top:8px}
+
+.app{display:none;max-width:700px;margin:0 auto;padding:20px 16px 60px}
+.header{text-align:center;padding:24px 0 20px}
+.header h1{font-size:22px;color:#0D1B2A;font-weight:700}
+.header p{color:#666;font-size:13px}
+
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#0D1B2A;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1px solid #E5E5E5;border-radius:8px;font-size:15px;font-family:inherit;background:#fff}
+.form-group textarea{height:80px;resize:vertical}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#0D1B2A;box-shadow:0 0 0 2px rgba(13,27,42,.1)}
+
+.row{display:flex;gap:12px}
+.row .form-group{flex:1}
+
+.wine-selector{position:relative}
+.wine-selector input{padding-right:40px}
+.wine-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #E5E5E5;border-radius:8px;max-height:240px;overflow-y:auto;z-index:10;display:none;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.wine-dropdown.show{display:block}
+.wine-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:14px}
+.wine-item:hover{background:#F5F5F3}
+.wine-item .sku{color:#666;font-size:12px;font-family:monospace}
+.wine-item .price{color:#0D1B2A;font-weight:600;font-size:13px;float:right}
+
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-primary{background:#0D1B2A;color:#fff}
+.btn-secondary{background:#E5E5E5;color:#1A1A1A}
+.btn-success{background:#16A34A;color:#fff}
+.btn-add{background:#0D1B2A;color:#fff;width:100%;padding:12px;font-size:15px;margin-top:8px}
+
+.line-items{margin:20px 0}
+.line-items h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0D1B2A;margin-bottom:12px}
+.line-items table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.line-items th{padding:10px 12px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#0D1B2A;background:#F5F5F3;border-bottom:2px solid #0D1B2A}
+.line-items td{padding:10px 12px;font-size:14px;border-bottom:1px solid #E5E5E5;vertical-align:middle}
+.line-items .qty-input{width:60px;padding:6px 8px;border:1px solid #E5E5E5;border-radius:6px;font-size:14px;text-align:center}
+.line-items .remove-btn{background:none;border:none;color:#DC2626;cursor:pointer;font-size:18px;padding:4px 8px}
+.subtotal-row{background:#0D1B2A!important}
+.subtotal-row td{color:#fff!important;font-weight:700;font-size:16px;border:none!important}
+
+.submit-btn{width:100%;padding:16px;background:#0D1B2A;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;font-family:inherit}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+
+.success-screen{display:none;text-align:center;padding:40px 20px;background:#fff;border-radius:12px;margin-top:20px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.success-screen .check{font-size:48px;margin-bottom:12px}
+.success-screen h2{color:#16A34A;margin-bottom:8px}
+.success-screen .quote-url{display:block;margin:16px 0;padding:12px;background:#F5F5F3;border-radius:8px;word-break:break-all;font-size:14px;color:#0D1B2A;font-weight:500}
+.success-screen .actions{display:flex;gap:12px;justify-content:center;margin-top:20px}
+
+.empty-state{text-align:center;padding:32px;color:#999;font-size:14px}
+
+@media(max-width:600px){
+  .row{flex-direction:column;gap:0}
+  .line-items{overflow-x:auto}
+  .line-items table{min-width:500px}
+}
+</style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <h1>7 Cellars</h1>
+    <p>Quote Creator — Enter password</p>
+    <input type="password" id="authPassword" placeholder="Password" autofocus>
+    <button onclick="authenticate()">Enter</button>
+    <div class="error" id="authError"></div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app" id="app">
+  <div class="header">
+    <h1>7 Cellars</h1>
+    <p>Quote Creator</p>
+  </div>
+
+  <div id="formSection">
+    <div class="row">
+      <div class="form-group">
+        <label>Customer Name</label>
+        <input type="text" id="customerName" placeholder="e.g. Ritz Carlton" list="customerList">
+        <datalist id="customerList"></datalist>
+      </div>
+      <div class="form-group">
+        <label>Email (optional)</label>
+        <input type="email" id="customerEmail" placeholder="buyer@example.com">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px">
+      <div class="form-group" style="flex:1">
+        <label>Base Pricing</label>
+        <select id="pricingTier" onchange="updateWineDropdown()">
+          <option value="1">Tier 1 (Retail)</option>
+          <option value="2" selected>Tier 2 (Wholesale)</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1">
+        <label>Discount %</label>
+        <input type="number" id="discountPct" min="0" max="100" step="1" value="0" placeholder="0" onchange="applyDiscount()">
+      </div>
+    </div>
+    <p style="font-size:11px;color:#888;margin:-8px 0 8px">Base price sets the default. You can edit each line item's price individually after adding.</p>
+
+    <div class="form-group wine-selector">
+      <label>Add Wine</label>
+      <input type="text" id="wineSearch" placeholder="Search wines..." oninput="filterWines()" onfocus="filterWines()">
+      <div class="wine-dropdown" id="wineDropdown"></div>
+    </div>
+
+    <div class="line-items">
+      <h3>Line Items</h3>
+      <div id="lineItemsContainer">
+        <div class="empty-state" id="emptyState">No wines added yet. Search and select wines above.</div>
+        <table id="lineItemsTable" style="display:none">
+          <thead>
+            <tr>
+              <th>Wine</th>
+              <th>SKU</th>
+              <th style="text-align:center">Qty</th>
+              <th style="text-align:right">Price</th>
+              <th style="text-align:right">Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="lineItemsBody"></tbody>
+          <tfoot>
+            <tr class="subtotal-row">
+              <td colspan="4" style="text-align:right">Subtotal (KYD)</td>
+              <td style="text-align:right" id="subtotalValue">$0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Notes / Terms</label>
+      <textarea id="quoteNotes" placeholder="e.g. Net 30 terms, delivery instructions..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Valid Until</label>
+      <input type="date" id="validUntil">
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="createQuote()">Create Quote & Get Link</button>
+  </div>
+
+  <div class="success-screen" id="successScreen">
+    <div class="check">✅</div>
+    <h2>Quote Created!</h2>
+    <p id="successQuoteNum"></p>
+    <a class="quote-url" id="successUrl" href="#" target="_blank"></a>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="copyLink()">📋 Copy Link</button>
+      <button class="btn btn-success" onclick="createAnother()">+ Create Another</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  ? 'http://localhost:3847' 
+  : 'http://macmini.local:3847';
+const AUTH_PASSWORD = 'quotes7c';
+const API_TOKEN = 'quotes7c2026';
+
+let wines = [];
+let lineItems = [];
+let customers = [];
+
+function authenticate() {
+  const pw = document.getElementById('authPassword').value;
+  if (pw === AUTH_PASSWORD) {
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('authError').textContent = 'Wrong password';
+  }
+}
+
+document.getElementById('authPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') authenticate();
+});
+
+async function loadData() {
+  // Set default valid until (30 days)
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  document.getElementById('validUntil').value = d.toISOString().slice(0, 10);
+
+  // Load inventory
+  try {
+    const base = window.location.pathname.replace(/\/[^/]*$/, '');
+    const res = await fetch(base + '/data/cin7-inventory.json');
+    const raw = await res.text();
+    // Handle both array and object format
+    const parsed = JSON.parse(raw);
+    wines = Array.isArray(parsed) ? parsed : (parsed.products || [parsed]);
+    wines = wines.filter(w => w.SKU && w.Name && w.Status === 'Active');
+  } catch(e) { 
+    console.error('Failed to load inventory:', e);
+    wines = [];
+  }
+
+  // Load customers
+  try {
+    const base = window.location.pathname.replace(/\/[^/]*$/, '');
+    const res = await fetch(base + '/data/customers.json');
+    customers = await res.json();
+    const dl = document.getElementById('customerList');
+    customers.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      dl.appendChild(opt);
+    });
+  } catch(e) { console.error('Failed to load customers:', e); }
+}
+
+function filterWines() {
+  const q = document.getElementById('wineSearch').value.toLowerCase();
+  const dd = document.getElementById('wineDropdown');
+  const tier = document.getElementById('pricingTier').value;
+  
+  if (!q && wines.length > 50) {
+    dd.classList.remove('show');
+    return;
+  }
+
+  const filtered = wines.filter(w => {
+    const name = (w.Name || '').toLowerCase();
+    const sku = (w.SKU || '').toLowerCase();
+    return name.includes(q) || sku.includes(q);
+  }).slice(0, 20);
+
+  if (filtered.length === 0) {
+    dd.innerHTML = '<div class="wine-item" style="color:#999">No wines found</div>';
+  } else {
+    dd.innerHTML = filtered.map(w => {
+      const price = tier === '1' ? (w.PriceTier1 || 0) : (w.PriceTier2 || 0);
+      const priceStr = price > 0 ? `$${price.toFixed(2)}` : 'No price set';
+      return `<div class="wine-item" onclick='selectWine(${JSON.stringify(w).replace(/'/g, "&#39;")})'>
+        <span class="price">${priceStr}</span>
+        ${w.Name}<br><span class="sku">${w.SKU}</span>
+      </div>`;
+    }).join('');
+  }
+  dd.classList.add('show');
+}
+
+function selectWine(wine) {
+  const tier = document.getElementById('pricingTier').value;
+  const basePrice = tier === '1' ? (wine.PriceTier1 || 0) : (wine.PriceTier2 || 0);
+  const pct = parseFloat(document.getElementById('discountPct').value) || 0;
+  const price = Math.round((basePrice * (1 - pct / 100)) * 100) / 100;
+  
+  lineItems.push({
+    sku: wine.SKU,
+    name: wine.Name,
+    qty: 1,
+    price: price
+  });
+
+  document.getElementById('wineSearch').value = '';
+  document.getElementById('wineDropdown').classList.remove('show');
+  renderLineItems();
+}
+
+function updateWineDropdown() {
+  // Refilter if dropdown is open
+  if (document.getElementById('wineDropdown').classList.contains('show')) {
+    filterWines();
+  }
+}
+
+function renderLineItems() {
+  const tbody = document.getElementById('lineItemsBody');
+  const table = document.getElementById('lineItemsTable');
+  const empty = document.getElementById('emptyState');
+
+  if (lineItems.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  table.style.display = 'table';
+  empty.style.display = 'none';
+
+  tbody.innerHTML = lineItems.map((item, i) => `
+    <tr>
+      <td style="font-size:13px">${item.name}</td>
+      <td style="font-family:monospace;font-size:12px;color:#666">${item.sku}</td>
+      <td style="text-align:center"><input class="qty-input" type="number" min="1" value="${item.qty}" onchange="updateQty(${i}, this.value)"></td>
+      <td style="text-align:right"><input class="qty-input" style="width:80px" type="number" step="0.01" min="0" value="${item.price.toFixed(2)}" onchange="updatePrice(${i}, this.value)"></td>
+      <td style="text-align:right;font-weight:600">$${(item.qty * item.price).toFixed(2)}</td>
+      <td><button class="remove-btn" onclick="removeItem(${i})">×</button></td>
+    </tr>
+  `).join('');
+
+  const subtotal = lineItems.reduce((s, i) => s + i.qty * i.price, 0);
+  document.getElementById('subtotalValue').textContent = `$${subtotal.toFixed(2)}`;
+}
+
+function updateQty(i, val) { lineItems[i].qty = parseInt(val) || 1; renderLineItems(); }
+function updatePrice(i, val) { lineItems[i].price = parseFloat(val) || 0; renderLineItems(); }
+function removeItem(i) { lineItems.splice(i, 1); renderLineItems(); }
+function applyDiscount() {
+  const pct = parseFloat(document.getElementById('discountPct').value) || 0;
+  const tier = document.getElementById('pricingTier').value;
+  lineItems.forEach(item => {
+    const wine = wines.find(w => w.SKU === item.sku);
+    if (wine) {
+      const base = tier === '1' ? (wine.PriceTier1 || 0) : (wine.PriceTier2 || 0);
+      item.price = Math.round((base * (1 - pct / 100)) * 100) / 100;
+    }
+  });
+  renderLineItems();
+}
+
+async function createQuote() {
+  const customer = document.getElementById('customerName').value.trim();
+  if (!customer) return alert('Please enter a customer name');
+  if (lineItems.length === 0) return alert('Please add at least one wine');
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating...';
+
+  const payload = {
+    customer,
+    email: document.getElementById('customerEmail').value.trim(),
+    tier: document.getElementById('pricingTier').value === '1' ? 'Tier 1' : 'Tier 2',
+    items: lineItems,
+    notes: document.getElementById('quoteNotes').value.trim(),
+    validUntil: document.getElementById('validUntil').value
+  };
+
+  try {
+    const res = await fetch(API_URL + '/api/create-quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Auth-Token': API_TOKEN },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('formSection').style.display = 'none';
+      document.getElementById('successScreen').style.display = 'block';
+      document.getElementById('successQuoteNum').textContent = data.quoteNum;
+      document.getElementById('successUrl').textContent = data.url;
+      document.getElementById('successUrl').href = data.url;
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch(e) {
+    alert('Failed to connect to API: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Create Quote & Get Link';
+}
+
+function copyLink() {
+  const url = document.getElementById('successUrl').textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = event.target;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy Link', 2000);
+  });
+}
+
+function createAnother() {
+  document.getElementById('formSection').style.display = 'block';
+  document.getElementById('successScreen').style.display = 'none';
+  document.getElementById('customerName').value = '';
+  document.getElementById('customerEmail').value = '';
+  document.getElementById('quoteNotes').value = '';
+  lineItems = [];
+  renderLineItems();
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.wine-selector')) {
+    document.getElementById('wineDropdown').classList.remove('show');
+  }
+});
+</script>
+</body>
+</html>

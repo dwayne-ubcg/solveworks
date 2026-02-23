@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveWorks — AI Automation Proposal for Ace Upholstery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & PRINT === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .solution-card,
+            .package-card,
+            .roi-card,
+            .roi-grid,
+            .timeline-item,
+            .bonus-card,
+            .packages-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #94a3b8;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.8in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #0ea5e9;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+
+        .solution-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .solution-price {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .solution-price .monthly {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0a0a1a;
+        }
+
+        .solution-price .period {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .solution-price .setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === PACKAGES === */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 22px 18px;
+            text-align: center;
+            position: relative;
+            page-break-inside: avoid;
+        }
+
+        .package-card.featured {
+            border: 2px solid #0ea5e9;
+            background: linear-gradient(180deg, #f0f9ff 0%, white 30%);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+
+        .package-name {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .package-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0a0a1a;
+            line-height: 1;
+        }
+
+        .package-price sup {
+            font-size: 16px;
+            font-weight: 600;
+            top: -10px;
+        }
+
+        .package-period {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .package-setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .package-features {
+            list-style: none;
+            text-align: left;
+            padding: 0;
+        }
+
+        .package-features li {
+            font-size: 11px;
+            color: #374151;
+            padding: 4px 0;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .package-tagline {
+            font-size: 11px;
+            color: #0ea5e9;
+            font-style: italic;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* === ROI SECTION === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === BONUS CARDS === */
+        .bonus-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 4px;
+        }
+
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #1e3a5f;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* === HOW YOU'LL USE IT — CHAT MOCK === */
+        .chat-mock {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+
+        .chat-bubble.user {
+            background: #0ea5e9;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.agent {
+            background: #1e293b;
+            color: #e2e8f0;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+
+        .chat-clear { clear: both; }
+
+        .chat-time {
+            text-align: center;
+            font-size: 9px;
+            color: #475569;
+            margin: 10px 0;
+            clear: both;
+        }
+
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #374151;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: COVER -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>AI Automation<br>Proposal for<br><span>Ace Upholstery</span></h1>
+        <div class="cover-subtitle">Fewer missed calls. Faster quotes. More time for the craft.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> February 19, 2026<br>
+            <strong>Prepared for:</strong> Taura Lee — Ace Upholstery<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- PAGE 2: WHAT WE HEARD -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>What We <span>Heard</span></h2>
+            <div class="section-subtitle">Understanding Ace Upholstery's challenges and opportunities</div>
+
+            <p class="intro-text">
+                Ace Upholstery has built a strong reputation in Halifax for custom upholstery, draperies, blinds, wallpaper, and decorating services. Your clients trust you with their homes — from breathing new life into heirloom furniture to designing custom window coverings that transform a room. That level of craft takes time, and <strong>your time shouldn't be eaten up by admin work.</strong>
+            </p>
+
+            <p class="intro-text">
+                Right now, customer inquiries come in and sometimes sit for hours. Scheduling is a back-and-forth game of emails and phone calls. Every quote gets built from scratch, even for similar jobs. Your CRM exists but rarely gets updated because there's no time. And past customers — the ones who'd gladly come back for draperies after you reupholstered their sofa — <strong>only hear from you when someone remembers to follow up.</strong>
+            </p>
+
+            <p class="intro-text">
+                You told us you're losing a few leads each month to slow follow-up, spending 5–10 hours a week on data entry alone, and your team burns 1–3 hours per person daily on repetitive tasks. That's time that should be spent on the work your clients actually hire you for.
+            </p>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">17hrs</div>
+                    <div class="roi-label">Estimated hours saved<br>per week with automation</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">67/100</div>
+                    <div class="roi-label">AI Readiness Score —<br>strong foundation to build on</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">24/7</div>
+                    <div class="roi-label">Customer response &<br>lead capture — even after hours</div>
+                </div>
+            </div>
+
+            <p class="disclaimer">* Hours saved estimated from your audit responses across communication, admin, and sales workflows.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Taura Lee</span>
+        </div>
+    </div>
+
+    <!-- PAGE 3: SOLUTIONS (1 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions</div>
+            </div>
+
+            <h2>What We'll <span>Build</span></h2>
+            <div class="section-subtitle">Five AI-powered systems designed specifically for Ace Upholstery</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">💬</div>
+                        <div>
+                            <h3>Auto-Response & Follow-Up Agent</h3>
+                            <div class="solution-card-desc">Never leave a customer waiting again</div>
+                        </div>
+                    </div>
+                </div>
+                <p>When someone reaches out about reupholstering a couch or getting a quote on custom draperies, they get an <strong>instant, helpful response</strong> — even at 9pm. The agent answers common questions about your services, collects job details, and routes hot leads to you. It also <strong>automatically follows up with past customers</strong> — the client who got blinds last year might be ready for wallpaper now.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Instant inquiry response</span>
+                    <span class="benefit-tag">Automated past-client follow-ups</span>
+                    <span class="benefit-tag">After-hours coverage</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📅</div>
+                        <div>
+                            <h3>Smart Scheduling Assistant</h3>
+                            <div class="solution-card-desc">No more back-and-forth emails to book a consultation</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Clients can book consultations, in-home measurements, or follow-up appointments <strong>without a single phone call</strong>. The assistant checks your availability, confirms the booking, and sends reminders. Whether it's a residential upholstery consultation or a commercial window covering install — scheduling just happens.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Self-serve booking</span>
+                    <span class="benefit-tag">Automatic reminders</span>
+                    <span class="benefit-tag">Calendar sync</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📋</div>
+                        <div>
+                            <h3>Quote & Proposal Generator</h3>
+                            <div class="solution-card-desc">Professional quotes in minutes, not hours</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Stop building every quote from scratch. Enter the job details — fabric type, piece count, window measurements — and the system <strong>auto-generates a polished, branded quote</strong> from your templates. Covers upholstery, draperies, blinds, wallpaper, and decorating packages. Clients get a professional PDF that reflects the quality of your work.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Template-based quotes</span>
+                    <span class="benefit-tag">Branded PDFs</span>
+                    <span class="benefit-tag">Multi-service support</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Taura Lee</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4: SOLUTIONS (2 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🔄</div>
+                        <div>
+                            <h3>CRM Auto-Pilot</h3>
+                            <div class="solution-card-desc">Your CRM stays current without you touching it</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Every email inquiry, phone call, quote sent, and job completed gets <strong>automatically logged in your CRM</strong>. No more manual updates, no more forgetting to add a new contact. You'll always know where a client is in the pipeline — from first inquiry about upholstery services to completed window covering install and beyond.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Auto-log from emails & calls</span>
+                    <span class="benefit-tag">Pipeline visibility</span>
+                    <span class="benefit-tag">Zero manual entry</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">⭐</div>
+                        <div>
+                            <h3>Customer Review & Feedback Engine</h3>
+                            <div class="solution-card-desc">Turn great work into great reviews — automatically</div>
+                        </div>
+                    </div>
+                </div>
+                <p>After every completed job, your customer automatically gets a friendly request to leave a review. The system aggregates feedback, flags anything that needs attention, and <strong>surfaces insights about what clients love most</strong> — whether it's your upholstery craftsmanship, your decorating eye, or your in-home consultation experience. More 5-star reviews, less manual asking.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Automated review requests</span>
+                    <span class="benefit-tag">Feedback aggregation</span>
+                    <span class="benefit-tag">Reputation building</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0369a1; margin-bottom: 8px;">💡 These Systems Work Together</h3>
+                <p style="font-size: 12px; color: #1e3a5f; margin-bottom: 0; line-height: 1.7;">A new lead inquires about custom draperies → they get an instant response → book a consultation on your calendar → receive a polished quote the same day → the CRM tracks it all → after the install, they're asked for a review. <strong>That entire journey happens automatically.</strong> You just focus on the craft.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Taura Lee</span>
+        </div>
+    </div>
+
+    <!-- PAGE: HOW YOU'LL USE IT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">How You'll Use It</div>
+            </div>
+
+            <h2>How You'll <span>Use It</span></h2>
+            <div class="section-subtitle">No dashboards. No complex software. Just text your agent like you'd text a team member.</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Today • via Telegram</div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Taura</div>
+                    Did anyone call about the sofa reupholstery quote I sent last week?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Yes — Karen Williams called at 10:20 AM. She wants to go ahead with the cream linen on the 3-seater. I've confirmed the quote and asked her to pick a drop-off day. She's leaning toward Tuesday.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Taura</div>
+                    Perfect. Book her in Tuesday morning and remind me Monday night to prep the workspace
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Done ✓ Karen's booked for Tuesday at 9 AM drop-off. I've sent her a confirmation with your address and set a reminder for you Monday at 7 PM. I also updated her job status in your tracker.
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">💬</div>
+                    <div>
+                        <div class="usage-point-text">Text-based</div>
+                        <div class="usage-point-desc">Works on any phone, any time — Telegram or WhatsApp</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🧠</div>
+                    <div>
+                        <div class="usage-point-text">Remembers everything</div>
+                        <div class="usage-point-desc">Knows your clients, fabrics, job history, and preferences</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚡</div>
+                    <div>
+                        <div class="usage-point-text">Available 24/7</div>
+                        <div class="usage-point-desc">No waiting for office hours — your agent never sleeps</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🔒</div>
+                    <div>
+                        <div class="usage-point-text">Private and secure</div>
+                        <div class="usage-point-desc">Your data stays yours — always</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Taura Lee</span>
+        </div>
+    </div>
+
+    <!-- PAGE 5: BEYOND WHAT YOU ASKED FOR -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Beyond What You Asked For</div>
+            </div>
+
+            <h2>Beyond What You <span>Asked For</span></h2>
+            <div class="section-subtitle">Extra capabilities we'd build in to make your systems even more powerful</div>
+
+            <p class="intro-text">
+                These aren't add-ons or upsells — they're things we noticed would make a real difference for a business like Ace Upholstery, based on how you work and the services you offer.
+            </p>
+
+            <div class="bonus-card">
+                <h3>📸 Photo-Based Quoting</h3>
+                <p>A customer texts or emails a photo of their worn-out sofa or dated window coverings. AI analyzes the image and provides a <strong>preliminary estimate range</strong> before you even visit — setting expectations early and qualifying serious inquiries faster.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>🔔 Automated Appointment Reminders</h3>
+                <p>Reduce no-shows for in-home consultations and measurement appointments with <strong>automatic text and email reminders</strong> at 24 hours and 1 hour before. Clients can confirm or reschedule with a single tap — no phone tag required.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>🌿 Seasonal Marketing Automation</h3>
+                <p>Upholstery and decorating have natural seasons. Automatically send <strong>targeted campaigns during slow periods</strong> — spring refresh promos, fall reupholstery specials, New Year "new room" packages — to past clients who are most likely to book again.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>📍 Job Status Updates</h3>
+                <p>Once a project is underway — whether it's a couch being reupholstered in your shop or custom draperies being fabricated — clients get <strong>automated progress updates</strong> via text or email. Less "is it ready yet?" calls, more peace of mind for your customers.</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">🔑 Why These Matter</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">Your clients are choosing Ace because of the personal touch and craftsmanship. These extras <strong style="color: #e2e8f0;">amplify that experience</strong> — they make every interaction feel premium without adding a single hour to your week. The result: happier customers, more referrals, and a reputation that grows itself.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Taura Lee</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6: TIMELINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>How It <span>Works</span></h2>
+            <div class="section-subtitle">From kickoff to fully operational in weeks, not months</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Discovery</div>
+                        <h3>Deep Dive Into Your Business</h3>
+                        <p>We learn everything about how Ace Upholstery operates — your service flow from inquiry to completed job, your quoting process for upholstery vs. draperies vs. blinds, your client communication style, and the tools you already use. We map out exactly where automation fits without disrupting what already works.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 2–3 — Build</div>
+                        <h3>Configure & Customize</h3>
+                        <p>We build your AI systems — training the auto-responder on your services and pricing, setting up quote templates for each service line, connecting your CRM, and configuring the scheduling assistant with your availability. Everything is tailored to how Ace actually works.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Deploy</div>
+                        <h3>Go Live with Support</h3>
+                        <p>We launch everything with you and your team. You'll see it working in real-time — a test inquiry comes in, gets responded to, books a consultation, and generates a quote. We make sure you and your team are comfortable before stepping back.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Optimize</div>
+                        <h3>Refine & Improve</h3>
+                        <p>We monitor performance, refine responses based on real customer interactions, and continuously improve. As your business evolves — new services, seasonal changes, growing team — your systems evolve with you.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">4wks</div>
+                    <div class="roi-label">From kickoff to<br>fully operational</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">Easy</div>
+                    <div class="roi-label">Designed for teams<br>who aren't "tech people"</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">∞</div>
+                    <div class="roi-label">Ongoing support &<br>continuous improvement</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Taura Lee</span>
+        </div>
+    </div>
+
+    <!-- PAGE 7: CTA -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Let's build your<br>automation system.</h2>
+        <p>Every hour you spend on admin is an hour you're not spending on the craft your clients love. Let's fix that — book a 30-minute call and we'll map out exactly what this looks like for Ace Upholstery.</p>
+        <a href="https://calendly.com/brody1schofield/30min" class="cta-button">Book Your 30-Minute Call →</a>
+        <div class="cta-contact">
+            <p><a href="https://calendly.com/brody1schofield/30min">calendly.com/brody1schofield/30min</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> | <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>

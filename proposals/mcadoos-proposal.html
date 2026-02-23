@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Automation Proposal — McAdoo's Landscaping & Excavating</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: letter; margin: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+        .page:last-child { page-break-after: auto; }
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child { page-break-after: auto !important; }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .solution-card, .package-card, .roi-card, .roi-grid, .timeline-item, .bonus-card, .packages-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .cover h1 span { color: #0ea5e9; }
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+        .cover-meta strong { color: #94a3b8; }
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+        .content { padding: 0.8in 1.0in; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+        h2 span { color: #0ea5e9; }
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+        .solution-card-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        .timeline { margin-top: 20px; }
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .bonus-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 4px;
+        }
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #1e3a5f;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+        .chat-mock {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+        .chat-bubble.user {
+            background: #0ea5e9;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.agent {
+            background: #1e293b;
+            color: #e2e8f0;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+        .chat-clear { clear: both; }
+        .chat-time {
+            text-align: center;
+            font-size: 9px;
+            color: #475569;
+            margin: 10px 0;
+            clear: both;
+        }
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #374151;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === PAGE 1: COVER === -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>AI Automation<br>Proposal for<br><span>McAdoo's</span></h1>
+        <div class="cover-subtitle">Fewer missed calls. Less admin. More jobs done right.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> February 19, 2026<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io<br>
+            <strong>Prepared for:</strong> Tyler McAdoo
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- === PAGE 2: WHAT WE HEARD === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>What We <span>Heard</span></h2>
+            <div class="section-subtitle">Your challenges, in your words — here's what we're solving for</div>
+
+            <p class="intro-text">
+                Tyler, you've built McAdoo's from the ground up since the late '90s — landscaping, excavating, snow removal, dumpsters, water delivery — serving the Windsor to Wolfville corridor. Your reputation is built on doing the job right the first time. But right now, <strong>the business side is holding you back</strong> from what you do best.
+            </p>
+            <p class="intro-text">
+                Customers call and you can't always pick up — you're on a job site operating equipment, not sitting at a desk. By the time you get back to them, they've already called someone else. Scheduling is a back-and-forth mess of calls and emails. Admin eats <strong>10+ hours every week</strong>. You're running on gut feeling with no real data, and your team spends hours on repetitive tasks that should take minutes. You're leaving money on the table — not because of the quality of your work, but because the <strong>systems around you aren't keeping up</strong>.
+            </p>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">21hrs</div>
+                    <div class="roi-label">Wasted per week on<br>manual tasks &amp; admin</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">85%</div>
+                    <div class="roi-label">AI readiness score —<br>huge automation potential</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">24/7</div>
+                    <div class="roi-label">Customer response<br>you should have</div>
+                </div>
+            </div>
+
+            <p class="disclaimer">* Hours estimate based on your audit responses across communication, admin, sales, reporting, and team productivity.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Tyler McAdoo</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 3: SOLUTIONS (1 of 2) === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions</div>
+            </div>
+
+            <h2>What We'll <span>Build</span></h2>
+            <div class="section-subtitle">AI systems designed specifically for a landscaping &amp; excavating operation</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📞</div>
+                        <div>
+                            <h3>24/7 Customer Response Agent</h3>
+                            <div class="solution-card-desc">Never lose a job because you were on a job</div>
+                        </div>
+                    </div>
+                </div>
+                <p>When a customer calls, emails, or messages through your website or Facebook, your AI agent responds <strong>instantly</strong> — even at 6 AM on a Saturday. It answers common questions (pricing ballparks, service areas, availability), captures the lead details, and sends you a clean summary. No more "sorry I missed your call" voicemails. Customers get the fast, professional response they expect, and you don't lose the job to someone who picked up first.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Instant response</span>
+                    <span class="benefit-tag">Lead capture</span>
+                    <span class="benefit-tag">After-hours coverage</span>
+                    <span class="benefit-tag">Facebook &amp; email</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📅</div>
+                        <div>
+                            <h3>Smart Scheduling &amp; Dispatch</h3>
+                            <div class="solution-card-desc">End the back-and-forth email and phone tag</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Instead of 5 emails to book one site visit, your agent handles scheduling automatically. It knows your crew's availability, accounts for travel time between Windsor, Wolfville, and Kennetcook, and books jobs into your calendar. Customers get a confirmation instantly. Reschedules? The agent handles those too — no phone tag required.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Auto-booking</span>
+                    <span class="benefit-tag">Route awareness</span>
+                    <span class="benefit-tag">Calendar sync</span>
+                    <span class="benefit-tag">Instant confirmations</span>
+                    <span class="benefit-tag">Reschedule handling</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📋</div>
+                        <div>
+                            <h3>Automated Admin &amp; Follow-Up</h3>
+                            <div class="solution-card-desc">Get 10+ hours per week back</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Every quote you send gets an automatic follow-up if the customer hasn't responded. Job completion triggers a thank-you message and a review request. Repeat customers get seasonal reminders — "Time to book spring cleanup?" or "Want to get on the snow removal schedule?" All the follow-up you know you should be doing but never have time for, <strong>handled automatically</strong>.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Quote follow-ups</span>
+                    <span class="benefit-tag">Review requests</span>
+                    <span class="benefit-tag">Seasonal reminders</span>
+                    <span class="benefit-tag">10+ hrs/week saved</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Tyler McAdoo</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 4: SOLUTIONS (2 of 2) === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🎯</div>
+                        <div>
+                            <h3>Lead &amp; Opportunity Tracker</h3>
+                            <div class="solution-card-desc">Stop missing opportunities that are already in your pipeline</div>
+                        </div>
+                    </div>
+                </div>
+                <p>You said you have a CRM but you're still missing lots of opportunities. Your agent automatically logs every inquiry, tracks where each lead stands, and flags the ones going cold before they slip away. No more "I forgot to follow up on that excavating quote." You'll see exactly how many leads came in, how many converted, and where the gaps are — <strong>without ever opening a spreadsheet</strong>.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Auto lead logging</span>
+                    <span class="benefit-tag">Pipeline tracking</span>
+                    <span class="benefit-tag">Cold lead alerts</span>
+                    <span class="benefit-tag">Conversion visibility</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📊</div>
+                        <div>
+                            <h3>Business Intelligence Dashboard</h3>
+                            <div class="solution-card-desc">Replace gut feeling with real numbers</div>
+                        </div>
+                    </div>
+                </div>
+                <p>You told us you're running on gut feeling with no tracking. Your agent changes that — it collects data from every job, every quote, every customer interaction and turns it into simple, actionable insights. Which services are most profitable? What's your close rate on excavating vs. landscaping quotes? Which months are busiest? You get a <strong>weekly summary sent right to your phone</strong> — no report-building required.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Auto data collection</span>
+                    <span class="benefit-tag">Weekly reports</span>
+                    <span class="benefit-tag">Service profitability</span>
+                    <span class="benefit-tag">Seasonal trends</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">⚙️</div>
+                        <div>
+                            <h3>Team SOPs &amp; Process Standardization</h3>
+                            <div class="solution-card-desc">Same quality, every crew, every time</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Your team does things differently every time — ad hoc processes with no consistency. Your agent creates and enforces standard checklists for every service type: excavating site prep, landscaping installs, snow removal routes, dumpster drops. Crew members can text the agent for guidance on any procedure. New hires get up to speed faster. Your reputation for "done right the first time" becomes <strong>systematic, not accidental</strong>.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Service checklists</span>
+                    <span class="benefit-tag">Crew guidance</span>
+                    <span class="benefit-tag">Faster onboarding</span>
+                    <span class="benefit-tag">Consistent quality</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0369a1; margin-bottom: 8px;">💡 Why This Works for You</h3>
+                <p style="font-size: 12.5px; color: #1e3a5f; margin-bottom: 0; line-height: 1.7;">
+                    This isn't six separate tools — it's <strong>one AI agent</strong> that understands your entire operation. It knows your services, your service area, your seasonal rhythms, and your customers. You talk to it like you'd text an employee. It runs 24/7 and gets smarter every week.
+                </p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Tyler McAdoo</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 5: HOW YOU'LL USE IT === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">How You'll Use It</div>
+            </div>
+
+            <h2>How You'll <span>Use It</span></h2>
+            <div class="section-subtitle">No dashboards. No complex software. Just text your agent like you'd text a team member.</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Today • via Telegram</div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Tyler</div>
+                    Did anyone call about that excavating job in Wolfville?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Yes — Mark Thompson called at 8:45 AM about a foundation dig on Elm Street. I got the details: new garage build, roughly 24x30. He wants a site visit this week. Want me to book him in?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Tyler</div>
+                    Yeah put him in Wednesday morning. Also how many quotes did we send out last week?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Done ✓ Mark is booked for Wednesday at 9 AM — confirmation sent to him. Last week you sent 11 quotes: 5 landscaping, 4 excavating, 2 snow removal. 7 have been accepted, 2 are pending follow-up (I'll nudge them today), and 2 declined.
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">💬</div>
+                    <div>
+                        <div class="usage-point-text">Text-based</div>
+                        <div class="usage-point-desc">Works on any phone, any time — even from the job site</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🧠</div>
+                    <div>
+                        <div class="usage-point-text">Remembers everything</div>
+                        <div class="usage-point-desc">Knows your customers, jobs, quotes, and schedule</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚡</div>
+                    <div>
+                        <div class="usage-point-text">Available 24/7</div>
+                        <div class="usage-point-desc">Catches leads at 6 AM and 10 PM — your agent never sleeps</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🔒</div>
+                    <div>
+                        <div class="usage-point-text">Private and secure</div>
+                        <div class="usage-point-desc">Your data stays yours — always</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Tyler McAdoo</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 6: BEYOND WHAT YOU ASKED FOR === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Beyond What You Asked For</div>
+            </div>
+
+            <h2>Beyond What You <span>Asked For</span></h2>
+            <div class="section-subtitle">Capabilities we'd include to make your agent significantly more powerful</div>
+
+            <p class="intro-text">
+                These aren't upsells — they're things we think would make a real difference for a landscaping and excavating operation like yours.
+            </p>
+
+            <div class="bonus-card">
+                <h3>☀️ Morning Briefing</h3>
+                <p>One message every morning before you leave the house: today's scheduled jobs, crew assignments, weather forecast (critical for excavating and landscaping), any new leads overnight, and quotes waiting for follow-up. Start every day knowing exactly what's happening.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>🌧️ Weather-Smart Scheduling</h3>
+                <p>The agent monitors the forecast and proactively flags scheduling conflicts — "Rain expected Thursday, want me to reschedule the Kennetcook landscaping job to Friday?" No more showing up to a soggy site. For snow removal, it alerts you when accumulation thresholds are hit so you can mobilize the crew before customers even call.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>⭐ Reputation Builder</h3>
+                <p>After every completed job, the agent sends a friendly follow-up asking for a Google review — timed perfectly (not too soon, not too late). Over time, this builds your online presence and helps new customers find McAdoo's. You told us you don't collect data systematically — reviews are data that sells for you.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>📱 Crew Communication Hub</h3>
+                <p>Your team can text the agent for job details, directions, customer notes, and material lists instead of calling you while you're on another site. Reduces interruptions and keeps everyone on the same page. New hires get answers without waiting for you to be free.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>💰 Seasonal Revenue Planner</h3>
+                <p>Based on historical job data, the agent forecasts revenue by season and service type — helping you plan equipment purchases, hiring, and cash flow. Know in October how much snow removal revenue to expect, and whether you need to push fall landscaping to fill a gap.</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">🔑 Why These Matter</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">
+                    The core solutions handle your biggest pain points — missed leads, admin overload, and inconsistent processes. These additions turn your agent into a true <strong>operations manager</strong> that plans ahead, protects your reputation, and keeps your crew running smoothly without everything flowing through you.
+                </p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Tyler McAdoo</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 7: HOW IT WORKS === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>How It <span>Works</span></h2>
+            <div class="section-subtitle">From kickoff to fully operational in weeks, not months</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Discovery</div>
+                        <h3>Deep Dive Into McAdoo's</h3>
+                        <p>We learn how you actually run your business day-to-day — how jobs come in, how you quote, how scheduling works, your service area, your seasonal rhythms. We map every process so the agent fits your workflow, not the other way around.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 2–3 — Build</div>
+                        <h3>Agent Development &amp; Integration</h3>
+                        <p>We build your custom agent — customer response system, scheduling logic, follow-up sequences, lead tracking, reporting, and team SOPs. Connect it to your phone, email, calendar, CRM, and Facebook page. Every capability is tested before going live.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Deploy</div>
+                        <h3>Go Live &amp; Calibrate</h3>
+                        <p>Agent goes live alongside your real workflow. We monitor every interaction for the first week — customer responses, scheduling accuracy, follow-up timing. Daily check-ins with you to fine-tune. You give feedback, we adjust in real-time.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Optimize</div>
+                        <h3>Continuous Improvement</h3>
+                        <p>Your agent learns from every interaction and gets smarter over time. We review performance weekly during the first month, then bi-weekly. New capabilities can be added as your needs evolve — the system grows with McAdoo's.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">~4</div>
+                    <div class="roi-label">Weeks from kickoff<br>to fully operational</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">0</div>
+                    <div class="roi-label">Disruption to your<br>current workflow</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">21hrs</div>
+                    <div class="roi-label">Saved per week<br>once fully deployed</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Tyler McAdoo</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 8: CTA === -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Let's build your<br>agent, Tyler.</h2>
+        <p>You've spent 25+ years building McAdoo's reputation on doing things right. Let's make sure the business systems behind it work just as hard as you do.</p>
+        <a href="https://calendly.com/brody1schofield/30min" class="cta-button">Book a Call →</a>
+        <div class="cta-contact">
+            <p><a href="https://calendly.com/brody1schofield/30min">calendly.com/brody1schofield/30min</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> &nbsp;|&nbsp; <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Security Blueprint — Revaly</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .threat-row,
+            .control-card,
+            .pilot-card,
+            .commitment-card,
+            table,
+            blockquote {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 38px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #94a3b8;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.7in 1.0in 0.9in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #0ea5e9;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        /* === THREAT RESPONSE TABLE === */
+        .threat-row {
+            display: flex;
+            gap: 0;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .threat-left {
+            background: #fef2f2;
+            padding: 12px 14px;
+            width: 45%;
+            border-right: 3px solid #0ea5e9;
+        }
+
+        .threat-left h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #991b1b;
+            margin-bottom: 4px;
+        }
+
+        .threat-left p {
+            font-size: 11px;
+            color: #7f1d1d;
+            margin-bottom: 0;
+            line-height: 1.5;
+        }
+
+        .threat-right {
+            background: #f0fdf4;
+            padding: 12px 14px;
+            width: 55%;
+        }
+
+        .threat-right h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: #166534;
+            margin-bottom: 4px;
+        }
+
+        .threat-right p {
+            font-size: 11px;
+            color: #14532d;
+            margin-bottom: 0;
+            line-height: 1.5;
+        }
+
+        /* === CONTROL CARDS === */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .control-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+
+        .control-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .control-card h4 {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 3px;
+        }
+
+        .control-card p {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-bottom: 0;
+            line-height: 1.45;
+        }
+
+        /* === PILOT SECTION === */
+        .pilot-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+        }
+
+        .pilot-card h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        .pilot-card p, .pilot-card li {
+            font-size: 11.5px;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .pilot-card ul {
+            margin-left: 16px;
+            margin-top: 4px;
+        }
+
+        .pilot-card li {
+            margin-bottom: 3px;
+        }
+
+        /* === COMMITMENT CARDS === */
+        .commitment-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+        }
+
+        .commitment-card h4 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .commitment-card p {
+            font-size: 11.5px;
+            color: #475569;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* === CALLOUT BOX === */
+        .callout {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 1px solid #93c5fd;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 16px;
+        }
+
+        .callout p {
+            font-size: 11.5px;
+            color: #1e40af;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        .shield-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === PAGE 1: COVER === -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>Enterprise Security<br>Blueprint for <span>OpenClaw</span><br>AI Deployment</h1>
+        <div class="cover-subtitle">A zero-trust framework for executive AI assistants</div>
+        <div class="cover-meta">
+            <strong>Prepared for:</strong> Revaly<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io<br>
+            <strong>Date:</strong> February 2026<br>
+            <strong>Classification:</strong> Confidential
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- === PAGE 2: EXECUTIVE SUMMARY === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <h2>Executive <span>Summary</span></h2>
+            <div class="section-subtitle">Your concerns are valid — and they're exactly why managed deployment matters</div>
+
+            <p class="intro-text">
+                Your team raised important security concerns about deploying OpenClaw-based AI assistants for Revaly's executive leadership. <strong>We want to be clear: those concerns are well-founded.</strong>
+            </p>
+
+            <p class="intro-text">
+                The articles you cited describe real vulnerabilities in the <em>open, consumer-facing</em> OpenClaw ecosystem:
+            </p>
+
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 16px 20px; margin-bottom: 18px;">
+                <p style="font-size: 12px; color: #991b1b; margin-bottom: 8px;"><strong>⚠️ Bitdefender Report:</strong> 135,000+ exposed agents with API keys, credentials, and sensitive workflows accessible to anyone.</p>
+                <p style="font-size: 12px; color: #991b1b; margin-bottom: 8px;"><strong>⚠️ The Verge:</strong> Skills marketplace vulnerabilities allowing malicious extensions to exfiltrate data from unsuspecting users.</p>
+                <p style="font-size: 12px; color: #991b1b; margin-bottom: 0;"><strong>⚠️ Hacker News / ClawHub:</strong> 341 malicious skills identified, including credential harvesters and prompt injection payloads.</p>
+            </div>
+
+            <p class="intro-text">
+                These findings are accurate. They describe what happens when AI agents are deployed without enterprise controls — public endpoints, unvetted marketplace skills, default-open permissions, and no oversight layer.
+            </p>
+
+            <p class="intro-text">
+                <strong>A SolveWorks managed deployment is fundamentally different.</strong> We deploy inside <em>your</em> infrastructure — on servers your IT team provisions and controls. We don't use the public ecosystem. We don't install marketplace skills. We don't expose agents to the internet. Every integration is custom-built, source-reviewed, and locked to the minimum permission scope required.
+            </p>
+
+            <div class="callout">
+                <p><strong>🛡️ The difference:</strong> The vulnerabilities cited apply to the open platform — the equivalent of running unvetted apps from the internet. Our approach is the equivalent of a locked-down enterprise MDM deployment: no app store, no public access, full audit trail, human approval for every outbound action.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 3: THREAT LANDSCAPE & RESPONSE === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <h2>Threat Landscape <span>&</span> Our Response</h2>
+            <div class="section-subtitle">For each concern you raised, here's the specific control we apply</div>
+
+            <div class="threat-row">
+                <div class="threat-left">
+                    <h4>⚠️ ClawHub / Marketplace Risk</h4>
+                    <p>341 malicious skills discovered. Public marketplace allows unvetted code to access agent context, credentials, and user data.</p>
+                </div>
+                <div class="threat-right">
+                    <h4>✅ Zero Public Skills</h4>
+                    <p>We never install marketplace skills. Every skill is custom-built by SolveWorks, fully source-reviewed, and scoped to Revaly's specific workflows. No third-party code runs in your environment.</p>
+                </div>
+            </div>
+
+            <div class="threat-row">
+                <div class="threat-left">
+                    <h4>⚠️ Agent Exposure / Misconfiguration</h4>
+                    <p>135,000+ agents publicly accessible with leaked API keys and sensitive data. Default configurations leave agents open to the internet.</p>
+                </div>
+                <div class="threat-right">
+                    <h4>✅ Private Deployment</h4>
+                    <p>No public endpoints. Agents are deployed within <em>your</em> infrastructure — on servers Revaly provisions and controls. No agent is discoverable or accessible from outside your authorized network perimeter.</p>
+                </div>
+            </div>
+
+            <div class="threat-row">
+                <div class="threat-left">
+                    <h4>⚠️ Credential Theft</h4>
+                    <p>Malicious skills designed to harvest OAuth tokens, API keys, and session credentials from agent runtime environments.</p>
+                </div>
+                <div class="threat-right">
+                    <h4>✅ Credential Isolation</h4>
+                    <p>All secrets stored in encrypted vaults, never exposed to the agent runtime. OAuth tokens are scoped to minimum permissions with automatic rotation. The agent never sees raw credentials.</p>
+                </div>
+            </div>
+
+            <div class="threat-row">
+                <div class="threat-left">
+                    <h4>⚠️ Blast Radius of Compromise</h4>
+                    <p>If one agent is compromised, attackers can pivot to other systems, escalate privileges, and access sensitive data across the organization.</p>
+                </div>
+                <div class="threat-right">
+                    <h4>✅ Sandboxed Runtime</h4>
+                    <p>Each agent runs in an isolated container with no lateral movement capability. Least-privilege networking means even a compromised agent cannot reach other internal systems.</p>
+                </div>
+            </div>
+
+            <div class="threat-row">
+                <div class="threat-left">
+                    <h4>⚠️ Executive Permission Scope</h4>
+                    <p>AI assistants with broad permissions could send emails, modify documents, approve transactions, or share sensitive information without oversight.</p>
+                </div>
+                <div class="threat-right">
+                    <h4>✅ Human-in-the-Loop</h4>
+                    <p>Read-only by default. Every outbound action — send, share, modify, approve, pay — requires explicit human approval. Executives maintain full control over what the assistant can do.</p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 4: SECURITY ARCHITECTURE (controls 1-8) === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <h2>Security <span>Architecture</span></h2>
+            <div class="section-subtitle">Eight core controls that make enterprise OpenClaw deployment safe</div>
+
+            <div class="controls-grid">
+                <div class="control-card">
+                    <div class="control-number">1</div>
+                    <h4>No Public Skills</h4>
+                    <p>Only custom, audited skills built by SolveWorks. Zero marketplace dependencies. Full source code review before deployment. Every skill is purpose-built for Revaly's workflows.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">2</div>
+                    <h4>Sandboxed Runtime</h4>
+                    <p>Each agent runs in an isolated container on Revaly's own servers — with its own network namespace. No shared memory, no shared filesystem, no ability to reach adjacent workloads.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">3</div>
+                    <h4>Least-Privilege Integrations</h4>
+                    <p>Read-only by default. Each integration scoped to the minimum data and actions required. Calendar read ≠ calendar write. Email read ≠ email send.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">4</div>
+                    <h4>Human-in-the-Loop</h4>
+                    <p>Every outbound action requires explicit approval. Send email? Approve. Share document? Approve. Modify record? Approve. No autonomous outbound actions.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">5</div>
+                    <h4>Credential Isolation</h4>
+                    <p>Secrets stored in encrypted vaults (HashiCorp Vault or equivalent). Automatic rotation on configurable schedules. Minimum-scope OAuth grants. Agent runtime never sees raw tokens.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">6</div>
+                    <h4>Audit Logging</h4>
+                    <p>Every agent action logged with timestamp, user, action type, target resource, and approval status. Logs are immutable, queryable, and alertable. Full audit trail for compliance.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">7</div>
+                    <h4>Network Segmentation</h4>
+                    <p>Agents can only reach explicitly allowlisted endpoints. No blanket internet access. DNS-level filtering. Egress rules enforced at the network layer by Revaly's IT team — not just application config.</p>
+                </div>
+                <div class="control-card">
+                    <div class="control-number">8</div>
+                    <h4>Version Pinning</h4>
+                    <p>No self-updating agents. Every version change goes through change management with review, testing, and approval. Rollback capability on every deployment.</p>
+                </div>
+            </div>
+
+            <div class="callout" style="margin-top: 14px;">
+                <p><strong>🔒 Defense in depth:</strong> These controls are layered — and Revaly controls the infrastructure kill switch. Even if one control fails, the others contain the impact. A compromised skill can't reach the network. A network breach can't access credentials. A credential leak can't perform actions without human approval.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 5: PLATFORM SECURITY EVOLUTION === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <h2>Platform Security <span>Evolution</span></h2>
+            <div class="section-subtitle">OpenClaw is actively hardening its core — 40+ patches in a single release, with daily updates continuing</div>
+
+            <p class="intro-text">
+                The security concerns your team identified were based on reports from early February 2026. Since then, OpenClaw has responded aggressively. <strong>Version 2026.2.12 alone patched 40+ vulnerabilities</strong>, with three more releases (2.13, 2.14, 2.15) following in rapid succession. This is a platform that takes security seriously and ships fixes fast.
+            </p>
+
+            <h3 style="margin-top: 14px; margin-bottom: 10px;">Key Security Patches (2026.2.12 – 2026.2.15)</h3>
+
+            <div class="threat-row" style="margin-bottom: 8px;">
+                <div class="threat-left" style="background: #f8fafc; border-right: 3px solid #0ea5e9;">
+                    <h4 style="color: #0369a1;">SSRF Protection</h4>
+                    <p style="color: #475569;">Gateway now enforces explicit deny policies with hostname allowlists on all URL parameters — preventing agents from being tricked into accessing internal network resources.</p>
+                </div>
+                <div class="threat-right" style="background: #f8fafc;">
+                    <h4 style="color: #0369a1;">Prompt Injection Defense</h4>
+                    <p style="color: #475569;">Browser and web content treated as "untrusted by default." Tool result details stripped during transcript compaction to prevent replay attacks from malicious web content.</p>
+                </div>
+            </div>
+
+            <div class="threat-row" style="margin-bottom: 8px;">
+                <div class="threat-left" style="background: #f8fafc; border-right: 3px solid #0ea5e9;">
+                    <h4 style="color: #0369a1;">Mandatory Browser Auth</h4>
+                    <p style="color: #475569;">Browser control routes now require authentication even on loopback. Auth tokens auto-generated at startup if missing — closing a local privilege escalation vector.</p>
+                </div>
+                <div class="threat-right" style="background: #f8fafc;">
+                    <h4 style="color: #0369a1;">Session Hijack Prevention</h4>
+                    <p style="color: #475569;">Webhook endpoints now reject payload sessionKey overrides by default. Prevents attackers from hijacking agent sessions through crafted webhook payloads.</p>
+                </div>
+            </div>
+
+            <div class="threat-row" style="margin-bottom: 8px;">
+                <div class="threat-left" style="background: #f8fafc; border-right: 3px solid #0ea5e9;">
+                    <h4 style="color: #0369a1;">Sandbox Hardening</h4>
+                    <p style="color: #475569;">Skill sync destinations confined to prevent filesystem escapes. Directory traversal via frontmatter-controlled names is now blocked. Separate browser container bind mounts added.</p>
+                </div>
+                <div class="threat-right" style="background: #f8fafc;">
+                    <h4 style="color: #0369a1;">High-Risk Tool Blocking</h4>
+                    <p style="color: #475569;">Dangerous tools (session spawning, gateway control) blocked from HTTP API by default. Fail-closed permission model when tool identity is ambiguous.</p>
+                </div>
+            </div>
+
+            <div class="threat-row" style="margin-bottom: 8px;">
+                <div class="threat-left" style="background: #f8fafc; border-right: 3px solid #0ea5e9;">
+                    <h4 style="color: #0369a1;">Webhook Hardening</h4>
+                    <p style="color: #475569;">Constant-time secret comparison prevents timing attacks. Rate limiting on webhook endpoints. Authentication bypass via loopback proxy trust patched.</p>
+                </div>
+                <div class="threat-right" style="background: #f8fafc;">
+                    <h4 style="color: #0369a1;">Signed Packages</h4>
+                    <p style="color: #475569;">macOS packages now SHA-256 signed. Malicious bundled hook ("soul-evil") removed from codebase. Remote config tampering via unauthenticated API patched.</p>
+                </div>
+            </div>
+
+            <div class="callout" style="margin-top: 14px;">
+                <p><strong>📈 Release velocity:</strong> 4 security-focused releases in 5 days (2.12 → 2.15). External security researchers actively contributing patches. This is a platform in rapid security maturation — and a SolveWorks managed deployment ensures you're always on the latest hardened version.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 6: PROPOSED PILOT DESIGN === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <h2>Proposed <span>Pilot</span> Design</h2>
+            <div class="section-subtitle">A 30-day controlled deployment to prove security and value</div>
+
+            <p class="intro-text">
+                We propose starting exactly where you suggested: a small, controlled pilot with 3–4 members of your Executive Leadership Team. This gives your security and IT teams full visibility into how the deployment works before any broader rollout.
+            </p>
+
+            <div class="pilot-card">
+                <h4>🎯 Scope: 3–4 ELT Members</h4>
+                <p>Hand-selected executives who will benefit most from AI assistance. Each receives a dedicated, individually configured assistant with permissions tailored to their role.</p>
+            </div>
+
+            <div class="pilot-card">
+                <h4>🔒 Read-Only Integrations Only</h4>
+                <ul>
+                    <li><strong>Calendar</strong> — Read access only. View upcoming meetings, attendees, agendas. Cannot create, modify, or delete events.</li>
+                    <li><strong>Email</strong> — Read access only. Summarize inbox, flag priorities, draft responses for review. Cannot send, forward, or delete.</li>
+                    <li><strong>SharePoint</strong> — Read access to specific, pre-approved folders only. Cannot upload, modify, or share documents.</li>
+                </ul>
+            </div>
+
+            <div class="pilot-card">
+                <h4>✋ Human Approval for ALL Outbound Actions</h4>
+                <p>During the pilot, every action that sends data outside the agent is gated by explicit human approval. No exceptions. The executive sees exactly what will be sent and confirms before it happens.</p>
+            </div>
+
+            <div class="pilot-card">
+                <h4>🏗️ Dedicated Sandbox Environment</h4>
+                <p>Pilot agents run on Revaly's own infrastructure, provisioned by your IT team — completely isolated from production systems. SolveWorks deploys remotely via secure access granted by Revaly's IT. Dedicated logging, monitoring, and alerting. Revaly can revoke SolveWorks' access at any time.</p>
+            </div>
+
+            <div class="pilot-card">
+                <h4>📊 Weekly Security Reviews</h4>
+                <p>Joint weekly meetings between SolveWorks and Revaly's security team. Review all agent activity logs, discuss any concerns, adjust permissions and controls in real-time.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 7: PILOT (continued) + ONGOING COMMITMENTS === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <div class="pilot-card">
+                <h4>✅ Success Criteria & Kill Switch</h4>
+                <ul>
+                    <li><strong>Security:</strong> Zero unauthorized data access, zero credential exposure, zero unintended outbound actions</li>
+                    <li><strong>Value:</strong> Measurable time savings reported by pilot participants (target: 5+ hrs/week)</li>
+                    <li><strong>Kill switch:</strong> Infrastructure-level control. Revaly can cut access at the server level — shut down agents, revoke SolveWorks' remote access, or power off the environment entirely. No waiting, no dependencies</li>
+                    <li><strong>Decision point:</strong> Day 30 — joint review to determine go/no-go for expansion</li>
+                </ul>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 12px; padding: 18px 20px; margin-bottom: 30px;">
+                <h4 style="font-size: 13px; color: #047857; margin-bottom: 6px;">📈 Clear Expansion Path</h4>
+                <p style="font-size: 12px; color: #065f46; margin-bottom: 0; line-height: 1.7;">
+                    <strong>Pilot (3–4 ELT)</strong> → <strong>Full ELT (9 members)</strong> → <strong>Department leads</strong> → <strong>Broader rollout</strong>. Each phase requires explicit sign-off from Revaly's security team. Permissions expand only when you're ready. The pace is entirely in your hands.
+                </p>
+            </div>
+
+            <h2>Ongoing Security <span>Commitments</span></h2>
+            <div class="section-subtitle">What we commit to for the lifetime of the engagement</div>
+
+            <div class="commitment-card">
+                <h4>🔍 Regular Penetration Testing</h4>
+                <p>Annual third-party penetration testing of the deployment environment. Results shared with Revaly's security team. Remediation SLAs for any findings: critical (24h), high (72h), medium (2 weeks).</p>
+            </div>
+
+            <div class="commitment-card">
+                <h4>🚨 Incident Response SLA</h4>
+                <p>Dedicated incident response process. Initial acknowledgment within 1 hour. Root cause analysis within 24 hours. Transparent communication throughout. Post-incident review and remediation plan for every event.</p>
+            </div>
+
+            <div class="commitment-card">
+                <h4>📋 Quarterly Security Reviews</h4>
+                <p>Formal quarterly review of agent activity, permission scopes, integration health, and emerging threats. Joint session with Revaly's security and IT leadership to maintain alignment.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 8: ONGOING COMMITMENTS (continued) === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Security Blueprint</div>
+            </div>
+
+            <h2>Ongoing Security <span>Commitments</span> <span style="font-size: 14px; color: #64748b; font-weight: 400;">(continued)</span></h2>
+            <div class="section-subtitle" style="margin-bottom: 20px;"></div>
+
+            <div class="commitment-card">
+                <h4>🏛️ SOC 2 Alignment Roadmap</h4>
+                <p>Our deployment practices align with SOC 2 Type II trust service criteria. We provide documentation mapping our controls to SOC 2 requirements for your compliance team's review.</p>
+            </div>
+
+            <div class="commitment-card">
+                <h4>👤 Dedicated Security Contact</h4>
+                <p>A named security point-of-contact at SolveWorks for Revaly. Direct line for security questions, concerns, or incident reporting. Not a support queue — a person who knows your deployment.</p>
+            </div>
+
+            <div class="commitment-card">
+                <h4>🔄 Continuous Version Management</h4>
+                <p>Updates are deployed via secure remote access, with Revaly's IT approval required before any changes reach production. Every update is tested in staging first. You're never exposed to known vulnerabilities — and never surprised by untested changes.</p>
+            </div>
+
+            <div class="callout" style="margin-top: 24px;">
+                <p><strong>🤝 Bottom line:</strong> We don't just deploy and walk away. SolveWorks acts as your ongoing security partner — monitoring the threat landscape, applying patches, and adapting controls as the platform evolves. Your team stays informed, in control, and protected.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 7: CTA === -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Let's build this<br>the <span style="color: #0ea5e9;">right way.</span></h2>
+        <p>Security isn't a checkbox — it's the foundation. We're ready to design a pilot that your security team is confident in.</p>
+        <div class="cta-contact">
+            <p style="margin-top: 10px;">solveworks.io &nbsp;|&nbsp; hello@solveworks.io</p>
+        </div>
+        <div class="cover-bar" style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0ea5e9, #0369a1);"></div>
+    </div>
+
+</body>
+</html>

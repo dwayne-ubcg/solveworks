@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Proposal — Drew Millington</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: letter; margin: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+        .page:last-child { page-break-after: auto; }
+
+        /* === COVER === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .cover h1 span { color: #0ea5e9; }
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+        .cover-meta strong { color: #94a3b8; }
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT === */
+        .content { padding: 0.8in 1.0in; }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+        h2 span { color: #0ea5e9; }
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+        .solution-card-header {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === ROI === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline { margin-top: 20px; }
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === CTA === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        /* === BONUS CARDS === */
+        .bonus-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 4px;
+        }
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #1e3a5f;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === PAGE 1: COVER === -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>Your Personal<br>AI Agent —<br>Built for <span>Drew</span></h1>
+        <div class="cover-subtitle">Sales coaching. Lead intelligence. Market research. All on autopilot.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> February 17, 2026<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io<br>
+            <strong>Prepared for:</strong> Drew Millington
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- === PAGE 2: WHAT WE HEARD === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>What We <span>Heard</span></h2>
+            <div class="section-subtitle">Your goals, in your words — here's what we're solving for</div>
+
+            <p class="intro-text">
+                Drew, you're operating across two very different businesses — fractional CRO for an AI setter startup and sales at Number, an embedded payroll company — plus personal goals around investing and language learning. You don't need another dashboard or another SaaS login. You need a <strong>working teammate</strong> that coaches you on calls, surfaces qualified leads while you sleep, and helps you get smarter every day.
+            </p>
+            <p class="intro-text">
+                Here's what you told us you need:
+            </p>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🎙️</div>
+                        <div>
+                            <h3>Sales Call Coaching</h3>
+                            <div class="solution-card-desc">Sandler methodology + persuasion psychology analysis on every call</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Review recordings from both businesses — Charlie AI setter demos and Number payroll sales calls — score against Sandler principles, and deliver specific, actionable feedback before your next call. At a fraction of the cost of tools like Gong.</p>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🔍</div>
+                        <div>
+                            <h3>Number Lead Intelligence</h3>
+                            <div class="solution-card-desc">Signal-based prospecting for mid-market and enterprise payroll opportunities</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Identify software companies signaling Canadian expansion — job posts, press releases, website statements, publicly traded reports. Flag vertical SaaS platforms and companies integrated with ADP or Ceridian. Target mid-market (500+) and enterprise firms, including banks. Deliver leads with the specific signal so you can reference it directly: <em>"Saw your press release about Canadian expansion."</em></p>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🎯</div>
+                        <div>
+                            <h3>AI Setter Lead Generation</h3>
+                            <div class="solution-card-desc">Find businesses actively looking for setter solutions</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Scan communities, forums, and social platforms for people asking questions <em>about</em> setters — how to pay them, where to recruit them, how to manage high-volume inbound qualification. These are the buyers. For verticals like personal injury law where speed-to-contact means 6x higher win rates, Charlie sells itself.</p>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🧠</div>
+                        <div>
+                            <h3>Technical Q&amp;A Knowledge Base</h3>
+                            <div class="solution-card-desc">Turn Number's technical calls into website content that sells</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Analyze Number's technical call recordings where engineers ask complex payroll questions, extract recurring themes, and publish a comprehensive Q&amp;A on Number's website. Demonstrates deep expertise and lets prospects self-serve during evaluation — turning support overhead into a sales asset.</p>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">8</div>
+                    <div class="roi-label">Core capabilities<br>working in parallel</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">24/7</div>
+                    <div class="roi-label">Scanning, coaching<br>&amp; intelligence</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">1</div>
+                    <div class="roi-label">Unified agent that<br>knows your world</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 3: WHAT WE HEARD (continued) === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">What We Heard (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📈</div>
+                        <div>
+                            <h3>TSX Dividend Stock Research</h3>
+                            <div class="solution-card-desc">Structured, reliable daily intel — no more "borderline gambling"</div>
+                        </div>
+                    </div>
+                </div>
+                <p>You told us your investing has been "borderline gambling" — you want to shift to a structured, disciplined approach. Focus on TSX dividend-paying stocks: favorable tax treatment, resilience during downturns, and compounding returns. Daily briefings with reasoned analysis, not generic tips. Potential to expand into blue-chip tech as your portfolio grows.</p>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🇫🇷</div>
+                        <div>
+                            <h3>Daily Quebec French Lesson</h3>
+                            <div class="solution-card-desc">From "2 out of 10" to conversational — one day at a time</div>
+                        </div>
+                    </div>
+                </div>
+                <p>You can recognize basic vocabulary and pick out words in podcasts, but forming verbal sentences is the gap. Short daily lessons focused on conversational fluency — practical phrases, Quebec-specific expressions, and pronunciation. Built to get you speaking, not just reading.</p>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">💡</div>
+                        <div>
+                            <h3>Payroll Marketing Strategy</h3>
+                            <div class="solution-card-desc">Channel-specific playbooks for Number's vertical SaaS clients</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Research and surface actionable strategies across every channel that matters: email campaigns, phone outreach to existing clients, outbound prospecting, website payroll presence, PPC, compensation programs and SPIFs, social media, channel partnerships, conferences, content marketing, and SEO. Delivered with enough detail to present to Number's clients as value-added consulting.</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 12px; padding: 22px 24px; margin-top: 24px;">
+                <h3 style="font-size: 14px; color: #0369a1; margin-bottom: 8px;">💬 The Big Picture</h3>
+                <p style="font-size: 12.5px; color: #1e3a5f; margin-bottom: 0; line-height: 1.7;">
+                    This isn't eight separate tools — it's <strong>one agent</strong> that understands your entire world. It knows your Sandler framework, Number's embedded payroll thesis, Charlie's AI setter pitch, your stock preferences, and your learning goals. Over time it gets sharper because every call, every lead, and every interaction makes it smarter. Think of it as a chief of staff that never sleeps — and costs a fraction of enterprise tools like Gong ($2,000/employee/month) while delivering more personalized results.
+                </p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 4: WHAT WE'LL BUILD === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">What We'll Build</div>
+            </div>
+
+            <h2>What We'll <span>Build</span></h2>
+            <div class="section-subtitle">Here's exactly how each capability works under the hood</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🎙️</div>
+                        <div>
+                            <h3>Sales Call Coaching Engine</h3>
+                            <div class="solution-card-desc">Charlie AI setter calls + Number payroll calls</div>
+                        </div>
+                    </div>
+                </div>
+                <p>You record calls via Plaud, then forward or upload the recording. The agent transcribes it, breaks it into phases (opening, pain discovery, budget, commitment), and scores each phase against Sandler methodology — did you get to pain? Did you establish an up-front contract? Were you the one asking the questions?</p>
+                <p>It also applies persuasion psychology principles — framing, reciprocity, social proof usage, commitment/consistency — and flags missed opportunities. You get a concise scorecard with 3–5 specific actions for your next call. Over time, it tracks improvement trends across both businesses.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Sandler scoring</span>
+                    <span class="benefit-tag">Persuasion analysis</span>
+                    <span class="benefit-tag">Actionable feedback</span>
+                    <span class="benefit-tag">Trend tracking</span>
+                    <span class="benefit-tag">Both businesses</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🔍</div>
+                        <div>
+                            <h3>Number Lead Intelligence System</h3>
+                            <div class="solution-card-desc">Signal-based prospecting for embedded payroll</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Number enables vertical SaaS platforms to own their payroll — eliminating the friction where managers export time-tracking data bi-weekly and re-import into standalone tools. The agent finds companies ripe for this pitch by monitoring specific signals:</p>
+                <p><strong>Canadian expansion signals:</strong> job posts, press releases, website statements, and publicly traded company reports indicating northward growth. <strong>Integration signals:</strong> companies integrated with ADP or Ceridian — they're already passing payroll data and could benefit from owning it. <strong>Company profile:</strong> vertical SaaS platforms, mid-market (500+) and enterprise firms, and banks.</p>
+                <p>Every lead comes with the specific signal so you can personalize outreach: <em>"Noticed your Q3 report mentioned Canadian expansion plans"</em> — not generic cold emails.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Expansion signal detection</span>
+                    <span class="benefit-tag">ADP/Ceridian integration tracking</span>
+                    <span class="benefit-tag">Vertical SaaS focus</span>
+                    <span class="benefit-tag">Mid-market &amp; enterprise</span>
+                    <span class="benefit-tag">Personalized outreach angles</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🎯</div>
+                        <div>
+                            <h3>AI Setter Lead Scanner</h3>
+                            <div class="solution-card-desc">Find the buyers, not the setters</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Scans Reddit, Facebook groups, X/Twitter, Discord, and niche forums for business owners asking questions <em>about</em> setters — how to pay them, where to find them, how to manage high-volume inbound qualification. These are Charlie's ideal customers. Delivers daily digests with direct links and suggested outreach angles tailored to their specific pain point.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Community scanning</span>
+                    <span class="benefit-tag">Buyer-intent signals</span>
+                    <span class="benefit-tag">Daily lead digest</span>
+                    <span class="benefit-tag">Outreach suggestions</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 5: WHAT WE'LL BUILD (continued) === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">What We'll Build (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🧠</div>
+                        <div>
+                            <h3>Technical Q&amp;A Knowledge Base</h3>
+                            <div class="solution-card-desc">Turn support calls into a sales engine</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Number's engineers field complex payroll questions on technical calls — compliance rules, tax calculations, integration architecture. The agent analyzes these recordings, identifies recurring questions and themes, and produces a comprehensive, well-organized Q&amp;A that lives on Number's website.</p>
+                <p>This does two things: it demonstrates deep domain expertise to prospects evaluating Number, and it lets technical buyers self-serve during their evaluation process. Support overhead becomes a content asset that shortens the sales cycle.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Call recording analysis</span>
+                    <span class="benefit-tag">Recurring theme extraction</span>
+                    <span class="benefit-tag">Website-ready content</span>
+                    <span class="benefit-tag">Prospect self-service</span>
+                    <span class="benefit-tag">Expertise positioning</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📈</div>
+                        <div>
+                            <h3>TSX Dividend Research Analyst</h3>
+                            <div class="solution-card-desc">Structured daily intel for disciplined investing</div>
+                        </div>
+                    </div>
+                </div>
+                <p>The agent learns core investing principles — P/E ratios, dividend yield, payout ratios, debt-to-equity, free cash flow — and applies them exclusively to the TSX. Emphasis on the favorable tax treatment of Canadian dividends and portfolio resilience during market downturns. Screens for undervalued dividend-paying companies, monitors earnings reports and analyst sentiment, and surfaces opportunities with clear reasoning and risk assessment.</p>
+                <p>Delivered daily via Telegram — reliable, structured analysis to replace gut-feel investing. Not financial advice, but a research assistant that keeps you informed and disciplined. Expandable to blue-chip tech as your strategy evolves.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">TSX dividend focus</span>
+                    <span class="benefit-tag">Tax-advantaged strategy</span>
+                    <span class="benefit-tag">Daily briefings</span>
+                    <span class="benefit-tag">Downturn resilience</span>
+                    <span class="benefit-tag">Expandable scope</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🇫🇷</div>
+                        <div>
+                            <h3>Quebec French Daily Lesson</h3>
+                            <div class="solution-card-desc">Conversational focus for a "2 out of 10" starting point</div>
+                        </div>
+                    </div>
+                </div>
+                <p>You recognize basic vocabulary and can pick out words in podcasts — but forming spoken sentences is the wall. Every morning, a short lesson focused on <strong>conversational fluency</strong>: practical phrases you'd actually use, Quebec-specific expressions (joual, local idioms), pronunciation notes, and a mini speaking exercise. Lessons build progressively and adapt to your pace.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Conversational focus</span>
+                    <span class="benefit-tag">Quebec dialect</span>
+                    <span class="benefit-tag">Daily delivery</span>
+                    <span class="benefit-tag">Progressive difficulty</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">💡</div>
+                        <div>
+                            <h3>Payroll Marketing Strategy Feed</h3>
+                            <div class="solution-card-desc">Channel-specific playbooks for Number's clients</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Actionable strategies across 11 channels: email, phone (existing clients), outbound prospecting, website payroll presence, PPC, compensation programs &amp; SPIFs, social media, channel partnerships, conferences, content marketing, and SEO. Delivered weekly with enough depth to present to Number's vertical SaaS clients as value-added consulting — positioning you as a strategic advisor, not just a vendor.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">11 marketing channels</span>
+                    <span class="benefit-tag">Client-ready insights</span>
+                    <span class="benefit-tag">Weekly delivery</span>
+                    <span class="benefit-tag">Advisor positioning</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0369a1; margin-bottom: 8px;">⚡ One Agent, Many Skills</h3>
+                <p style="font-size: 12.5px; color: #1e3a5f; margin-bottom: 0; line-height: 1.7;">
+                    All eight capabilities run inside a single AI agent deployed on <strong>OpenClaw</strong> — our agent infrastructure platform. It connects to your Gmail, Google Calendar (both businesses), HubSpot CRM, Telegram, and Plaud call recordings. You talk to it like a person. It remembers context across conversations and gets better at understanding your preferences, communication style, and business nuances over time.
+                </p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 6: BEYOND WHAT YOU ASKED FOR === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Beyond What You Asked For</div>
+            </div>
+
+            <h2>Beyond What You <span>Asked For</span></h2>
+            <div class="section-subtitle">Capabilities we'd include to make the agent significantly more powerful</div>
+
+            <p class="intro-text">
+                These aren't upsells — they're things we think would make a real difference based on how you work. Since we're building a single agent that lives alongside you, adding these is natural.
+            </p>
+
+            <div class="bonus-card">
+                <h3>☀️ Morning Briefing</h3>
+                <p>One message, every morning. Your French lesson, top dividend movers, new leads found overnight across both businesses, follow-up reminders for open deals in HubSpot, and any important news. Start your day with everything you need in one Telegram message — no app-hopping.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>📋 CRM Autopilot</h3>
+                <p>After every sales call, the agent auto-logs notes to HubSpot, creates follow-up reminders in Google Calendar, and updates your pipeline. No more "I forgot to log that call" or losing track of where a deal stands. Your CRM stays current without you touching it.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>👁️ Competitor Monitoring</h3>
+                <p>Track what other embedded payroll companies and AI setter competitors are doing — new features, pricing changes, content strategies, job postings, partnership announcements. Know what the market is doing so you're never caught off guard. Delivered as a weekly competitive brief.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>✉️ Email &amp; Outreach Drafting</h3>
+                <p>When the agent finds a lead, it doesn't just flag it — it drafts a personalized outreach message referencing the specific signal it found. "Noticed your Q3 report mentioned Canadian expansion" or "Saw your job post for a payroll engineer." You review, tweak if needed, and send from Gmail. Cuts prospecting-to-outreach time from hours to minutes.</p>
+            </div>
+
+            <div class="bonus-card">
+                <h3>📁 Meeting Prep</h3>
+                <p>Before any scheduled call in Google Calendar, the agent auto-pulls context on the prospect — LinkedIn profile, company info, previous call notes from HubSpot, relevant news — and sends you a one-page brief via Telegram. Walk into every conversation prepared and confident.</p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">🔑 Why These Matter</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">
+                    The core capabilities find opportunities and make you better at closing. These additions ensure <strong>nothing slips through the cracks</strong> between finding a lead and closing it. The Morning Briefing alone saves 30+ minutes of daily context-switching. Together, they turn your agent from a set of tools into a genuine operating system for both businesses.
+                </p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 7: HOW IT WORKS === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>How It <span>Works</span></h2>
+            <div class="section-subtitle">From setup call to fully operational in weeks, not months</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Setup</div>
+                        <h3>Install &amp; Configure</h3>
+                        <p>We set up your dedicated 2021 MacBook Pro — reformatted and clean. Connect it to Wi-Fi (Ethernet recommended for reliability), install OpenClaw, and integrate your tools: Gmail, Google Calendar (both businesses), HubSpot CRM, Telegram, and Plaud. Configure the agent's personality, Sandler framework, and knowledge base.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 2–3 — Build</div>
+                        <h3>Agent Development &amp; Integration</h3>
+                        <p>We build each capability — call analysis pipelines, lead scanning workflows (expansion signals, ADP/Ceridian integrations, community monitoring), stock research tools, Q&amp;A knowledge base pipeline, French lesson curriculum, and payroll marketing research. Each capability is tested independently before integration.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Deploy</div>
+                        <h3>Go Live &amp; Calibrate</h3>
+                        <p>Agent goes live with you. We run it alongside your real workflow for a week — feeding it real calls, reviewing lead quality, checking stock analysis depth, tuning the morning briefing. Daily check-ins to fine-tune. You give feedback, we adjust in real-time.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Optimize</div>
+                        <h3>Continuous Improvement</h3>
+                        <p>The agent learns from every interaction. We review performance weekly during the first month, then bi-weekly. New capabilities can be added as your needs evolve. The goal: an agent that's measurably better at its job 90 days from now than it is on day one.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">~4</div>
+                    <div class="roi-label">Weeks from kickoff<br>to fully operational</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">0</div>
+                    <div class="roi-label">Disruption to your<br>current workflow</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">∞</div>
+                    <div class="roi-label">Improvement ceiling —<br>it never stops learning</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 8: AGREEMENT === -->
+    <div class="page">
+        <div class="content" style="display: flex; flex-direction: column; justify-content: center; min-height: 9.4in;">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Agreement</div>
+            </div>
+
+            <h2>Agreement to <span>Proceed</span></h2>
+            <div class="section-subtitle">Let's make it official</div>
+
+            <p class="intro-text">
+                By signing below, you agree to move forward with the AI agent build as described in this proposal. We'll schedule a setup call to get your dedicated machine configured and your integrations connected.
+            </p>
+
+            <!-- TEMPLATE NOTE: For paid engagements, payment terms, pricing, and billing schedule would be inserted here. -->
+
+            <div style="margin-top: 50px;">
+                <div style="margin-bottom: 40px;">
+                    <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Full Name</p>
+                    <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; min-height: 30px;"></div>
+                </div>
+
+                <div style="margin-bottom: 40px;">
+                    <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Signature</p>
+                    <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; min-height: 50px;"></div>
+                </div>
+
+                <div style="margin-bottom: 40px;">
+                    <p style="font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Date</p>
+                    <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; min-height: 30px; max-width: 300px;"></div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 40px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">What Happens Next</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">
+                    Once signed, we'll schedule a Zoom session to install OpenClaw on your dedicated MacBook Pro, connect your integrations (Gmail, Google Calendar, HubSpot, Telegram, Plaud), and get your agent up and running. You'll be talking to it within the first session.
+                </p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Drew Millington</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 9: CTA === -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Let's get you<br>set up.</h2>
+        <p>Discovery's done. We know what you need. Schedule your install session and we'll have your agent running on day one.</p>
+        <a href="https://calendly.com/brody1schofield/30min" class="cta-button">Schedule Your Install Session →</a>
+        <div class="cta-contact">
+            <p><a href="https://calendly.com/brody1schofield/30min">calendly.com/brody1schofield/30min</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> &nbsp;|&nbsp; <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>

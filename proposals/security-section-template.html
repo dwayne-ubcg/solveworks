@@ -1,0 +1,294 @@
+<!--
+    ================================================================
+    SolveWorks — Proposal Security Section (Reusable Template)
+    ================================================================
+    DROP THIS BLOCK into any proposal before the pricing/CTA page.
+    Uses the same inline CSS conventions as SolveWorks proposals.
+    ================================================================
+-->
+<style>
+    /* Security Section Styles — scoped with .sec- prefix */
+    .sec-section {
+        padding: 0.6in 1.2in;
+        background: linear-gradient(135deg, #050810 0%, #0a0f1e 50%, #0d1528 100%);
+        position: relative;
+        overflow: hidden;
+        page-break-inside: avoid;
+    }
+    .sec-section::before {
+        content: '';
+        position: absolute;
+        top: -30%;
+        right: -15%;
+        width: 50%;
+        height: 90%;
+        background: radial-gradient(ellipse, rgba(14, 165, 233, 0.07), transparent 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+    .sec-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(14, 165, 233, 0.1);
+        border: 1px solid rgba(14, 165, 233, 0.25);
+        border-radius: 100px;
+        padding: 6px 16px;
+        margin-bottom: 28px;
+        color: #38bdf8;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+    .sec-badge-dot {
+        width: 6px;
+        height: 6px;
+        background: #0ea5e9;
+        border-radius: 50%;
+    }
+    .sec-headline {
+        font-size: 32px;
+        font-weight: 800;
+        color: #f1f5f9;
+        line-height: 1.2;
+        margin-bottom: 16px;
+        letter-spacing: -0.5px;
+    }
+    .sec-headline span {
+        color: #0ea5e9;
+    }
+    .sec-intro {
+        font-size: 15px;
+        color: #64748b;
+        line-height: 1.75;
+        max-width: 560px;
+        margin-bottom: 36px;
+    }
+
+    /* Trust points grid */
+    .sec-points {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 36px;
+    }
+    .sec-point {
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 20px;
+        position: relative;
+    }
+    .sec-point-icon {
+        font-size: 22px;
+        margin-bottom: 10px;
+        display: block;
+    }
+    .sec-point h4 {
+        color: #f1f5f9;
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 6px;
+    }
+    .sec-point p {
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.65;
+    }
+
+    /* Q&A Block */
+    .sec-qa {
+        background: rgba(14, 165, 233, 0.05);
+        border: 1px solid rgba(14, 165, 233, 0.15);
+        border-left: 3px solid #0ea5e9;
+        border-radius: 12px;
+        padding: 22px 24px;
+        margin-bottom: 28px;
+    }
+    .sec-qa-q {
+        font-size: 13px;
+        font-weight: 700;
+        color: #38bdf8;
+        margin-bottom: 10px;
+    }
+    .sec-qa-a {
+        font-size: 13px;
+        color: #94a3b8;
+        line-height: 1.75;
+    }
+
+    /* Trust diagram */
+    .sec-diagram {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+        align-items: center;
+        gap: 0;
+        margin-bottom: 28px;
+    }
+    .sec-diag-node {
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 16px 14px;
+        text-align: center;
+    }
+    .sec-diag-node.trusted {
+        border-color: rgba(14,165,233,0.3);
+        background: rgba(14,165,233,0.06);
+    }
+    .sec-diag-node.agent {
+        border-color: rgba(34,197,94,0.3);
+        background: rgba(34,197,94,0.05);
+    }
+    .sec-diag-icon { font-size: 20px; margin-bottom: 6px; display: block; }
+    .sec-diag-label { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #94a3b8; margin-bottom: 3px; }
+    .sec-diag-title { font-size: 12px; font-weight: 600; color: #f1f5f9; }
+    .sec-diag-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .sec-diag-arrow {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 8px;
+        gap: 4px;
+    }
+    .sec-diag-arrow-line {
+        width: 40px;
+        height: 2px;
+    }
+    .sec-diag-arrow-head { font-size: 10px; }
+    .sec-diag-arrow.blocked .sec-diag-arrow-line { background: rgba(239,68,68,0.3); }
+    .sec-diag-arrow.blocked .sec-diag-arrow-head { color: #f87171; }
+    .sec-diag-arrow.allowed .sec-diag-arrow-line { background: rgba(14,165,233,0.5); }
+    .sec-diag-arrow.allowed .sec-diag-arrow-head { color: #0ea5e9; }
+    .sec-diag-arrow-tag {
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin-top: 2px;
+    }
+    .sec-diag-arrow.blocked .sec-diag-arrow-tag { color: #f87171; }
+    .sec-diag-arrow.allowed .sec-diag-arrow-tag { color: #38bdf8; }
+
+    /* Closing */
+    .sec-close {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 24px 28px;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .sec-close-icon {
+        font-size: 28px;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+    .sec-close p {
+        font-size: 13px;
+        line-height: 1.75;
+        color: #94a3b8;
+    }
+    .sec-close strong { color: #f1f5f9; }
+</style>
+
+<!-- ====== SECURITY SECTION START ====== -->
+<div class="sec-section">
+
+    <div class="sec-badge">
+        <div class="sec-badge-dot"></div>
+        Enterprise Security
+    </div>
+
+    <h2 class="sec-headline">
+        Your agent only takes instructions<br>
+        <span>from you.</span>
+    </h2>
+
+    <p class="sec-intro">
+        AI agents that browse the web, read emails, and process documents face a real risk: malicious instructions hidden in that content. SolveWorks eliminates this threat at the architecture level — not with a policy, but with code that cannot be overridden.
+    </p>
+
+    <!-- Trust Points -->
+    <div class="sec-points">
+        <div class="sec-point">
+            <span class="sec-point-icon">🔒</span>
+            <h4>Authenticated Channel Only</h4>
+            <p>Your agent has one trusted source of instructions: your authenticated private channel. Everything else — every email, web page, document, and calendar invite — is treated as read-only data, regardless of what it says.</p>
+        </div>
+        <div class="sec-point">
+            <span class="sec-point-icon">🛡️</span>
+            <h4>Two Independent Security Layers</h4>
+            <p>Protection runs at two separate levels simultaneously. If the first layer is ever tested, the second is already in place. Both must pass for any instruction to be executed. This is redundancy by design.</p>
+        </div>
+        <div class="sec-point">
+            <span class="sec-point-icon">🚫</span>
+            <h4>Prompt Injection Blocked</h4>
+            <p>Prompt injection — the technique of hiding malicious commands in content your agent reads — is neutralized automatically. Your agent understands the difference between data it's reading and instructions it should follow.</p>
+        </div>
+        <div class="sec-point">
+            <span class="sec-point-icon">📦</span>
+            <h4>Your Data Stays Private</h4>
+            <p>Your agent runs on dedicated hardware in your environment. Your business data is never shared, never used to train AI models, and never passes through shared infrastructure.</p>
+        </div>
+    </div>
+
+    <!-- Direct Q&A: The Real Fear -->
+    <div class="sec-qa">
+        <div class="sec-qa-q">❓ "What if a malicious instruction is hidden in an email my agent reads?"</div>
+        <div class="sec-qa-a">
+            It is ignored — automatically, at two independent levels, before it ever reaches your agent's decision-making. Your agent reads the email as data, extracts what's useful, and moves on. The embedded instruction is never seen as a command. This protection is hardcoded into the agent's architecture, not a setting that can be turned off or misconfigured.
+        </div>
+    </div>
+
+    <!-- Simple Trust Diagram -->
+    <div style="margin-bottom: 12px;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #475569; margin-bottom: 14px; text-align: center;">Trust Hierarchy at a Glance</div>
+        <div class="sec-diagram">
+            <!-- Untrusted -->
+            <div class="sec-diag-node">
+                <span class="sec-diag-icon">⚠️</span>
+                <div class="sec-diag-label">External</div>
+                <div class="sec-diag-title">Emails, Websites,<br>Documents, PDFs</div>
+                <div class="sec-diag-sub">Read as data only</div>
+            </div>
+            <!-- Arrow: blocked -->
+            <div class="sec-diag-arrow blocked">
+                <div class="sec-diag-arrow-line"></div>
+                <div class="sec-diag-arrow-head">✗</div>
+                <div class="sec-diag-arrow-tag">Blocked</div>
+            </div>
+            <!-- Agent -->
+            <div class="sec-diag-node agent">
+                <span class="sec-diag-icon">🤖</span>
+                <div class="sec-diag-label">Your Agent</div>
+                <div class="sec-diag-title">Reads everything<br>Acts on nothing<br>but your word</div>
+            </div>
+            <!-- Arrow: allowed -->
+            <div class="sec-diag-arrow allowed" style="flex-direction: column-reverse;">
+                <div class="sec-diag-arrow-line"></div>
+                <div class="sec-diag-arrow-head">✓</div>
+                <div class="sec-diag-arrow-tag">Verified</div>
+            </div>
+            <!-- Trusted -->
+            <div class="sec-diag-node trusted">
+                <span class="sec-diag-icon">📱</span>
+                <div class="sec-diag-label">Trusted</div>
+                <div class="sec-diag-title">Your Private<br>Authenticated Channel</div>
+                <div class="sec-diag-sub">The only source of instructions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Closing -->
+    <div class="sec-close">
+        <div class="sec-close-icon">🧘</div>
+        <p>
+            <strong>Peace of mind is part of the product.</strong> Your executive team, your board, and your clients can trust that your AI agent cannot be manipulated by anything it reads online or receives in an inbox. SolveWorks agents have never been compromised by an injection attempt — and the architecture is why.
+        </p>
+    </div>
+
+</div>
+<!-- ====== SECURITY SECTION END ====== -->

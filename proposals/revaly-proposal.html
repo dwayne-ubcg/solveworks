@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenClaw AI Assistant Deployment — Revaly</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .department-card,
+            .solution-card,
+            .package-card,
+            .roi-card,
+            .roi-grid,
+            .timeline-item,
+            .use-case,
+            table,
+            blockquote,
+            .packages-grid,
+            .category-advantage,
+            .success-metrics {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #94a3b8;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.8in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #0ea5e9;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+        }
+
+        .solution-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            color: white;
+        }
+
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .solution-price {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .solution-price .monthly {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0a0a1a;
+        }
+
+        .solution-price .period {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .solution-price .setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === PACKAGES === */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 22px 18px;
+            text-align: center;
+            position: relative;
+        }
+
+        .package-card.featured {
+            border: 2px solid #0ea5e9;
+            background: linear-gradient(180deg, #f0f9ff 0%, white 30%);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+
+        .package-name {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .package-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0a0a1a;
+            line-height: 1;
+        }
+
+        .package-price sup {
+            font-size: 16px;
+            font-weight: 600;
+            top: -10px;
+        }
+
+        .package-period {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .package-setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .package-features {
+            list-style: none;
+            text-align: left;
+            padding: 0;
+        }
+
+        .package-features li {
+            font-size: 11px;
+            color: #374151;
+            padding: 4px 0;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .package-tagline {
+            font-size: 11px;
+            color: #0ea5e9;
+            font-style: italic;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* === ROI SECTION === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* === DEPARTMENT CARDS === */
+        .department-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+        }
+
+        .department-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .department-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .department-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .department-savings {
+            text-align: right;
+            color: #047857;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .use-case {
+            margin-bottom: 8px;
+        }
+
+        .use-case-title {
+            font-weight: 600;
+            font-size: 12px;
+            color: #374151;
+            margin-bottom: 2px;
+        }
+
+        .use-case-desc {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .chat-mock {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+        .chat-bubble.user {
+            background: #0ea5e9;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.agent {
+            background: #1e293b;
+            color: #e2e8f0;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+        .chat-clear { clear: both; }
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #374151;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 400;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === PAGE 1: COVER === -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>OpenClaw AI Assistant<br>Deployment for<br><span>Revaly</span></h1>
+        <div class="cover-subtitle">Amplify your team. Own your category. Scale without limits.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> February 11, 2026<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io<br>
+            <strong>Valid through:</strong> March 15, 2026
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- === PAGE 2: EXECUTIVE SUMMARY === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>Executive <span>Summary</span></h2>
+            <div class="section-subtitle">The AI multiplier for category leaders</div>
+
+            <p class="intro-text">
+                Revaly isn't just another fintech company — you're creating the entire <strong>Payment Performance Management</strong> category. With your recent rebrand and aggressive growth plans, your 63-person team is punching above its weight against well-funded competitors like Chargebee and Recurly.
+            </p>
+            <p class="intro-text">
+                But category creation demands speed at scale: technical documentation, competitive intelligence, sales enablement, customer success, and thought leadership — all while maintaining the product innovation that keeps you ahead. <strong>Your biggest constraint isn't market opportunity, it's human bandwidth.</strong>
+            </p>
+            <p class="intro-text">
+                OpenClaw AI Assistants change that equation. By deploying personalized AI assistants across every role — from engineering to executive leadership — you can amplify your existing team's output by <strong>30-50%</strong> without adding headcount. Think of it as hiring 15-25 additional team members who work 24/7, never need training, and scale instantly with your growth.
+            </p>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">$1.3M+</div>
+                    <div class="roi-label">Annual productivity value<br>equivalent to 15 FTE</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">&lt;3mo</div>
+                    <div class="roi-label">Payback period<br>faster than hiring</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">7-10hrs</div>
+                    <div class="roi-label">Saved per employee<br>per week</div>
+                </div>
+            </div>
+
+            <p class="disclaimer">* Conservative estimates based on Payment Performance Management industry analysis and Montreal SaaS team costs. Productivity gains measured by time savings on repetitive knowledge work, content creation, and administrative tasks.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 3: DEPARTMENT BREAKDOWN — Sales & Customer Success === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Department Impact Analysis</div>
+            </div>
+
+            <h2>Department <span>Breakdown</span></h2>
+            <div class="section-subtitle">Specific use cases and time savings by function</div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">🎯</div>
+                        <div>
+                            <h3>Sales & Business Development (8-12 people)</h3>
+                            <div class="solution-card-desc">Every interaction with category education and competitive differentiation</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">8-12 hrs/week saved per rep</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Prospect Research & Category Education</div>
+                    <div class="use-case-desc">AI deep-dives on target subscription companies: current payment stack, recovery solutions, PPM readiness indicators. Auto-generates educational content explaining payment performance management vs. basic dunning.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Competitive Battlecards</div>
+                    <div class="use-case-desc">Real-time intelligence on Butter Payments, Gravy, Churnkey positioning. Auto-updates when competitors announce features, pricing changes, or new partnerships (like your AdvantageCS integration).</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Demo Personalization</div>
+                    <div class="use-case-desc">Custom demo scripts based on prospect's billing platform (Recurly/Chargebee/custom), industry vertical, and specific payment performance challenges.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">RFP & Security Responses</div>
+                    <div class="use-case-desc">Auto-drafts technical responses pulling from SOC2 reports, API documentation, and integration guides. Critical for enterprise deals.</div>
+                </div>
+            </div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">💚</div>
+                        <div>
+                            <h3>Customer Success (6-10 people)</h3>
+                            <div class="solution-card-desc">Proactive health monitoring and expansion intelligence</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">8-12 hrs/week saved per CSM</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Client Health & Churn Risk Analysis</div>
+                    <div class="use-case-desc">Tracks payment performance metrics (recovery rates, approval rates), flags declining accounts before churn risk materializes. Critical in subscription business with high CACs.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">QBR Automation</div>
+                    <div class="use-case-desc">Auto-generates quarterly business review decks with client-specific ROI metrics, industry benchmarks, and expansion opportunities. Saves 5-8 hours per QBR.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Integration Support</div>
+                    <div class="use-case-desc">Drafts technical responses for common Recurly, Chargebee, Stripe integration issues. Reduces escalations to engineering team.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Expansion Identification</div>
+                    <div class="use-case-desc">Analyzes client payment data to identify opportunities for additional payment methods, new retry strategies, or geographic expansion.</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 4: DEPARTMENT BREAKDOWN — Engineering & Marketing === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Department Impact Analysis (continued)</div>
+            </div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">🔧</div>
+                        <div>
+                            <h3>Engineering (15-20 people)</h3>
+                            <div class="solution-card-desc">Technical documentation and debugging acceleration</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">6-10 hrs/week saved per engineer</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">API Documentation & Integration Guides</div>
+                    <div class="use-case-desc">Auto-generates documentation for payment gateway integrations, webhook handling, and ML model endpoints. Critical as you scale integrations.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Payment Flow Debugging</div>
+                    <div class="use-case-desc">Analyzes error logs, traces payment failures, suggests fixes for common gateway integration edge cases. Understands issuer response codes.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Code Review Assistance</div>
+                    <div class="use-case-desc">Reviews PRs for payment processing patterns, security considerations, and PCI compliance requirements.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">ML Model Documentation</div>
+                    <div class="use-case-desc">Documents retry optimization model performance, training data changes, and A/B test results for payment algorithms.</div>
+                </div>
+            </div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">📢</div>
+                        <div>
+                            <h3>Marketing (4-6 people)</h3>
+                            <div class="solution-card-desc">Category creation and thought leadership content at scale</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">8-12 hrs/week saved per marketer</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Payment Performance Management Content</div>
+                    <div class="use-case-desc">Creates blog posts, whitepapers, webinar content defining PPM category. References your "Approvals By Design" guide, involuntary churn statistics, and industry benchmarks.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Competitive Intelligence</div>
+                    <div class="use-case-desc">Monitors competitor messaging, identifies positioning gaps, suggests counter-narratives. Tracks industry M&A, partnership announcements, and feature releases.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">SEO & Content Optimization</div>
+                    <div class="use-case-desc">Keyword research for "payment recovery," "failed payment optimization," "involuntary churn reduction." Optimizes content for payment industry search terms.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Case Study Development</div>
+                    <div class="use-case-desc">Transforms client data into polished case studies with specific ROI metrics, approval rate improvements, and revenue recovery numbers.</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 5: DEPARTMENT BREAKDOWN — Product & Finance === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Department Impact Analysis (continued)</div>
+            </div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">📋</div>
+                        <div>
+                            <h3>Product Management (4-6 people)</h3>
+                            <div class="solution-card-desc">Market intelligence and product requirement acceleration</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">6-10 hrs/week saved per PM</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Payment Industry Intelligence</div>
+                    <div class="use-case-desc">Monitors card network rule changes (Visa, Mastercard), PCI compliance updates, and new payment method trends. Critical for platform roadmap.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Feature Research & PRDs</div>
+                    <div class="use-case-desc">Analyzes competitor feature sets, processes user feedback from CS tickets, creates product requirement documents with technical specifications.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">User Feedback Synthesis</div>
+                    <div class="use-case-desc">Processes support tickets, NPS responses, and CS notes to identify feature requests, integration priorities, and pain points.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Roadmap Communication</div>
+                    <div class="use-case-desc">Drafts changelog entries, release notes, and internal roadmap updates. Maintains product documentation for new features.</div>
+                </div>
+            </div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">💰</div>
+                        <div>
+                            <h3>Finance & Operations (3-5 people)</h3>
+                            <div class="solution-card-desc">Automated reporting and compliance documentation</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">4-8 hrs/week saved per person</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Financial Reporting</div>
+                    <div class="use-case-desc">Generates revenue reports, client billing summaries, usage-based pricing calculations. Critical for subscription SaaS business model.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Compliance Documentation</div>
+                    <div class="use-case-desc">Maintains SOC2, PCI-DSS, and GDPR documentation. Automated compliance evidence collection for payment processing requirements.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Board & Investor Reporting</div>
+                    <div class="use-case-desc">Auto-generates board presentations with KPIs, market positioning data, and competitive intelligence. Saves significant executive prep time.</div>
+                </div>
+            </div>
+
+            <div class="department-card">
+                <div class="department-header">
+                    <div class="department-title">
+                        <div class="department-icon">👔</div>
+                        <div>
+                            <h3>Executive Leadership (4-6 people)</h3>
+                            <div class="solution-card-desc">Strategic intelligence and executive communication</div>
+                        </div>
+                    </div>
+                    <div class="department-savings">5-8 hrs/week saved per leader</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Market & Competitive Analysis</div>
+                    <div class="use-case-desc">Real-time analysis of payment industry trends, competitor funding rounds, M&A activity, and category evolution.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Board & Investor Communications</div>
+                    <div class="use-case-desc">Drafts board presentations, investor updates, and fundraising materials with category creation messaging.</div>
+                </div>
+                <div class="use-case">
+                    <div class="use-case-title">Strategic Planning Support</div>
+                    <div class="use-case-desc">Synthesizes internal data with market intelligence for quarterly planning and category roadmap development.</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 6: PHASED ROLLOUT & PRICING === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation & Investment</div>
+            </div>
+
+            <h2>Phased <span>Rollout</span> Strategy</h2>
+            <div class="section-subtitle">Strategic deployment to maximize adoption and immediate impact</div>
+
+            <div class="packages-grid">
+                <div class="package-card">
+                    <div class="package-name">Phase 1: Pilot</div>
+                    <div class="package-price">3-4 <span style="font-size: 16px;">seats</span></div>
+                    <div class="package-period">Sales & Marketing leads</div>
+                    <div class="package-setup">$6,000 setup + $1,800/mo</div>
+                    <ul class="package-features">
+                        <li>Category education content</li>
+                        <li>Competitive battlecards</li>
+                        <li>Sales enablement automation</li>
+                        <li>Content creation for PPM</li>
+                        <li>30-day impact assessment</li>
+                    </ul>
+                    <div class="package-tagline">Weeks 1-4: Immediate revenue impact</div>
+                </div>
+
+                <div class="package-card featured">
+                    <div class="package-badge">Recommended</div>
+                    <div class="package-name">Phase 2: ELT</div>
+                    <div class="package-price">9 <span style="font-size: 16px;">seats</span></div>
+                    <div class="package-period">Executive Leadership Team</div>
+                    <div class="package-setup">$13,500 setup + $4,050/mo</div>
+                    <ul class="package-features">
+                        <li>Board presentation automation</li>
+                        <li>Strategic planning support</li>
+                        <li>Market intelligence feeds</li>
+                        <li>Investor communication drafts</li>
+                        <li>Cross-department workflows</li>
+                    </ul>
+                    <div class="package-tagline">Weeks 5-8: Executive amplification</div>
+                </div>
+
+                <div class="package-card">
+                    <div class="package-name">Phase 3: Company-Wide</div>
+                    <div class="package-price">60 <span style="font-size: 16px;">seats</span></div>
+                    <div class="package-period">Full organization</div>
+                    <div class="package-setup">$90,000 setup + $27,000/mo</div>
+                    <ul class="package-features">
+                        <li>Department-specific assistants</li>
+                        <li>Technical documentation</li>
+                        <li>Customer success automation</li>
+                        <li>Engineering support</li>
+                        <li>Complete integration</li>
+                    </ul>
+                    <div class="package-tagline">Weeks 9-12: Full transformation</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 24px;">
+                <h2>Investment <span>&</span> ROI</h2>
+                <div class="section-subtitle">Clear cost structure with rapid payback</div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 16px 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; text-align: center;">
+                        <div>
+                            <h3 style="color: #0ea5e9; margin-bottom: 8px;">Setup Investment</h3>
+                            <div style="font-size: 24px; font-weight: 800; color: #374151;">$1,500</div>
+                            <div style="font-size: 12px; color: #64748b;">per seat, one-time (CAD)</div>
+                        </div>
+                        <div>
+                            <h3 style="color: #0ea5e9; margin-bottom: 8px;">Monthly Fee</h3>
+                            <div style="font-size: 24px; font-weight: 800; color: #374151;">$450</div>
+                            <div style="font-size: 12px; color: #64748b;">per seat per month (CAD)</div>
+                        </div>
+                        <div>
+                            <h3 style="color: #0ea5e9; margin-bottom: 8px;">Full Deployment</h3>
+                            <div style="font-size: 24px; font-weight: 800; color: #374151;">$90K + $27K/mo</div>
+                            <div style="font-size: 12px; color: #64748b;">60 seats all-in (CAD)</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 8px; font-size: 10px; color: #94a3b8; font-style: italic;">All prices in CAD</div>
+                <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #93c5fd; border-radius: 10px; padding: 14px 18px; margin-top: 14px;">
+                    <p style="font-size: 11.5px; color: #1e40af; margin-bottom: 0; line-height: 1.6;">
+                        <strong>💡 Compare:</strong> One full-time AI engineer in Montreal costs $120–150K CAD/year — and serves one role. A 9-seat deployment serves your entire leadership team for under $50K/year.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 7: ROI + CATEGORY LEADER ADVANTAGE === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Return on Investment</div>
+            </div>
+
+            <h2>Projected <span>Returns</span></h2>
+            <div class="section-subtitle">Conservative estimates based on industry benchmarks</div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">$1.3M–$2.5M</div>
+                    <div class="roi-label">Annual productivity value<br>from time savings</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">400%+</div>
+                    <div class="roi-label">Return on investment<br>in Year 1</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">15-25</div>
+                    <div class="roi-label">Equivalent FTE gained<br>without hiring</div>
+                </div>
+            </div>
+
+            <div class="category-advantage" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border: 1px solid #a7f3d0; border-radius: 12px; padding: 20px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #047857; margin-bottom: 8px;">💡 The Category Leader Advantage</h3>
+                <p style="font-size: 12px; color: #065f46; margin-bottom: 0; line-height: 1.7;">
+                    You're not just buying productivity software — you're investing in category creation speed. Every hour your team saves on administrative work is an hour they can spend defining Payment Performance Management, educating the market, and staying ahead of competitors who are chasing your lead. First-mover advantage compounds when you move faster.
+                </p>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h2>12-Week <span>Implementation</span> Plan</h2>
+                <div class="section-subtitle">Zero disruption to current operations while building category leadership capacity</div>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot">1</div>
+                            <div class="timeline-line"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-week">Weeks 1-2</div>
+                            <h3>Discovery & Configuration</h3>
+                            <p>Deep dive into Revaly's workflows, Payment Performance Management positioning, competitive landscape, and technical documentation. Configure initial AI assistants with your category messaging, product knowledge, and integration details.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot">2</div>
+                            <div class="timeline-line"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-week">Weeks 3-4</div>
+                            <h3>Pilot Launch (Sales & Marketing)</h3>
+                            <p>Deploy 3-4 seats to sales and marketing leads. Focus on category education content, competitive battlecards, and prospect research. Quick wins to demonstrate immediate ROI.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker">
+                            <div class="timeline-dot">3</div>
+                            <div class="timeline-line"></div>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-week">Weeks 5-6</div>
+                            <h3>Executive Rollout</h3>
+                            <p>Expand to 9-person ELT with board presentation automation, strategic planning support, and market intelligence. Executive buy-in accelerates company-wide adoption.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 8: TIMELINE (continued) + SUCCESS METRICS === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation Timeline (continued)</div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 7-8</div>
+                        <h3>Customer Success & Product</h3>
+                        <p>Deploy to Customer Success for client health monitoring and QBR automation. Add Product team with feature research, user feedback synthesis, and payment industry intelligence workflows.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">5</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 9-10</div>
+                        <h3>Engineering & Technical Teams</h3>
+                        <p>Integrate with engineering workflows: API documentation, payment debugging, code review assistance, and ML model documentation. Critical for scaling technical integrations with billing platforms.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">6</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 11-12</div>
+                        <h3>Full Deployment & Optimization</h3>
+                        <p>Complete rollout to remaining teams (Finance, Operations). Implement cross-department workflows. Fine-tune AI assistants based on 60 days of usage data. Establish success metrics and ongoing optimization plan.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="success-metrics" style="margin-top: 30px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px;">
+                <h3 style="font-size: 16px; color: #0a0a1a; margin-bottom: 12px;">Success Metrics & Milestones</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4 style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">Week 4 Targets</h4>
+                        <ul style="font-size: 11px; color: #64748b; margin-left: 16px; line-height: 1.6;">
+                            <li>5+ competitive battlecards generated</li>
+                            <li>10+ category education pieces created</li>
+                            <li>Sales team time savings: 6+ hours/week</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px;">Week 12 Targets</h4>
+                        <ul style="font-size: 11px; color: #64748b; margin-left: 16px; line-height: 1.6;">
+                            <li>Company-wide productivity gain: 30%+</li>
+                            <li>Documentation generation: 80% automated</li>
+                            <li>Leadership prep time reduced by 50%</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE: HOW YOU'LL USE IT === -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">How You'll Use It</div>
+            </div>
+
+            <h2>How You'll <span>Use It</span></h2>
+            <div class="section-subtitle">No dashboards. No complex software. Just text your agent like you'd text a team member.</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Today • via Telegram</div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">You</div>
+                    Can you pull this quarter's sales pipeline? I need the top 10 deals by value for the board deck.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Here's your Q1 pipeline — top 10 deals total $2.4M. Three are in final negotiation stage. I've formatted it for your board deck template. Want me to drop it into the slide?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">You</div>
+                    Yes and draft a follow-up email to the Meridian team about their renewal
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Done ✓ Pipeline slide updated and saved. Here's the draft email to Meridian — references their usage stats and the new pricing tier. Ready to send when you approve.
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">💬</div>
+                    <div>
+                        <div class="usage-point-text">Text-based</div>
+                        <div class="usage-point-desc">Works on any phone, any time — Telegram or WhatsApp</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🧠</div>
+                    <div>
+                        <div class="usage-point-text">Remembers everything</div>
+                        <div class="usage-point-desc">Knows your business, your clients, your preferences</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚡</div>
+                    <div>
+                        <div class="usage-point-text">Available 24/7</div>
+                        <div class="usage-point-desc">No waiting for office hours — your agent never sleeps</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🔒</div>
+                    <div>
+                        <div class="usage-point-text">Private and secure</div>
+                        <div class="usage-point-desc">Your data stays yours — always</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Revaly</span>
+        </div>
+    </div>
+
+    <!-- === PAGE 9: CTA === -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Ready to amplify<br>category leadership?</h2>
+        <p>Schedule a 45-minute strategy session with our team. We'll demonstrate how OpenClaw AI Assistants can accelerate your Payment Performance Management category creation while scaling your team's impact — no commitment required.</p>
+        <div class="cta-button">Schedule Strategy Session →</div>
+        <div class="cta-contact">
+            <p>calendly.com/solveworks-strategy/45min</p>
+            <p style="margin-top: 10px;">solveworks.io &nbsp;|&nbsp; hello@solveworks.io</p>
+        </div>
+        <div class="cover-bar" style="position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0ea5e9, #0369a1);"></div>
+    </div>
+
+</body>
+</html>

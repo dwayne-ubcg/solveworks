@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
+--border:#1e2d3d;--border-hover:#2a3d52;--text:#e4e4e8;--text2:#7a8ba0;
+--accent:#0D1B2A;--accent-light:#1a3050;
+--yellow:#f0c040;--green:#40c080;--blue:#4080f0;--red:#f04060;--purple:#a060f0;
+--radius:12px;
+--glass:rgba(12,21,32,.6);--glass-border:rgba(255,255,255,.06);
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;position:relative}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+a{color:var(--blue);text-decoration:none}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--border)}
+
+.sidebar{width:240px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-right:1px solid var(--glass-border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;z-index:2}
+.sidebar-logo{padding:20px;border-bottom:1px solid var(--glass-border)}
+.sidebar-logo .title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--blue);text-transform:uppercase}
+.sidebar-logo .sub{display:block;font-size:13px;font-weight:600;color:var(--text);margin-top:4px}
+.nav{flex:1;padding:8px 12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .2s cubic-bezier(.4,0,.2,1);position:relative}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav-item.active{background:rgba(64,128,240,.12);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:18px;background:var(--blue);border-radius:0 3px 3px 0}
+.nav-item svg{width:16px;height:16px;opacity:.5;flex-shrink:0}.nav-item.active svg{opacity:1}
+.nav-badge{position:absolute;right:10px;font-size:10px;font-weight:700;background:rgba(64,128,240,.15);color:var(--blue);padding:2px 7px;border-radius:10px;min-width:20px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.15);color:#fff}
+.sidebar-footer{padding:14px;border-top:1px solid var(--glass-border);text-align:center}
+.sidebar-footer a{font-size:11px;color:var(--text2);opacity:.6;transition:opacity .2s}
+.sidebar-footer a:hover{opacity:1;color:var(--blue)}
+
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:32px 40px;padding-bottom:80px;position:relative;z-index:1;min-height:0}
+.section{display:none;animation:fadeIn .4s cubic-bezier(.4,0,.2,1)}.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:linear-gradient(-45deg,#0a0a0f,#0d1520,#0a1228,#0f0a1a);background-size:400% 400%;animation:grad 15s ease infinite}
+#login.hidden{display:none}
+@keyframes grad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.login-box{background:rgba(12,21,32,.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--glass-border);border-radius:16px;padding:48px;width:360px;text-align:center;animation:loginIn .6s cubic-bezier(.4,0,.2,1)}
+@keyframes loginIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.login-box h1{font-size:20px;margin-bottom:4px;font-weight:700}
+.login-box .login-sub{font-size:11px;font-weight:600;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .3s}
+.login-box input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(64,128,240,.15)}
+.login-box button{width:100%;padding:12px;margin-top:12px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.login-box button:hover{background:#5090ff}
+.login-box button:active{transform:scale(.97)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+.glass-card{background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);transition:all .25s cubic-bezier(.4,0,.2,1)}
+.glass-card:hover{border-color:var(--border-hover);box-shadow:0 4px 24px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.03)}
+
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px;letter-spacing:-.02em}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.clock{font-size:13px;color:var(--text2);margin-bottom:24px;font-variant-numeric:tabular-nums}
+
+.mission-statement{background:linear-gradient(135deg,rgba(10,22,40,.8),rgba(22,40,64,.6),rgba(26,48,80,.5));backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:28px;margin-bottom:28px;position:relative;overflow:hidden}
+.mission-statement::before{content:'';position:absolute;top:-50%;right:-50%;width:200%;height:200%;background:radial-gradient(circle at 70% 30%,rgba(64,128,240,.08),transparent 60%);pointer-events:none}
+.mission-statement h2{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px}
+.mission-statement p{font-size:18px;font-weight:500;line-height:1.6;position:relative}
+.mission-statement .tag{display:inline-block;margin-top:12px;font-size:12px;color:var(--blue);font-weight:600;padding:4px 12px;background:rgba(64,128,240,.1);border-radius:20px;border:1px solid rgba(64,128,240,.15)}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px}
+.stat-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards;transition:all .25s}
+.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}.stat-card:nth-child(5){animation-delay:.25s}.stat-card:nth-child(6){animation-delay:.3s}.stat-card:nth-child(7){animation-delay:.35s}
+.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.stat-card:nth-child(1)::before{background:linear-gradient(180deg,var(--yellow),rgba(240,192,64,.2))}.stat-card:nth-child(2)::before{background:linear-gradient(180deg,var(--green),rgba(64,192,128,.2))}.stat-card:nth-child(3)::before{background:linear-gradient(180deg,var(--blue),rgba(64,128,240,.2))}.stat-card:nth-child(4)::before{background:linear-gradient(180deg,var(--purple),rgba(160,96,240,.2))}.stat-card:nth-child(5)::before{background:linear-gradient(180deg,var(--red),rgba(240,64,96,.2))}.stat-card:nth-child(6)::before{background:linear-gradient(180deg,#40c0c0,rgba(64,192,192,.2))}.stat-card:nth-child(7)::before{background:linear-gradient(180deg,#c080f0,rgba(192,128,240,.2))}
+.stat-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}
+.stat-card .value{font-size:28px;font-weight:700}
+
+.feed-item{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;transition:all .25s;opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
+.feed-item:hover{border-color:var(--border-hover)}
+.feed-item .feed-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.feed-item .feed-icon{font-size:18px;flex-shrink:0}
+.feed-item .feed-date{font-size:12px;color:var(--blue);font-weight:600;letter-spacing:.5px}
+.feed-item .feed-content{font-size:14px;line-height:1.7}
+.feed-item .feed-content strong{color:var(--text);font-weight:600}
+
+.filter-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.search-input{padding:9px 14px 9px 36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;width:260px;transition:all .25s}
+.search-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(64,128,240,.1)}
+.search-wrap{position:relative}.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text2);pointer-events:none}
+.filter-chip{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;user-select:none}
+.filter-chip:hover{background:var(--surface2);color:var(--text)}.filter-chip.active{background:rgba(64,128,240,.15);color:var(--blue);border-color:rgba(64,128,240,.3)}
+
+.task-section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}.task-section-title:first-child{margin-top:0}
+.task{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:8px;padding:14px 18px;margin-bottom:8px;transition:all .25s;opacity:0;animation:cardIn .4s cubic-bezier(.4,0,.2,1) forwards}
+.task:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.task-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.badge.high{background:rgba(240,64,96,.15);color:var(--red)}.badge.medium{background:rgba(240,192,64,.15);color:var(--yellow)}.badge.low{background:rgba(64,128,240,.15);color:var(--blue)}
+.badge.in-progress{background:rgba(240,192,64,.15);color:var(--yellow)}.badge.completed{background:rgba(64,192,128,.15);color:var(--green)}.badge.waiting{background:rgba(64,128,240,.15);color:var(--blue)}.badge.blocked{background:rgba(240,64,96,.15);color:var(--red)}.badge.todo{background:rgba(152,152,176,.12);color:var(--text2)}
+.task-name{font-size:14px;font-weight:500;flex:1;min-width:0}
+.task-cat{font-size:11px;color:var(--text2);margin-left:4px}
+.task-due{font-size:11px;color:var(--text2);white-space:nowrap}
+
+.meeting-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;opacity:0;animation:cardIn .4s cubic-bezier(.4,0,.2,1) forwards;transition:all .25s;border-left:3px solid transparent;cursor:pointer}
+.meeting-card:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.meeting-card.today{border-left-color:var(--green)}
+.meeting-card .meeting-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.meeting-card .meeting-title{font-size:15px;font-weight:600;margin-bottom:4px}
+.meeting-card .meeting-meta{font-size:12px;color:var(--text2);display:flex;flex-wrap:wrap;gap:12px;margin-top:6px}
+.meeting-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.meeting-badge.today-badge{background:rgba(64,192,128,.15);color:var(--green)}
+.meeting-badge.upcoming-badge{background:rgba(64,128,240,.15);color:var(--blue)}
+.meeting-attendees{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.meeting-attendee{font-size:11px;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text2)}
+.meeting-details{max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1)}
+.meeting-card.expanded .meeting-details{max-height:800px}
+.meeting-prep{margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+.meeting-prep h4{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px}
+.prep-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;font-size:13px}
+.prep-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.prep-dot.pending{background:var(--yellow)}.prep-dot.complete{background:var(--green)}
+.prep-item .prep-response{font-size:12px;color:var(--text2);margin-top:4px;padding-left:16px}
+.prep-input-wrap{display:flex;gap:8px;margin-top:12px}
+.prep-input{flex:1;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+.prep-input:focus{border-color:var(--blue)}
+.prep-submit{padding:8px 16px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.prep-submit:hover{background:#5090ff}
+
+.doc-card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 20px;margin-bottom:8px;display:flex;align-items:center;gap:14px;transition:all .25s;opacity:0;animation:cardIn .4s cubic-bezier(.4,0,.2,1) forwards}
+.doc-card:hover{border-color:var(--border-hover);transform:translateY(-1px)}
+.doc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.doc-icon.pdf{background:rgba(240,64,96,.12)}.doc-icon.xlsx{background:rgba(64,192,128,.12)}.doc-icon.pptx{background:rgba(240,192,64,.12)}
+.doc-title{font-size:14px;font-weight:500;flex:1}.doc-cat{font-size:11px;color:var(--text2)}.doc-date{font-size:11px;color:var(--text2)}.doc-size{font-size:11px;color:var(--text2)}
+
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.agent-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:24px;transition:all .25s;opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
+.agent-card:nth-child(1){animation-delay:.05s}.agent-card:nth-child(2){animation-delay:.1s}.agent-card:nth-child(3){animation-delay:.15s}
+.agent-card:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.agent-card .agent-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.agent-card .agent-role{font-size:13px;color:var(--text2);margin-bottom:14px}
+.agent-card .agent-desc{font-size:14px;line-height:1.6}
+.agent-status{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:12px;letter-spacing:.5px;text-transform:uppercase}
+.agent-status.active{background:rgba(64,192,128,.15);color:var(--green);box-shadow:0 0 12px rgba(64,192,128,.1)}
+.agent-status.standby{background:rgba(64,128,240,.15);color:var(--blue)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.agent-status.active::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s ease-in-out infinite}
+.agent-status.standby::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:6px}
+.agent-caps{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+.agent-cap{font-size:10px;padding:2px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2)}
+.agent-meta{font-size:12px;color:var(--text2);margin-top:10px;display:flex;gap:16px}
+
+.travel-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:0;margin-bottom:16px;overflow:hidden;transition:all .25s;opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
+.travel-card:hover{border-color:var(--border-hover)}
+.travel-card-header{padding:20px 24px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.travel-card-header:hover{background:rgba(255,255,255,.02)}
+.travel-dest{font-size:17px;font-weight:700}.travel-dates{font-size:13px;color:var(--text2);margin-top:2px}
+.travel-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px}
+.travel-badge.business{background:rgba(64,128,240,.15);color:var(--blue)}
+.travel-status{font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;margin-left:8px}
+.travel-status.upcoming{background:rgba(64,128,240,.12);color:var(--blue)}.travel-status.completed{background:rgba(152,152,176,.12);color:var(--text2)}
+.travel-details{display:none;padding:0 24px 20px;border-top:1px solid var(--glass-border)}.travel-details.open{display:block}
+.travel-section{margin-top:16px}
+.travel-section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.flight-route{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface2);border-radius:8px;margin-bottom:8px}
+.flight-airport{font-size:20px;font-weight:700;letter-spacing:1px}
+.flight-arrow{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.flight-arrow .line{width:100%;height:1px;background:var(--border);position:relative}
+.flight-arrow .line::after{content:'✈';position:absolute;right:-4px;top:-9px;font-size:14px}
+.flight-arrow .flight-num{font-size:11px;color:var(--text2);font-weight:600}
+.flight-time{font-size:12px;color:var(--text2)}
+.flight-conf{font-size:11px;color:var(--blue);font-weight:600;margin-top:2px}
+.hotel-card{padding:12px 16px;background:var(--surface2);border-radius:8px;margin-bottom:8px}
+.hotel-name{font-size:14px;font-weight:600}.hotel-detail{font-size:12px;color:var(--text2);margin-top:4px}
+.itin-day{padding:10px 16px;background:var(--surface2);border-radius:8px;margin-bottom:8px}
+.itin-date{font-size:12px;font-weight:600;color:var(--blue);margin-bottom:6px}
+.itin-item{font-size:13px;color:var(--text);padding:2px 0}
+.travel-notes{padding:12px 16px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--text);line-height:1.6}
+
+/* Health */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.health-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;opacity:0;animation:cardIn .5s forwards}
+.health-card .h-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.health-card .h-value{font-size:32px;font-weight:700}
+.health-card .h-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:80px;margin-top:12px}
+.bar-chart .bar{flex:1;border-radius:4px 4px 0 0;transition:height .6s ease;position:relative;min-width:0}
+.bar-chart .bar-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text2);white-space:nowrap}
+.sleep-breakdown{display:flex;gap:0;height:24px;border-radius:6px;overflow:hidden;margin:8px 0}
+.sleep-segment{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;transition:width .6s ease}
+
+/* Security */
+.security-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;transition:all .25s}
+.security-card:hover{border-color:var(--border-hover)}
+.security-status-badge{display:inline-block;font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:12px;letter-spacing:.5px}
+.security-status-badge.ok{background:rgba(64,192,128,.15);color:var(--green)}.security-status-badge.warn{background:rgba(240,192,64,.15);color:var(--yellow)}
+
+/* Calls */
+.call-item{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;transition:all .25s;opacity:0;animation:cardIn .5s forwards}
+.call-item:hover{border-color:var(--border-hover)}
+.call-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.call-title{font-size:15px;font-weight:600;flex:1;min-width:200px}
+.call-date{font-size:12px;color:var(--text2)}
+.call-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.call-badge.partnership{background:rgba(240,192,64,.15);color:var(--yellow)}.call-badge.enterprise{background:rgba(64,128,240,.15);color:var(--blue)}.call-badge.prospect{background:var(--surface3);color:var(--text2)}
+.call-takeaways{list-style:none;padding:0}.call-takeaways li{padding:4px 0 4px 16px;position:relative;font-size:13px;line-height:1.6}.call-takeaways li::before{content:'→';position:absolute;left:0;color:var(--text2)}
+.sandler-score{display:flex;align-items:center;gap:8px;margin:12px 0}
+.sandler-bar{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.sandler-fill{height:100%;border-radius:4px;transition:width .8s ease}
+.sandler-label{font-size:12px;color:var(--text2);min-width:60px}
+
+/* CRM Pipeline */
+.pipeline-stages{display:flex;gap:2px;margin-bottom:24px;overflow-x:auto}
+.pipeline-stage{flex:1;min-width:100px;padding:12px;text-align:center;background:var(--glass);border:1px solid var(--glass-border);border-radius:8px;font-size:12px;font-weight:600;color:var(--text2);transition:all .2s}
+.pipeline-stage.active{background:rgba(64,128,240,.12);color:var(--blue);border-color:rgba(64,128,240,.3)}
+.pipeline-stage .stage-count{font-size:20px;font-weight:700;color:var(--text);display:block;margin-top:4px}
+.deal-card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;transition:all .25s;opacity:0;animation:cardIn .4s forwards}
+.deal-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.deal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.deal-company{font-size:15px;font-weight:600}.deal-value{font-size:15px;font-weight:700;color:var(--green)}
+.deal-meta{font-size:12px;color:var(--text2);display:flex;gap:16px;flex-wrap:wrap}
+.deal-stage{font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px}
+.deal-stage.lead{background:rgba(152,152,176,.12);color:var(--text2)}
+.deal-stage.qualified{background:rgba(64,128,240,.15);color:var(--blue)}
+.deal-stage.proposal{background:rgba(240,192,64,.15);color:var(--yellow)}
+.deal-stage.negotiation{background:rgba(160,96,240,.15);color:var(--purple)}
+.deal-stage.closed-won{background:rgba(64,192,128,.15);color:var(--green)}
+
+/* Email */
+.email-card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 20px;margin-bottom:8px;transition:all .25s;opacity:0;animation:cardIn .4s forwards}
+.email-card:hover{border-color:var(--border-hover);transform:translateY(-1px)}
+.email-header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.email-from{font-size:14px;font-weight:600;flex:1}
+.email-time{font-size:11px;color:var(--text2)}
+.email-cat{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.email-cat.urgent{background:rgba(240,64,96,.15);color:var(--red)}.email-cat.needs-response{background:rgba(240,192,64,.15);color:var(--yellow)}.email-cat.fyi{background:rgba(64,128,240,.15);color:var(--blue)}.email-cat.promotional{background:rgba(152,152,176,.12);color:var(--text2)}
+.email-subject{font-size:13px;font-weight:500;margin-bottom:4px}
+.email-preview{font-size:12px;color:var(--text2);line-height:1.5}
+.email-action{font-size:12px;color:var(--blue);margin-top:6px;font-weight:500}
+
+/* Intel */
+.intel-card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;transition:all .25s;opacity:0;animation:cardIn .5s forwards}
+.intel-card:hover{border-color:var(--border-hover)}
+.intel-title{font-size:15px;font-weight:600;margin-bottom:6px}
+.intel-meta{font-size:12px;color:var(--text2);margin-bottom:10px;display:flex;gap:16px;flex-wrap:wrap}
+.intel-relevance{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.intel-body{font-size:14px;line-height:1.7}
+.intel-insight{margin-top:10px;padding:10px 14px;background:rgba(64,128,240,.06);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;font-size:13px;line-height:1.6;color:var(--text)}
+
+/* Reports */
+.report-card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;transition:all .25s;opacity:0;animation:cardIn .5s forwards}
+.report-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.report-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.report-title{font-size:15px;font-weight:600}.report-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(64,192,128,.15);color:var(--green)}
+.report-meta{font-size:12px;color:var(--text2);margin-bottom:8px}
+.report-summary{font-size:13px;line-height:1.6;color:var(--text2)}
+
+/* Reading */
+.reading-item{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:all .25s;opacity:0;animation:cardIn .4s forwards}
+.reading-item:hover{border-color:var(--border-hover)}
+.reading-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;flex-shrink:0}
+.reading-status.reading{background:rgba(64,192,128,.15);color:var(--green)}.reading-status.queued{background:rgba(152,152,176,.12);color:var(--text2)}.reading-status.completed{background:rgba(64,128,240,.15);color:var(--blue)}
+.reading-title{font-size:14px;font-weight:500;flex:1}
+.reading-author{font-size:12px;color:var(--text2)}
+.reading-type{font-size:10px;color:var(--text2);padding:2px 6px;background:var(--surface2);border-radius:6px}
+.progress-bar{width:80px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;flex-shrink:0}
+.progress-fill{height:100%;border-radius:2px;background:var(--green)}
+
+/* Outreach */
+.outreach-card{background:var(--glass);backdrop-filter:blur(8px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;transition:all .25s;opacity:0;animation:cardIn .5s forwards}
+.outreach-card:hover{border-color:var(--border-hover)}
+.outreach-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.outreach-recipient{font-size:14px;font-weight:600}
+.outreach-status{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.outreach-status.ready{background:rgba(64,128,240,.15);color:var(--blue)}.outreach-status.sent{background:rgba(64,192,128,.15);color:var(--green)}
+.outreach-subject{font-size:13px;color:var(--text2);margin-bottom:8px}
+.outreach-body{font-size:13px;line-height:1.6;padding:12px;background:var(--surface2);border-radius:8px;white-space:pre-line;max-height:120px;overflow:hidden;transition:max-height .3s}
+.outreach-body.expanded{max-height:none}
+.outreach-context{font-size:12px;color:var(--text2);margin-top:8px;padding:8px 12px;background:rgba(64,128,240,.04);border-radius:6px;border-left:2px solid var(--blue)}
+
+.section-cta{text-align:center;padding:20px;margin-top:24px;font-size:12px;color:var(--text2);opacity:.5}
+.section-cta a{color:var(--blue);font-weight:600}
+
+.demo-card{background:linear-gradient(135deg,rgba(64,128,240,.08),rgba(160,96,240,.06));border:1px solid rgba(64,128,240,.2);border-radius:var(--radius);padding:24px;margin-bottom:24px;text-align:center}
+.demo-card p{font-size:14px;line-height:1.6;color:var(--text2)}
+.demo-card a{color:var(--blue);font-weight:600}
+
+/* Mobile */
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
+.mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--glass);backdrop-filter:blur(20px);border-top:1px solid var(--glass-border);z-index:40;padding:4px 0;padding-bottom:env(safe-area-inset-bottom,4px)}
+.mobile-tabs-inner{display:flex;justify-content:space-around;align-items:center}
+.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:10px;font-weight:500;transition:all .2s;border:none;background:none;font-family:inherit;flex:1}
+.mobile-tab svg{width:20px;height:20px}.mobile-tab.active{color:var(--blue)}.mobile-tab:active{transform:scale(.9)}
+@media(max-width:1024px){
+  body{height:auto;overflow:auto;display:block;-webkit-overflow-scrolling:touch}
+  .sidebar{position:fixed;left:-260px;top:0;height:100%;z-index:40;transition:left .3s cubic-bezier(.4,0,.2,1)}
+  .sidebar.open{left:0}
+  .menu-toggle{display:block}
+  .mobile-tabs{display:block}
+  .main{padding:20px 16px;padding-top:56px;padding-bottom:80px;overflow:visible;height:auto;min-height:auto}
+  .section.active{display:block;overflow:visible}
+  .stats-grid{grid-template-columns:1fr 1fr}.agents-grid{grid-template-columns:1fr}
+  .filter-bar{flex-direction:column;align-items:stretch}.search-input{width:100%}
+  .health-grid{grid-template-columns:1fr 1fr}
+  .pipeline-stages{flex-wrap:wrap}
+}
+@media(min-width:1025px) and (pointer:coarse){
+  body{height:auto;overflow:auto;-webkit-overflow-scrolling:touch}
+  .main{overflow:visible;height:auto;min-height:auto}
+}
+
+/* Kanban Board */
+.kanban-board-switcher{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.kanban-board-switcher .kb-tab{padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text2);transition:all .2s}
+.kanban-board-switcher .kb-tab:hover{background:var(--surface2);color:var(--text)}
+.kanban-board-switcher .kb-tab.active{color:#fff;border-color:transparent}
+.kanban-board-group{margin-bottom:32px}
+.kanban-board-group .kb-group-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.kanban-board-group .kb-group-dot{width:10px;height:10px;border-radius:50%}
+.kanban-board-group .kb-group-name{font-size:16px;font-weight:700}
+.kanban-board-group .kb-group-count{font-size:13px;color:var(--text2)}
+.kanban-columns{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;min-height:300px}
+.kanban-col{min-width:240px;width:240px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:70vh}
+.kanban-col-header{padding:14px 16px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.kanban-col-header .kc-count{font-size:11px;font-weight:600;background:var(--surface2);padding:2px 8px;border-radius:10px;color:var(--text2)}
+.kanban-col-body{flex:1;overflow-y:auto;padding:10px;min-height:60px;transition:background .2s}
+.kanban-col-body.drag-over{background:rgba(64,128,240,.08);border-radius:0 0 var(--radius) var(--radius)}
+.kanban-card{background:rgba(20,30,46,.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:grab;transition:all .2s;user-select:none}
+.kanban-card:active{cursor:grabbing}
+.kanban-card:hover{border-color:var(--border-hover);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.kanban-card.dragging{opacity:.4;transform:scale(.96)}
+.kanban-card.won-glow{box-shadow:0 0 12px rgba(64,192,128,.2);border-color:rgba(64,192,128,.3)}
+.kanban-card.lost-dim{opacity:.5}
+.kanban-card .kc-company{font-size:14px;font-weight:700;margin-bottom:4px}
+.kanban-card .kc-contact{font-size:12px;color:var(--text2);margin-bottom:6px}
+.kanban-card .kc-signal{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kanban-card .kc-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.kanban-card .kc-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff}
+.kanban-card .kc-badge.src-ai{background:#0066FF}
+.kanban-card .kc-badge.src-referral{background:#FF6B00}
+.kanban-card .kc-badge.src-partner{background:#00A550}
+.kanban-card .kc-tag{font-size:10px;padding:2px 7px;border-radius:10px;background:var(--surface2);color:var(--text2)}
+.kanban-card .kc-date{font-size:10px;color:var(--text2);margin-left:auto}
+.kanban-toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;color:var(--text);z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.kanban-toast.show{transform:translateX(-50%) translateY(0)}
+.kanban-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:150;display:none;align-items:center;justify-content:center}
+.kanban-modal.open{display:flex}
+.kanban-modal-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;animation:cardIn .3s ease}
+.kanban-modal-content h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.kanban-modal-content .km-contact{font-size:13px;color:var(--text2);margin-bottom:12px}
+.kanban-modal-content .km-section{margin-bottom:14px}
+.kanban-modal-content .km-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:4px}
+.kanban-modal-content .km-text{font-size:13px;line-height:1.6;color:var(--text)}
+.kanban-modal-content .km-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+@media(max-width:1024px){
+  .kanban-columns{flex-direction:column}
+  .kanban-col{min-width:100%;width:100%;max-height:none}
+}
+
+/* Travel Research */
+.travel-research { margin-top: 16px; }
+.research-item { background: var(--surface2); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+.research-status { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+.research-status.pending { background: var(--yellow); }
+.research-status.complete { background: var(--green); }
+.research-input { display: flex; gap: 8px; margin-top: 12px; }
+.research-input input { flex: 1; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 13px; font-family: inherit; }
+.research-input button { padding: 10px 18px; background: var(--blue); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h1>Mission Control</h1>
+    <div class="login-sub">Acme Ventures — Alex Chen</div>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="title">MISSION CONTROL</div>
+    <span class="sub">Acme Ventures — Alex Chen</span>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div class="sidebar-footer"><a href="https://solveworks.io" target="_blank">Powered by SolveWorks</a></div>
+</nav>
+
+<div class="main" id="main-content"></div>
+
+<div class="mobile-tabs"><div class="mobile-tabs-inner">
+  <button class="mobile-tab active" onclick="showSection('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
+  <button class="mobile-tab" onclick="showSection('tasks')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Tasks</button>
+  <button class="mobile-tab" onclick="showSection('meetings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>Meetings</button>
+  <button class="mobile-tab" onclick="showSection('crm')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Pipeline</button>
+  <button class="mobile-tab" onclick="showSection('agents')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>Agents</button>
+</div></div>
+
+<script>
+const HASH='2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea';
+const SECTIONS=[
+  {id:'dashboard',icon:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',label:'Dashboard'},
+  {id:'activity',icon:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',label:'Activity Feed'},
+  {id:'tasks',icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',label:'Tasks',badge:'tasks-badge'},
+  {id:'meetings',icon:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',label:'Meetings',badge:'meetings-badge'},
+  {id:'documents',icon:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',label:'Documents'},
+  {id:'agents',icon:'<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/>',label:'Agents'},
+  {id:'travel',icon:'<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>',label:'Travel'},
+  {id:'health',icon:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>',label:'Health'},
+  {id:'security',icon:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',label:'Security'},
+  {id:'calls',icon:'<path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.8.36 1.58.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c1.23.34 2.01.58 2.81.7A2 2 0 0122 16.92z"/>',label:'Call Analysis'},
+  {id:'crm',icon:'<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/>',label:'Pipeline',badge:'crm-badge'},
+  {id:'email',icon:'<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',label:'Email Triage',badge:'email-badge'},
+  {id:'intel',icon:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',label:'Intel'},
+  {id:'reports',icon:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',label:'Reports'},
+  {id:'reading',icon:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',label:'Reading List'},
+  {id:'outreach',icon:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',label:'Outreach'},
+  {id:'expenses',icon:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>',label:'Expenses',badge:'expenses-badge'}
+];
+
+// Build nav & sections
+(function(){
+  let navH='',mainH='';
+  SECTIONS.forEach((s,i)=>{
+    navH+=`<div class="nav-item${i===0?' active':''}" data-section="${s.id}" onclick="showSection('${s.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${s.icon}</svg>${s.label}${s.badge?`<span class="nav-badge" id="${s.badge}">0</span>`:''}</div>`;
+    mainH+=`<div class="section${i===0?' active':''}" id="sec-${s.id}"><div style="padding:40px;text-align:center;color:var(--text2)">Loading...</div></div>`;
+  });
+  document.getElementById('nav').innerHTML=navH;
+  document.getElementById('main-content').innerHTML=mainH;
+})();
+
+/* AUTH */
+async function sha256(s){const d=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+async function tryLogin(){if(await sha256(document.getElementById('pw').value)===HASH){document.getElementById('login').classList.add('hidden');init()}else{document.getElementById('login-error').style.display='block'}}
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
+  const sec=document.getElementById('sec-'+id);if(sec){sec.style.animation='none';sec.offsetHeight;sec.style.animation='fadeIn .4s cubic-bezier(.4,0,.2,1)';sec.classList.add('active')}
+  document.querySelector(`.nav-item[data-section="${id}"]`)?.classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+}
+
+function esc(s){if(s==null)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+async function loadJSON(p){try{const r=await fetch(p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+function cta(){return '<div class="section-cta">Powered by <a href="https://solveworks.io" target="_blank">SolveWorks</a> — solveworks.io</div>'}
+
+async function init(){
+  try{await renderDashboard()}catch(e){console.error('Dashboard error:',e)}
+  try{await renderActivity()}catch(e){console.error('Activity error:',e)}
+  try{await renderTasks()}catch(e){console.error('Tasks error:',e)}
+  try{await renderMeetings()}catch(e){console.error('Meetings error:',e)}
+  try{await renderDocuments()}catch(e){console.error('Documents error:',e)}
+  try{await renderAgents()}catch(e){console.error('Agents error:',e)}
+  try{await renderTravel()}catch(e){console.error('Travel error:',e)}
+  try{await renderHealth()}catch(e){console.error('Health error:',e)}
+  try{await renderSecurity()}catch(e){console.error('Security error:',e)}
+  try{await renderCalls()}catch(e){console.error('Calls error:',e)}
+  try{await renderCRM()}catch(e){console.error('CRM error:',e)}
+  try{await renderEmail()}catch(e){console.error('Email error:',e)}
+  try{await renderIntel()}catch(e){console.error('Intel error:',e)}
+  try{await renderReports()}catch(e){console.error('Reports error:',e)}
+  try{await renderReading()}catch(e){console.error('Reading error:',e)}
+  try{await renderOutreach()}catch(e){console.error('Outreach error:',e)}
+}
+
+/* DASHBOARD */
+async function renderDashboard(){
+  const d=await loadJSON('data/dashboard.json');
+  const s=d?.stats||{};
+  document.getElementById('sec-dashboard').innerHTML=`
+    <h1 class="page-title">Dashboard</h1>
+    <div class="clock" id="clock"></div>
+    <div class="demo-card"><p>🎯 <strong>This is a live demo.</strong> Your Mission Control is customized to your business. <a href="https://solveworks.io" target="_blank">→ Learn more at solveworks.io</a></p></div>
+    <div class="mission-statement"><h2>Mission</h2><p>${esc(d?.mission||'')}</p><span class="tag">${esc(d?.missionTag||'')}</span></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label">In Progress</div><div class="value" style="color:var(--yellow)">${s.tasksInProgress||0}</div></div>
+      <div class="stat-card"><div class="label">Completed</div><div class="value" style="color:var(--green)">${s.tasksCompleted||0}</div></div>
+      <div class="stat-card"><div class="label">Meetings Today</div><div class="value" style="color:var(--blue)">${s.meetingsToday||0}</div></div>
+      <div class="stat-card"><div class="label">Active Agents</div><div class="value" style="color:var(--purple)">${s.activeAgents||0}</div></div>
+      <div class="stat-card"><div class="label">Upcoming Trips</div><div class="value" style="color:var(--red)">${s.upcomingTrips||0}</div></div>
+      <div class="stat-card"><div class="label">Health Score</div><div class="value" style="color:#40c0c0">${s.healthScore||0}</div></div>
+      <div class="stat-card"><div class="label">Pipeline Value</div><div class="value" style="color:#c080f0">${esc(s.pipelineValue||'$0')}</div></div>
+    </div>${cta()}`;
+  updateClock();setInterval(updateClock,1000);
+}
+function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=new Date().toLocaleString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+
+/* ACTIVITY */
+async function renderActivity(){
+  const d=await loadJSON('data/activity.json');
+  const items=d?.activities||[];
+  let html='<h1 class="page-title">Activity Feed</h1><p class="page-sub">Real-time log of everything your agents are doing</p>';
+  items.forEach((a,i)=>{
+    html+=`<div class="feed-item" style="animation-delay:${Math.min(i*50,500)}ms"><div class="feed-header"><span class="feed-icon">${a.icon||'📌'}</span><span class="feed-date">${esc(a.date)}</span></div><div class="feed-content">${a.content.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div></div>`;
+  });
+  document.getElementById('sec-activity').innerHTML=html+cta();
+}
+
+/* TASKS */
+async function renderTasks(){
+  const d=await loadJSON('data/tasks.json');
+  const tasks=d?.tasks||[];
+  const groups={ip:[],blocked:[],todo:[],done:[]};
+  tasks.forEach(t=>{
+    const s=(t.status||'').toLowerCase();
+    if(s.includes('complet')||s==='done')groups.done.push(t);
+    else if(s==='blocked')groups.blocked.push(t);
+    else if(s.includes('progress'))groups.ip.push(t);
+    else groups.todo.push(t);
+  });
+  let html='<h1 class="page-title">Tasks</h1><p class="page-sub">All tasks across your business, operations, and personal life</p>';
+  const badge=document.getElementById('tasks-badge');if(badge)badge.textContent=groups.ip.length+groups.blocked.length+groups.todo.length;
+  let idx=0;
+  const renderGroup=(title,arr)=>{if(!arr.length)return;html+=`<div class="task-section-title">${title} (${arr.length})</div>`;arr.forEach(t=>{
+    const pri=t.priority||'medium';const s=(t.status||'').toLowerCase();
+    let bc='todo';if(s.includes('progress'))bc='in-progress';else if(s==='blocked')bc='blocked';else if(s.includes('complet'))bc='completed';
+    let due='';if(t.due){const dd=new Date(t.due+'T00:00:00');due=dd.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+    html+=`<div class="task" style="animation-delay:${Math.min(idx*40,400)}ms"><div class="task-row"><span class="badge ${pri}">${pri}</span><span class="badge ${bc}">${bc.replace('-',' ')}</span><span class="task-name">${esc(t.title)}${t.category?` <span class="task-cat">${esc(t.category)}</span>`:''}</span>${due?`<span class="task-due">📅 ${due}</span>`:''}</div></div>`;
+    idx++;
+  })};
+  renderGroup('In Progress',groups.ip);renderGroup('Blocked',groups.blocked);renderGroup('Todo',groups.todo);renderGroup('Completed',groups.done);
+  document.getElementById('sec-tasks').innerHTML=html+cta();
+}
+
+/* MEETINGS */
+async function renderMeetings(){
+  const d=await loadJSON('data/meetings.json');
+  const meetings=d?.meetings||[];
+  const todayStr=new Date().toISOString().slice(0,10);
+  const badge=document.getElementById('meetings-badge');
+  const now=new Date();
+  const upcomingCount=meetings.filter(m=>new Date(m.datetime)>=now||m.datetime?.slice(0,10)===todayStr).length;
+  if(badge)badge.textContent=upcomingCount;
+  let html='<h1 class="page-title">Meetings</h1><p class="page-sub">Upcoming meetings with AI-powered prep</p>';
+  meetings.forEach((m,i)=>{
+    const isToday=m.datetime?.slice(0,10)===todayStr;
+    const dt=new Date(m.datetime);
+    const timeStr=dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    const dateStr=dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    html+=`<div class="meeting-card ${isToday?'today':''}" style="animation-delay:${i*60}ms" onclick="this.classList.toggle('expanded')">
+      <div class="meeting-header"><div><div class="meeting-title">${esc(m.title)}</div><div class="meeting-meta"><span>📅 ${dateStr} at ${timeStr}</span><span>⏱ ${esc(m.duration)}</span><span>📍 ${esc(m.location)}</span></div>
+      <div class="meeting-attendees">${(m.attendees||[]).map(a=>`<span class="meeting-attendee">${esc(a)}</span>`).join('')}</div></div>
+      <span class="meeting-badge ${isToday?'today-badge':'upcoming-badge'}">${isToday?'Today':'Upcoming'}</span></div>
+      <div class="meeting-details"><div class="meeting-prep"><h4>AI Prep Requests</h4>
+      ${(m.prepRequests||[]).map(p=>`<div class="prep-item"><span class="prep-dot ${p.status}"></span><div><div>${esc(p.text)}</div>${p.response?`<div class="prep-response">✅ ${esc(p.response)}</div>`:p.status==='pending'?'<div class="prep-response" style="color:var(--yellow)">⏳ Pending...</div>':''}</div></div>`).join('')}
+      <div class="prep-input-wrap"><input class="prep-input" placeholder="Add a prep request..." onclick="event.stopPropagation()"><button class="prep-submit" onclick="event.stopPropagation()">Request</button></div>
+      </div></div></div>`;
+  });
+  document.getElementById('sec-meetings').innerHTML=html+cta();
+}
+
+/* DOCUMENTS */
+async function renderDocuments(){
+  const d=await loadJSON('data/documents.json');
+  const docs=d?.documents||[];
+  let html='<h1 class="page-title">Documents</h1><p class="page-sub">All your files, organized and accessible</p>';
+  docs.forEach((doc,i)=>{
+    const iconMap={pdf:'📄',xlsx:'📊',pptx:'📽️'};
+    html+=`<div class="doc-card" style="animation-delay:${i*40}ms"><div class="doc-icon ${doc.type}">${iconMap[doc.type]||'📄'}</div><div class="doc-title">${esc(doc.title)}<div class="doc-cat">${esc(doc.category)}</div></div><span class="doc-date">${esc(doc.date)}</span><span class="doc-size">${esc(doc.size)}</span></div>`;
+  });
+  document.getElementById('sec-documents').innerHTML=html+cta();
+}
+
+/* AGENTS */
+async function renderAgents(){
+  const d=await loadJSON('data/agents.json');
+  const agents=d?.agents||[];
+  let html='<h1 class="page-title">Agents</h1><p class="page-sub">Your AI team — always working, always learning</p><div class="agents-grid">';
+  agents.forEach(a=>{
+    html+=`<div class="agent-card"><span class="agent-status ${a.status}">${a.status}</span><div class="agent-name">${esc(a.name)}</div><div class="agent-role">${esc(a.role)}</div><div class="agent-desc">${esc(a.description)}</div><div class="agent-meta"><span>🔧 ${a.taskCount} active tasks</span><span>⏱ ${esc(a.lastActive)}</span></div><div class="agent-caps">${(a.capabilities||[]).map(c=>`<span class="agent-cap">${esc(c)}</span>`).join('')}</div></div>`;
+  });
+  document.getElementById('sec-agents').innerHTML=html+'</div>'+cta();
+}
+
+/* TRAVEL */
+function showToast(msg){const t=document.createElement('div');t.textContent=msg;Object.assign(t.style,{position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%)',background:'var(--surface2)',color:'var(--text)',padding:'12px 24px',borderRadius:'12px',fontSize:'14px',fontWeight:'500',zIndex:'9999',boxShadow:'0 4px 20px rgba(0,0,0,0.3)',opacity:'0',transition:'opacity 0.3s'});document.body.appendChild(t);requestAnimationFrame(()=>t.style.opacity='1');setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500)}
+async function renderTravel(){
+  const d=await loadJSON('data/travel.json');
+  const trips=d?.trips||[];
+  let html='<h1 class="page-title">Travel</h1><p class="page-sub">Upcoming and past trips with full itineraries</p>';
+  trips.forEach((t,ti)=>{
+    html+=`<div class="travel-card" style="animation-delay:${ti*80}ms"><div class="travel-card-header" onclick="this.nextElementSibling.classList.toggle('open')"><div><div class="travel-dest">${esc(t.destination)}</div><div class="travel-dates">${esc(t.dates)} — ${esc(t.purpose)}</div></div><div><span class="travel-badge business">${esc(t.type)}</span><span class="travel-status ${t.status}">${t.status}</span></div></div><div class="travel-details">`;
+    // Flights
+    if(t.flights?.length){
+      html+=`<div class="travel-section"><div class="travel-section-title">✈️ Flights</div>`;
+      t.flights.forEach(f=>{
+        html+=`<div class="flight-route"><div><div class="flight-airport">${esc(f.from)}</div><div class="flight-time">${esc(f.depart)}</div></div><div class="flight-arrow"><div class="flight-num">${esc(f.airline)} ${esc(f.flight)}</div><div class="line"></div></div><div><div class="flight-airport">${esc(f.to)}</div><div class="flight-time">${esc(f.arrive)}</div></div></div><div class="flight-conf">Confirmation: ${esc(f.conf)}</div>`;
+      });
+      html+=`</div>`;
+    }
+    // Hotels
+    if(t.hotels?.length){
+      html+=`<div class="travel-section"><div class="travel-section-title">🏨 Hotels</div>`;
+      t.hotels.forEach(h=>{
+        html+=`<div class="hotel-card"><div class="hotel-name">${esc(h.name)}</div><div class="hotel-detail">${esc(h.dates)} • Conf: ${esc(h.conf)}</div><div class="hotel-detail">${esc(h.address)}</div>${h.notes?`<div class="hotel-detail" style="color:var(--text);margin-top:4px">${esc(h.notes)}</div>`:''}</div>`;
+      });
+      html+=`</div>`;
+    }
+    // Itinerary
+    if(t.itinerary?.length){
+      html+=`<div class="travel-section"><div class="travel-section-title">📋 Itinerary</div>`;
+      t.itinerary.forEach(day=>{
+        html+=`<div class="itin-day"><div class="itin-date">${esc(day.date)}</div>${(day.items||[]).map(item=>`<div class="itin-item">${esc(item)}</div>`).join('')}</div>`;
+      });
+      html+=`</div>`;
+    }
+    // 🔍 Trip Research
+    {
+      html+=`<div class="travel-section travel-research"><div class="travel-section-title">🔍 Trip Research</div>`;
+      const tripId=(t.destination||'').replace(/[^a-zA-Z0-9]/g,'_');
+      const stored=JSON.parse(localStorage.getItem('travel_research_'+tripId)||'[]');
+      const allResearch=[...(t.research||[]),...stored];
+      allResearch.forEach(r=>{
+        const resp=r.response?(r.response.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')):'';
+        html+=`<div class="research-item"><div><span class="research-status ${r.status}"></span><strong>${esc(r.request)}</strong></div>${resp?`<div style="margin-top:8px;font-size:13px;color:var(--text2)">${resp}</div>`:`<div style="margin-top:4px;font-size:12px;color:var(--text2)">Pending — your agent is working on this</div>`}</div>`;
+      });
+      // TODO: Wire to agent API for actual research execution
+      html+=`<div class="research-input"><input type="text" placeholder="What do you want to research for this trip?" onkeydown="if(event.key==='Enter')this.nextElementSibling.click()"><button onclick="const inp=this.previousElementSibling;if(!inp.value.trim())return;const tid='${tripId}';const s=JSON.parse(localStorage.getItem('travel_research_'+tid)||'[]');s.push({request:inp.value.trim(),status:'pending',response:''});localStorage.setItem('travel_research_'+tid,JSON.stringify(s));inp.value='';showToast('Research request submitted');renderTravel()">Request</button></div>`;
+      html+=`</div>`;
+    }
+    // Weather & Notes
+    if(t.weather)html+=`<div class="travel-section"><div class="travel-section-title">🌤 Weather</div><div class="travel-notes">${esc(t.weather)}</div></div>`;
+    if(t.notes)html+=`<div class="travel-section"><div class="travel-section-title">📝 Notes</div><div class="travel-notes">${esc(t.notes)}</div></div>`;
+    html+=`</div></div>`;
+  });
+  document.getElementById('sec-travel').innerHTML=html+cta();
+}
+
+/* HEALTH */
+async function renderHealth(){
+  const d=await loadJSON('data/health.json');
+  if(!d){document.getElementById('sec-health').innerHTML='<p>No health data</p>';return}
+  const t=d.today,sb=d.sleepBreakdown,wk=d.weeklyTrend,act=d.activitySummary;
+  let html='<h1 class="page-title">Health</h1><p class="page-sub">Oura Ring data — sleep, readiness, and activity</p>';
+  html+=`<div class="health-grid">
+    <div class="health-card" style="animation-delay:.05s"><div class="h-label">Sleep Score</div><div class="h-value" style="color:var(--blue)">${t.sleepScore}</div><div class="h-sub">Total: ${sb.total} (${sb.bedtime} → ${sb.wakeTime})</div></div>
+    <div class="health-card" style="animation-delay:.1s"><div class="h-label">Readiness</div><div class="h-value" style="color:var(--green)">${t.readiness}</div><div class="h-sub">Body temp: ${t.bodyTemp} (${t.bodyTempStatus})</div></div>
+    <div class="health-card" style="animation-delay:.15s"><div class="h-label">HRV</div><div class="h-value" style="color:var(--purple)">${t.hrv}<span style="font-size:14px;color:var(--text2)"> ms</span></div><div class="h-sub">Resting HR: ${t.restingHR} bpm</div></div>
+    <div class="health-card" style="animation-delay:.2s"><div class="h-label">Activity</div><div class="h-value" style="color:var(--yellow)">${t.steps.toLocaleString()}</div><div class="h-sub">${t.activeMinutes} active min • ${t.calories} cal</div></div>
+  </div>`;
+  // Sleep breakdown bar
+  html+=`<div class="glass-card" style="padding:20px;margin-bottom:20px"><h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Sleep Breakdown</h3><div class="sleep-breakdown"><div class="sleep-segment" style="width:${sb.deepPct}%;background:#4060d0" title="Deep ${sb.deep}">Deep ${sb.deepPct}%</div><div class="sleep-segment" style="width:${sb.remPct}%;background:#8040c0" title="REM ${sb.rem}">REM ${sb.remPct}%</div><div class="sleep-segment" style="width:${sb.lightPct}%;background:#4080a0" title="Light ${sb.light}">Light ${sb.lightPct}%</div><div class="sleep-segment" style="width:${sb.awakePct}%;background:var(--surface3)" title="Awake ${sb.awake}">Awake</div></div><div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--text2)"><span>🟦 Deep: ${sb.deep}</span><span>🟪 REM: ${sb.rem}</span><span>Light: ${sb.light}</span><span>Awake: ${sb.awake}</span></div></div>`;
+  // 7-day trend
+  html+=`<div class="glass-card" style="padding:20px;margin-bottom:20px"><h3 style="font-size:14px;font-weight:600;margin-bottom:12px">7-Day Sleep Score Trend</h3><div class="bar-chart">${wk.sleep.map((v,i)=>`<div class="bar" style="height:${v}%;background:linear-gradient(180deg,var(--blue),rgba(64,128,240,.3))"><span class="bar-label">${wk.days[i]}</span></div>`).join('')}</div></div>`;
+  // Activity
+  html+=`<div class="glass-card" style="padding:20px;margin-bottom:20px"><h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Weekly Steps</h3><div class="bar-chart">${act.weeklySteps.map((v,i)=>{const pct=Math.round(v/12000*100);return`<div class="bar" style="height:${pct}%;background:linear-gradient(180deg,var(--green),rgba(64,192,128,.3))"><span class="bar-label">${wk.days[i]}</span></div>`}).join('')}</div><div style="margin-top:24px;font-size:12px;color:var(--text2)">🔥 ${act.streak}-day activity streak • Goal: ${act.goal.toLocaleString()} steps/day</div></div>`;
+  document.getElementById('sec-health').innerHTML=html+cta();
+}
+
+/* SECURITY */
+async function renderSecurity(){
+  const d=await loadJSON('data/security.json');
+  const o=d?.overview||{};
+  let html=`<h1 class="page-title">Security</h1><p class="page-sub">System health, audits, and alerts</p>`;
+  html+=`<div class="glass-card" style="padding:24px;margin-bottom:20px"><div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span class="security-status-badge ok">✅ System Healthy</span><span style="font-size:13px;color:var(--text2)">Gateway: <strong style="color:var(--green)">${esc(o.gatewayStatus)}</strong></span><span style="font-size:13px;color:var(--text2)">Uptime: <strong>${esc(o.uptime)}</strong></span><span style="font-size:13px;color:var(--text2)">Last Audit: ${esc(o.lastAudit)}</span></div>
+  <div class="stats-grid" style="margin-top:16px;margin-bottom:0"><div class="stat-card" style="animation:none;opacity:1"><div class="label">Critical</div><div class="value" style="color:var(--green)">${o.critical}</div></div><div class="stat-card" style="animation:none;opacity:1"><div class="label">Warnings</div><div class="value" style="color:var(--yellow)">${o.warnings}</div></div><div class="stat-card" style="animation:none;opacity:1"><div class="label">Info</div><div class="value" style="color:var(--blue)">${o.info}</div></div></div></div>`;
+  (d?.items||[]).forEach(item=>{
+    const lc=item.level==='warning'?'warn':'ok';
+    html+=`<div class="security-card"><span class="security-status-badge ${lc}">${item.level==='warning'?'⚠️':'ℹ️'} ${item.level.toUpperCase()}</span><div style="font-size:15px;font-weight:600;margin-bottom:6px">${esc(item.title)}</div><div style="font-size:13px;color:var(--text2);line-height:1.6">${esc(item.detail)}</div><div style="font-size:11px;color:var(--text2);margin-top:6px">${esc(item.timestamp)}</div></div>`;
+  });
+  document.getElementById('sec-security').innerHTML=html+cta();
+}
+
+/* CALLS */
+async function renderCalls(){
+  const d=await loadJSON('data/call-analyses.json');
+  const calls=d?.calls||[];
+  let html='<h1 class="page-title">Call Analysis</h1><p class="page-sub">AI-analyzed calls with Sandler methodology scoring</p>';
+  calls.forEach((c,i)=>{
+    const color=c.sandlerScore>=75?'var(--green)':c.sandlerScore>=60?'var(--yellow)':'var(--red)';
+    html+=`<div class="call-item" style="animation-delay:${i*80}ms"><div class="call-header"><span class="call-title">${esc(c.title)}</span><span class="call-badge ${c.badge}">${esc(c.badge)}</span><span class="call-date">${esc(c.date)} • ${esc(c.duration)}</span></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:8px">${esc(c.prospect)} — ${esc(c.company)}</div>
+    <div class="sandler-score"><span class="sandler-label">Sandler Score</span><div class="sandler-bar"><div class="sandler-fill" style="width:${c.sandlerScore}%;background:${color}"></div></div><span style="font-size:14px;font-weight:700;color:${color}">${c.sandlerScore}/100</span></div>
+    <ul class="call-takeaways">${(c.takeaways||[]).map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+    <div style="margin-top:10px;font-size:13px;color:var(--blue);font-weight:500">📋 Next: ${esc(c.nextSteps)}</div></div>`;
+  });
+  document.getElementById('sec-calls').innerHTML=html+cta();
+}
+
+/* CRM / KANBAN PIPELINE */
+async function renderCRM(){
+  const leadsData=await loadJSON('data/leads.json');
+  const stages=[
+    {id:'new',label:'New Leads',color:'var(--blue)'},
+    {id:'contacted',label:'Contacted',color:'var(--yellow)'},
+    {id:'call-booked',label:'Call Booked',color:'var(--green)'},
+    {id:'won',label:'Won',color:'#40c080'},
+    {id:'lost',label:'Lost / Dead',color:'var(--text2)'}
+  ];
+  const stageOverrides=JSON.parse(localStorage.getItem('demo-kanban-stages')||'{}');
+  window._kanbanFilter='all';
+  window._kanbanLeadMap={};
+  if(leadsData&&leadsData.boards)leadsData.boards.forEach(b=>(b.leads||[]).forEach(l=>{window._kanbanLeadMap[b.id+'::'+l.id]=l}));
+
+  function getStage(bid,lid,orig){return stageOverrides[bid+'::'+lid]||orig}
+  function setStage(bid,lid,s){stageOverrides[bid+'::'+lid]=s;localStorage.setItem('demo-kanban-stages',JSON.stringify(stageOverrides))}
+  function srcClass(s){if(s==='AI Scan')return'src-ai';if(s==='Referral')return'src-referral';return'src-partner'}
+  function kanbanToast(msg){const t=document.getElementById('kanban-toast');if(!t)return;t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+  function openLeadModal(lead){
+    const m=document.getElementById('kanban-modal-body');
+    m.innerHTML=`<h2>${esc(lead.company)}</h2>
+      <div class="km-contact">${esc(lead.contact)}${lead.title?' — '+esc(lead.title):''}${lead.email?' · '+esc(lead.email):''}</div>
+      <div class="km-section"><div class="km-label">Signal</div><div class="km-text">${esc(lead.signal||'—')}</div></div>
+      <div class="km-section"><div class="km-label">Notes</div><div class="km-text">${esc(lead.notes||'—')}</div></div>
+      ${lead.meetingDate?`<div class="km-section"><div class="km-label">Meeting</div><div class="km-text">📅 ${esc(lead.meetingDate)}</div></div>`:''}
+      <div class="km-section"><div class="km-label">Added</div><div class="km-text">${esc(lead.added||'—')}</div></div>
+      ${lead.tags&&lead.tags.length?`<div class="km-tags">${lead.tags.map(t=>`<span class="kc-tag">${esc(t)}</span>`).join('')}</div>`:''}`;
+    document.getElementById('kanban-modal').classList.add('open');
+  }
+  window._openLeadModal=openLeadModal;
+
+  function renderBoard(){
+    if(!leadsData||!leadsData.boards)return;
+    const boards=window._kanbanFilter==='all'?leadsData.boards:leadsData.boards.filter(b=>b.id===window._kanbanFilter);
+    let totalActive=0;
+    let sw=`<div class="kb-tab ${window._kanbanFilter==='all'?'active':''}" style="${window._kanbanFilter==='all'?'background:var(--accent-light);':''}" onclick="window._kanbanFilter='all';window._renderBoard()">All Boards</div>`+
+      leadsData.boards.map(b=>`<div class="kb-tab ${window._kanbanFilter===b.id?'active':''}" style="${window._kanbanFilter===b.id?'background:'+b.color+';':''}" onclick="window._kanbanFilter='${b.id}';window._renderBoard()">${esc(b.name)}</div>`).join('');
+    let html=`<h1 class="page-title">Lead Pipeline</h1><p class="page-sub">The CRM that fills itself — drag leads between stages · click to expand</p>
+      <div class="kanban-board-switcher">${sw}</div>`;
+    boards.forEach(board=>{
+      const leads=board.leads||[];
+      const active=leads.filter(l=>{const s=getStage(board.id,l.id,l.stage);return s!=='won'&&s!=='lost'});
+      totalActive+=active.length;
+      html+=`<div class="kanban-board-group"><div class="kb-group-header"><div class="kb-group-dot" style="background:${esc(board.color)}"></div><span class="kb-group-name">${esc(board.name)}</span><span class="kb-group-count">(${leads.length} leads)</span></div><div class="kanban-columns">`;
+      stages.forEach(st=>{
+        const colLeads=leads.filter(l=>getStage(board.id,l.id,l.stage)===st.id);
+        html+=`<div class="kanban-col"><div class="kanban-col-header" style="color:${st.color}">${st.label} <span class="kc-count">${colLeads.length}</span></div><div class="kanban-col-body" data-stage="${st.id}" data-board="${board.id}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="window._handleDrop(event,this)">`;
+        colLeads.forEach(lead=>{
+          const extra=st.id==='won'?' won-glow':st.id==='lost'?' lost-dim':'';
+          html+=`<div class="kanban-card${extra}" draggable="true" data-id="${esc(lead.id)}" data-board="${esc(board.id)}" data-company="${esc(lead.company)}" ondragstart="window._dragCard(event)" onclick="window._openLeadModal(window._kanbanLeadMap['${board.id}::${lead.id}'])">
+            <div class="kc-company">${esc(lead.company)}</div>
+            <div class="kc-contact">${esc(lead.contact)}${lead.title?' · '+esc(lead.title):''}</div>
+            <div class="kc-signal">${esc(lead.signal||'')}</div>
+            <div class="kc-meta">
+              <span class="kc-badge ${srcClass(lead.source)}">${esc(lead.source)}</span>
+              ${(lead.tags||[]).slice(0,2).map(t=>`<span class="kc-tag">${esc(t)}</span>`).join('')}
+              ${lead.meetingDate?`<span class="kc-date">📅 ${esc(lead.meetingDate)}</span>`:`<span class="kc-date">${esc(lead.added||'')}</span>`}
+            </div></div>`;
+        });
+        html+=`</div></div>`;
+      });
+      html+=`</div></div>`;
+    });
+    html+=`<div id="kanban-toast" class="kanban-toast"></div><div id="kanban-modal" class="kanban-modal" onclick="if(event.target===this)this.classList.remove('open')"><div class="kanban-modal-content" id="kanban-modal-body"></div></div>`;
+    const badge=document.getElementById('crm-badge');if(badge){badge.textContent=totalActive}
+    document.getElementById('sec-crm').innerHTML=html+cta();
+  }
+  window._renderBoard=renderBoard;
+  window._dragData={};
+  window._dragCard=function(e){const c=e.target.closest('.kanban-card');window._dragData={id:c.dataset.id,board:c.dataset.board,company:c.dataset.company};c.classList.add('dragging');e.dataTransfer.effectAllowed='move'};
+  window._handleDrop=function(e,col){e.preventDefault();col.classList.remove('drag-over');const d=window._dragData;if(!d.id)return;const newStage=col.dataset.stage;const board=col.dataset.board;if(d.board!==board)return;setStage(board,d.id,newStage);const labels={new:'New Leads',contacted:'Contacted','call-booked':'Call Booked',won:'Won',lost:'Lost'};kanbanToast('Moved '+d.company+' → '+labels[newStage]);document.querySelectorAll('.kanban-card.dragging').forEach(c=>c.classList.remove('dragging'));renderBoard()};
+  renderBoard();
+}
+
+/* EMAIL */
+async function renderEmail(){
+  const d=await loadJSON('data/email-triage.json');
+  const emails=d?.emails||[];
+  const urgentCount=emails.filter(e=>e.category==='urgent'||e.category==='needs-response').length;
+  const badge=document.getElementById('email-badge');if(badge)badge.textContent=urgentCount;
+  let html='<h1 class="page-title">Email Triage</h1><p class="page-sub">AI-categorized inbox with suggested actions</p>';
+  emails.forEach((e,i)=>{
+    html+=`<div class="email-card" style="animation-delay:${i*40}ms"><div class="email-header"><span class="email-from">${esc(e.from)}</span><span class="email-cat ${e.category}">${e.category.replace('-',' ')}</span><span class="email-time">${esc(e.time)}</span></div><div class="email-subject">${esc(e.subject)}</div><div class="email-preview">${esc(e.preview)}</div><div class="email-action">💡 ${esc(e.action)}</div></div>`;
+  });
+  document.getElementById('sec-email').innerHTML=html+cta();
+}
+
+/* INTEL */
+async function renderIntel(){
+  const d=await loadJSON('data/intel.json');
+  const items=d?.items||d?.opportunities||d?.entries||[];
+  let html='<h1 class="page-title">Competitive Intel</h1><p class="page-sub">AI-monitored industry intelligence and actionable insights</p>';
+  items.forEach((item,i)=>{
+    const rc=item.relevance>=80?'background:rgba(240,64,96,.15);color:var(--red)':item.relevance>=60?'background:rgba(240,192,64,.15);color:var(--yellow)':'background:rgba(64,128,240,.15);color:var(--blue)';
+    html+=`<div class="intel-card" style="animation-delay:${i*80}ms"><div class="intel-title">${esc(item.title)}</div><div class="intel-meta"><span>📰 ${esc(item.source)}</span><span>📅 ${esc(item.date)}</span><span class="intel-relevance" style="${rc}">${item.relevance}% relevant</span><span class="badge" style="background:rgba(64,128,240,.1);color:var(--blue)">${esc(item.category)}</span></div><div class="intel-body">${esc(item.summary)}</div><div class="intel-insight">💡 <strong>Insight:</strong> ${esc(item.insight)}</div></div>`;
+  });
+  document.getElementById('sec-intel').innerHTML=html+cta();
+}
+
+/* REPORTS */
+async function renderReports(){
+  const d=await loadJSON('data/reports.json');
+  const reports=d?.reports||[];
+  let html='<h1 class="page-title">Reports</h1><p class="page-sub">Auto-generated reports and analyses</p>';
+  reports.forEach((r,i)=>{
+    html+=`<div class="report-card" style="animation-delay:${i*80}ms"><div class="report-header"><span class="report-title">${esc(r.title)}</span><span class="report-badge">📥 ${esc(r.status)}</span></div><div class="report-meta">${esc(r.type)} • ${esc(r.date)}</div><div class="report-summary">${esc(r.summary)}</div></div>`;
+  });
+  document.getElementById('sec-reports').innerHTML=html+cta();
+}
+
+/* READING */
+async function renderReading(){
+  const d=await loadJSON('data/reading-list.json');
+  const items=d?.items||[];
+  let html='<h1 class="page-title">Reading List</h1><p class="page-sub">Books, articles, and reports — tracked and organized</p>';
+  items.forEach((item,i)=>{
+    html+=`<div class="reading-item" style="animation-delay:${i*50}ms"><span class="reading-status ${item.status}">${item.status}</span><div style="flex:1;min-width:0"><div class="reading-title">${esc(item.title)}</div><div class="reading-author">${esc(item.author)}${item.note?` — <em>${esc(item.note)}</em>`:''}</div></div><span class="reading-type">${esc(item.type)}</span>${item.progress!=null?`<div class="progress-bar"><div class="progress-fill" style="width:${item.progress}%"></div></div>`:''}</div>`;
+  });
+  document.getElementById('sec-reading').innerHTML=html+cta();
+}
+
+/* OUTREACH */
+async function renderOutreach(){
+  const d=await loadJSON('data/outreach.json');
+  const drafts=d?.drafts||[];
+  let html='<h1 class="page-title">Outreach</h1><p class="page-sub">AI-drafted outreach emails ready for review</p>';
+  drafts.forEach((o,i)=>{
+    html+=`<div class="outreach-card" style="animation-delay:${i*80}ms"><div class="outreach-header"><span class="outreach-recipient">${esc(o.recipient)}</span><span class="outreach-status ${o.status}">${o.status==='sent'?'✅ Sent':'📝 Ready'}</span></div><div class="outreach-subject">Subject: ${esc(o.subject)}</div><div class="outreach-body" onclick="this.classList.toggle('expanded')">${esc(o.body)}</div><div class="outreach-context">🎯 ${esc(o.context)}</div></div>`;
+  });
+  document.getElementById('sec-outreach').innerHTML=html+cta();
+}
+
+// Expenses / Receipts
+{
+  const EXP_CATS={meals:'🍽 Meals',travel:'✈️ Travel',office:'🏢 Office',software:'💻 Software',vehicle:'🚗 Vehicle',professional:'📋 Professional',other:'📦 Other'};
+  const EXP_COLORS={meals:'#EC4899',travel:'#3B82F6',office:'#8B5CF6',software:'#06B6D4',vehicle:'#EF4444',professional:'#10B981',other:'#6B7280'};
+  const PERSON_COLORS={Alex:'#3B82F6',Jordan:'#F59E0B',Sam:'#10B981',Taylor:'#8B5CF6'};
+  const sampleExpenses=[
+    {id:'d1',person:'Alex',vendor:'Delta Airlines',amount:847.50,currency:'USD',date:'2026-02-18',category:'travel',notes:'SaaStr Annual — SFO round trip',status:'approved',image:''},
+    {id:'d2',person:'Jordan',vendor:'AWS',amount:2340.00,currency:'USD',date:'2026-02-15',category:'software',notes:'Monthly infrastructure',status:'reimbursed',image:''},
+    {id:'d3',person:'Alex',vendor:'WeWork',amount:450.00,currency:'USD',date:'2026-02-01',category:'office',notes:'Coworking — February',status:'approved',image:''},
+    {id:'d4',person:'Sam',vendor:'Figma',amount:75.00,currency:'USD',date:'2026-02-10',category:'software',notes:'Team plan',status:'pending',image:''},
+    {id:'d5',person:'Taylor',vendor:'Client dinner — Nobu',amount:389.00,currency:'USD',date:'2026-02-14',category:'meals',notes:'Enterprise prospect dinner',status:'pending',image:''},
+    {id:'d6',person:'Sam',vendor:'Uber',amount:62.40,currency:'USD',date:'2026-02-19',category:'travel',notes:'Airport transfer',status:'pending',image:''},
+    {id:'d7',person:'Jordan',vendor:'Vercel Pro',amount:20.00,currency:'USD',date:'2026-02-01',category:'software',notes:'Monthly hosting',status:'reimbursed',image:''},
+    {id:'d8',person:'Alex',vendor:'Staples',amount:134.50,currency:'USD',date:'2026-02-12',category:'office',notes:'Monitor stand + cables',status:'approved',image:''},
+    {id:'d9',person:'Taylor',vendor:'LinkedIn Sales Nav',amount:99.99,currency:'USD',date:'2026-02-01',category:'software',notes:'Monthly subscription',status:'reimbursed',image:''},
+    {id:'d10',person:'Sam',vendor:'Baker McKenzie',amount:1500.00,currency:'USD',date:'2026-02-08',category:'professional',notes:'Contract review — Series A',status:'pending',image:''},
+  ];
+  let expenses=JSON.parse(localStorage.getItem('demo-expenses')||'null')||sampleExpenses;
+  function saveExp(){localStorage.setItem('demo-expenses',JSON.stringify(expenses))}
+
+  function openExpModal(editId){
+    const r=editId?expenses.find(x=>x.id===editId):null;
+    let h=`<h2>${r?'Edit':'➕ New'} Expense</h2><div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+      <select id="dx-person" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit">
+        <option value="">Who paid?</option>${['Alex','Jordan','Sam','Taylor'].map(p=>`<option${r&&r.person===p?' selected':''}>${p}</option>`).join('')}
+      </select>
+      <input id="dx-vendor" value="${r?esc(r.vendor):''}" placeholder="Vendor / merchant" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit">
+      <div style="display:flex;gap:10px">
+        <input id="dx-amount" type="number" step="0.01" value="${r?r.amount:''}" placeholder="Amount ($)" style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit">
+        <input id="dx-date" type="date" value="${r?r.date:new Date().toISOString().slice(0,10)}" style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit">
+      </div>
+      <select id="dx-cat" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit">
+        ${Object.entries(EXP_CATS).map(([k,v])=>`<option value="${k}"${r&&r.category===k?' selected':''}>${v}</option>`).join('')}
+      </select>
+      <textarea id="dx-notes" rows="2" placeholder="Notes" style="padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:inherit;resize:vertical">${r?esc(r.notes||''):''}</textarea>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="padding:10px 16px;border-radius:8px;border:1px dashed var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px">📷 Take Photo<input type="file" accept="image/*" capture="environment" style="display:none" onchange="demoExpPreview(this)"></label>
+        <label style="padding:10px 16px;border-radius:8px;border:1px dashed var(--border);background:var(--surface2);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px">📄 Upload File<input type="file" accept="image/*,.pdf,.heic,.heif" style="display:none" onchange="demoExpPreview(this)"></label>
+        <span id="dx-photo-name" style="font-size:12px;color:var(--text2)">${r&&r.image?'📎 Attached':''}</span>
+      </div>
+      <div id="dx-photo-preview" style="display:${r&&r.image?'block':'none'}"><img id="dx-photo-img" src="${r&&r.image||''}" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border)"></div>
+      <div style="display:flex;gap:10px">
+        <button onclick="submitDemoExp('${editId||''}')" style="flex:1;padding:12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">${r?'Save':'Add Expense'}</button>
+        ${r?`<button onclick="expenses=expenses.filter(x=>x.id!=='${editId}');saveExp();document.getElementById('exp-modal').classList.remove('open');renderExp()" style="padding:12px 16px;border-radius:8px;border:1px solid #EF4444;background:transparent;color:#EF4444;cursor:pointer;font-family:inherit">🗑</button>`:''}
+      </div></div>`;
+    document.getElementById('exp-modal-body').innerHTML=h;
+    document.getElementById('exp-modal').classList.add('open');
+  }
+  window.openExpModal=openExpModal;
+  window.demoExpPreview=function(input){if(input.files&&input.files[0]){const r=new FileReader();r.onload=e=>{document.getElementById('dx-photo-preview').style.display='block';document.getElementById('dx-photo-img').src=e.target.result;document.getElementById('dx-photo-name').textContent='📎 '+input.files[0].name};r.readAsDataURL(input.files[0])}};
+  window.submitDemoExp=function(editId){
+    const person=document.getElementById('dx-person').value;
+    const vendor=document.getElementById('dx-vendor').value.trim();
+    const amount=parseFloat(document.getElementById('dx-amount').value);
+    if(!vendor||isNaN(amount))return;
+    const img=document.getElementById('dx-photo-img');
+    const image=img&&img.src&&img.src.startsWith('data:')?img.src:'';
+    const data={person:person||'Unknown',vendor,amount,currency:'USD',date:document.getElementById('dx-date').value,category:document.getElementById('dx-cat').value,notes:document.getElementById('dx-notes').value.trim(),status:'pending',image:image||(editId?((expenses.find(r=>r.id===editId)||{}).image||''):'')};
+    if(editId){const i=expenses.findIndex(r=>r.id===editId);if(i>=0){data.status=expenses[i].status;Object.assign(expenses[i],data)}}else{data.id='d'+Date.now();expenses.unshift(data)}
+    saveExp();document.getElementById('exp-modal').classList.remove('open');renderExp();
+  };
+  window.setDemoExpStatus=function(id,s){const e=expenses.find(x=>x.id===id);if(e){e.status=s;saveExp();renderExp();document.getElementById('exp-view').classList.remove('open')}};
+
+  function viewExp(id){
+    const r=expenses.find(x=>x.id===id);if(!r)return;
+    const pc=PERSON_COLORS[r.person]||'#6B7280';
+    const st={pending:'⏳ Pending',approved:'✅ Approved',reimbursed:'💰 Reimbursed'}[r.status]||r.status;
+    document.getElementById('exp-view-body').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px">
+      <div><h2 style="margin:0">${esc(r.vendor)}</h2><div style="font-size:13px;color:var(--text2);margin-top:4px">${esc(r.date)} · ${esc(EXP_CATS[r.category]||r.category)}</div>
+      <div style="margin-top:6px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff;background:${pc}">${esc(r.person)}</span> <span style="font-size:12px;color:var(--text2)">${st}</span></div></div>
+      <div style="font-size:24px;font-weight:800;color:#40c080">$${r.amount.toFixed(2)}</div></div>
+    ${r.notes?`<div style="font-size:13px;color:var(--text2);margin-bottom:16px">${esc(r.notes)}</div>`:''}
+    ${r.image?`<img src="${r.image}" style="max-width:100%;border-radius:8px;border:1px solid var(--border);margin-bottom:16px">`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      ${r.status!=='approved'?`<button onclick="setDemoExpStatus('${r.id}','approved')" style="padding:8px 16px;border-radius:8px;border:1px solid #40c080;background:transparent;color:#40c080;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✅ Approve</button>`:''}
+      ${r.status!=='reimbursed'?`<button onclick="setDemoExpStatus('${r.id}','reimbursed')" style="padding:8px 16px;border-radius:8px;border:1px solid #F59E0B;background:transparent;color:#F59E0B;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">💰 Reimburse</button>`:''}
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="openExpModal('${r.id}');document.getElementById('exp-view').classList.remove('open')" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✏️ Edit</button>
+      <button onclick="expenses=expenses.filter(x=>x.id!=='${r.id}');saveExp();document.getElementById('exp-view').classList.remove('open');renderExp()" style="padding:10px 16px;border-radius:8px;border:1px solid #EF4444;background:transparent;color:#EF4444;cursor:pointer;font-family:inherit">🗑</button>
+    </div>`;
+    document.getElementById('exp-view').classList.add('open');
+  }
+  window.viewExp=viewExp;
+
+  window.renderExp=function(){
+    const sec=document.getElementById('sec-expenses');if(!sec)return;
+    const byPerson={};expenses.forEach(r=>{byPerson[r.person]=byPerson[r.person]||{t:0,c:0};byPerson[r.person].t+=r.amount;byPerson[r.person].c++});
+    const total=expenses.reduce((s,r)=>s+r.amount,0);
+    let sumHTML='';Object.entries(byPerson).sort((a,b)=>b[1].t-a[1].t).forEach(([n,d])=>{
+      const c=PERSON_COLORS[n]||'#6B7280';
+      sumHTML+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;border-color:${c}44"><div style="font-size:13px;font-weight:700;color:${c}">${esc(n)}</div><div style="font-size:20px;font-weight:800">$${d.t.toFixed(0)}</div><div style="font-size:11px;color:var(--text2)">${d.c} receipts</div></div>`;
+    });
+    let listHTML='';expenses.sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach((r,i)=>{
+      const color=EXP_COLORS[r.category]||'#6B7280';const icon=EXP_CATS[r.category]?EXP_CATS[r.category].split(' ')[0]:'📦';
+      const pc=PERSON_COLORS[r.person]||'#6B7280';const si={pending:'⏳',approved:'✅',reimbursed:'💰'}[r.status]||'';
+      listHTML+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:16px;opacity:0;animation:cardIn .4s ease forwards;animation-delay:${i*50}ms" onclick="viewExp('${r.id}')" onmouseover="this.style.borderColor='#3a3a4a'" onmouseout="this.style.borderColor=''">
+        <div style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:${color}22;color:${color};flex-shrink:0">${icon}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.vendor)}</div><div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;color:#fff;background:${pc}">${esc(r.person)}</span> ${esc(EXP_CATS[r.category]||'')}${r.notes?' · '+esc(r.notes):''}</div></div>
+        <div style="text-align:right"><div style="font-size:16px;font-weight:700;color:#40c080">${si} $${r.amount.toFixed(2)}</div><div style="font-size:11px;color:var(--text2)">${esc(r.date)}</div></div>
+      </div>`;
+    });
+    sec.innerHTML=`<h1 class="page-title">Expenses</h1><p class="page-sub">Track team expenses and receipts · Snap a photo or upload a file</p>
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+        <button onclick="openExpModal()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Expense</button>
+        <div style="margin-left:auto;font-size:14px;font-weight:700">${expenses.length} expenses · $${total.toFixed(2)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:24px">${sumHTML}</div>
+      ${listHTML}
+      <div id="exp-modal" class="kanban-modal" onclick="if(event.target===this)this.classList.remove('open')"><div class="kanban-modal-content" id="exp-modal-body" style="max-width:480px"></div></div>
+      <div id="exp-view" class="kanban-modal" onclick="if(event.target===this)this.classList.remove('open')"><div class="kanban-modal-content" id="exp-view-body" style="max-width:560px"></div></div>`;
+    const b=document.getElementById('expenses-badge');if(b){b.textContent=expenses.length;b.style.display='';}
+  };
+  renderExp();
+}
+
+// Auto-login check & start
+document.getElementById('login').classList.add('hidden');init()
+</script>
+<script src="../shared/interactivity.js"></script>
+</body>
+</html>

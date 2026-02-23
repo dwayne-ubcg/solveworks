@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolveWorks — Client Setup Guide</title>
+<style>
+  :root { --bg: #0a0e17; --surface: #111827; --border: #1e293b; --blue: #3b82f6; --blue-dim: #1e3a5f; --green: #22c55e; --yellow: #eab308; --red: #ef4444; --text: #e2e8f0; --muted: #94a3b8; --code-bg: #1e293b; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+  .container { max-width: 780px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  h1 { font-size: 2rem; margin-bottom: .5rem; }
+  h1 span { color: var(--blue); }
+  .subtitle { color: var(--muted); font-size: 1.1rem; margin-bottom: 2.5rem; }
+  h2 { font-size: 1.4rem; margin: 2.5rem 0 1rem; padding-bottom: .5rem; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 .75rem; color: var(--blue); }
+  p, li { color: var(--text); margin-bottom: .75rem; }
+  ul { padding-left: 1.5rem; }
+  .step { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .step-num { display: inline-block; background: var(--blue); color: #fff; width: 28px; height: 28px; border-radius: 50%; text-align: center; line-height: 28px; font-weight: 700; font-size: .85rem; margin-right: .5rem; }
+  .step-title { font-size: 1.15rem; font-weight: 600; margin-bottom: .75rem; }
+  .code-block { position: relative; background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 3rem 1rem 1rem; margin: .75rem 0; font-family: 'SF Mono', 'Fira Code', monospace; font-size: .85rem; overflow-x: auto; word-break: break-all; white-space: pre-wrap; }
+  .copy-btn { position: absolute; top: .5rem; right: .5rem; background: var(--blue-dim); border: 1px solid var(--blue); color: var(--text); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: .75rem; transition: background .2s; }
+  .copy-btn:hover { background: var(--blue); }
+  .copy-btn.copied { background: var(--green); border-color: var(--green); }
+  .hero-cmd { background: var(--surface); border: 2px solid var(--blue); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0 2.5rem; text-align: center; }
+  .hero-cmd .code-block { font-size: 1rem; text-align: left; border-color: var(--blue); }
+  .warn { background: #1c1305; border: 1px solid #854d0e; border-radius: 8px; padding: 1rem; margin: .75rem 0; }
+  .warn::before { content: '⚠️ '; }
+  .info { background: #0c1929; border: 1px solid var(--blue-dim); border-radius: 8px; padding: 1rem; margin: .75rem 0; }
+  .info::before { content: 'ℹ️ '; }
+  .trouble { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: .75rem; }
+  .trouble summary { cursor: pointer; font-weight: 600; color: var(--yellow); }
+  .trouble p { margin-top: .5rem; color: var(--muted); }
+  .badge { display: inline-block; background: var(--green); color: #000; font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; vertical-align: middle; margin-left: .5rem; }
+  .badge.manual { background: var(--yellow); }
+  @media (max-width: 600px) { .container { padding: 1rem 1rem 3rem; } h1 { font-size: 1.5rem; } .code-block { font-size: .78rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Solve<span>Works</span> Setup</h1>
+<p class="subtitle">Your AI assistant, installed in one command. Interactive setup guide below.</p>
+
+<!-- Hero install command -->
+<div class="hero-cmd">
+  <p style="margin-bottom:.75rem;font-weight:600;">Run this in Terminal:</p>
+  <div class="code-block" id="install-cmd">curl -sL https://solveworks.io/install.sh | bash<button class="copy-btn" onclick="copyCode('install-cmd')">Copy</button></div>
+  <p style="color:var(--muted);font-size:.85rem;margin-top:.75rem;">Or with client config:</p>
+  <div class="code-block" id="install-cmd2">curl -sL https://solveworks.io/install.sh | bash -s -- --repo https://github.com/your-org/config.git --client your-name<button class="copy-btn" onclick="copyCode('install-cmd2')">Copy</button></div>
+</div>
+
+<p>The script automatically installs Homebrew, Node.js, Git, OpenClaw, creates your workspace, and hardens security. The steps below cover the <strong>interactive parts</strong> the script can't do for you.</p>
+
+<!-- Step 1 -->
+<div class="step">
+  <p class="step-title"><span class="step-num">1</span> Configure OpenClaw <span class="badge manual">Interactive</span></p>
+  <p>After the install script finishes, run:</p>
+  <div class="code-block" id="s1">openclaw config<button class="copy-btn" onclick="copyCode('s1')">Copy</button></div>
+  <p>The wizard walks through these screens:</p>
+  <h3>a) Workspace</h3>
+  <p>Accept the default (<code>~/clawd</code>) or press Enter.</p>
+  <h3>b) Model Provider</h3>
+  <p>Select <strong>Anthropic</strong>. Paste your API key when prompted. Your installer will provide this.</p>
+  <h3>c) Default Model</h3>
+  <p>Choose <strong>claude-sonnet-4-20250514</strong> (recommended default).</p>
+  <h3>d) Gateway</h3>
+  <p>Select <strong>Enable Gateway</strong>. It generates a token — <strong>save this token</strong>, you'll need it for the dashboard.</p>
+  <h3>e) Channels</h3>
+  <p>Select <strong>Telegram</strong>. It will ask for a bot token — you'll create this in Step 2.</p>
+  <p>You can skip channels for now and add them later by re-running <code>openclaw config</code>.</p>
+  <h3>f) Daemon</h3>
+  <p>Select <strong>Enable</strong> to run OpenClaw as a background service.</p>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+  <p class="step-title"><span class="step-num">2</span> Create Telegram Bot</p>
+  <p>Open Telegram and message <a href="https://t.me/BotFather" style="color:var(--blue)">@BotFather</a>:</p>
+  <ol>
+    <li>Send <code>/newbot</code></li>
+    <li>Name: <code>Your Name - Mika</code> (e.g., "Drew - Mika")</li>
+    <li>Username: <code>yourname_mika_bot</code> (must end in <code>bot</code>)</li>
+    <li>BotFather gives you a token like <code>7123456789:AAH...</code></li>
+    <li>Copy that token — paste it when <code>openclaw config</code> asks for Telegram bot token</li>
+  </ol>
+  <div class="info">Also send <code>/setprivacy</code> to @BotFather → select your bot → <strong>Disable</strong> (so the bot can see group messages).</div>
+</div>
+
+<!-- Step 3 -->
+<div class="step">
+  <p class="step-title"><span class="step-num">3</span> Get Your Chat ID</p>
+  <p>Send any message to your new bot in Telegram, then run:</p>
+  <div class="code-block" id="s3">curl -s https://api.telegram.org/bot&lt;YOUR_BOT_TOKEN&gt;/getUpdates | python3 -m json.tool<button class="copy-btn" onclick="copyCode('s3')">Copy</button></div>
+  <p>Look for <code>"chat":{"id": 123456789}</code> — that's your chat ID. Your installer may need this to configure direct messaging.</p>
+</div>
+
+<!-- Step 4 -->
+<div class="step">
+  <p class="step-title"><span class="step-num">4</span> Start the Gateway &amp; Approve Pairing</p>
+  <div class="code-block" id="s4a">openclaw gateway start<button class="copy-btn" onclick="copyCode('s4a')">Copy</button></div>
+  <p>If your Mac Mini shows as a pending node, approve it:</p>
+  <div class="code-block" id="s4b">openclaw gateway approve<button class="copy-btn" onclick="copyCode('s4b')">Copy</button></div>
+</div>
+
+<!-- Step 5 -->
+<div class="step">
+  <p class="step-title"><span class="step-num">5</span> Connect Dashboard</p>
+  <p>Go to <a href="https://app.openclaw.com" style="color:var(--blue)">app.openclaw.com</a> and sign in.</p>
+  <ol>
+    <li>Click <strong>Add Gateway</strong></li>
+    <li>Paste the gateway token from Step 1d</li>
+    <li>Your Mac Mini should appear as connected</li>
+  </ol>
+</div>
+
+<!-- Step 6 -->
+<div class="step">
+  <p class="step-title"><span class="step-num">6</span> Add Cron Jobs via Dashboard</p>
+  <p>In the dashboard, go to <strong>Cron</strong> and add scheduled tasks. Common ones your installer will set up:</p>
+  <ul>
+    <li>Heartbeat check (every 30 min)</li>
+    <li>Email monitoring</li>
+    <li>Calendar reminders</li>
+  </ul>
+</div>
+
+<!-- Troubleshooting -->
+<h2>🔧 Troubleshooting</h2>
+
+<details class="trouble">
+  <summary>"command not found" after Homebrew install</summary>
+  <p>Close Terminal completely and reopen it. The PATH update only takes effect in new sessions. If it still doesn't work, run:<br>
+  <code>eval "$(/opt/homebrew/bin/brew shellenv)"</code></p>
+</details>
+
+<details class="trouble">
+  <summary>Rate limiting on new Anthropic accounts</summary>
+  <p>This is normal for new API accounts. Limits increase automatically within 24–48 hours as you add credits and build usage history. No action needed.</p>
+</details>
+
+<details class="trouble">
+  <summary>"openclaw init" doesn't exist</summary>
+  <p>Skip it — that command doesn't exist. The workspace is created by the install script. Use <code>openclaw config</code> for configuration.</p>
+</details>
+
+<details class="trouble">
+  <summary>"openclaw auth google" doesn't exist</summary>
+  <p>Skip it — Google auth is configured separately through the dashboard or browser. Your installer will handle this later if needed.</p>
+</details>
+
+<details class="trouble">
+  <summary>Tailscale won't install from App Store</summary>
+  <p>Download directly from <a href="https://tailscale.com/download/mac" style="color:var(--blue)">tailscale.com/download/mac</a> instead. The standalone installer works better than the App Store version.</p>
+</details>
+
+<details class="trouble">
+  <summary>Gateway "pairing required" error in CLI</summary>
+  <p>Use the <a href="https://app.openclaw.com" style="color:var(--blue)">dashboard</a> instead. Some CLI operations require an active gateway pairing — the dashboard handles this automatically.</p>
+</details>
+
+<p style="color:var(--muted);margin-top:3rem;text-align:center;font-size:.85rem;">SolveWorks — AI operations, handled. Questions? Contact your installer.</p>
+
+</div>
+<script>
+function copyCode(id){
+  const el=document.getElementById(id);
+  const btn=el.querySelector('.copy-btn');
+  const text=el.textContent.replace('Copy','').replace('Copied!','').trim();
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='Copied!';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied');},2000);
+  });
+}
+</script>
+</body>
+</html>
