@@ -6,6 +6,21 @@ Every panel available for client dashboards. When adding a panel to a client:
 3. Add the `scp` entry to their `sync.sh`
 4. Commit and push
 
+## ⚠️ CRITICAL: Cron Delivery Rules
+**NEVER use OpenClaw `announce` delivery mode for client crons.** It fails silently when no active session exists.
+
+**Always:**
+- Set `--no-deliver` on every client cron
+- Set `--timeout-seconds 240` (default 120s is too short)
+- Have the agent send directly via Telegram bot API in the cron prompt:
+  ```python
+  import requests
+  requests.post('https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',
+    json={'chat_id': '{CHAT_ID}', 'text': '[message]', 'parse_mode': 'Markdown'})
+  ```
+- **Darryl bot token:** `8443155276:AAG9J7Yac0ij1c8fAv0z3nbrvmjJO_Bl6I0` / chat_id: `495065127`
+- **Drew bot token:** in `~/.openclaw/openclaw.json` on Drew's machine / chat_id: TBD
+
 Core panels (every client gets these by default) are marked **CORE**.  
 Optional panels require setup or credentials.
 
