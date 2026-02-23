@@ -146,7 +146,7 @@ print(json.dumps(stats, indent=2))
 " > "$DATA_DIR/dashboard.json"
 
 # 8. New Mission Control v2 data files
-for datafile in one-thing.json anomalies.json competitor-intel.json momentum.json goals.json; do
+for datafile in one-thing.json anomalies.json competitor-intel.json momentum.json goals.json health.json travel.json learning.json overnight-tasks.json; do
   scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/$datafile" "$DATA_DIR/$datafile" 2>/dev/null || true
 done
 
