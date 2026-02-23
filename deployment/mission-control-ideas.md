@@ -87,3 +87,17 @@ Every time we work on Mission Control — for any client — ask:
 2. Health Intelligence — feels deeply personal
 3. Inbox Zero — saves time every single day
 
+
+### 🌟 Show-Your-Friends Features
+- **Morning Score** — single 1-10 number based on sleep, calendar density, open tasks. "Today is a 7. Here's why."
+- **Legacy Tracker** — net worth, business milestones, goals hit over time. A running record of what they've built.
+- **Family Dashboard** ⭐ EXPLORE — spouse calendar, kids' activities, family budget. Agent keeps the household running. No one else does this. Massive differentiator for family-oriented executives.
+
+### 🧠 Intelligence
+- **Podcast/Content Digest** — agent summarizes 3 podcasts/articles they would have read this week. Delivered Monday morning. Stay sharp without the time investment.
+- **Regulatory Radar** — monitor government/regulatory changes affecting their industry before it hits mainstream news.
+
+### 💸 Money Intelligence
+- **Tax Efficiency Alerts** — "3 capital gain events this year. Consider harvesting this loss before year end."
+- **Subscription Audit** — flags unused or duplicated business subscriptions automatically.
+
