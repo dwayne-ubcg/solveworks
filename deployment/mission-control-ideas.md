@@ -61,3 +61,29 @@ Every time we work on Mission Control — for any client — ask:
 ---
 
 *Last updated: 2026-02-23*
+
+---
+
+## Feb 23 Brainstorm — "Whole Life & Business in One Spot"
+
+### 🟢 Build Now (no new integrations)
+- **Inbox Zero Panel** — agent reads emails, surfaces only 3-5 that need response today. Inbox becomes a task list, not noise.
+- **Decision Journal** — every significant decision logged with context and date. CEO-level memory.
+- **Relationship Radar** — who haven't you contacted in 30+ days that matters? Agent flags cold relationships.
+- **Weekly Planning** — agent reviews last week + upcoming calendar + open tasks → auto-generates Monday focus plan.
+
+### 🟡 One Integration Needed
+- **Health Intelligence** — Oura sleep/HRV/readiness → tied to calendar awareness. "Readiness 58, board meeting at 2pm — keep afternoon light."
+- **Smart Inbox** — Gmail/Outlook API. Agent triages, drafts replies, surfaces what actually matters.
+- **Net Worth Tracker** — stocks + crypto + real estate in one number, updated daily. Brokerage + crypto API. Jaw-drop feature for high-net-worth clients.
+
+### 🔵 Premium/Enterprise
+- **Cash Flow Runway** — at current burn, X months remaining. Stripe + bank feed.
+- **Team Pulse** — are people shipping? Based on Slack/email/meeting frequency.
+- **Customer Health Score** — for SaaS clients, flag at-risk accounts before they churn.
+
+### 💡 Jaw-Drop Demo Features (in order)
+1. Net Worth Tracker — makes them feel rich and in control
+2. Health Intelligence — feels deeply personal
+3. Inbox Zero — saves time every single day
+
