@@ -143,7 +143,10 @@ stats = {
 print(json.dumps(stats, indent=2))
 " > "$DATA_DIR/dashboard.json"
 
-# 8. Git push
+# 8. Pipeline leads — Kanban board data
+scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/leads.json" "$DATA_DIR/leads.json" 2>/dev/null || true
+
+# 9. Git push
 cd "$SCRIPT_DIR/.."
 git add drew/
 if git diff --cached --quiet; then
