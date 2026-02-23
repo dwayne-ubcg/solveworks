@@ -165,11 +165,32 @@ fi
 # ===== CIN7 =====
 echo "📦 Syncing Cin7 data..."
 if [ -n "$CIN7_ACCOUNT_ID" ] && [ -n "$CIN7_API_KEY" ]; then
-  curl -s "https://inventory.dearsystems.com/ExternalApi/v2/Product?limit=250" \
-    -H "api-auth-accountid: $CIN7_ACCOUNT_ID" \
-    -H "api-auth-applicationkey: $CIN7_API_KEY" \
-    > data/cin7-inventory.json 2>/dev/null
-  echo "  ✅ cin7-inventory.json"
+  python3 - <<'PYEOF'
+import urllib.request, json, os
+account_id = os.environ['CIN7_ACCOUNT_ID']
+api_key = os.environ['CIN7_API_KEY']
+headers = {'api-auth-accountid': account_id, 'api-auth-applicationkey': api_key}
+all_products = []
+page = 1
+total = None
+while True:
+    url = f'https://inventory.dearsystems.com/ExternalApi/v2/Product?limit=250&page={page}'
+    req = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(req) as r:
+        data = json.loads(r.read())
+    products = data.get('Products', [])
+    all_products.extend(products)
+    if total is None:
+        total = data.get('Total', 0)
+    print(f'  Page {page}: {len(products)} products (total so far: {len(all_products)}/{total})')
+    if len(all_products) >= total or len(products) == 0:
+        break
+    page += 1
+result = {'Total': total, 'Page': 1, 'Products': all_products}
+with open('data/cin7-inventory.json', 'w') as f:
+    json.dump(result, f)
+print(f'  ✅ cin7-inventory.json ({len(all_products)} products)')
+PYEOF
 
   # Cin7 Sales Orders (wholesale)
   curl -s "https://inventory.dearsystems.com/ExternalApi/v2/SaleList?limit=50&page=1" \
