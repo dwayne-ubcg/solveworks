@@ -167,6 +167,33 @@ a{color:var(--blue);text-decoration:none}
 .security-status-badge.ok{background:rgba(64,192,128,.15);color:var(--green);box-shadow:0 0 12px rgba(64,192,128,.1)}
 .security-status-badge.warn{background:rgba(240,192,64,.15);color:var(--yellow);box-shadow:0 0 12px rgba(240,192,64,.1)}
 .security-status-badge.alert{background:rgba(240,64,96,.15);color:var(--red);box-shadow:0 0 12px rgba(240,64,96,.1)}
+.stocks-table-wrap{overflow-x:auto;margin-top:8px}
+.stocks-table{width:100%;border-collapse:collapse;font-size:14px}
+.stocks-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
+.stocks-table td{padding:14px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.stocks-table tr:last-child td{border-bottom:none}
+.stocks-table tr.sv-undervalued td{background:rgba(64,192,128,.06)}
+.stocks-table tr.sv-midvalued td{background:rgba(240,192,64,.05)}
+.stocks-table tr.sv-fullvalued td{background:transparent}
+.stock-ticker{font-weight:700;font-size:15px;letter-spacing:.5px}
+.stock-name{font-size:11px;color:var(--text2);margin-top:2px}
+.stock-yield{font-size:11px;color:var(--green);font-weight:600;margin-top:3px}
+.stock-rating{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px;margin-top:4px}
+.stock-rating.buy{background:rgba(64,192,128,.15);color:var(--green)}
+.stock-rating.hold{background:rgba(240,192,64,.15);color:var(--yellow)}
+.stock-rating.watch{background:rgba(130,130,140,.15);color:var(--text2)}
+.stock-rating.strongbuy{background:rgba(64,192,128,.25);color:var(--green)}
+.stock-price{font-size:16px;font-weight:600}
+.stock-currency{font-size:11px;color:var(--text2)}
+.stock-vs-low{font-size:12px;color:var(--text2);margin-top:4px}
+.stock-estimate{font-size:14px;font-weight:500}
+.stock-thesis-preview{color:var(--text);line-height:1.5;font-size:13px}
+.stock-thesis-full{display:none;color:var(--text2);line-height:1.6;font-size:12px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.stock-thesis-toggle{font-size:11px;color:var(--blue);cursor:pointer;margin-top:4px;display:inline-block;user-select:none}
+.stock-risks{font-size:11px;color:var(--text2);margin-top:6px;font-style:italic}
+.stock-date{font-size:10px;color:var(--text2);margin-top:4px;opacity:.7}
+.stocks-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.stocks-updated{font-size:12px;color:var(--text2)}
 /* Travel */
 .travel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0;margin-bottom:16px;overflow:hidden;transition:all .25s;opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
 .travel-card:hover{border-color:#3a3a4a;box-shadow:inset 0 0 30px rgba(255,255,255,.015)}
@@ -516,6 +543,10 @@ a{color:var(--blue);text-decoration:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Security
     </div>
+    <div class="nav-item" data-section="stocks" onclick="showSection('stocks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Stocks
+    </div>
   </div>
   <div class="sidebar-footer">
     <button class="btn-logout" onclick="logout()">← Logout</button>
@@ -702,6 +733,12 @@ a{color:var(--blue);text-decoration:none}
     <h1 class="page-title">Security Status</h1>
     <p class="page-sub">System security checks and audit results</p>
     <div id="security-feed"><div class="skeleton"></div></div>
+  </div>
+
+  <div class="section" id="sec-stocks">
+    <h1 class="page-title">📈 Stocks</h1>
+    <p class="page-sub">Freedom's daily dividend research — updated every morning at 7am</p>
+    <div id="stocks-feed"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
   </div>
 </div>
 
@@ -1679,6 +1716,77 @@ async function init(){
       'No security data','Security checks will populate here when audits are run');
   }
   } catch(e){console.error('Security error:',e)}
+
+  try { await loadStocks(); } catch(e){console.error('Stocks error:',e)}
+}
+
+async function loadStocks(){
+  const feed=document.getElementById('stocks-feed');
+  if(!feed)return;
+  try{
+    const data=await loadJSON('data/stocks.json');
+    if(!data||!data.stocks||!data.stocks.length){
+      feed.innerHTML=emptyStateHTML(
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+        'Freedom is researching stocks daily.',
+        'Next update at 8am. Dividend picks and valuation analysis will appear here.');
+      return;
+    }
+    const updatedStr=data.lastUpdated?new Date(data.lastUpdated).toLocaleString('en-CA',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'—';
+    let html=`<div class="stocks-header"><div class="stocks-updated">Last updated: ${esc(updatedStr)}</div></div>`;
+    html+='<div class="stocks-table-wrap"><table class="stocks-table"><thead><tr>';
+    html+='<th>Stock</th><th>Price</th><th>52W Low</th><th>Conservative</th><th>Optimistic</th><th>Thesis</th>';
+    html+='</tr></thead><tbody>';
+    data.stocks.forEach((s,idx)=>{
+      const price=s.currentPrice||0;
+      const cons=s.conservativeEstimate||0;
+      const opt=s.optimisticEstimate||0;
+      let rowClass='sv-fullvalued';
+      if(cons&&price<cons)rowClass='sv-undervalued';
+      else if(cons&&opt&&price>=cons&&price<=opt)rowClass='sv-midvalued';
+      const ratingKey=(s.rating||'').toLowerCase().replace(/\s/g,'');
+      const ratingClass=ratingKey==='strongbuy'?'strongbuy':ratingKey==='buy'?'buy':ratingKey==='hold'?'hold':'watch';
+      const cur=s.currency||'CAD';
+      const priceFmt=price?`${cur} $${price.toFixed(2)}`:'—';
+      const consFmt=cons?`$${cons.toFixed(2)}`:'—';
+      const optFmt=opt?`$${opt.toFixed(2)}`:'—';
+      const low52Fmt=s.week52Low?`$${s.week52Low.toFixed(2)}`:'—';
+      const vsLow=s.priceVs52wLow||'';
+      const thesisId=`thesis-${idx}`;
+      const firstSentence=(s.thesis||'').split(/\.\s/)[0]+(s.thesis&&s.thesis.includes('.')?'.':'');
+      const hasMore=(s.thesis||'').split(/\.\s/).length>1;
+      html+=`<tr class="${rowClass}">`;
+      html+=`<td><div class="stock-ticker">${esc(s.ticker||'')}</div><div class="stock-name">${esc(s.name||'')}</div><div class="stock-yield">${esc(s.yield||'')}</div><span class="stock-rating ${ratingClass}">${esc(s.rating||'')}</span></td>`;
+      html+=`<td><div class="stock-price">${esc(priceFmt)}</div></td>`;
+      html+=`<td><div class="stock-estimate">${esc(low52Fmt)}</div><div class="stock-vs-low">${vsLow?esc(vsLow)+' above low':''}</div></td>`;
+      html+=`<td><div class="stock-estimate">${esc(consFmt)}</div></td>`;
+      html+=`<td><div class="stock-estimate">${esc(optFmt)}</div></td>`;
+      html+=`<td><div class="stock-thesis-preview">${esc(firstSentence)}</div>`;
+      if(hasMore){
+        html+=`<div class="stock-thesis-full" id="${thesisId}">${esc(s.thesis||'')}</div>`;
+        html+=`<span class="stock-thesis-toggle" onclick="toggleThesis('${thesisId}',this)">▸ More</span>`;
+      }
+      if(s.risks)html+=`<div class="stock-risks">⚠ ${esc(s.risks)}</div>`;
+      if(s.researchDate)html+=`<div class="stock-date">Researched ${esc(s.researchDate)}</div>`;
+      html+='</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+    feed.innerHTML=html;
+  }catch(e){
+    console.error('Stocks panel error:',e);
+    feed.innerHTML=emptyStateHTML(
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>',
+      'Could not load stock data','Freedom is researching stocks daily. Next update at 8am.');
+  }
+}
+
+function toggleThesis(id,btn){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const isOpen=el.style.display==='block';
+  el.style.display=isOpen?'none':'block';
+  btn.textContent=isOpen?'▸ More':'▴ Less';
 }
 
 async function renderPersonal(){

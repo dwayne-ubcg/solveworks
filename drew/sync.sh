@@ -146,6 +146,9 @@ print(json.dumps(stats, indent=2))
 # 8. Pipeline leads — Kanban board data
 scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/leads.json" "$DATA_DIR/leads.json" 2>/dev/null || true
 
+# 9. Stock research — Freedom's daily dividend picks
+scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/stocks.json" "$DATA_DIR/stocks.json" 2>/dev/null || echo '{"lastUpdated":"","stocks":[]}' > "$DATA_DIR/stocks.json"
+
 # 9. Git push
 cd "$SCRIPT_DIR/.."
 git add drew/
