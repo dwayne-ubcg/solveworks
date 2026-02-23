@@ -101,3 +101,32 @@ Every time we work on Mission Control — for any client — ask:
 - **Tax Efficiency Alerts** — "3 capital gain events this year. Consider harvesting this loss before year end."
 - **Subscription Audit** — flags unused or duplicated business subscriptions automatically.
 
+
+---
+
+## 🏠 PRODUCT IDEA: SolveWorks Family (Feb 23, 2026)
+**Concept:** Every family member gets their own AI agent. All agents feed one shared Family Hub dashboard.
+
+**Vision:**
+- Dad's agent: work calendar, travel, finances, health
+- Mom's agent: household, kids' activities, errands, social calendar
+- Kids: age-appropriate agent — homework, sports, allowance
+- Family Hub: shared calendar, upcoming trips, who's where, budget, milestones
+
+**Why it wins:**
+- No competitor doing this
+- Mac Mini stays in the home — it IS the family's AI
+- Word of mouth is insane (school pickup, dinner parties)
+- Near-permanent retention — you don't cancel your family's AI
+- Natural upsell from business clients who are also parents
+
+**Pricing:** $999 setup + $350/month (one Mac Mini, multiple agents, Family Hub)
+
+**Architecture:** Same infrastructure. Each agent has its own persona + data feeds. Family Hub aggregates via shared data folder or API layer.
+
+**Next steps to explore:**
+- What does the Family Hub look like? (shared calendar, budget, travel, milestones)
+- How do spouse agents connect? (each has own Telegram bot?)
+- Kids' agent — what's age-appropriate? (12+? parental controls?)
+- Could be standalone product: solveworks.io/family
+
