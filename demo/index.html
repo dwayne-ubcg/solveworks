@@ -359,6 +359,35 @@ a{color:var(--blue);text-decoration:none}
   .kanban-col{min-width:100%;width:100%;max-height:none}
 }
 
+/* Stocks */
+.stocks-table-wrap{overflow-x:auto;margin-top:8px}
+.stocks-table{width:100%;border-collapse:collapse;font-size:14px}
+.stocks-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
+.stocks-table td{padding:14px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.stocks-table tr:last-child td{border-bottom:none}
+.stocks-table tr.sv-undervalued td{background:rgba(64,192,128,.06)}
+.stocks-table tr.sv-midvalued td{background:rgba(240,192,64,.05)}
+.stocks-table tr.sv-fullvalued td{background:transparent}
+.stock-ticker{font-weight:700;font-size:15px;letter-spacing:.5px}
+.stock-name{font-size:11px;color:var(--text2);margin-top:2px}
+.stock-yield{font-size:11px;color:var(--green);font-weight:600;margin-top:3px}
+.stock-rating{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.5px;margin-top:4px}
+.stock-rating.buy{background:rgba(64,192,128,.15);color:var(--green)}
+.stock-rating.hold{background:rgba(240,192,64,.15);color:var(--yellow)}
+.stock-rating.watch{background:rgba(130,130,140,.15);color:var(--text2)}
+.stock-rating.strongbuy{background:rgba(64,192,128,.25);color:var(--green)}
+.stock-price{font-size:16px;font-weight:600}
+.stock-currency{font-size:11px;color:var(--text2)}
+.stock-vs-low{font-size:12px;color:var(--text2);margin-top:4px}
+.stock-estimate{font-size:14px;font-weight:500}
+.stock-thesis-preview{color:var(--text);line-height:1.5;font-size:13px}
+.stock-thesis-full{display:none;color:var(--text2);line-height:1.6;font-size:12px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.stock-thesis-toggle{font-size:11px;color:var(--blue);cursor:pointer;margin-top:4px;display:inline-block;user-select:none}
+.stock-risks{font-size:11px;color:var(--text2);margin-top:6px;font-style:italic}
+.stock-date{font-size:10px;color:var(--text2);margin-top:4px;opacity:.7}
+.stocks-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.stocks-updated{font-size:12px;color:var(--text2)}
+
 /* Travel Research */
 .travel-research { margin-top: 16px; }
 .research-item { background: var(--surface2); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
@@ -422,7 +451,8 @@ const SECTIONS=[
   {id:'reports',icon:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',label:'Reports'},
   {id:'reading',icon:'<path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>',label:'Reading List'},
   {id:'outreach',icon:'<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',label:'Outreach'},
-  {id:'expenses',icon:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>',label:'Expenses',badge:'expenses-badge'}
+  {id:'expenses',icon:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>',label:'Expenses',badge:'expenses-badge'},
+  {id:'stocks',icon:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',label:'Stocks'}
 ];
 
 // Build nav & sections
@@ -471,6 +501,7 @@ async function init(){
   try{await renderReports()}catch(e){console.error('Reports error:',e)}
   try{await renderReading()}catch(e){console.error('Reading error:',e)}
   try{await renderOutreach()}catch(e){console.error('Outreach error:',e)}
+  try{await renderStocks()}catch(e){console.error('Stocks error:',e)}
 }
 
 /* DASHBOARD */
@@ -934,6 +965,73 @@ async function renderOutreach(){
     const b=document.getElementById('expenses-badge');if(b){b.textContent=expenses.length;b.style.display='';}
   };
   renderExp();
+}
+
+/* STOCKS */
+async function renderStocks(){
+  const feed=document.getElementById('sec-stocks');
+  if(!feed)return;
+  try{
+    const data=await loadJSON('data/stocks.json');
+    if(!data||!data.stocks||!data.stocks.length){
+      feed.innerHTML='<h1 class="page-title">📈 Stocks</h1><p class="page-sub">Daily dividend research — updated every morning</p><div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:48px;margin-bottom:16px">📊</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Researching stocks daily.</div><p>Next update at 8am. Dividend picks and valuation analysis will appear here.</p></div>'+cta();
+      return;
+    }
+    const updatedStr=data.lastUpdated?new Date(data.lastUpdated).toLocaleString('en-CA',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}):'—';
+    let html='<h1 class="page-title">📈 Stocks</h1><p class="page-sub">Daily dividend research — updated every morning at 8am</p>';
+    html+=`<div class="stocks-header"><div class="stocks-updated">Last updated: ${esc(updatedStr)}</div></div>`;
+    html+='<div class="stocks-table-wrap"><table class="stocks-table"><thead><tr>';
+    html+='<th>Stock</th><th>Price</th><th>52W Low</th><th>Conservative</th><th>Optimistic</th><th>Thesis</th>';
+    html+='</tr></thead><tbody>';
+    data.stocks.forEach((s,idx)=>{
+      const price=s.currentPrice||0;
+      const cons=s.conservativeEstimate||0;
+      const opt=s.optimisticEstimate||0;
+      let rowClass='sv-fullvalued';
+      if(cons&&price<cons)rowClass='sv-undervalued';
+      else if(cons&&opt&&price>=cons&&price<=opt)rowClass='sv-midvalued';
+      const ratingKey=(s.rating||'').toLowerCase().replace(/\s/g,'');
+      const ratingClass=ratingKey==='strongbuy'?'strongbuy':ratingKey==='buy'?'buy':ratingKey==='hold'?'hold':'watch';
+      const cur=s.currency||'CAD';
+      const priceFmt=price?`${cur} $${price.toFixed(2)}`:'—';
+      const consFmt=cons?`$${cons.toFixed(2)}`:'—';
+      const optFmt=opt?`$${opt.toFixed(2)}`:'—';
+      const low52Fmt=s.week52Low?`$${s.week52Low.toFixed(2)}`:'—';
+      const vsLow=s.priceVs52wLow||'';
+      const thesisId=`thesis-${idx}`;
+      const sentences=(s.thesis||'').split(/\.\s/);
+      const firstSentence=sentences[0]+(sentences.length>1&&s.thesis&&s.thesis.includes('.')?'.':'');
+      const hasMore=sentences.length>1;
+      html+=`<tr class="${rowClass}">`;
+      html+=`<td><div class="stock-ticker">${esc(s.ticker||'')}</div><div class="stock-name">${esc(s.name||'')}</div><div class="stock-yield">${esc(s.yield||'')}</div><span class="stock-rating ${ratingClass}">${esc(s.rating||'')}</span></td>`;
+      html+=`<td><div class="stock-price">${esc(priceFmt)}</div></td>`;
+      html+=`<td><div class="stock-estimate">${esc(low52Fmt)}</div><div class="stock-vs-low">${vsLow?esc(vsLow)+' above low':''}</div></td>`;
+      html+=`<td><div class="stock-estimate">${esc(consFmt)}</div></td>`;
+      html+=`<td><div class="stock-estimate">${esc(optFmt)}</div></td>`;
+      html+=`<td><div class="stock-thesis-preview">${esc(firstSentence)}</div>`;
+      if(hasMore){
+        html+=`<div class="stock-thesis-full" id="${thesisId}">${esc(s.thesis||'')}</div>`;
+        html+=`<span class="stock-thesis-toggle" onclick="toggleThesis('${thesisId}',this)">▸ More</span>`;
+      }
+      if(s.risks)html+=`<div class="stock-risks">⚠ ${esc(s.risks)}</div>`;
+      if(s.researchDate)html+=`<div class="stock-date">Researched ${esc(s.researchDate)}</div>`;
+      html+='</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+    feed.innerHTML=html+cta();
+  }catch(e){
+    console.error('Stocks panel error:',e);
+    document.getElementById('sec-stocks').innerHTML='<h1 class="page-title">📈 Stocks</h1><p class="page-sub">Daily dividend research — updated every morning</p><div style="text-align:center;padding:60px 20px;color:var(--text2)"><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">Could not load stock data.</div><p>Researching stocks daily. Next update at 8am.</p></div>'+cta();
+  }
+}
+
+function toggleThesis(id,btn){
+  const el=document.getElementById(id);
+  if(!el)return;
+  const isOpen=el.style.display==='block';
+  el.style.display=isOpen?'none':'block';
+  btn.textContent=isOpen?'▸ More':'▴ Less';
 }
 
 // Auto-login check & start
