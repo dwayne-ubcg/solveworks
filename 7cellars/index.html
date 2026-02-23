@@ -952,8 +952,8 @@ function updateClock(){
 /* ===== UTILS ===== */
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
-function closeModal(id){document.getElementById(id).classList.remove('open')}
-function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){const el=document.getElementById(id);if(el){el.classList.remove('open');el.style.display='';}}
+function openModal(id){const el=document.getElementById(id);if(el){el.classList.add('open');el.style.display='flex';}}
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')})});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'))});
 function avatarHTML(name,size){
@@ -1259,22 +1259,29 @@ function renderDocs(){
   document.getElementById('docs-badge').textContent=totalFiles;
 }
 function viewDoc(name){
-  document.getElementById('modal-doc-title').textContent=name;
-  let content = null;
-  for(const cat of docsData){
-    const f = (cat.files||[]).find(f=>f.name===name);
-    if(f && f.content){content=f.content;break;}
-  }
-  if(content && content !== '[PDF file — open in shared files]'){
-    try{document.getElementById('modal-doc-content').innerHTML=marked.parse(content)}
-    catch(e){document.getElementById('modal-doc-content').innerHTML='<pre style="white-space:pre-wrap">'+esc(content)+'</pre>'}
-  } else if(content === '[PDF file — open in shared files]'){
-    document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">📄 This is a PDF file. Please open it from the shared files.</p>';
-  } else {
-    document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">No content available for this document.</p>';
-  }
+  try {
+    document.getElementById('modal-doc-title').textContent=name;
+    let content = null;
+    for(const cat of docsData){
+      const f = (cat.files||[]).find(f=>f.name===name);
+      if(f && f.content){content=f.content;break;}
+    }
+    if(content && content !== '[PDF file — open in shared files]'){
+      try{
+        const rendered = (typeof marked !== 'undefined') ? marked.parse(content) : null;
+        document.getElementById('modal-doc-content').innerHTML = rendered || '<pre style="white-space:pre-wrap">'+esc(content)+'</pre>';
+      } catch(e){
+        document.getElementById('modal-doc-content').innerHTML='<pre style="white-space:pre-wrap">'+esc(content)+'</pre>';
+      }
+    } else if(content === '[PDF file — open in shared files]'){
+      document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">📄 This is a PDF file. Please open it from the shared files.</p>';
+    } else {
+      document.getElementById('modal-doc-content').innerHTML='<p style="color:var(--text2)">No content available for this document.</p>';
+    }
+  } catch(e){ console.error('viewDoc error:', e); }
   openModal('modal-doc');
 }
+window.viewDoc=viewDoc;
 
 /* ===== MEETINGS ===== */
 function renderMeetings(){
