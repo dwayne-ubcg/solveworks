@@ -578,23 +578,9 @@ async function loadJSON(p){try{const r=await fetch(p+'?_='+Date.now());if(!r.ok)
 function cta(){return '<div class="section-cta">Powered by <a href="https://solveworks.io" target="_blank">SolveWorks</a> — solveworks.io</div>'}
 
 async function init(){
-  try{await renderDashboard()}catch(e){console.error('Dashboard error:',e)}
-  try{await renderActivity()}catch(e){console.error('Activity error:',e)}
+  // Run all hardcoded (synchronous) renders first — instant, no waiting
   try{setupKanban()}catch(e){console.error('Tasks error:',e)}
-  try{await renderMeetings()}catch(e){console.error('Meetings error:',e)}
   try{renderDocuments()}catch(e){console.error('Documents error:',e)}
-  try{await renderAgents()}catch(e){console.error('Agents error:',e)}
-  try{await renderTravel()}catch(e){console.error('Travel error:',e)}
-  try{await renderHealth()}catch(e){console.error('Health error:',e)}
-  try{await renderSecurity()}catch(e){console.error('Security error:',e)}
-  try{await renderCalls()}catch(e){console.error('Calls error:',e)}
-  try{await renderCRM()}catch(e){console.error('CRM error:',e)}
-  try{await renderEmail()}catch(e){console.error('Email error:',e)}
-  try{await renderIntel()}catch(e){console.error('Intel error:',e)}
-  try{await renderReports()}catch(e){console.error('Reports error:',e)}
-  try{await renderReading()}catch(e){console.error('Reading error:',e)}
-  try{await renderOutreach()}catch(e){console.error('Outreach error:',e)}
-  try{await renderStocks()}catch(e){console.error('Stocks error:',e)}
   try{renderProjects()}catch(e){console.error('Projects error:',e)}
   try{renderFinancials()}catch(e){console.error('Financials error:',e)}
   try{renderInventory()}catch(e){console.error('Inventory error:',e)}
@@ -603,6 +589,24 @@ async function init(){
   try{renderPermits()}catch(e){console.error('Permits error:',e)}
   try{renderContractors()}catch(e){console.error('Contractors error:',e)}
   try{renderInvestors()}catch(e){console.error('Investors error:',e)}
+  // Then run data-fetching renders in parallel
+  await Promise.allSettled([
+    renderDashboard().catch(e=>console.error('Dashboard error:',e)),
+    renderActivity().catch(e=>console.error('Activity error:',e)),
+    renderMeetings().catch(e=>console.error('Meetings error:',e)),
+    renderAgents().catch(e=>console.error('Agents error:',e)),
+    renderTravel().catch(e=>console.error('Travel error:',e)),
+    renderHealth().catch(e=>console.error('Health error:',e)),
+    renderSecurity().catch(e=>console.error('Security error:',e)),
+    renderCalls().catch(e=>console.error('Calls error:',e)),
+    renderCRM().catch(e=>console.error('CRM error:',e)),
+    renderEmail().catch(e=>console.error('Email error:',e)),
+    renderIntel().catch(e=>console.error('Intel error:',e)),
+    renderReports().catch(e=>console.error('Reports error:',e)),
+    renderReading().catch(e=>console.error('Reading error:',e)),
+    renderOutreach().catch(e=>console.error('Outreach error:',e)),
+    renderStocks().catch(e=>console.error('Stocks error:',e))
+  ]);
 }
 
 /* DASHBOARD */
