@@ -457,6 +457,7 @@ a{color:var(--blue);text-decoration:none}
 .move-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
 .move-btn:hover{background:var(--accent-light);color:#fff;border-color:transparent}
 .move-btn.current{background:var(--blue);color:#fff;border-color:transparent}
+.k-filter-chip.active{background:var(--blue)!important;color:#fff!important;border-color:var(--blue)!important}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
@@ -508,6 +509,7 @@ a{color:var(--blue);text-decoration:none}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="modal-field"><label>Priority</label><select id="mt-priority"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select></div>
       <div class="modal-field"><label>Due Date</label><input id="mt-due" type="date" /></div>
+      <div class="modal-field"><label>Assignee</label><select id="mt-assignee"><option value="">— Unassigned —</option></select></div>
     </div>
     <div class="modal-field" id="mt-move-section" style="display:none"><label>Move to</label><div id="mt-move-btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div></div>
     <div class="modal-actions">
@@ -680,25 +682,59 @@ async function renderActivity(){
 const KCOLS=['todo','inprogress','waiting','done'];
 const KCOL_LABELS={todo:'To Do',inprogress:'In Progress',waiting:'Waiting',done:'Done'};
 const KCOL_ICONS={todo:'📋',inprogress:'🔄',waiting:'⏳',done:'✅'};
-const DEMO_TASKS=[
-  {id:'t1',title:'Review Q1 financial projections',description:'Go through portfolio IRR and cash position with CFO',status:'inprogress',priority:'high',dueDate:'2026-02-26'},
-  {id:'t2',title:'Follow up — Yuki Tanaka offer (HP-302)',description:'3-day rule — reach out if no response',status:'inprogress',priority:'high',dueDate:'2026-02-25'},
-  {id:'t3',title:'Schedule site visit for Nathan & Claire Hughes',description:'Very interested in HP-309, toured Tuesday',status:'todo',priority:'medium',dueDate:'2026-02-27'},
-  {id:'t4',title:'Westfield Commons — budget variance review',description:'Over by $340K — need meeting with Summit Dev Group',status:'todo',priority:'high',dueDate:'2026-02-28'},
-  {id:'t5',title:'ThermaAir HVAC — resolve overdue invoice ($84K)',status:'todo',priority:'high',dueDate:'2026-02-25'},
-  {id:'t6',title:'Prepare LP update report for Q1 distributions',status:'waiting',priority:'medium',dueDate:'2026-03-15'},
-  {id:'t7',title:'BP-2025-0312 permit follow-up — Meridian building',status:'waiting',priority:'medium'},
-  {id:'t8',title:'Send offer package to Thompson Capital',status:'todo',priority:'low'},
-  {id:'t9',title:'Harrison Group HP-118 closing docs signed',status:'done',priority:'high'},
-  {id:'t10',title:'Andrea Fontaine MR-105 deposit received',status:'done',priority:'medium'}
+const DEMO_TEAM=[
+  {name:'Alex Chen',   initials:'AC',color:'#4080f0'},
+  {name:'Jordan Walsh',initials:'JW',color:'#40c080'},
+  {name:'Sam Rivera',  initials:'SR',color:'#f0c040'},
+  {name:'Morgan Blake',initials:'MB',color:'#a060f0'},
+  {name:'Taylor Kim',  initials:'TK',color:'#f04060'},
 ];
-let ktasks=[];let editingKTaskId=null;let newKTaskCol='todo';let kDragId=null;
+function kAvatar(name,size){
+  size=size||24;
+  const m=DEMO_TEAM.find(t=>t.name===name);
+  if(!m)return '';
+  return `<span style="width:${size}px;height:${size}px;border-radius:50%;background:${m.color};display:inline-flex;align-items:center;justify-content:center;font-size:${Math.round(size*.38)}px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.5px">${m.initials}</span>`;
+}
+const DEMO_TASKS=[
+  {id:'t1', title:'Review Q1 financial projections',          description:'Go through portfolio IRR and cash position with CFO',              status:'inprogress',priority:'high',  dueDate:'2026-02-26',assignee:'Taylor Kim'},
+  {id:'t2', title:'Follow up — Yuki Tanaka offer (HP-302)',   description:'3-day rule — reach out if no response by EOD',                    status:'inprogress',priority:'high',  dueDate:'2026-02-25',assignee:'Jordan Walsh'},
+  {id:'t3', title:'Refinance model — Harbour Point Tower A',  description:'Run updated comps and stress-test at 7.5% cap rate',              status:'inprogress',priority:'high',  dueDate:'2026-02-27',assignee:'Taylor Kim'},
+  {id:'t4', title:'Negotiate GC contract — Westfield phase 3',description:'Summit Dev Group wants 8% contingency — push back to 5%',         status:'inprogress',priority:'medium',dueDate:'2026-03-01',assignee:'Morgan Blake'},
+  {id:'t5', title:'Meridian retail leasing — prospect list',  description:'Pull all food & beverage tenants under 2,500 sq ft in the city',  status:'inprogress',priority:'medium',dueDate:'2026-02-28',assignee:'Sam Rivera'},
+  {id:'t6', title:'Schedule site visit — Nathan & Claire Hughes',description:'Very interested in HP-309, toured Tuesday. Book for this week.', status:'todo',      priority:'high',  dueDate:'2026-02-27',assignee:'Jordan Walsh'},
+  {id:'t7', title:'Westfield Commons — budget variance review',description:'Over by $340K — need meeting with Summit Dev Group ASAP',         status:'todo',      priority:'high',  dueDate:'2026-02-28',assignee:'Morgan Blake'},
+  {id:'t8', title:'ThermaAir HVAC — resolve overdue invoice ($84K)',description:'Third notice received. Escalate or pause future work orders.', status:'todo',      priority:'high',  dueDate:'2026-02-25',assignee:'Morgan Blake'},
+  {id:'t9', title:'Send offer package to Thompson Capital',   description:'Unit MR-204, $1.85M. Include latest appraisal and floor plan.',   status:'todo',      priority:'medium',                       assignee:'Jordan Walsh'},
+  {id:'t10',title:'Q1 investor report — first draft',         description:'Cover occupancy, NOI, and distributions. Due to Alex by Mar 5.',  status:'todo',      priority:'medium',dueDate:'2026-03-05',  assignee:'Taylor Kim'},
+  {id:'t11',title:'Zoning variance approval — Meridian phase 2',description:'City council meeting Mar 12 — brief council members before then.',status:'todo',     priority:'low',   dueDate:'2026-03-10',  assignee:'Sam Rivera'},
+  {id:'t12',title:'Henderson family — financing contingency', description:'Waiting on their bank. Counter-offer expires Feb 26.',             status:'waiting',   priority:'high',  dueDate:'2026-02-26',assignee:'Jordan Walsh'},
+  {id:'t13',title:'BP-2025-0312 permit — Meridian building',  description:'Filed Nov 14. City inspector said 60-day review. Follow up.',     status:'waiting',   priority:'medium',                       assignee:'Sam Rivera'},
+  {id:'t14',title:'Prepare LP update — Q1 distributions',     description:'All 8 LPs expecting update by Mar 15. Taylor drafting.',          status:'waiting',   priority:'medium',dueDate:'2026-03-15',  assignee:'Taylor Kim'},
+  {id:'t15',title:'Insurance renewal — Harbour Point portfolio',description:'Broker submitted 3 quotes. Alex reviewing before binding.',      status:'waiting',   priority:'low',   dueDate:'2026-03-20',  assignee:'Morgan Blake'},
+  {id:'t16',title:'Board deck Q4 2025 — final version',       description:'Approved by Alex. Filed.',                                        status:'done',      priority:'high',                         assignee:'Taylor Kim'},
+  {id:'t17',title:'Harrison Group HP-118 closing docs signed',description:'Closed Feb 18. $2.4M. Commission split confirmed.',               status:'done',      priority:'high',                         assignee:'Jordan Walsh'},
+  {id:'t18',title:'Andrea Fontaine MR-105 deposit received',  description:'$95K deposit cleared. Move to pending close.',                    status:'done',      priority:'medium',                       assignee:'Jordan Walsh'},
+  {id:'t19',title:'Renew landscaping contract — Westfield',   description:'3-year renewal signed with GreenEdge at prior rates.',            status:'done',      priority:'low',                          assignee:'Morgan Blake'},
+  {id:'t20',title:'Update rent roll — all properties',        description:'Sam completed full audit. Uploaded to Drive.',                    status:'done',      priority:'medium',                       assignee:'Sam Rivera'},
+];
+let ktasks=[];let editingKTaskId=null;let newKTaskCol='todo';let kDragId=null;let kFilter='all';
+function kSetFilter(name,el){
+  kFilter=name;
+  document.querySelectorAll('.k-filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderKanban();
+}
 
 function setupKanban(){
-  try{ktasks=JSON.parse(localStorage.getItem('demo-tasks'));if(!Array.isArray(ktasks)||!ktasks.length)ktasks=null}catch(e){ktasks=null}
+  try{ktasks=JSON.parse(localStorage.getItem('demo-tasks'));if(!Array.isArray(ktasks)||!ktasks.length||!ktasks[0].assignee)ktasks=null}catch(e){ktasks=null}
   if(!ktasks)ktasks=JSON.parse(JSON.stringify(DEMO_TASKS));
   const sec=document.getElementById('sec-tasks');
-  sec.innerHTML=`<h1 class="page-title">Tasks</h1><p class="page-sub">Drag cards between columns · Click to edit · + to add new</p>
+  const filterChips=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px">
+    <button class="k-filter-chip active" onclick="kSetFilter('all',this)" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">Everyone</button>
+    ${DEMO_TEAM.map(m=>`<button class="k-filter-chip" onclick="kSetFilter('${m.name}',this)" style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer">${kAvatar(m.name,18)} ${m.name.split(' ')[0]}</button>`).join('')}
+  </div>`;
+  sec.innerHTML=`<h1 class="page-title">Tasks</h1><p class="page-sub">Drag cards between columns · Click to edit · filter by team member</p>
+  ${filterChips}
   <div class="kanban-board" id="kb-board">${KCOLS.map(c=>`
     <div class="kanban-col" data-col="${c}">
       <div class="kanban-col-header">
@@ -729,7 +765,7 @@ function kOverdue(d){if(!d)return false;return new Date(d)<new Date(new Date().t
 
 function renderKanban(){
   KCOLS.forEach(col=>{
-    const items=ktasks.filter(t=>t.status===col);
+    const items=ktasks.filter(t=>t.status===col&&(kFilter==='all'||t.assignee===kFilter));
     const el=document.getElementById('kcol-'+col);if(!el)return;
     el.innerHTML=items.map(t=>`
       <div class="kanban-card" draggable="true" data-id="${t.id}" onclick="openEditKTask('${t.id}')"
@@ -739,6 +775,7 @@ function renderKanban(){
           ${t.priority?`<span class="priority-tag ${t.priority}">${t.priority}</span>`:''}
           ${t.dueDate?`<span class="kanban-card-due ${kOverdue(t.dueDate)?'overdue':''}">${kOverdue(t.dueDate)?'⚠ ':'📅 '}${kFmtDate(t.dueDate)}</span>`:''}
         </div>
+        ${t.assignee?`<div style="display:flex;align-items:center;gap:6px;margin-top:8px">${kAvatar(t.assignee,22)}<span style="font-size:11px;color:var(--text2)">${esc(t.assignee)}</span></div>`:''}
       </div>`).join('');
     const cnt=document.getElementById('kcount-'+col);if(cnt)cnt.textContent=items.length;
   });
@@ -749,6 +786,10 @@ function renderKanban(){
 function kDragStart(e){kDragId=e.currentTarget.dataset.id;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
 function kDragEnd(e){e.currentTarget.classList.remove('dragging');kDragId=null}
 
+function kPopulateAssignees(selected){
+  const sel=document.getElementById('mt-assignee');
+  sel.innerHTML='<option value="">— Unassigned —</option>'+DEMO_TEAM.map(m=>`<option value="${m.name}"${m.name===selected?' selected':''}>${m.initials} ${m.name}</option>`).join('');
+}
 function openNewKTask(col){
   editingKTaskId=null;newKTaskCol=col;
   document.getElementById('modal-task-title').textContent='New Task';
@@ -756,6 +797,7 @@ function openNewKTask(col){
   document.getElementById('mt-desc').value='';
   document.getElementById('mt-due').value='';
   document.getElementById('mt-priority').value='medium';
+  kPopulateAssignees('');
   document.getElementById('mt-move-section').style.display='none';
   document.getElementById('mt-delete').style.display='none';
   document.getElementById('mt-save').textContent='Create';
@@ -771,6 +813,7 @@ function openEditKTask(id){
   document.getElementById('mt-desc').value=t.description||'';
   document.getElementById('mt-due').value=t.dueDate||'';
   document.getElementById('mt-priority').value=t.priority||'medium';
+  kPopulateAssignees(t.assignee||'');
   document.getElementById('mt-move-section').style.display='block';
   document.getElementById('mt-move-btns').innerHTML=KCOLS.map(c=>
     `<button class="move-btn ${t.status===c?'current':''}" onclick="moveKTask('${id}','${c}')">${KCOL_ICONS[c]} ${KCOL_LABELS[c]}</button>`
@@ -824,9 +867,12 @@ function saveTask(){
     const t=ktasks.find(x=>x.id===editingKTaskId);if(!t)return;
     t.title=title;t.description=document.getElementById('mt-desc').value.trim();
     t.priority=document.getElementById('mt-priority').value;t.dueDate=document.getElementById('mt-due').value;
+    t.assignee=document.getElementById('mt-assignee').value;
   } else {
     ktasks.push({id:kGenId(),title,description:document.getElementById('mt-desc').value.trim(),
-      status:newKTaskCol,priority:document.getElementById('mt-priority').value,dueDate:document.getElementById('mt-due').value});
+      status:newKTaskCol,priority:document.getElementById('mt-priority').value,
+      dueDate:document.getElementById('mt-due').value,
+      assignee:document.getElementById('mt-assignee').value});
   }
   saveKTasks();renderKanban();closeTaskModal();
 }
