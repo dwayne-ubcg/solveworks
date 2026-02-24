@@ -262,6 +262,50 @@ a{color:var(--blue);text-decoration:none}
 .past-trips.open{display:block}
 .past-trips .travel-card{opacity:.7}
 
+/* ── TripIt-style travel UI ─────────────────────────────────────── */
+.trip-header-left{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.trip-purpose-label{font-size:19px;font-weight:700;letter-spacing:-.015em;line-height:1.2}
+.trip-dest-sub{font-size:13px;color:var(--text2);margin-top:1px}
+.trip-header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.trip-badges{display:flex;align-items:center;gap:6px}
+.travel-badge[data-toggle="1"]{cursor:pointer;transition:all .2s}
+.travel-badge[data-toggle="1"]:hover{filter:brightness(1.2);transform:scale(1.05)}
+.trip-expand-hint{font-size:10px;color:var(--text2);opacity:.6;margin-top:2px;font-style:italic}
+/* Day-by-day timeline */
+.trip-timeline{padding:0 20px 20px}
+.timeline-day{margin-bottom:20px}
+.timeline-day-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.timeline-day-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text2)}
+.timeline-day-line{flex:1;height:1px;background:var(--border)}
+/* Timeline items */
+.timeline-item{border-radius:8px;margin-bottom:6px;overflow:hidden;border:1px solid var(--border)}
+.timeline-item.flight{border-left:3px solid var(--blue)}
+.timeline-item.hotel{border-left:3px solid var(--green)}
+.timeline-item.itinerary{border-left:3px solid var(--yellow)}
+.timeline-item-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--surface2);transition:background .15s;user-select:none}
+.timeline-item-header:hover{background:var(--surface3)}
+.tl-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center}
+.tl-time{font-size:12px;font-weight:700;color:var(--text2);min-width:38px;flex-shrink:0;font-feature-settings:'tnum'}
+.tl-title{font-size:13px;font-weight:600;flex:1;min-width:0}
+.tl-sub{font-size:11px;color:var(--text2);flex-shrink:0}
+.tl-arrow{font-size:10px;color:var(--text2);transition:transform .2s;flex-shrink:0}
+.timeline-item.open .tl-arrow{transform:rotate(90deg)}
+/* Expandable body */
+.timeline-item-body{display:none;padding:10px 14px 12px 44px;background:var(--surface);border-top:1px solid var(--border);font-size:13px;line-height:1.7;color:var(--text)}
+.timeline-item.open .timeline-item-body{display:block}
+.tl-detail-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.tl-detail-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;min-width:80px}
+.tl-detail-val{font-size:13px;color:var(--text);flex:1}
+/* Copy button */
+.copy-btn{display:inline-flex;align-items:center;padding:2px 7px;border:1px solid var(--border);background:var(--surface2);border-radius:4px;color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;margin-left:4px;flex-shrink:0}
+.copy-btn:hover{background:var(--surface3);color:var(--text)}
+.copy-btn.copied{background:rgba(64,192,128,.15);color:var(--green);border-color:rgba(64,192,128,.3)}
+/* Layover chip */
+.layover-chip{display:flex;align-items:center;gap:8px;padding:6px 14px;margin:4px 0;color:var(--yellow);font-size:11px;font-weight:600;text-align:center}
+.layover-chip::before,.layover-chip::after{content:'';flex:1;height:1px;background:rgba(240,192,64,.2)}
+/* Copy toast */
+.copy-toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface2);border:1px solid var(--green);color:var(--green);border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;z-index:999;opacity:0;pointer-events:none;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.copy-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* Pulsing sync dot */
 @keyframes syncPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.3)}}
 
@@ -1272,41 +1316,141 @@ async function init(){
     const past=travel.trips.filter(t=>t.status==='completed');
     if(upcoming.length>0){document.getElementById('travel-badge').textContent=upcoming.length;document.getElementById('travel-badge').style.display='';}
     let html='';
+    // Helper: calculate layover string between two time strings "HH:MM"
+    const calcLayover=(arr,dep)=>{
+      if(!arr||!dep)return null;
+      const [ah,am]=(arr+':00').split(':').map(Number);
+      const [dh,dm]=(dep+':00').split(':').map(Number);
+      const diff=(dh*60+dm)-(ah*60+am);
+      if(diff<=0)return null;
+      const h=Math.floor(diff/60),m=diff%60;
+      return h>0?(m>0?`${h}h ${m}m layover`:`${h}h layover`):`${m}m layover`;
+    };
+    // Helper: format date for day header
+    const fmtDay=(dateStr)=>{
+      const d=new Date(dateStr+'T00:00:00');
+      return d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    };
+    // Copy button HTML
+    const copyBtn=(text,label)=>`<button class="copy-btn" onclick="tripCopy(this,'${esc(text).replace(/'/g,"\\'")}')">📋</button>`;
     const renderTrip=(trip,i)=>{
-      const purposeClass=trip.purpose||'business';
+      const tripId=(trip.destination||'').replace(/[^a-zA-Z0-9]/g,'_')+'_'+(trip.startDate||'').replace(/[^0-9]/g,'');
+      const savedPurpose=localStorage.getItem('mc_trip_purpose_'+tripId);
+      const purposeClass=savedPurpose||(trip.purpose||'business');
       const statusClass=(trip.status||'upcoming').replace(' ','-');
       const statusLabel={'upcoming':'Upcoming','in-progress':'In Progress','completed':'Completed'}[statusClass]||trip.status;
       const start=new Date(trip.startDate+'T00:00:00');const end=new Date(trip.endDate+'T00:00:00');
       const dateStr=start.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-      let h=`<div class="travel-card" style="animation-delay:${i*0.08}s"><div class="travel-card-header" onclick="this.nextElementSibling.classList.toggle('open')"><div><div class="travel-dest">${esc(trip.destination)}</div><div class="travel-dates">${esc(dateStr)}</div></div><div><span class="travel-badge ${purposeClass}">${purposeClass}</span><span class="travel-status ${statusClass}">${statusLabel}</span></div></div>`;
+      const purposeLabel=trip.notes||trip.destination||'';
+      // Card header — TripIt style
+      let h=`<div class="travel-card" style="animation-delay:${i*0.08}s">`;
+      h+=`<div class="travel-card-header" onclick="this.nextElementSibling.classList.toggle('open')">`;
+      h+=`<div class="trip-header-left">`;
+      h+=`<div class="trip-purpose-label">${esc(purposeLabel||trip.destination)}</div>`;
+      h+=`<div class="trip-dest-sub">📍 ${esc(trip.destination)} &nbsp;·&nbsp; ${esc(dateStr)}</div>`;
+      h+=`</div>`;
+      h+=`<div class="trip-header-right">`;
+      h+=`<div class="trip-badges">`;
+      h+=`<span class="travel-badge ${purposeClass}" data-toggle="1" data-tripid="${esc(tripId)}" onclick="event.stopPropagation();toggleTripPurpose('${esc(tripId)}',this)">${purposeClass}</span>`;
+      h+=`<span class="travel-status ${statusClass}">${statusLabel}</span>`;
+      h+=`</div>`;
+      h+=`<div class="trip-expand-hint">tap to expand ▾</div>`;
+      h+=`</div></div>`;
+      // Details panel — day-by-day timeline
       h+=`<div class="travel-details">`;
-      if(trip.flights&&trip.flights.length){
-        h+=`<div class="travel-section"><div class="travel-section-title">✈️ Flights</div>`;
-        trip.flights.forEach(f=>{
-          h+=`<div class="flight-route"><div><div class="flight-airport">${esc(f.from)}</div><div class="flight-time">${esc(f.depart)}</div></div><div class="flight-arrow"><div class="flight-num">${esc(f.airline)} ${esc(f.flightNum)}</div><div class="line"></div><div class="flight-time">${esc(f.date||'')}</div></div><div><div class="flight-airport">${esc(f.to)}</div><div class="flight-time">${esc(f.arrive)}</div></div></div>`;
-          if(f.confirmation)h+=`<div class="flight-conf">Confirmation: ${esc(f.confirmation)}</div>`;
+      // Build flat list of all items with date + sortable time
+      const allItems=[];
+      (trip.flights||[]).forEach(f=>{
+        allItems.push({type:'flight',date:f.date||trip.startDate,time:f.depart||'00:00',data:f});
+      });
+      (trip.hotels||[]).forEach(ho=>{
+        // Show hotel on check-in day
+        allItems.push({type:'hotel',date:ho.checkIn||trip.startDate,time:'15:00',data:ho});
+      });
+      (trip.itinerary||[]).forEach(day=>{
+        if(Array.isArray(day.items)){
+          // Legacy format: {date, items:[string]}
+          day.items.forEach(item=>{
+            allItems.push({type:'itinerary',date:day.date,time:'09:00',data:{title:item,location:'',date:day.date,time:''}});
+          });
+        } else {
+          // New flat format: {date, time, title, location}
+          allItems.push({type:'itinerary',date:day.date,time:day.time||'09:00',data:day});
+        }
+      });
+      // Sort by date, then time
+      allItems.sort((a,b)=>a.date!==b.date?(a.date<b.date?-1:1):(a.time<b.time?-1:1));
+      // Group by date
+      const byDate={};const dateOrder=[];
+      allItems.forEach(item=>{if(!byDate[item.date]){byDate[item.date]=[];dateOrder.push(item.date);}byDate[item.date].push(item);});
+      // Render timeline
+      h+=`<div class="trip-timeline">`;
+      dateOrder.forEach(date=>{
+        h+=`<div class="timeline-day">`;
+        h+=`<div class="timeline-day-header"><div class="timeline-day-line"></div><div class="timeline-day-label">${fmtDay(date)}</div><div class="timeline-day-line"></div></div>`;
+        const dayItems=byDate[date];
+        dayItems.forEach((item,idx)=>{
+          const iid=`tl_${tripId}_${date}_${idx}`;
+          if(item.type==='flight'){
+            const f=item.data;
+            const routeLabel=`${esc(f.from)} → ${esc(f.to)}`;
+            const subLabel=`${esc(f.airline||'')} ${esc(f.flightNum||'')}`.trim();
+            h+=`<div class="timeline-item flight" id="${iid}">`;
+            h+=`<div class="timeline-item-header" onclick="toggleTlItem('${iid}')">`;
+            h+=`<span class="tl-icon">✈️</span>`;
+            h+=`<span class="tl-time">${esc(f.depart||'')}</span>`;
+            h+=`<span class="tl-title">${routeLabel}</span>`;
+            h+=`<span class="tl-sub">${subLabel}</span>`;
+            h+=`<span class="tl-arrow">▶</span>`;
+            h+=`</div>`;
+            h+=`<div class="timeline-item-body">`;
+            if(f.airline||f.flightNum)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Flight</span><span class="tl-detail-val">${esc((f.airline||'')+' '+(f.flightNum||'')).trim()}</span></div>`;
+            h+=`<div class="tl-detail-row"><span class="tl-detail-label">Departs</span><span class="tl-detail-val">${esc(f.depart||'—')} from ${esc(f.from||'')}</span></div>`;
+            h+=`<div class="tl-detail-row"><span class="tl-detail-label">Arrives</span><span class="tl-detail-val">${esc(f.arrive||'—')} at ${esc(f.to||'')}</span></div>`;
+            if(f.confirmation)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Conf #</span><span class="tl-detail-val" style="color:var(--blue);font-weight:600">${esc(f.confirmation)}${copyBtn(f.confirmation,'conf')}</span></div>`;
+            h+=`</div></div>`;
+            // Layover between this flight and next same-day flight
+            if(idx<dayItems.length-1&&dayItems[idx+1].type==='flight'){
+              const nextF=dayItems[idx+1].data;
+              const lv=calcLayover(f.arrive,nextF.depart);
+              if(lv)h+=`<div class="layover-chip">⏱ ${lv} in ${esc(f.to||'')}</div>`;
+            }
+          } else if(item.type==='hotel'){
+            const ho=item.data;
+            h+=`<div class="timeline-item hotel" id="${iid}">`;
+            h+=`<div class="timeline-item-header" onclick="toggleTlItem('${iid}')">`;
+            h+=`<span class="tl-icon">🏨</span>`;
+            h+=`<span class="tl-time">Check-in</span>`;
+            h+=`<span class="tl-title">${esc(ho.name)}</span>`;
+            h+=`<span class="tl-sub">–${esc(ho.checkOut||'')}</span>`;
+            h+=`<span class="tl-arrow">▶</span>`;
+            h+=`</div>`;
+            h+=`<div class="timeline-item-body">`;
+            h+=`<div class="tl-detail-row"><span class="tl-detail-label">Check-in</span><span class="tl-detail-val">${esc(ho.checkIn||'')}</span></div>`;
+            h+=`<div class="tl-detail-row"><span class="tl-detail-label">Check-out</span><span class="tl-detail-val">${esc(ho.checkOut||'')}</span></div>`;
+            if(ho.address)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Address</span><span class="tl-detail-val">${esc(ho.address)}${copyBtn(ho.address,'addr')}</span></div>`;
+            if(ho.confirmation)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Conf #</span><span class="tl-detail-val" style="color:var(--green);font-weight:600">${esc(ho.confirmation)}${copyBtn(ho.confirmation,'conf')}</span></div>`;
+            h+=`</div></div>`;
+          } else if(item.type==='itinerary'){
+            const it=item.data;
+            h+=`<div class="timeline-item itinerary" id="${iid}">`;
+            h+=`<div class="timeline-item-header" onclick="toggleTlItem('${iid}')">`;
+            h+=`<span class="tl-icon">📌</span>`;
+            h+=`<span class="tl-time">${esc(it.time||'')}</span>`;
+            h+=`<span class="tl-title">${esc(it.title||it+'')}</span>`;
+            if(it.location)h+=`<span class="tl-sub" style="color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(it.location)}</span>`;
+            h+=`<span class="tl-arrow">▶</span>`;
+            h+=`</div>`;
+            h+=`<div class="timeline-item-body">`;
+            if(it.time)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Time</span><span class="tl-detail-val">${esc(it.time)}</span></div>`;
+            if(it.location)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Location</span><span class="tl-detail-val">${esc(it.location)}${copyBtn(it.location,'loc')}</span></div>`;
+            if(it.notes)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Notes</span><span class="tl-detail-val">${esc(it.notes)}</span></div>`;
+            h+=`</div></div>`;
+          }
         });
-        h+=`</div>`;
-      }
-      if(trip.hotels&&trip.hotels.length){
-        h+=`<div class="travel-section"><div class="travel-section-title">🏨 Hotels</div>`;
-        trip.hotels.forEach(ho=>{
-          h+=`<div class="hotel-card"><div class="hotel-name">${esc(ho.name)}</div><div class="hotel-detail">Check-in: ${esc(ho.checkIn)} · Check-out: ${esc(ho.checkOut)}</div>`;
-          if(ho.confirmation)h+=`<div class="hotel-detail" style="color:var(--blue)">Confirmation: ${esc(ho.confirmation)}</div>`;
-          if(ho.address)h+=`<div class="hotel-detail">${esc(ho.address)}</div>`;
-          h+=`</div>`;
-        });
-        h+=`</div>`;
-      }
-      if(trip.itinerary&&trip.itinerary.length){
-        h+=`<div class="travel-section"><div class="travel-section-title">📋 Itinerary</div>`;
-        trip.itinerary.forEach(day=>{
-          h+=`<div class="itin-day"><div class="itin-date">${esc(day.date)}</div>`;
-          (day.items||[]).forEach(item=>{h+=`<div class="itin-item">• ${esc(item)}</div>`});
-          h+=`</div>`;
-        });
-        h+=`</div>`;
-      }
+        h+=`</div>`; // .timeline-day
+      });
+      h+=`</div>`; // .trip-timeline
       // 🔍 Trip Research (rich format)
       {
         const r=trip.research;
