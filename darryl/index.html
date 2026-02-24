@@ -282,6 +282,7 @@ a{color:var(--blue);text-decoration:none}
 .timeline-item.flight{border-left:3px solid var(--blue)}
 .timeline-item.hotel{border-left:3px solid var(--green)}
 .timeline-item.itinerary{border-left:3px solid var(--yellow)}
+.timeline-item.restaurant{border-left:3px solid var(--purple)}
 .timeline-item-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;background:var(--surface2);transition:background .15s;user-select:none}
 .timeline-item-header:hover{background:var(--surface3)}
 .tl-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center}
@@ -1374,8 +1375,9 @@ async function init(){
             allItems.push({type:'itinerary',date:day.date,time:'09:00',data:{title:item,location:'',date:day.date,time:''}});
           });
         } else {
-          // New flat format: {date, time, title, location}
-          allItems.push({type:'itinerary',date:day.date,time:day.time||'09:00',data:day});
+          // New flat format: {date, time, title, location, type?}
+          const itemType=(day.type==='restaurant'||day.type==='dining')?'restaurant':'itinerary';
+          allItems.push({type:itemType,date:day.date,time:day.time||'09:00',data:day});
         }
       });
       // Sort by date, then time
@@ -1446,6 +1448,23 @@ async function init(){
             if(it.location)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Location</span><span class="tl-detail-val">${esc(it.location)}${copyBtn(it.location,'loc')}</span></div>`;
             if(it.notes)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Notes</span><span class="tl-detail-val">${esc(it.notes)}</span></div>`;
             h+=`</div></div>`;
+          } else if(item.type==='restaurant'){
+            const re=item.data;
+            h+=`<div class="timeline-item restaurant" id="${iid}">`;
+            h+=`<div class="timeline-item-header" onclick="toggleTlItem('${iid}')">`;
+            h+=`<span class="tl-icon">🍽️</span>`;
+            h+=`<span class="tl-time">${esc(re.time||'')}</span>`;
+            h+=`<span class="tl-title">${esc(re.title||re.name||'')}</span>`;
+            if(re.cuisine||re.location)h+=`<span class="tl-sub" style="color:var(--text2);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(re.cuisine||re.location||'')}</span>`;
+            h+=`<span class="tl-arrow">▶</span>`;
+            h+=`</div>`;
+            h+=`<div class="timeline-item-body">`;
+            if(re.time)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Reservation</span><span class="tl-detail-val">${esc(re.time)}</span></div>`;
+            if(re.cuisine)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Cuisine</span><span class="tl-detail-val">${esc(re.cuisine)}</span></div>`;
+            if(re.address||re.location)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Address</span><span class="tl-detail-val">${esc(re.address||re.location)}${copyBtn(re.address||re.location,'addr')}</span></div>`;
+            if(re.confirmation)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Conf #</span><span class="tl-detail-val" style="color:var(--purple);font-weight:600">${esc(re.confirmation)}${copyBtn(re.confirmation,'conf')}</span></div>`;
+            if(re.notes)h+=`<div class="tl-detail-row"><span class="tl-detail-label">Notes</span><span class="tl-detail-val">${esc(re.notes)}</span></div>`;
+            h+=`</div></div>`;
           }
         });
         h+=`</div>`; // .timeline-day
@@ -1489,7 +1508,22 @@ async function init(){
             h+=`<div style="margin-bottom:6px;margin-top:14px"><div class="act-group-title">🌤️ Weather</div></div><div class="weather-widget"><div class="weather-temps"><div class="high">${r.weather.avgHigh}°C</div><div class="low">Low ${r.weather.avgLow}°C</div></div><div class="weather-conditions">${esc(r.weather.conditions)}</div></div>`;
           }
         } else {
-          h+=`<div class="research-empty">🤖 Your agent will prepare personalized recommendations before your trip</div>`;
+          const lsKey=`research_req_${tripId}`;
+          const pending=JSON.parse(localStorage.getItem(lsKey)||'null');
+          if(pending){
+            h+=`<div class="research-empty" style="text-align:left">`;
+            h+=`<div style="font-size:13px;font-weight:600;color:var(--yellow);margin-bottom:6px">⏳ Research Requested</div>`;
+            h+=`<div style="font-size:12px;color:var(--text2);margin-bottom:4px">Your agent is working on it. Check back soon.</div>`;
+            if(pending.note)h+=`<div style="font-size:12px;color:var(--text);margin-top:6px;padding:8px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border)">"${esc(pending.note)}"</div>`;
+            h+=`<button onclick="localStorage.removeItem('${lsKey}');showToast('Request cleared');document.getElementById('travel-content').dispatchEvent(new Event('refresh'))" style="margin-top:10px;font-size:11px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);padding:4px 10px;cursor:pointer">Cancel Request</button>`;
+            h+=`</div>`;
+          } else {
+            h+=`<div id="research-empty-${tripId}" class="research-empty" style="text-align:left">`;
+            h+=`<div style="font-size:13px;font-weight:600;margin-bottom:6px">🤖 No research yet for this trip</div>`;
+            h+=`<div style="font-size:12px;color:var(--text2);margin-bottom:12px">Ask your agent to prepare restaurant picks, activities, weather, and local tips.</div>`;
+            h+=`<div class="research-input"><input id="ri_${tripId}" placeholder="Any specific requests? (optional)" onclick="event.stopPropagation()"><button onclick="event.stopPropagation();submitResearchReq('${tripId}','${esc(trip.destination||'')}')">Request Research</button></div>`;
+            h+=`</div>`;
+          }
         }
         h+=`</div></div>`;
       }
@@ -1706,6 +1740,20 @@ function toggleTripPurpose(tripId,badge){
   const next=cur==='business'?'personal':'business';
   badge.textContent=next;badge.className='travel-badge '+next;
   localStorage.setItem('mc_trip_purpose_'+tripId,next);
+}
+function submitResearchReq(tripId,destination){
+  const input=document.getElementById('ri_'+tripId);
+  const note=input?input.value.trim():'';
+  const lsKey='research_req_'+tripId;
+  localStorage.setItem(lsKey,JSON.stringify({destination,note,requestedAt:new Date().toISOString()}));
+  showToast('Research requested — Brit is on it! 🔍');
+  // Update div in place to show pending state
+  const el=document.getElementById('research-empty-'+tripId);
+  if(el){
+    el.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--yellow);margin-bottom:6px">⏳ Research Requested</div>`+
+      `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">Your agent is working on it. Check back soon.</div>`+
+      (note?`<div style="font-size:12px;color:var(--text);margin-top:6px;padding:8px 10px;background:var(--surface);border-radius:6px;border:1px solid var(--border)">"${note}"</div>`:'');
+  }
 }
 function dismissAnomaly(id){
   const el=document.getElementById('anomaly-'+id);
