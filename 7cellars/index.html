@@ -824,7 +824,14 @@ a{color:var(--blue);text-decoration:none}
         <option value="approved">✅ Approved</option>
         <option value="reimbursed">💰 Reimbursed</option>
       </select>
-      <div id="exp-total" style="margin-left:auto;font-size:14px;font-weight:700;color:var(--text)"></div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--text2)">View in:</span>
+        <select id="exp-display-currency" onchange="renderExpenses()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit;font-weight:600">
+          <option value="KYD">KYD</option>
+          <option value="USD">USD</option>
+        </select>
+        <div id="exp-total" style="font-size:14px;font-weight:700;color:var(--text)"></div>
+      </div>
     </div>
     <!-- Per-person summary cards -->
     <div id="exp-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px"></div>
@@ -2462,28 +2469,41 @@ function viewExpense(id){
 }
 window.viewExpense=viewExpense;
 
+// Exchange rates to USD (KYD is fixed peg; CAD is approximate)
+const FX_TO_USD={KYD:1.20,USD:1.00,CAD:0.74};
+function toDisplayCurrency(amount,fromCurrency,toCurrency){
+  const usd=amount*(FX_TO_USD[fromCurrency]||1.00);
+  return usd/(FX_TO_USD[toCurrency]||1.00);
+}
+
 window.renderExpenses=function(){
   const pF=document.getElementById('exp-filter-person').value;
   const cF=document.getElementById('exp-filter-cat').value;
   const mF=document.getElementById('exp-filter-month').value;
   const sF=document.getElementById('exp-filter-status').value;
+  const dispCur=(document.getElementById('exp-display-currency')||{}).value||'KYD';
+  const curSymbol=dispCur==='KYD'?'CI$':'US$';
   let filtered=expenses;
   if(pF!=='all')filtered=filtered.filter(r=>r.person===pF);
   if(cF!=='all')filtered=filtered.filter(r=>r.category===cF);
   if(mF!=='all')filtered=filtered.filter(r=>r.date&&r.date.startsWith(mF));
   if(sF!=='all')filtered=filtered.filter(r=>r.status===sF);
-  const total=filtered.reduce((s,r)=>s+r.amount,0);
-  document.getElementById('exp-total').textContent=filtered.length?`${filtered.length} expenses · $${total.toFixed(2)}`:'';
+  const total=filtered.reduce((s,r)=>s+toDisplayCurrency(r.amount,r.currency||'USD',dispCur),0);
+  document.getElementById('exp-total').textContent=filtered.length?`${filtered.length} expenses · ${curSymbol}${total.toFixed(2)}`:'';
   document.getElementById('expenses-badge').textContent=expenses.length;
   document.getElementById('expenses-badge').style.display=expenses.length?'':'none';
 
   // Per-person summary
   const byPerson={};
-  filtered.forEach(r=>{if(!byPerson[r.person])byPerson[r.person]={total:0,count:0};byPerson[r.person].total+=r.amount;byPerson[r.person].count++});
+  filtered.forEach(r=>{
+    if(!byPerson[r.person])byPerson[r.person]={total:0,count:0};
+    byPerson[r.person].total+=toDisplayCurrency(r.amount,r.currency||'USD',dispCur);
+    byPerson[r.person].count++;
+  });
   let summaryHTML='';
   Object.entries(byPerson).sort((a,b)=>b[1].total-a[1].total).forEach(([name,data])=>{
     const c=PERSON_COLORS[name]||'#6B7280';
-    summaryHTML+=`<div class="exp-summary-card" style="border-color:${c}44"><div class="exp-name" style="color:${c}">${esc(name)}</div><div class="exp-amt">$${data.total.toFixed(2)}</div><div class="exp-count">${data.count} receipt${data.count!==1?'s':''}</div></div>`;
+    summaryHTML+=`<div class="exp-summary-card" style="border-color:${c}44"><div class="exp-name" style="color:${c}">${esc(name)}</div><div class="exp-amt">${curSymbol}${data.total.toFixed(2)}</div><div class="exp-count">${data.count} receipt${data.count!==1?'s':''}</div></div>`;
   });
   document.getElementById('exp-summary').innerHTML=summaryHTML;
 
