@@ -881,22 +881,31 @@ function renderDocuments(){
     {title:'Marketing Campaign Analytics',type:'xlsx',category:'Marketing',date:'Feb 19, 2026',size:'2.4 MB'},
     {title:'Partnership Agreement Template',type:'pdf',category:'Legal',date:'Feb 12, 2026',size:'560 KB'}
   ];
+  // Store docs in global map so event delegation can look them up by index
+  window._docs = docs;
   const iconMap={pdf:'📄',xlsx:'📊',pptx:'📽️',zip:'🗂️'};
   const catIcons={'Brand':'🎨','Strategy':'🎯','Finance':'💰','Research':'🔍','Product':'🚀','Operations':'⚙️','Marketing':'📣','Legal':'⚖️','Engineering':'🔧'};
-  // Group by category
   const cats={};
-  docs.forEach(d=>{if(!cats[d.category])cats[d.category]=[];cats[d.category].push(d)});
-  let html='<h1 class="page-title">Documents</h1><p class="page-sub">All your files, organized by category</p>';
+  docs.forEach((d,idx)=>{d._idx=idx;if(!cats[d.category])cats[d.category]=[];cats[d.category].push(d)});
+  let html='<h1 class="page-title">Documents</h1><p class="page-sub">All your files, organized by category — click any file to preview</p>';
   let i=0;
   Object.entries(cats).forEach(([cat,items])=>{
     html+=`<div style="margin-bottom:24px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:8px">${catIcons[cat]||'📁'} ${cat} <span style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 8px;font-size:10px">${items.length}</span></div>`;
     items.forEach(doc=>{
-      html+=`<div class="doc-card" style="animation-delay:${Math.min(i*30,300)}ms;cursor:pointer" onclick="viewDoc('${doc.title.replace(/'/g,"\\'")}','${doc.type}','${doc.category}','${doc.date}','${doc.size}')"><div class="doc-icon ${doc.type}">${iconMap[doc.type]||'📄'}</div><div class="doc-title">${esc(doc.title)}</div><span class="doc-date">${esc(doc.date)}</span><span class="doc-size">${esc(doc.size)}</span></div>`;
+      html+=`<div class="doc-card" data-doc-idx="${doc._idx}" style="animation-delay:${Math.min(i*30,300)}ms"><div class="doc-icon ${doc.type}">${iconMap[doc.type]||'📄'}</div><div class="doc-title">${esc(doc.title)}</div><span class="doc-date">${esc(doc.date)}</span><span class="doc-size">${esc(doc.size)}</span></div>`;
       i++;
     });
     html+='</div>';
   });
-  document.getElementById('sec-documents').innerHTML=html+cta();
+  const sec=document.getElementById('sec-documents');
+  sec.innerHTML=html+cta();
+  // Event delegation — one listener on the section, no inline onclick needed
+  sec.addEventListener('click',function(e){
+    const card=e.target.closest('[data-doc-idx]');
+    if(!card)return;
+    const doc=window._docs[parseInt(card.dataset.docIdx,10)];
+    if(doc)viewDoc(doc.title,doc.type,doc.category,doc.date,doc.size);
+  });
 }
 
 /* AGENTS */
