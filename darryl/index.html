@@ -272,7 +272,7 @@ a{color:var(--blue);text-decoration:none}
 .travel-badge[data-toggle="1"]:hover{filter:brightness(1.2);transform:scale(1.05)}
 .trip-expand-hint{font-size:10px;color:var(--text2);opacity:.6;margin-top:2px;font-style:italic}
 /* Day-by-day timeline */
-.trip-timeline{padding:0 20px 20px}
+.trip-timeline{padding:4px 0 16px}
 .timeline-day{margin-bottom:20px}
 .timeline-day-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .timeline-day-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text2)}
@@ -1493,7 +1493,8 @@ async function init(){
         }
         h+=`</div></div>`;
       }
-      if(trip.notes)h+=`<div class="travel-section"><div class="travel-section-title">📝 Notes</div><div class="travel-notes">${esc(trip.notes)}</div></div>`;
+      // Notes now shown as purpose label in card header — only show extra notes if different
+      if(trip.notes&&trip.notes!==purposeLabel)h+=`<div class="travel-section"><div class="travel-section-title">📝 Notes</div><div class="travel-notes">${esc(trip.notes)}</div></div>`;
       h+=`</div></div>`;
       return h;
     };
@@ -1685,6 +1686,27 @@ async function init(){
   } catch(e){console.error('Momentum error:',e);const el=document.getElementById('momentum-container');if(el)el.innerHTML='';}
 }
 
+// ── TripIt helpers ────────────────────────────────────────────────
+function toggleTlItem(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('open');
+}
+function tripCopy(btn,text){
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent='✓ Copied';btn.classList.add('copied');
+    // show toast
+    let t=document.getElementById('_copy_toast');
+    if(!t){t=document.createElement('div');t.id='_copy_toast';t.className='copy-toast';document.body.appendChild(t);}
+    t.textContent='Copied to clipboard!';t.classList.add('show');
+    setTimeout(()=>{btn.textContent='📋';btn.classList.remove('copied');t.classList.remove('show');},1500);
+  }).catch(()=>{btn.textContent='✗';setTimeout(()=>{btn.textContent='📋';},1500);});
+}
+function toggleTripPurpose(tripId,badge){
+  const cur=badge.textContent.trim();
+  const next=cur==='business'?'personal':'business';
+  badge.textContent=next;badge.className='travel-badge '+next;
+  localStorage.setItem('mc_trip_purpose_'+tripId,next);
+}
 function dismissAnomaly(id){
   const el=document.getElementById('anomaly-'+id);
   if(el)el.classList.add('dismissed');

@@ -49,3 +49,32 @@ ssh <user>@<ip> "cat ~/.openclaw/identity/device-auth.json"
 ## If any check fails, it's a blocker — fix before moving on.
 
 *Created after Darryl's install failure — Feb 22, 2026. His gateway had operator.read-only scope, crons never fired, first morning briefing was silence.*
+
+## ✅ Memory & Session Config (MANDATORY — do not skip)
+
+These were missing on Brit and Freedom installs. Every agent must have these set before handoff.
+
+### In `~/.openclaw/openclaw.json`:
+```json
+"channels": {
+  "telegram": {
+    "dmHistoryLimit": 200,
+    "dms": {
+      "<CLIENT_TELEGRAM_ID>": { "historyLimit": 200 }
+    }
+  }
+},
+"session": {
+  "reset": { "idleMinutes": 240 }
+}
+```
+
+### Test before calling install done:
+1. Send 5+ messages to the agent
+2. Ask "what did I say in my first message?"  
+3. Agent must answer correctly — if not, historyLimit not working
+4. Wait 10 min, send another message, ask about earlier messages
+5. Agent must still remember — if not, session timeout too short
+6. Ask about something from "yesterday" — agent should reference memory files
+
+**If any of these fail, DO NOT hand off to client.**
