@@ -804,21 +804,35 @@ async function renderMeetings(){
 /* DOCUMENTS */
 function renderDocuments(){
   const docs=[
+    {title:'Brand Identity Guide 2026',type:'pdf',category:'Brand',date:'Jan 15, 2026',size:'18.4 MB'},
+    {title:'Logo Package — All Formats',type:'zip',category:'Brand',date:'Jan 15, 2026',size:'42.1 MB'},
+    {title:'Color Palette & Typography',type:'pdf',category:'Brand',date:'Jan 15, 2026',size:'2.8 MB'},
+    {title:'Brand Voice & Messaging Guide',type:'pdf',category:'Brand',date:'Feb 3, 2026',size:'1.4 MB'},
+    {title:'Social Media Templates',type:'zip',category:'Brand',date:'Feb 10, 2026',size:'24.6 MB'},
     {title:'Series B Pitch Deck v3.2',type:'pdf',category:'Strategy',date:'Feb 20, 2026',size:'4.2 MB'},
+    {title:'Board Meeting Minutes — Jan',type:'pdf',category:'Strategy',date:'Jan 28, 2026',size:'340 KB'},
     {title:'Q1 2026 Financial Model',type:'xlsx',category:'Finance',date:'Feb 18, 2026',size:'1.8 MB'},
     {title:'Competitive Landscape Report',type:'pdf',category:'Research',date:'Feb 21, 2026',size:'2.1 MB'},
     {title:'Product Roadmap Q2–Q4',type:'pptx',category:'Product',date:'Feb 15, 2026',size:'6.4 MB'},
     {title:'Employee Onboarding SOP',type:'pdf',category:'Operations',date:'Jan 30, 2026',size:'890 KB'},
     {title:'Customer Success Playbook',type:'pdf',category:'Operations',date:'Feb 10, 2026',size:'1.2 MB'},
-    {title:'Board Meeting Minutes — Jan',type:'pdf',category:'Strategy',date:'Jan 28, 2026',size:'340 KB'},
     {title:'Marketing Campaign Analytics',type:'xlsx',category:'Marketing',date:'Feb 19, 2026',size:'2.4 MB'},
-    {title:'Partnership Agreement Template',type:'pdf',category:'Legal',date:'Feb 12, 2026',size:'560 KB'},
-    {title:'Engineering Velocity Dashboard',type:'xlsx',category:'Engineering',date:'Feb 21, 2026',size:'1.1 MB'}
+    {title:'Partnership Agreement Template',type:'pdf',category:'Legal',date:'Feb 12, 2026',size:'560 KB'}
   ];
-  const iconMap={pdf:'📄',xlsx:'📊',pptx:'📽️'};
-  let html='<h1 class="page-title">Documents</h1><p class="page-sub">All your files, organized and accessible</p>';
-  docs.forEach((doc,i)=>{
-    html+=`<div class="doc-card" style="animation-delay:${i*40}ms"><div class="doc-icon ${doc.type}">${iconMap[doc.type]||'📄'}</div><div class="doc-title">${esc(doc.title)}<div class="doc-cat">${esc(doc.category)}</div></div><span class="doc-date">${esc(doc.date)}</span><span class="doc-size">${esc(doc.size)}</span></div>`;
+  const iconMap={pdf:'📄',xlsx:'📊',pptx:'📽️',zip:'🗂️'};
+  const catIcons={'Brand':'🎨','Strategy':'🎯','Finance':'💰','Research':'🔍','Product':'🚀','Operations':'⚙️','Marketing':'📣','Legal':'⚖️','Engineering':'🔧'};
+  // Group by category
+  const cats={};
+  docs.forEach(d=>{if(!cats[d.category])cats[d.category]=[];cats[d.category].push(d)});
+  let html='<h1 class="page-title">Documents</h1><p class="page-sub">All your files, organized by category</p>';
+  let i=0;
+  Object.entries(cats).forEach(([cat,items])=>{
+    html+=`<div style="margin-bottom:24px"><div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:8px">${catIcons[cat]||'📁'} ${cat} <span style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1px 8px;font-size:10px">${items.length}</span></div>`;
+    items.forEach(doc=>{
+      html+=`<div class="doc-card" style="animation-delay:${Math.min(i*30,300)}ms"><div class="doc-icon ${doc.type}">${iconMap[doc.type]||'📄'}</div><div class="doc-title">${esc(doc.title)}</div><span class="doc-date">${esc(doc.date)}</span><span class="doc-size">${esc(doc.size)}</span></div>`;
+      i++;
+    });
+    html+='</div>';
   });
   document.getElementById('sec-documents').innerHTML=html+cta();
 }
