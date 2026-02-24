@@ -434,6 +434,44 @@ a{color:var(--blue);text-decoration:none}
 .cap-debt{background:var(--green)}
 .cap-mezz{background:var(--yellow)}
 .avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-light);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--blue)}
+.kanban-board{display:flex;gap:16px;overflow-x:auto;padding-bottom:16px;min-height:calc(100vh - 280px)}
+.kanban-col{flex:1;min-width:240px;max-width:320px;background:var(--surface2);border-radius:var(--radius);display:flex;flex-direction:column}
+.kanban-col-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.kanban-col-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.kanban-col-count{font-size:11px;font-weight:700;background:var(--border);color:var(--text2);padding:2px 8px;border-radius:10px}
+.kanban-col-add{width:26px;height:26px;border-radius:6px;border:1px dashed var(--border);background:transparent;color:var(--text2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
+.kanban-col-add:hover{border-color:var(--blue);color:var(--blue)}
+.kanban-col-body{flex:1;padding:8px;overflow-y:auto;min-height:80px}
+.kanban-col-body.drag-over{background:rgba(64,128,240,.08)}
+.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:grab;transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.kanban-card:hover{border-color:var(--border-hover);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.kanban-card.dragging{opacity:.4;transform:rotate(2deg)}
+.kanban-card-title{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:8px}
+.kanban-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.priority-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+.priority-tag.high{background:rgba(240,64,96,.15);color:var(--red)}
+.priority-tag.medium{background:rgba(240,192,64,.15);color:var(--yellow)}
+.priority-tag.low{background:rgba(64,192,128,.15);color:var(--green)}
+.kanban-card-due{font-size:11px;color:var(--text2)}
+.kanban-card-due.overdue{color:var(--red);font-weight:600}
+.move-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.move-btn:hover{background:var(--accent-light);color:#fff;border-color:transparent}
+.move-btn.current{background:var(--blue);color:#fff;border-color:transparent}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-box h2{font-size:17px;font-weight:700;margin-bottom:20px}
+.modal-field{margin-bottom:16px}
+.modal-field label{display:block;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.modal-field input,.modal-field textarea,.modal-field select{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.modal-field input:focus,.modal-field textarea:focus,.modal-field select:focus{border-color:var(--blue)}
+.modal-field textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.modal-btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.modal-btn.primary{background:var(--blue);color:#fff}
+.modal-btn.primary:hover{background:#5090ff}
+.modal-btn.secondary{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.modal-btn.danger{background:rgba(240,64,96,.15);color:var(--red);border:1px solid rgba(240,64,96,.2)}
 </style>
 </head>
 <body>
@@ -468,6 +506,25 @@ a{color:var(--blue);text-decoration:none}
   <button class="mobile-tab" onclick="showSection('crm')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>Pipeline</button>
   <button class="mobile-tab" onclick="showSection('agents')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>Agents</button>
 </div></div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="modal-task">
+  <div class="modal-box">
+    <h2 id="modal-task-title">New Task</h2>
+    <div class="modal-field"><label>Title</label><input id="mt-title" type="text" placeholder="Task title..." /></div>
+    <div class="modal-field"><label>Description</label><textarea id="mt-desc" placeholder="Optional details..."></textarea></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="modal-field"><label>Priority</label><select id="mt-priority"><option value="high">🔴 High</option><option value="medium" selected>🟡 Medium</option><option value="low">🟢 Low</option></select></div>
+      <div class="modal-field"><label>Due Date</label><input id="mt-due" type="date" /></div>
+    </div>
+    <div class="modal-field" id="mt-move-section" style="display:none"><label>Move to</label><div id="mt-move-btns" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div></div>
+    <div class="modal-actions">
+      <button class="modal-btn danger" id="mt-delete" onclick="deleteTask()" style="display:none;margin-right:auto">Delete</button>
+      <button class="modal-btn secondary" onclick="closeTaskModal()">Cancel</button>
+      <button class="modal-btn primary" id="mt-save" onclick="saveTask()">Create</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const HASH='2a97516c354b68848cdbd8f54a226a0a55b21ed138e207ad6c5cbb9c00aa5aea';
@@ -532,7 +589,7 @@ function cta(){return '<div class="section-cta">Powered by <a href="https://solv
 async function init(){
   try{await renderDashboard()}catch(e){console.error('Dashboard error:',e)}
   try{await renderActivity()}catch(e){console.error('Activity error:',e)}
-  try{await renderTasks()}catch(e){console.error('Tasks error:',e)}
+  try{setupKanban()}catch(e){console.error('Tasks error:',e)}
   try{await renderMeetings()}catch(e){console.error('Meetings error:',e)}
   try{await renderDocuments()}catch(e){console.error('Documents error:',e)}
   try{await renderAgents()}catch(e){console.error('Agents error:',e)}
@@ -591,29 +648,139 @@ async function renderActivity(){
 }
 
 /* TASKS */
-async function renderTasks(){
-  const d=await loadJSON('data/tasks.json');
-  const tasks=d?.tasks||[];
-  const groups={ip:[],blocked:[],todo:[],done:[]};
-  tasks.forEach(t=>{
-    const s=(t.status||'').toLowerCase();
-    if(s.includes('complet')||s==='done')groups.done.push(t);
-    else if(s==='blocked')groups.blocked.push(t);
-    else if(s.includes('progress'))groups.ip.push(t);
-    else groups.todo.push(t);
+/* ===== KANBAN TASKS ===== */
+const KCOLS=['todo','inprogress','waiting','done'];
+const KCOL_LABELS={todo:'To Do',inprogress:'In Progress',waiting:'Waiting',done:'Done'};
+const KCOL_ICONS={todo:'📋',inprogress:'🔄',waiting:'⏳',done:'✅'};
+const DEMO_TASKS=[
+  {id:'t1',title:'Review Q1 financial projections',description:'Go through portfolio IRR and cash position with CFO',status:'inprogress',priority:'high',dueDate:'2026-02-26'},
+  {id:'t2',title:'Follow up — Yuki Tanaka offer (HP-302)',description:'3-day rule — reach out if no response',status:'inprogress',priority:'high',dueDate:'2026-02-25'},
+  {id:'t3',title:'Schedule site visit for Nathan & Claire Hughes',description:'Very interested in HP-309, toured Tuesday',status:'todo',priority:'medium',dueDate:'2026-02-27'},
+  {id:'t4',title:'Westfield Commons — budget variance review',description:'Over by $340K — need meeting with Summit Dev Group',status:'todo',priority:'high',dueDate:'2026-02-28'},
+  {id:'t5',title:'ThermaAir HVAC — resolve overdue invoice ($84K)',status:'todo',priority:'high',dueDate:'2026-02-25'},
+  {id:'t6',title:'Prepare LP update report for Q1 distributions',status:'waiting',priority:'medium',dueDate:'2026-03-15'},
+  {id:'t7',title:'BP-2025-0312 permit follow-up — Meridian building',status:'waiting',priority:'medium'},
+  {id:'t8',title:'Send offer package to Thompson Capital',status:'todo',priority:'low'},
+  {id:'t9',title:'Harrison Group HP-118 closing docs signed',status:'done',priority:'high'},
+  {id:'t10',title:'Andrea Fontaine MR-105 deposit received',status:'done',priority:'medium'}
+];
+let ktasks=[];let editingKTaskId=null;let newKTaskCol='todo';let kDragId=null;
+
+function setupKanban(){
+  try{ktasks=JSON.parse(localStorage.getItem('demo-tasks'));if(!Array.isArray(ktasks)||!ktasks.length)ktasks=null}catch(e){ktasks=null}
+  if(!ktasks)ktasks=JSON.parse(JSON.stringify(DEMO_TASKS));
+  const sec=document.getElementById('sec-tasks');
+  sec.innerHTML=`<h1 class="page-title">Tasks</h1><p class="page-sub">Drag cards between columns · Click to edit · + to add new</p>
+  <div class="kanban-board" id="kb-board">${KCOLS.map(c=>`
+    <div class="kanban-col" data-col="${c}">
+      <div class="kanban-col-header">
+        <span class="kanban-col-title">${KCOL_ICONS[c]} ${KCOL_LABELS[c]} <span class="kanban-col-count" id="kcount-${c}">0</span></span>
+        <button class="kanban-col-add" onclick="openNewKTask('${c}')">+</button>
+      </div>
+      <div class="kanban-col-body" id="kcol-${c}"></div>
+    </div>`).join('')}
+  </div>`;
+  document.querySelectorAll('.kanban-col-body').forEach(col=>{
+    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-over')});
+    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+    col.addEventListener('drop',e=>{
+      e.preventDefault();col.classList.remove('drag-over');
+      if(!kDragId)return;
+      const newStatus=col.id.replace('kcol-','');
+      const t=ktasks.find(x=>x.id===kDragId);
+      if(t&&t.status!==newStatus){t.status=newStatus;saveKTasks();renderKanban();}
+    });
   });
-  let html='<h1 class="page-title">Tasks</h1><p class="page-sub">All tasks across your business, operations, and personal life</p>';
-  const badge=document.getElementById('tasks-badge');if(badge)badge.textContent=groups.ip.length+groups.blocked.length+groups.todo.length;
-  let idx=0;
-  const renderGroup=(title,arr)=>{if(!arr.length)return;html+=`<div class="task-section-title">${title} (${arr.length})</div>`;arr.forEach(t=>{
-    const pri=t.priority||'medium';const s=(t.status||'').toLowerCase();
-    let bc='todo';if(s.includes('progress'))bc='in-progress';else if(s==='blocked')bc='blocked';else if(s.includes('complet'))bc='completed';
-    let due='';if(t.due){const dd=new Date(t.due+'T00:00:00');due=dd.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
-    html+=`<div class="task" style="animation-delay:${Math.min(idx*40,400)}ms"><div class="task-row"><span class="badge ${pri}">${pri}</span><span class="badge ${bc}">${bc.replace('-',' ')}</span><span class="task-name">${esc(t.title)}${t.category?` <span class="task-cat">${esc(t.category)}</span>`:''}</span>${due?`<span class="task-due">📅 ${due}</span>`:''}</div></div>`;
-    idx++;
-  })};
-  renderGroup('In Progress',groups.ip);renderGroup('Blocked',groups.blocked);renderGroup('Todo',groups.todo);renderGroup('Completed',groups.done);
-  document.getElementById('sec-tasks').innerHTML=html+cta();
+  renderKanban();
+}
+
+function saveKTasks(){localStorage.setItem('demo-tasks',JSON.stringify(ktasks))}
+function kGenId(){return 't'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function kFmtDate(d){if(!d)return '';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+function kOverdue(d){if(!d)return false;return new Date(d)<new Date(new Date().toDateString())}
+
+function renderKanban(){
+  KCOLS.forEach(col=>{
+    const items=ktasks.filter(t=>t.status===col);
+    const el=document.getElementById('kcol-'+col);if(!el)return;
+    el.innerHTML=items.map(t=>`
+      <div class="kanban-card" draggable="true" data-id="${t.id}" onclick="openEditKTask('${t.id}')"
+        ondragstart="kDragStart(event)" ondragend="kDragEnd(event)">
+        <div class="kanban-card-title">${esc(t.title)}</div>
+        <div class="kanban-card-meta">
+          ${t.priority?`<span class="priority-tag ${t.priority}">${t.priority}</span>`:''}
+          ${t.dueDate?`<span class="kanban-card-due ${kOverdue(t.dueDate)?'overdue':''}">${kOverdue(t.dueDate)?'⚠ ':'📅 '}${kFmtDate(t.dueDate)}</span>`:''}
+        </div>
+      </div>`).join('');
+    const cnt=document.getElementById('kcount-'+col);if(cnt)cnt.textContent=items.length;
+  });
+  const active=ktasks.filter(t=>t.status!=='done').length;
+  const badge=document.getElementById('tasks-badge');if(badge)badge.textContent=active||'';
+}
+
+function kDragStart(e){kDragId=e.currentTarget.dataset.id;e.currentTarget.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
+function kDragEnd(e){e.currentTarget.classList.remove('dragging');kDragId=null}
+
+function openNewKTask(col){
+  editingKTaskId=null;newKTaskCol=col;
+  document.getElementById('modal-task-title').textContent='New Task';
+  document.getElementById('mt-title').value='';
+  document.getElementById('mt-desc').value='';
+  document.getElementById('mt-due').value='';
+  document.getElementById('mt-priority').value='medium';
+  document.getElementById('mt-move-section').style.display='none';
+  document.getElementById('mt-delete').style.display='none';
+  document.getElementById('mt-save').textContent='Create';
+  document.getElementById('modal-task').classList.add('open');
+  setTimeout(()=>document.getElementById('mt-title').focus(),100);
+}
+
+function openEditKTask(id){
+  const t=ktasks.find(x=>x.id===id);if(!t)return;
+  editingKTaskId=id;
+  document.getElementById('modal-task-title').textContent='Edit Task';
+  document.getElementById('mt-title').value=t.title||'';
+  document.getElementById('mt-desc').value=t.description||'';
+  document.getElementById('mt-due').value=t.dueDate||'';
+  document.getElementById('mt-priority').value=t.priority||'medium';
+  document.getElementById('mt-move-section').style.display='block';
+  document.getElementById('mt-move-btns').innerHTML=KCOLS.map(c=>
+    `<button class="move-btn ${t.status===c?'current':''}" onclick="moveKTask('${id}','${c}')">${KCOL_ICONS[c]} ${KCOL_LABELS[c]}</button>`
+  ).join('');
+  document.getElementById('mt-delete').style.display='inline-block';
+  document.getElementById('mt-save').textContent='Save';
+  document.getElementById('modal-task').classList.add('open');
+}
+
+function closeTaskModal(){document.getElementById('modal-task').classList.remove('open')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTaskModal()});
+
+function moveKTask(id,col){
+  const t=ktasks.find(x=>x.id===id);if(!t)return;
+  t.status=col;saveKTasks();renderKanban();
+  document.getElementById('mt-move-btns').innerHTML=KCOLS.map(c=>
+    `<button class="move-btn ${t.status===c?'current':''}" onclick="moveKTask('${id}','${c}')">${KCOL_ICONS[c]} ${KCOL_LABELS[c]}</button>`
+  ).join('');
+}
+
+function saveTask(){
+  const title=document.getElementById('mt-title').value.trim();
+  if(!title)return;
+  if(editingKTaskId){
+    const t=ktasks.find(x=>x.id===editingKTaskId);if(!t)return;
+    t.title=title;t.description=document.getElementById('mt-desc').value.trim();
+    t.priority=document.getElementById('mt-priority').value;t.dueDate=document.getElementById('mt-due').value;
+  } else {
+    ktasks.push({id:kGenId(),title,description:document.getElementById('mt-desc').value.trim(),
+      status:newKTaskCol,priority:document.getElementById('mt-priority').value,dueDate:document.getElementById('mt-due').value});
+  }
+  saveKTasks();renderKanban();closeTaskModal();
+}
+
+function deleteTask(){
+  if(!editingKTaskId)return;
+  ktasks=ktasks.filter(t=>t.id!==editingKTaskId);
+  saveKTasks();renderKanban();closeTaskModal();
 }
 
 /* MEETINGS */
