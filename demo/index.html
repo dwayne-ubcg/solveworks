@@ -564,11 +564,28 @@ const SECTIONS=[
 async function sha256(s){const d=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
 
 
+const RENDER_MAP={
+  documents:renderDocuments,
+  projects:renderProjects,
+  financials:renderFinancials,
+  inventory:renderInventory,
+  pipeline2:renderPipeline2,
+  market:renderMarket,
+  permits:renderPermits,
+  contractors:renderContractors,
+  investors:renderInvestors
+};
 function showSection(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.querySelectorAll('.mobile-tab').forEach(t=>t.classList.remove('active'));
-  const sec=document.getElementById('sec-'+id);if(sec){sec.style.animation='none';sec.offsetHeight;sec.style.animation='fadeIn .4s cubic-bezier(.4,0,.2,1)';sec.classList.add('active')}
+  const sec=document.getElementById('sec-'+id);
+  if(sec){
+    // Re-render hardcoded sections on every click — zero timing dependency
+    if(RENDER_MAP[id]){try{RENDER_MAP[id]()}catch(e){console.error(id+' render error:',e)}}
+    sec.style.animation='none';sec.offsetHeight;sec.style.animation='fadeIn .4s cubic-bezier(.4,0,.2,1)';
+    sec.classList.add('active');
+  }
   document.querySelector(`.nav-item[data-section="${id}"]`)?.classList.add('active');
   document.querySelector('.sidebar').classList.remove('open');
 }
