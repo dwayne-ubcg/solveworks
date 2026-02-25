@@ -1323,7 +1323,7 @@ async function init(){
       const [ah,am]=(arr+':00').split(':').map(Number);
       const [dh,dm]=(dep+':00').split(':').map(Number);
       const diff=(dh*60+dm)-(ah*60+am);
-      if(diff<=0)return null;
+      if(diff<=0||diff>720)return null; // ignore negative or >12h (overnight/date boundary)
       const h=Math.floor(diff/60),m=diff%60;
       return h>0?(m>0?`${h}h ${m}m layover`:`${h}h layover`):`${m}m layover`;
     };
@@ -1342,12 +1342,13 @@ async function init(){
       const statusLabel={'upcoming':'Upcoming','in-progress':'In Progress','completed':'Completed'}[statusClass]||trip.status;
       const start=new Date(trip.startDate+'T00:00:00');const end=new Date(trip.endDate+'T00:00:00');
       const dateStr=start.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' – '+end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-      const purposeLabel=trip.notes||trip.destination||'';
+      const savedTripName=localStorage.getItem('mc_trip_name_'+tripId);
+      const purposeLabel=savedTripName||trip.notes||trip.destination||'';
       // Card header — TripIt style
       let h=`<div class="travel-card" style="animation-delay:${i*0.08}s">`;
       h+=`<div class="travel-card-header" onclick="this.nextElementSibling.classList.toggle('open')">`;
       h+=`<div class="trip-header-left">`;
-      h+=`<div class="trip-purpose-label">${esc(purposeLabel||trip.destination)}</div>`;
+      h+=`<div class="trip-purpose-label" id="tname-${esc(tripId)}">${esc(purposeLabel||trip.destination)}<button class="trip-name-edit-btn" title="Edit trip name" onclick="event.stopPropagation();startEditTripName('${esc(tripId)}','${esc(purposeLabel||trip.destination).replace(/'/g,"\\'")}')" style="margin-left:7px;background:none;border:none;cursor:pointer;font-size:12px;opacity:0.5;vertical-align:middle;padding:0;line-height:1">✏️</button></div>`;
       h+=`<div class="trip-dest-sub">📍 ${esc(trip.destination)} &nbsp;·&nbsp; ${esc(dateStr)}</div>`;
       h+=`</div>`;
       h+=`<div class="trip-header-right">`;
@@ -1361,12 +1362,27 @@ async function init(){
       h+=`<div class="travel-details">`;
       // Build flat list of all items with date + sortable time
       const allItems=[];
+      // Pre-compute latest flight time per date (for hotel sort ordering)
+      const latestFlightTime={};
+      (trip.flights||[]).forEach(f=>{
+        const d=f.date||trip.startDate;
+        const t=f.arrive||f.depart||'00:00';
+        if(!latestFlightTime[d]||t>latestFlightTime[d])latestFlightTime[d]=t;
+      });
       (trip.flights||[]).forEach(f=>{
         allItems.push({type:'flight',date:f.date||trip.startDate,time:f.depart||'00:00',data:f});
       });
       (trip.hotels||[]).forEach(ho=>{
-        // Show hotel on check-in day
-        allItems.push({type:'hotel',date:ho.checkIn||trip.startDate,time:'15:00',data:ho});
+        // Always sort hotel AFTER the last flight on check-in day
+        const d=ho.checkIn||trip.startDate;
+        const lastFlight=latestFlightTime[d];
+        let hotelTime='15:00';
+        if(lastFlight){
+          const [lh,lm]=lastFlight.split(':').map(Number);
+          const afterMins=lh*60+lm+30;
+          hotelTime=`${String(Math.min(Math.floor(afterMins/60),23)).padStart(2,'0')}:${String(afterMins%60).padStart(2,'0')}`;
+        }
+        allItems.push({type:'hotel',date:d,time:hotelTime,data:ho});
       });
       (trip.itinerary||[]).forEach(day=>{
         if(Array.isArray(day.items)){
@@ -1740,6 +1756,25 @@ function toggleTripPurpose(tripId,badge){
   const next=cur==='business'?'personal':'business';
   badge.textContent=next;badge.className='travel-badge '+next;
   localStorage.setItem('mc_trip_purpose_'+tripId,next);
+}
+function startEditTripName(tripId,currentName){
+  const el=document.getElementById('tname-'+tripId);
+  if(!el)return;
+  const input=document.createElement('input');
+  input.value=currentName;
+  input.style.cssText='font-size:15px;font-weight:700;color:var(--text);background:var(--surface);border:1px solid var(--blue);border-radius:6px;padding:2px 8px;width:220px;font-family:inherit;outline:none';
+  const save=()=>{
+    const v=input.value.trim();
+    if(v){localStorage.setItem('mc_trip_name_'+tripId,v);}
+    else{localStorage.removeItem('mc_trip_name_'+tripId);}
+    el.innerHTML=`${v||currentName}<button class="trip-name-edit-btn" title="Edit trip name" onclick="event.stopPropagation();startEditTripName('${tripId}','${(v||currentName).replace(/'/g,"\\'")}') " style="margin-left:7px;background:none;border:none;cursor:pointer;font-size:12px;opacity:0.5;vertical-align:middle;padding:0;line-height:1">✏️</button>`;
+    showToast('Trip name updated');
+  };
+  input.onblur=save;
+  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();save();}if(e.key==='Escape'){input.blur();}};
+  el.innerHTML='';
+  el.appendChild(input);
+  input.focus();input.select();
 }
 function submitResearchReq(tripId,destination){
   const input=document.getElementById('ri_'+tripId);
