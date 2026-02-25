@@ -1318,10 +1318,21 @@ async function init(){
     if(upcoming.length>0){document.getElementById('travel-badge').textContent=upcoming.length;document.getElementById('travel-badge').style.display='';}
     let html='';
     // Helper: calculate layover string between two time strings "HH:MM"
+    const to24h=(t)=>{
+      if(!t)return'00:00';
+      const m=t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if(!m)return'00:00';
+      let h=parseInt(m[1]),min=parseInt(m[2]);
+      const ap=(m[3]||'').toUpperCase();
+      if(ap==='PM'&&h!==12)h+=12;
+      if(ap==='AM'&&h===12)h=0;
+      return`${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`;
+    };
     const calcLayover=(arr,dep)=>{
       if(!arr||!dep)return null;
-      const [ah,am]=(arr+':00').split(':').map(Number);
-      const [dh,dm]=(dep+':00').split(':').map(Number);
+      const a=to24h(arr),d=to24h(dep);
+      const [ah,am]=a.split(':').map(Number);
+      const [dh,dm]=d.split(':').map(Number);
       const diff=(dh*60+dm)-(ah*60+am);
       if(diff<=0||diff>720)return null; // ignore negative or >12h (overnight/date boundary)
       const h=Math.floor(diff/60),m=diff%60;
@@ -1366,11 +1377,11 @@ async function init(){
       const latestFlightTime={};
       (trip.flights||[]).forEach(f=>{
         const d=f.date||trip.startDate;
-        const t=f.arrive||f.depart||'00:00';
+        const t=to24h(f.arrive||f.depart||'00:00');
         if(!latestFlightTime[d]||t>latestFlightTime[d])latestFlightTime[d]=t;
       });
       (trip.flights||[]).forEach(f=>{
-        allItems.push({type:'flight',date:f.date||trip.startDate,time:f.depart||'00:00',data:f});
+        allItems.push({type:'flight',date:f.date||trip.startDate,time:to24h(f.depart||'00:00'),data:f});
       });
       (trip.hotels||[]).forEach(ho=>{
         // Always sort hotel AFTER the last flight on check-in day
