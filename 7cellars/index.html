@@ -503,6 +503,10 @@ a{color:var(--blue);text-decoration:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
       Roberto Legacy
     </div>
+    <div class="nav-item" data-section="bizexpenses" onclick="showSection('bizexpenses')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Business Expenses <span class="nav-badge" id="bizexp-badge" style="display:none">0</span>
+    </div>
   </div>
   <div class="sidebar-footer">
     <button class="btn-logout" onclick="logout()">← Logout</button>
@@ -853,6 +857,108 @@ a{color:var(--blue);text-decoration:none}
     </div>
     <div id="expense-view-modal" class="kanban-modal" onclick="if(event.target===this)this.classList.remove('open')">
       <div class="kanban-modal-content" id="expense-view-body" style="max-width:560px"></div>
+    </div>
+  </div>
+
+  <!-- Business Expenses -->
+  <div class="section" id="sec-bizexpenses">
+    <h1 class="page-title">Business Expenses</h1>
+    <p class="page-sub">Upload bank or credit card statements · Transactions are auto-categorized · Feeds into P&L</p>
+
+    <div id="bizexp-stats" class="stats-grid" style="margin-bottom:24px"></div>
+
+    <!-- Upload Zone -->
+    <div id="bizexp-upload-zone" style="border:2px dashed var(--border);border-radius:var(--radius);padding:36px;text-align:center;margin-bottom:24px;cursor:pointer;transition:border-color .2s"
+      onclick="document.getElementById('bizexp-file-input').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--blue)'"
+      ondragleave="this.style.borderColor='var(--border)'"
+      ondrop="event.preventDefault();this.style.borderColor='var(--border)';handleBizExpDrop(event)">
+      <div style="font-size:32px;margin-bottom:8px">📄</div>
+      <div style="font-weight:600;color:var(--text);margin-bottom:4px">Drop CSV statement here or click to upload</div>
+      <div style="font-size:12px;color:var(--text2)">Bank of Butterfield · Most major bank CSV exports supported</div>
+      <input type="file" id="bizexp-file-input" accept=".csv" style="display:none" onchange="handleBizExpFile(this.files[0])">
+    </div>
+
+    <!-- Column Mapper (shown after upload if needed) -->
+    <div id="bizexp-mapper" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px">Map Columns</h3>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px">We couldn't auto-detect the format. Match your CSV columns below:</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div>
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Date Column</label>
+          <select id="map-date" class="modal-input" style="width:100%"></select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Description Column</label>
+          <select id="map-desc" class="modal-input" style="width:100%"></select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Amount Column</label>
+          <select id="map-amount" class="modal-input" style="width:100%"></select>
+        </div>
+      </div>
+      <button onclick="applyBizExpMapping()" style="margin-top:14px;padding:9px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Apply Mapping</button>
+    </div>
+
+    <!-- Review Table (shown after parse) -->
+    <div id="bizexp-review" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:600">Review Transactions <span id="bizexp-review-count" style="color:var(--text2);font-weight:400"></span></div>
+        <div style="display:flex;gap:8px">
+          <button onclick="saveBizExpenses()" style="padding:9px 20px;border-radius:8px;border:none;background:var(--green);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">✅ Save All</button>
+          <button onclick="document.getElementById('bizexp-review').style.display='none'" style="padding:9px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);color:var(--text2);text-align:left">
+            <th style="padding:8px 10px">Date</th>
+            <th style="padding:8px 10px">Description</th>
+            <th style="padding:8px 10px">Amount</th>
+            <th style="padding:8px 10px">Category</th>
+            <th style="padding:8px 10px">Skip?</th>
+          </tr>
+        </thead>
+        <tbody id="bizexp-review-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Saved Expenses Table -->
+    <div id="bizexp-saved-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:600">All Business Expenses</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="bizexp-filter-cat" onchange="renderBizExpenses()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit">
+            <option value="all">All Categories</option>
+            <option value="inventory">🍷 Inventory / Wine</option>
+            <option value="shipping">📦 Shipping & Freight</option>
+            <option value="duties">🛃 Import Duties & Customs</option>
+            <option value="rent">🏠 Rent & Utilities</option>
+            <option value="staff">👥 Staff & Contractors</option>
+            <option value="marketing">📢 Marketing</option>
+            <option value="travel">✈️ Travel</option>
+            <option value="banking">🏦 Banking & Fees</option>
+            <option value="software">💻 Software & Tech</option>
+            <option value="meals">🍽️ Meals & Entertainment</option>
+            <option value="other">📦 Other</option>
+          </select>
+          <select id="bizexp-filter-month" onchange="renderBizExpenses()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit">
+            <option value="all">All Months</option>
+          </select>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);color:var(--text2);text-align:left">
+            <th style="padding:8px 10px">Date</th>
+            <th style="padding:8px 10px">Description</th>
+            <th style="padding:8px 10px">Amount</th>
+            <th style="padding:8px 10px">Category</th>
+            <th style="padding:8px 10px"></th>
+          </tr>
+        </thead>
+        <tbody id="bizexp-tbody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -3100,6 +3206,266 @@ renderExpenses();
   };
 
   renderRoberto();
+})();
+
+// ============================================================
+// BUSINESS EXPENSES
+// ============================================================
+(function(){
+  let bizExpenses = [];
+  let pendingRows = [];
+  let rawHeaders = [];
+  let rawRows = [];
+
+  const CATEGORIES = {
+    inventory: '🍷 Inventory / Wine',
+    shipping: '📦 Shipping & Freight',
+    duties: '🛃 Import Duties & Customs',
+    rent: '🏠 Rent & Utilities',
+    staff: '👥 Staff & Contractors',
+    marketing: '📢 Marketing',
+    travel: '✈️ Travel',
+    banking: '🏦 Banking & Fees',
+    software: '💻 Software & Tech',
+    meals: '🍽️ Meals & Entertainment',
+    other: '📦 Other'
+  };
+
+  const CAT_RULES = [
+    [/wine|chateau|domaine|winery|vino|bordeaux|burgundy|champagne/i, 'inventory'],
+    [/freight|shipping|courier|dhl|fedex|ups|cargo|customs|duty|duties|import/i, 'shipping'],
+    [/customs|duty|duties|tariff|excise/i, 'duties'],
+    [/rent|lease|utility|utilities|electric|water|cayman utilities/i, 'rent'],
+    [/salary|payroll|wages|staff|contractor|roberto|tallyn/i, 'staff'],
+    [/facebook|instagram|meta ads|google ads|marketing|advertising|promotion/i, 'marketing'],
+    [/airline|airfare|hotel|airbnb|car rental|uber|taxi|travel/i, 'travel'],
+    [/bank fee|wire fee|transfer fee|service charge|butterfield|account fee/i, 'banking'],
+    [/shopify|cin7|software|subscription|app|saas/i, 'software'],
+    [/restaurant|dining|lunch|dinner|breakfast|cafe|coffee|entertainment/i, 'meals'],
+  ];
+
+  function autoCategory(desc){
+    for(const [re, cat] of CAT_RULES){
+      if(re.test(desc)) return cat;
+    }
+    return 'other';
+  }
+
+  function parseCSV(text){
+    const lines = text.trim().split(/\r?\n/);
+    if(lines.length < 2) return null;
+    const parse = line => {
+      const cols = []; let cur = ''; let inQ = false;
+      for(let i=0;i<line.length;i++){
+        const c = line[i];
+        if(c==='"'){inQ=!inQ;}
+        else if(c===','&&!inQ){cols.push(cur.trim());cur='';}
+        else cur+=c;
+      }
+      cols.push(cur.trim());
+      return cols;
+    };
+    const headers = parse(lines[0]);
+    const rows = lines.slice(1).filter(l=>l.trim()).map(parse);
+    return {headers, rows};
+  }
+
+  function detectColumns(headers){
+    const h = headers.map(h=>h.toLowerCase());
+    const dateIdx = h.findIndex(x=>/date|transaction date|posted/i.test(x));
+    const descIdx = h.findIndex(x=>/desc|description|narration|details|memo|reference|particulars/i.test(x));
+    const amtIdx = h.findIndex(x=>/amount|debit|credit|value/i.test(x));
+    if(dateIdx>=0 && descIdx>=0 && amtIdx>=0) return {dateIdx, descIdx, amtIdx};
+    return null;
+  }
+
+  function processRows(headers, rows, dateIdx, descIdx, amtIdx){
+    const result = [];
+    for(const row of rows){
+      if(row.length <= Math.max(dateIdx, descIdx, amtIdx)) continue;
+      const dateRaw = row[dateIdx]||'';
+      const desc = row[descIdx]||'';
+      const amtRaw = (row[amtIdx]||'').replace(/[,$\s]/g,'');
+      const amt = parseFloat(amtRaw);
+      if(!desc || isNaN(amt) || amt === 0) continue;
+      // Skip credits (positive = money in for most banks) — only track debits (expenses)
+      // Allow negative amounts (debits shown as negative)
+      const expense = Math.abs(amt);
+      // Parse date
+      let date = dateRaw;
+      const dm = dateRaw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+      if(dm){
+        const y = dm[3].length===2?'20'+dm[3]:dm[3];
+        date = `${y}-${dm[1].padStart(2,'0')}-${dm[2].padStart(2,'0')}`;
+      }
+      result.push({
+        id: Date.now().toString()+Math.random().toString(36).slice(2),
+        date, desc, amount: expense,
+        category: autoCategory(desc),
+        skip: false,
+        raw: amtRaw
+      });
+    }
+    return result;
+  }
+
+  function loadBizExpenses(){
+    try{bizExpenses=JSON.parse(localStorage.getItem('7c-bizexp'));if(!Array.isArray(bizExpenses))bizExpenses=[];}catch(e){bizExpenses=[];}
+  }
+  function saveBizExpensesData(){localStorage.setItem('7c-bizexp',JSON.stringify(bizExpenses));}
+
+  window.handleBizExpDrop = function(e){
+    const file = e.dataTransfer.files[0];
+    if(file) handleBizExpFile(file);
+  };
+
+  window.handleBizExpFile = function(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const parsed = parseCSV(text);
+      if(!parsed){toast('Could not parse CSV');return;}
+      rawHeaders = parsed.headers;
+      rawRows = parsed.rows;
+      const cols = detectColumns(rawHeaders);
+      if(cols){
+        pendingRows = processRows(rawHeaders, rawRows, cols.dateIdx, cols.descIdx, cols.amtIdx);
+        showReviewTable();
+      } else {
+        // Show column mapper
+        const opts = rawHeaders.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
+        ['map-date','map-desc','map-amount'].forEach(id=>document.getElementById(id).innerHTML=opts);
+        document.getElementById('bizexp-mapper').style.display='block';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  window.applyBizExpMapping = function(){
+    const di = parseInt(document.getElementById('map-date').value);
+    const dei = parseInt(document.getElementById('map-desc').value);
+    const ai = parseInt(document.getElementById('map-amount').value);
+    pendingRows = processRows(rawHeaders, rawRows, di, dei, ai);
+    document.getElementById('bizexp-mapper').style.display='none';
+    showReviewTable();
+  };
+
+  function showReviewTable(){
+    if(!pendingRows.length){toast('No expense transactions found in file');return;}
+    document.getElementById('bizexp-review-count').textContent = `(${pendingRows.length} transactions)`;
+    const catOptions = Object.entries(CATEGORIES).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+    const tbody = document.getElementById('bizexp-review-tbody');
+    tbody.innerHTML = pendingRows.map((r,i)=>`
+      <tr id="pr-${i}" style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 10px;color:var(--text2)">${r.date}</td>
+        <td style="padding:8px 10px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc}</td>
+        <td style="padding:8px 10px;font-weight:600">$${r.amount.toFixed(2)}</td>
+        <td style="padding:8px 10px">
+          <select onchange="pendingRows[${i}].category=this.value" style="padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-family:inherit">
+            ${Object.entries(CATEGORIES).map(([v,l])=>`<option value="${v}"${v===r.category?' selected':''}>${l}</option>`).join('')}
+          </select>
+        </td>
+        <td style="padding:8px 10px;text-align:center">
+          <input type="checkbox" onchange="pendingRows[${i}].skip=this.checked;document.getElementById('pr-${i}').style.opacity=this.checked?'0.35':'1'" style="cursor:pointer">
+        </td>
+      </tr>
+    `).join('');
+    document.getElementById('bizexp-review').style.display='block';
+  }
+
+  window.saveBizExpenses = function(){
+    loadBizExpenses();
+    const toAdd = pendingRows.filter(r=>!r.skip);
+    // Deduplicate by date+desc+amount
+    const existing = new Set(bizExpenses.map(e=>`${e.date}|${e.desc}|${e.amount}`));
+    let added = 0;
+    for(const r of toAdd){
+      const key = `${r.date}|${r.desc}|${r.amount}`;
+      if(!existing.has(key)){bizExpenses.push(r);added++;}
+    }
+    saveBizExpensesData();
+    document.getElementById('bizexp-review').style.display='none';
+    pendingRows=[];
+    renderBizExpenses();
+    toast(`✅ ${added} expenses saved (${toAdd.length-added} duplicates skipped)`);
+  };
+
+  window.deleteBizExpense = function(id){
+    loadBizExpenses();
+    bizExpenses = bizExpenses.filter(e=>e.id!==id);
+    saveBizExpensesData();renderBizExpenses();toast('Expense deleted');
+  };
+
+  window.renderBizExpenses = function(){
+    try{
+      loadBizExpenses();
+      const catFilter = document.getElementById('bizexp-filter-cat')?.value||'all';
+      const monthFilter = document.getElementById('bizexp-filter-month')?.value||'all';
+
+      // Populate month filter
+      const months = [...new Set(bizExpenses.map(e=>e.date.slice(0,7)))].sort().reverse();
+      const mSel = document.getElementById('bizexp-filter-month');
+      if(mSel){
+        const cur = mSel.value;
+        mSel.innerHTML = '<option value="all">All Months</option>' + months.map(m=>`<option value="${m}"${m===cur?' selected':''}>${m}</option>`).join('');
+      }
+
+      // Filter
+      let filtered = bizExpenses;
+      if(catFilter!=='all') filtered = filtered.filter(e=>e.category===catFilter);
+      if(monthFilter!=='all') filtered = filtered.filter(e=>e.date.startsWith(monthFilter));
+
+      // Stats
+      const total = bizExpenses.reduce((s,e)=>s+e.amount,0);
+      const thisMonth = new Date().toISOString().slice(0,7);
+      const monthTotal = bizExpenses.filter(e=>e.date.startsWith(thisMonth)).reduce((s,e)=>s+e.amount,0);
+      const catTotals = {};
+      bizExpenses.forEach(e=>{catTotals[e.category]=(catTotals[e.category]||0)+e.amount;});
+      const topCat = Object.entries(catTotals).sort((a,b)=>b[1]-a[1])[0];
+
+      const stats = document.getElementById('bizexp-stats');
+      if(stats) stats.innerHTML=`
+        <div class="stat-card"><div class="label">Total Expenses</div><div class="value red">$${total.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+        <div class="stat-card"><div class="label">This Month</div><div class="value yellow">$${monthTotal.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+        <div class="stat-card"><div class="label">Transactions</div><div class="value blue">${bizExpenses.length}</div></div>
+        ${topCat?`<div class="stat-card"><div class="label">Top Category</div><div class="value" style="font-size:14px">${CATEGORIES[topCat[0]]||topCat[0]}</div></div>`:''}
+      `;
+
+      // Badge
+      const badge = document.getElementById('bizexp-badge');
+      if(badge){badge.textContent=bizExpenses.length;badge.style.display=bizExpenses.length?'':'none';}
+
+      // Table
+      const tbody = document.getElementById('bizexp-tbody');
+      if(!tbody) return;
+      if(!filtered.length){tbody.innerHTML=`<tr><td colspan="5" style="padding:40px;text-align:center;color:var(--text2)">${bizExpenses.length?'No expenses match filter':'Upload a bank statement to get started'}</td></tr>`;return;}
+
+      tbody.innerHTML = filtered.sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:9px 10px;color:var(--text2)">${e.date}</td>
+          <td style="padding:9px 10px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc}</td>
+          <td style="padding:9px 10px;font-weight:600;color:var(--red)">$${e.amount.toFixed(2)}</td>
+          <td style="padding:9px 10px">
+            <select onchange="updateBizExpCat('${e.id}',this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-family:inherit">
+              ${Object.entries(CATEGORIES).map(([v,l])=>`<option value="${v}"${v===e.category?' selected':''}>${l}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:9px 10px">
+            <button onclick="deleteBizExpense('${e.id}')" style="padding:3px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);font-size:12px;cursor:pointer;font-family:inherit">Del</button>
+          </td>
+        </tr>
+      `).join('');
+    }catch(e){console.error('BizExp error:',e);}
+  };
+
+  window.updateBizExpCat = function(id, cat){
+    loadBizExpenses();
+    const e = bizExpenses.find(x=>x.id===id);
+    if(e){e.category=cat;saveBizExpensesData();}
+  };
+
+  renderBizExpenses();
 })();
 
 </script>
