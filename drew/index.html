@@ -874,7 +874,7 @@ function openModal(id){document.getElementById(id).classList.add('open')}
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')})});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open'))});
 document.addEventListener('click',e=>{if(!e.target.closest('.assign-pos'))document.querySelectorAll('.assign-dropdown.open').forEach(d=>d.classList.remove('open'))});
-async function loadJSON(path){try{const r=await fetch(path+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+async function loadJSON(path){try{const r=await fetch(path+'?_='+Date.now());if(!r.ok)return null;return await r.json()}catch(e){console.warn('loadJSON failed for',path,e);return null}}
 
 /* ─── Task Kanban Board ─── */
 let taskItems=[];
@@ -1175,6 +1175,8 @@ async function init(){
   // Kanban Pipeline Board (generic — leads, tasks, anything)
   try {
   const leadsDataFile=await loadJSON('data/leads.json');
+  const leadsFileLoadFailed=!leadsDataFile;
+  if(leadsFileLoadFailed){console.error('⚠️ leads.json failed to load — kanban will be empty');}
   // Merge file data with user-created boards/cards from localStorage
   const userBoards=JSON.parse(localStorage.getItem('kanban-user-boards')||'[]');
   const userCards=JSON.parse(localStorage.getItem('kanban-user-cards')||'[]');
@@ -1367,12 +1369,21 @@ async function init(){
     });
     // Empty state if no boards
     if(!leadsData.boards.length){
-      html=`<div style="text-align:center;padding:60px 20px;color:var(--text2)">
-        <div style="font-size:48px;margin-bottom:16px">📋</div>
-        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">No boards yet</div>
-        <div style="font-size:13px;margin-bottom:20px">Create your first board to start tracking leads, deals, projects — anything.</div>
-        <button onclick="openNewBoardModal()" style="padding:12px 24px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">+ Create Board</button>
-      </div>`;
+      if(leadsFileLoadFailed){
+        html=`<div style="text-align:center;padding:60px 20px;color:var(--text2)">
+          <div style="font-size:48px;margin-bottom:16px">⚠️</div>
+          <div style="font-size:16px;font-weight:600;color:#f87171;margin-bottom:8px">Pipeline data failed to load</div>
+          <div style="font-size:13px;margin-bottom:20px;max-width:400px;margin-left:auto;margin-right:auto">Could not parse <code>data/leads.json</code>. The file may be corrupt or unreachable. Check the browser console for details.</div>
+          <button onclick="window.location.reload()" style="padding:12px 24px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Retry</button>
+        </div>`;
+      } else {
+        html=`<div style="text-align:center;padding:60px 20px;color:var(--text2)">
+          <div style="font-size:48px;margin-bottom:16px">📋</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">No boards yet</div>
+          <div style="font-size:13px;margin-bottom:20px">Create your first board to start tracking leads, deals, projects — anything.</div>
+          <button onclick="openNewBoardModal()" style="padding:12px 24px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">+ Create Board</button>
+        </div>`;
+      }
     }
     document.getElementById('kanban-container').innerHTML=html;
     document.getElementById('crm-badge').textContent=totalActive;document.getElementById('crm-badge').style.display='';
