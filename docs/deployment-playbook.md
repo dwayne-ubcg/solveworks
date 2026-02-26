@@ -1,15 +1,35 @@
 # SolveWorks Deployment Playbook
 
 **Purpose:** Complete SOP for deploying a new SolveWorks client agent, from intake to monitoring.  
-**Last Updated:** February 21, 2026  
+**Last Updated:** February 26, 2026  
 **Author:** Mika (SolveWorks)  
-**Based on:** Lessons learned from Drew's deployment
+**Based on:** Lessons learned from Drew's and Brody's deployments
 
 ---
 
 ## TL;DR
 
 A SolveWorks deployment = Mac Mini + OpenClaw + Tailscale + Telegram + guardrails. Setup takes ~2 hours hands-on. The critical lesson from Drew: agents WILL try to modify their own config if you don't explicitly forbid it. Lock it down with guardrails in SOUL.md and AGENTS.md.
+
+## ⚠️ The Golden Rule: Pre-Ship Everything
+
+**The client NEVER touches Terminal. Ever.**
+
+This means the Mac Mini must be fully configured BEFORE it ships to the client. Do not ship an unconfigured machine and try to set it up remotely after delivery. That's how installs go from 20 minutes to 2 hours.
+
+**Pre-ship checklist:**
+- Homebrew installed
+- Node.js installed  
+- OpenClaw installed
+- SSH key exchanged (Dwayne's key → client machine AND client machine → Mika)
+- Tailscale joined and approved
+- `claude setup-token` run (requires physical machine — see Section 6)
+- Gateway installed and running
+- Test message sent and confirmed
+
+If the machine ships without any of these, the install becomes a remote debugging session instead of a 20-minute configuration job.
+
+> **Install machine:** Brody's Mac Mini (`brodyschofield@100.75.147.76`) is the designated SolveWorks install machine. Sunday (his agent) handles client installs. Mika's Mac Mini = 7 Cellars + urbanbutter oversight only.
 
 ---
 
@@ -293,6 +313,10 @@ Run through every item before handing off to the client:
 - [ ] Agent can perform its intended use cases
 - [ ] Agent writes to memory files correctly
 - [ ] No errors in gateway logs
+- [ ] Heartbeat cron configured (every 30m, isolated session, haiku model):
+  ```bash
+  openclaw cron add --name heartbeat --every 30m --session isolated --model anthropic/claude-haiku-4-5 "Read HEARTBEAT.md if it exists. If nothing needs attention, reply HEARTBEAT_OK."
+  ```
 
 ---
 
@@ -332,9 +356,32 @@ If still failing, check logs and ensure Node.js is installed.
 openclaw gateway restart
 ```
 
+### SSH Username ≠ Machine Name
+**Cause:** The macOS username (e.g., `brodyschofield`) may differ from the machine hostname. Tailscale shows the machine name, not the SSH username.  
+**Fix:** Confirm with `whoami` before setting up SSH keys or building connection strings.
+
+### Tailscale Ghost Devices After macOS Update
+**Cause:** macOS updates can cause Tailscale to re-register the device under a new entry.  
+**Fix:** Leave ghost devices in the Tailnet — don't delete them. The active device will be the one with the recent "Last Seen" timestamp. Deleting old entries can break things.
+
+### Anthropic Outages
+**Context:** Anthropic had a 25-minute outage on Feb 25, 2026 (17:21–17:46 UTC) during Brody's install, causing `claude setup-token` to return 500 errors.  
+**Fix:** Wait it out. Check status.anthropic.com. Don't assume the token flow is broken — it may be a platform issue.
+
 ### Setup Token Fails Over SSH
 **Cause:** `claude setup-token` requires a physical TTY with browser access.  
 **Fix:** Must be run locally on the Mac Mini with a monitor/keyboard, or via screen sharing. Cannot be done over SSH.
+
+**Full auth flow (subscription route):**
+1. Run `claude setup-token` locally on the machine (browser + terminal together)
+2. Complete browser OAuth flow — generates a `sk-ant-oat01-*` token (valid 1 year)
+3. Copy the token
+4. Run: `openclaw models auth setup-token --provider anthropic --yes` (PTY required — use `process send-keys` + Enter)
+5. Verify: `openclaw models status` → must show `Providers w/ OAuth/tokens (1): anthropic`
+6. Token location: `~/.openclaw/agents/main/agent/auth-profiles.json` — this is the file OpenClaw actually reads, not `~/.openclaw/auth-profiles.json`
+7. Restart gateway after token is registered
+
+> **Claude Max required** — NOT Claude Pro. The subscription token route only works with Max tier ($100/mo).
 
 ### chmod 444 on Config
 **Cause:** Someone tried to make config read-only as a "guardrail."  
