@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveWorks — AI Automation Proposal for Mike Dades</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & PRINT === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .solution-card,
+            .package-card,
+            .roi-card,
+            .roi-grid,
+            .timeline-item,
+            .bonus-card,
+            .packages-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #94a3b8;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.8in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #0ea5e9;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+
+        .solution-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .solution-price {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .solution-price .monthly {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0a0a1a;
+        }
+
+        .solution-price .period {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .solution-price .setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === PACKAGES === */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            page-break-inside: avoid;
+        }
+
+        .package-card.featured {
+            border: 2px solid #0ea5e9;
+            background: linear-gradient(180deg, #f0f9ff 0%, white 30%);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+
+        .package-name {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .package-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0a0a1a;
+            line-height: 1;
+        }
+
+        .package-price sup {
+            font-size: 16px;
+            font-weight: 600;
+            top: -10px;
+        }
+
+        .package-period {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .package-setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .package-features {
+            list-style: none;
+            text-align: left;
+            padding: 0;
+        }
+
+        .package-features li {
+            font-size: 11px;
+            color: #374151;
+            padding: 4px 0;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .package-tagline {
+            font-size: 11px;
+            color: #0ea5e9;
+            font-style: italic;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* === ROI SECTION === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === BONUS CARDS === */
+        .bonus-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 4px;
+        }
+
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #1e3a5f;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* === HOW YOU'LL USE IT — CHAT MOCK === */
+        .chat-mock {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+
+        .chat-bubble.user {
+            background: #0ea5e9;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.agent {
+            background: #1e293b;
+            color: #e2e8f0;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+
+        .chat-clear { clear: both; }
+
+        .chat-time {
+            text-align: center;
+            font-size: 9px;
+            color: #475569;
+            margin: 10px 0;
+            clear: both;
+        }
+
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #374151;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        /* === INVESTMENT === */
+        .investment-setup {
+            text-align: center;
+            background: linear-gradient(135deg, #050507, #0d1528);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .investment-note {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.7;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: COVER -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>AI Automation<br>Proposal for<br><span>Mike Dades</span></h1>
+        <div class="cover-subtitle">More meetings. Better hires. A sales team that actually scales.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> February 26, 2026<br>
+            <strong>Valid through:</strong> March 12, 2026<br>
+            <strong>Prepared for:</strong> Mike Dades<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- PAGE 1B: PERSONAL LETTER -->
+    <div class="page">
+        <div class="content" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">A Note from Brody</div>
+            </div>
+
+            <div style="max-width: 560px; margin: 40px auto 0; padding: 0 10px;">
+                <p style="font-size: 15px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    Mike,
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    You asked me one question that I kept coming back to after our call: <em>"How do we get in front of more hiring managers?"</em> That's it. That's the whole game. And you've got the clients — Microsoft, Amazon, Expedia, T-Mobile, Nordstrom, REI — to prove you know what to do once you're in the room.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    The problem isn't your offering. It's the machine that's supposed to fill the pipeline. Right now your SDRs are spending the first hour of every day just building a list before they write a single word. You switched to custom emails to improve quality — and meetings dropped. That's not a strategy problem. That's a volume and speed problem that AI can fix.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    You also burned $75K on three sales hires in six months. You said it yourself: "We're good at hiring for everyone else but not ourselves." That one hit me — because you have the data to fix it. Sheila's calls are all recorded. They're just sitting there. Every rep on your team could be coached on what she does, and right now no one is.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    This proposal is built around those three problems — the SDR grind, the bad hire cost, and the Sheila model locked in your RingCentral transcripts. Read it, tell me what I got wrong, and let's talk.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 40px;">
+                    — Brody<br>
+                    <span style="font-size: 12px; color: #94a3b8;">SolveWorks | brody@solveworks.io</span>
+                </p>
+
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.7; margin-bottom: 0; font-style: italic;">
+                        "We're good at hiring for everyone else, but not for ourselves."<br>
+                        <strong style="color: #64748b;">— Mike Dades, from our call</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 2: WHAT WE HEARD -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>What You <span>Told Us</span></h2>
+            <div class="section-subtitle">Your pain points, in your language — mapped to what we can actually solve</div>
+
+            <p class="intro-text">
+                Your firm places tech and finance contractors. <strong>~$20M revenue. 50 employees across the Philippines and the US.</strong> You're top supplier at Microsoft, Amazon, Expedia, T-Mobile, Nordstrom, and REI — you know how to close. The problem is getting there: Directors of Engineering, IT Directors, Controllers, CFOs. The right targets, at scale, with outreach that doesn't feel like a template.
+            </p>
+
+            <p class="intro-text">
+                Right now your SDRs manually pull from LinkedIn, cross-reference ZoomInfo, build an Excel list, enter it into CRM, then trigger an 18-step, 30-day outreach sequence — <strong>all before a single email goes out.</strong> You shifted to custom emails to improve quality. Meetings dropped sharply. Volume was masking the broken process, and now that you've fixed quality, the process is the bottleneck.
+            </p>
+
+            <p class="intro-text">
+                You also fired three sales hires in six months. Two at 90 days (~$25K each). One at six months. <strong>$75K gone</strong> before you had a clear picture of whether they could perform. And your top recruiter in the Philippines — Sheila — is exceptional at something nobody can articulate, including her. Her RingCentral calls are recorded. The transcripts exist. Nobody's touched them.
+            </p>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">$75K</div>
+                    <div class="roi-label">Burned on 3 bad sales hires<br>in 6 months</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">18</div>
+                    <div class="roi-label">Manual steps before<br>a single SDR email goes out</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">0%</div>
+                    <div class="roi-label">Of Sheila's winning patterns<br>extracted or trained on</div>
+                </div>
+            </div>
+
+            <p class="disclaimer">* Business metrics from discovery call with Mike Dades.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 3: SOLUTIONS (1 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions</div>
+            </div>
+
+            <h2>What We'll <span>Build</span></h2>
+            <div class="section-subtitle">Four systems built around the exact problems you described</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🎯</div>
+                        <div>
+                            <h3>Automated SDR Pipeline</h3>
+                            <div class="solution-card-desc">Your SDRs write emails. The agent builds the list.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>The AI agent finds ICP-matching leads from LinkedIn and ZoomInfo automatically — Directors of Engineering, IT Directors, Controllers, CFOs at companies that fit your placement profile. It populates a drag-and-drop pipeline (New Lead → Contacted → Meeting Booked → Won/Lost) and <strong>drafts a personalized outreach email for each lead before your SDR sees it.</strong> Your reps review, tweak, approve — never build a list again. The 18-step sequence triggers automatically based on status. RingCentral call logs sync back into the pipeline so every touchpoint is tracked. Tools you already pay for — LinkedIn, ZoomInfo, your CRM, RingCentral — actually work together instead of being manual handoffs.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Auto lead discovery from LinkedIn + ZoomInfo</span>
+                    <span class="benefit-tag">Personalized email drafts per lead</span>
+                    <span class="benefit-tag">18-step sequence auto-triggered</span>
+                    <span class="benefit-tag">RingCentral integration</span>
+                    <span class="benefit-tag">Drag-and-drop pipeline</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🧠</div>
+                        <div>
+                            <h3>The Sheila Model — Call Intelligence Engine</h3>
+                            <div class="solution-card-desc">Extract what makes your best rep win. Scale it to everyone.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Every call recorded in RingCentral gets auto-pulled and transcribed. Sheila's calls are analyzed for <strong>winning patterns: her opening lines, how she handles objections, when she pivots, how she closes.</strong> Every rep on your team gets scored against the Sheila Model with specific, actionable coaching: "Instead of saying X, try Y — here's why Sheila closes this." A dashboard panel shows each rep's call history, scores, coaching notes, and improvement trends over time. You stop wondering why Sheila is exceptional. You start replicating it.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">RingCentral API integration</span>
+                    <span class="benefit-tag">Sheila's patterns extracted & codified</span>
+                    <span class="benefit-tag">Per-rep scoring & coaching</span>
+                    <span class="benefit-tag">Trend tracking dashboard</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4: SOLUTIONS (2 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📊</div>
+                        <div>
+                            <h3>Mission Control Dashboard</h3>
+                            <div class="solution-card-desc">Your entire operation, one screen, real-time.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>A custom-built command center showing your full pipeline: leads found, contacted, meetings booked, won, lost. The call intelligence feed surfaces per-rep coaching notes as they come in. SDR performance metrics — emails sent, reply rates, meetings booked — in one view. Tasks, documents, and AI-generated meeting summaries all in one place. <strong>You open one screen and see exactly where your business is.</strong> No logging into five tools before your first coffee.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Real-time pipeline view</span>
+                    <span class="benefit-tag">Call intelligence feed</span>
+                    <span class="benefit-tag">SDR performance metrics</span>
+                    <span class="benefit-tag">Meeting summaries</span>
+                    <span class="benefit-tag">Task management</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🏆</div>
+                        <div>
+                            <h3>Sales Training OS — Beyond What You Asked For</h3>
+                            <div class="solution-card-desc">Training built from Sheila's real calls. Not books. Not theory.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Whatever training tool your reps click through to fake completion — this replaces it. Dynamic coaching modules are built directly from Sheila's actual recorded calls. Every rep is coached on their <strong>own calls</strong> — not hypotheticals, not role-play scripts. The training updates automatically as new patterns emerge in real calls. It's engaging because it's real, specific, and personal. Bad hires become identifiable before the 90-day mark — if someone can't improve against the Sheila Model in weeks 3–6, you know before you've burned another $25K.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Built from Sheila's real calls</span>
+                    <span class="benefit-tag">Reps coached on their own calls</span>
+                    <span class="benefit-tag">Early performance signals</span>
+                    <span class="benefit-tag">Replaces passive click-through training</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 12px; padding: 22px 24px; margin-top: 16px;">
+                <h3 style="font-size: 14px; color: #0369a1; margin-bottom: 8px;">💡 How These Work Together</h3>
+                <p style="font-size: 12px; color: #1e3a5f; margin-bottom: 0; line-height: 1.7;">The Pipeline Agent fills your SDRs' day with ICP-matched leads and pre-drafted emails — volume and quality, simultaneously. The Sheila Model tells every rep exactly how to work those leads based on what actually closes. Mission Control lets you see everything in real-time without opening five tools. The Training OS catches bad hires early and turns good hires into great ones. <strong>It's a complete system, not four separate tools.</strong></p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4B: MISSION CONTROL DASHBOARD -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Mission Control</div>
+            </div>
+
+            <h2>Your <span>Mission Control</span></h2>
+            <div class="section-subtitle">One screen for your entire sales operation — try it right now</div>
+
+            <p class="intro-text">
+                Your pipeline, your reps, your calls — all in one view. Leads found today by the agent, SDR activity, meetings booked this week, call scores by rep, Sheila Model coaching alerts. <strong>No more logging into LinkedIn, ZoomInfo, your CRM, and RingCentral separately.</strong> It's all here, live, from one screen.
+            </p>
+
+            <div style="text-align: center; margin-bottom: 16px;">
+                <a href="https://solveworks.io/demo/" target="_blank" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #0ea5e9, #0369a1); color: white; font-size: 15px; font-weight: 700; padding: 14px 36px; border-radius: 50px; text-decoration: none; box-shadow: 0 4px 24px rgba(14,165,233,0.35); letter-spacing: 0.3px;">
+                    <span style="font-size: 18px;">🖥️</span> Open Interactive Demo in Browser
+                    <span style="font-size: 13px; opacity: 0.85; font-weight: 500;">→ Best experience</span>
+                </a>
+                <p style="font-size: 11px; color: #94a3b8; margin-top: 8px; margin-bottom: 0;">solveworks.io/demo — click to explore it live</p>
+            </div>
+
+            <div style="border-radius: 14px; overflow: hidden; border: 2px solid #0ea5e9; box-shadow: 0 8px 40px rgba(14,165,233,0.15); margin-bottom: 16px; position: relative;">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(5,5,7,0.6); z-index: 2; border-radius: 14px; flex-direction: column; gap: 12px;">
+                    <a href="https://solveworks.io/demo/" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: white; color: #0a0a1a; font-size: 14px; font-weight: 700; padding: 12px 28px; border-radius: 50px; text-decoration: none;">
+                        🖥️ Click to Open Full Demo
+                    </a>
+                    <p style="color: #94a3b8; font-size: 11px; margin: 0;">Interactive — drag tasks, explore live data</p>
+                </div>
+                <iframe src="https://solveworks.io/demo/" style="width: 100%; height: 460px; border: none; filter: blur(1px);" loading="lazy"></iframe>
+            </div>
+
+            <div class="solution-benefits" style="justify-content: center; margin-top: 14px;">
+                <span class="benefit-tag">Real-time pipeline view</span>
+                <span class="benefit-tag">Call intelligence feed</span>
+                <span class="benefit-tag">SDR performance metrics</span>
+                <span class="benefit-tag">AI meeting summaries</span>
+                <span class="benefit-tag">Task management</span>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 5: HOW YOU'LL USE IT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">How You'll Use It</div>
+            </div>
+
+            <h2>How You'll <span>Use It</span></h2>
+            <div class="section-subtitle">No new software to learn. Text your agent — like you'd text anyone on your team.</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Monday Morning • via Telegram &nbsp;·&nbsp; <em>Numbers illustrative — built from your actual data during onboarding</em></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Mike</div>
+                    Find me hiring managers at Seattle tech companies — Directors of Engineering or IT Directors, companies 200–2000 employees.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Found 12 qualified contacts matching your ICP:<br><br>
+                    1. Sarah Chen — Dir. of Engineering @ Convoy (Seattle, 800 employees) — LinkedIn ↗<br>
+                    2. Marcus Webb — IT Director @ Remitly (Seattle, 1,400 employees) — LinkedIn ↗<br>
+                    3. Priya Patel — Dir. of Engineering @ Avalara (Seattle, 1,800 employees) — LinkedIn ↗<br>
+                    <em>...9 more in pipeline. All added to CRM, outreach sequences staged.</em>
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Mike</div>
+                    Draft an outreach email for Sarah Chen at Convoy.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    <strong>Subject:</strong> Engineering contract support — Convoy's growth stage<br><br>
+                    Sarah — saw Convoy raised $400M Series E and is scaling the engineering org aggressively. We're top supplier for Microsoft and Amazon's contractor needs in the Pacific Northwest. If you're building out your contractor bench for Q2, I'd like 15 minutes. — [SDR name]<br><br>
+                    <em>Queued in sequence. SDR can approve and send in one click.</em>
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Mike</div>
+                    How would Sheila have opened the call if Sarah picks up?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    From the Sheila Model — she opens engineering director calls with: <em>"I'm not going to waste your time — I know you're not looking unless something changes. I'm calling because something changed for two of your peers at [competitor] this quarter, and I want to tell you what we did."</em> She never asks if it's a good time. She gives a reason immediately. Close rate from this opener: 34% callback.
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">💬</div>
+                    <div>
+                        <div class="usage-point-text">Text your agent, get results</div>
+                        <div class="usage-point-desc">Telegram or WhatsApp — same as messaging anyone on your team</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🔗</div>
+                    <div>
+                        <div class="usage-point-text">Knows your stack</div>
+                        <div class="usage-point-desc">LinkedIn, ZoomInfo, your CRM, RingCentral, O365 — all connected</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🧠</div>
+                    <div>
+                        <div class="usage-point-text">Sheila always available</div>
+                        <div class="usage-point-desc">Every rep has instant access to her patterns — on every call, every day</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚡</div>
+                    <div>
+                        <div class="usage-point-text">SDRs start selling, not list-building</div>
+                        <div class="usage-point-desc">Pipeline built overnight — reps open to leads ready for outreach</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6: THE $75K PROBLEM -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">The Numbers</div>
+            </div>
+
+            <h2>Let's Talk About <span>$75,000</span></h2>
+            <div class="section-subtitle">The cost of three bad sales hires — and how AI changes the math going forward</div>
+
+            <p class="intro-text">
+                Three hires. Six months. $75K. Two out at 90 days (~$25K each). One at the six-month mark. You hire for your clients every day. You know exactly how to screen, assess, and predict performance — for engineers, for finance professionals, for anyone you place. But your own sales org is a blind spot, and it's costing you more than the salary and recruiting fees. It's costing you pipeline.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">❌ Today — Hire and Hope</div>
+                    <p style="font-size: 11.5px; color: #374151; line-height: 1.8; margin-bottom: 0;">
+                        Day 1: new hire starts → weeks 1–4: onboarding → weeks 5–8: calls being made → weeks 9–12: performance data starts to form → Day 90: enough data to know if it's working → if not, $25K gone and you're back to square one.
+                    </p>
+                </div>
+                <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">✓ With the Sheila Model</div>
+                    <p style="font-size: 11.5px; color: #1e3a5f; line-height: 1.8; margin-bottom: 0;">
+                        Week 1: rep's calls scored against Sheila Model → Week 3: coaching gaps identified → Week 6: performance trajectory clear → save or cut with data, not gut feel. <strong>The $25K decision happens at week 6, not week 12.</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">~$25K</div>
+                    <div class="roi-label">Average cost of a<br>90-day failed hire</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">Wk 6</div>
+                    <div class="roi-label">When the Sheila Model gives you<br>a clear read on a new hire</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">$0</div>
+                    <div class="roi-label">Cost of identifying the problem<br>before you hit the 90-day wall</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">📊 The SDR Pipeline Math</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">If your SDRs spend 90 minutes per day on list-building before they can start outreach — that's 37+ hours a month per rep that goes to admin, not selling. The pipeline agent does that work overnight. Your reps open to a staged, ICP-matched queue every morning. <strong style="color: #e2e8f0;">The question isn't whether automation pays for itself. It's how fast.</strong></p>
+            </div>
+
+            <p class="disclaimer">* Hire cost estimates based on Mike's figures from our discovery call. SDR time estimates are industry-standard for manual research + CRM entry workflows.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6B: YOUR NEW WORKFLOW -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Your New Workflow</div>
+            </div>
+
+            <h2>How It All <span>Connects</span></h2>
+            <div class="section-subtitle">The 18-step manual process — automated end to end</div>
+
+            <p class="intro-text">
+                Here's what changes on day one of going live:
+            </p>
+
+            <div class="solution-card" style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-color: #bae6fd;">
+                <p style="font-size: 13px; color: #1e3a5f; margin-bottom: 10px; line-height: 1.9;">
+                    <strong>1. Every night,</strong> the pipeline agent pulls ICP-matched leads from LinkedIn and ZoomInfo — Directors of Engineering, IT Directors, Controllers, CFOs — and stages them in the CRM with personalized outreach drafts ready to review.<br><br>
+                    <strong>2. Every morning,</strong> your SDRs open a queue of leads, not a blank spreadsheet. Review, approve, send. The 18-step sequence triggers automatically from there. Calls log back into the pipeline via RingCentral.<br><br>
+                    <strong>3. Every call,</strong> the Sheila Model scores the transcript as soon as it's available — coaching notes delivered to the rep within hours: "Here's what Sheila does differently in this moment."<br><br>
+                    <strong>4. Every week,</strong> Mission Control gives you the full picture: leads found, contacted, meetings booked, won/lost. Rep-by-rep performance. Coaching trends. New hire trajectory vs. Sheila's baseline. One screen. Real time.
+                </p>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">🎯 The North Star</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 12px; line-height: 1.7;">Your exact words: <em style="color: #e2e8f0;">"How do we get in front of more hiring managers?"</em></p>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">The pipeline agent finds them. The Sheila Model teaches your reps how to convert them. Mission Control lets you see it all working in real time. You still set strategy. You still own relationships. <strong style="color: #e2e8f0;">The agent does the 90 minutes of daily admin that was stopping your SDRs from actually selling.</strong></p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                <div class="solution-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 13px; margin-bottom: 4px;">🔧 Tools You Keep</h3>
+                    <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">LinkedIn, ZoomInfo, your CRM, RingCentral, O365 — nothing gets ripped out. The agent connects them so information flows instead of being manually carried between tools.</p>
+                </div>
+                <div class="solution-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 13px; margin-bottom: 4px;">👥 Your Team's Role</h3>
+                    <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">SDRs review and approve outreach — they still own every message. Recruiters still run their calls. The agent coaches and tracks, never replaces. Your Philippines team and your US reps use the same system.</p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6C: FAQ -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Questions & Answers</div>
+            </div>
+
+            <h2>Common <span>Questions</span></h2>
+            <div class="section-subtitle">Straight answers — no pitch</div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🎯 "Will the outreach emails actually feel personalized, or will prospects see through it?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">The agent pulls real signals — recent funding rounds, hiring activity, LinkedIn posts, news — and references them specifically. Your SDRs still review every email before it sends and can edit freely. It's a draft, not an auto-send. The quality ceiling is your rep's judgment. The floor is set by the agent.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🧠 "How accurate is the Sheila Model really?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">It's trained on her actual calls — not theory. The more calls it analyzes, the better it gets. In week one, it's identifying patterns. By month two, it's producing specific, granular coaching that's grounded in real outcomes. We build it together from your existing RingCentral transcripts, so you see what it finds before it's deployed.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">⏱️ "How long until we see results?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">Four weeks from kickoff to fully operational. SDR pipeline automation is the fastest win — your reps can be working agent-sourced leads inside three weeks. The Sheila Model takes one full sales cycle to calibrate fully, but coaching insights start appearing in week two as we process her existing transcripts.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🖥️ "Does my team need to learn new software?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">No. You text the agent via Telegram or WhatsApp — same as messaging anyone on your team. SDRs use the pipeline interface, which feels like a simple kanban board. Nothing complex to learn. Your Philippines team and US reps use the same system from day one.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🔒 "What about data privacy — we handle sensitive client and candidate data."</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">Your data is processed securely and never shared externally. Call transcripts stay within your system. We use enterprise-grade AI providers with strict data policies. Nothing leaves your environment without your explicit control. We can walk through the architecture in detail before any integrations go live.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🚪 "What if we cancel?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">No long-term contracts. If you cancel, automations stop and your team returns to current workflow. Your data is always yours. We'd rather earn your business every month than lock you in on a contract you can't exit.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 7: TIMELINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>How It <span>Works</span></h2>
+            <div class="section-subtitle">From kickoff to fully operational in weeks, not months</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Discovery</div>
+                        <h3>Map Your Stack & ICP</h3>
+                        <p>We connect to LinkedIn, ZoomInfo, your CRM, RingCentral, and O365. We define your ICP in precise terms — target titles, company size, industries, signals. We pull Sheila's existing transcripts and start the initial analysis. We learn how your SDR sequence currently works so we can replicate and automate it exactly.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 2–3 — Build</div>
+                        <h3>Pipeline Agent + Sheila Model</h3>
+                        <p>Pipeline agent goes live — pulling leads, staging outreach, triggering sequences. SDRs test the draft emails and give feedback. The Sheila Model gets its first scoring outputs from her transcripts — we review with you before deploying to the broader team. Mission Control dashboard is built and connected to live data.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Go Live</div>
+                        <h3>Full Deployment with Hands-On Support</h3>
+                        <p>Everything goes live: pipeline automation running overnight, call coaching active on all RingCentral transcripts, Mission Control dashboard operational. We're on-call during go-live week to handle any edge cases. Your SDRs, US team, and Philippines reps are all onboarded and comfortable before we step back.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Optimize</div>
+                        <h3>Refine & Improve</h3>
+                        <p>The Sheila Model improves with every call analyzed. Lead quality tightens as the ICP definition is refined based on what's actually converting. We monitor pipeline performance, flag any sequence issues, and tune the system monthly. As new hires join, they're automatically onboarded to the coaching system.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">4wks</div>
+                    <div class="roi-label">From kickoff to<br>fully operational</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">No</div>
+                    <div class="roi-label">New software for your<br>SDRs or reps to learn</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">∞</div>
+                    <div class="roi-label">Sheila Model improves<br>with every call analyzed</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 8: INVESTMENT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Investment</div>
+            </div>
+
+            <h2>Your <span>Investment</span></h2>
+            <div class="section-subtitle">All pricing in USD. No surprises. Cancel anytime.</div>
+
+            <div class="investment-setup" style="margin-top: 20px;">
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px;">
+                    <div class="roi-number" style="font-size: 42px; font-weight: 800; color: #0ea5e9;">$2,500</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #64748b;">USD</div>
+                </div>
+                <div class="roi-label" style="font-size: 13px; margin-top: 6px;">One-time setup — discovery, pipeline build, Sheila Model, dashboard, deploy & onboarding</div>
+            </div>
+
+            <div class="packages-grid" style="grid-template-columns: 1fr;">
+                <div class="package-card featured" style="max-width: 480px; margin: 0 auto;">
+                    <div class="package-name">Monthly Service</div>
+                    <div style="display: flex; align-items: baseline; justify-content: center; gap: 6px;">
+                        <div class="package-price"><sup>$</sup>500</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">USD</div>
+                    </div>
+                    <div class="package-period">/month</div>
+                    <div class="package-setup">You manage your own Anthropic account — full transparency on AI usage costs</div>
+                    <ul class="package-features">
+                        <li>Automated SDR pipeline — leads found, staged, and drafted nightly</li>
+                        <li>The Sheila Model — call scoring + per-rep coaching</li>
+                        <li>Mission Control Dashboard</li>
+                        <li>Sales Training OS</li>
+                        <li>LinkedIn, ZoomInfo, CRM, RingCentral, O365 integrations</li>
+                        <li>Ongoing optimization, support, and model refinement</li>
+                        <li>You control your own AI usage & costs — no markup</li>
+                    </ul>
+                    <div class="package-tagline">Built for the north star: more meetings with hiring managers.</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 24px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 10px;">🖥️ Hardware — Your Agent Needs a Home</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.7; margin-bottom: 12px;">Your AI agents run on a dedicated Mac Mini — a small, silent computer that powers everything 24/7. Your data stays in your environment. Two options:</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 16px;">
+                        <div style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px;">Option A: You Purchase</div>
+                        <p style="font-size: 12px; color: #94a3b8; line-height: 1.6;">Buy the Mac Mini directly — we provide exact specs. Yours from day one.</p>
+                        <div style="margin-top: 10px;">
+                            <div style="font-size: 18px; font-weight: 700; color: #0ea5e9; line-height: 1;">~$600 <span style="font-size: 11px; font-weight: 600; color: #64748b;">USD</span></div>
+                            <div style="font-size: 12px; color: #475569; margin-top: 3px;">Apple retail, we configure remotely</div>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 16px;">
+                        <div style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px;">Option B: We Provide</div>
+                        <p style="font-size: 12px; color: #94a3b8; line-height: 1.6;">We supply and pre-configure it — arrives at your office ready to plug in and go.</p>
+                        <div style="margin-top: 10px;">
+                            <div style="font-size: 18px; font-weight: 700; color: #0ea5e9; line-height: 1;">~$600 <span style="font-size: 11px; font-weight: 600; color: #64748b;">USD</span></div>
+                            <div style="font-size: 12px; color: #475569; margin-top: 3px;">Ships to your Seattle office</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="investment-note" style="margin-top: 20px;">
+                <strong>No long-term contracts. Cancel anytime.</strong><br>
+                All SolveWorks pricing in USD.<br>
+                Anthropic AI usage billed directly through your own account — fully transparent, no markups. For a business running agents at your call volume, we recommend the <strong style="color: #374151;">Anthropic Max plan ($100 USD/month)</strong> — we set it up during onboarding.
+            </p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Mike Dades</span>
+        </div>
+    </div>
+
+    <!-- PAGE 9: CTA -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>You know how to place<br>top talent. Let's build the<br>machine to <span style="color: #0ea5e9;">get you in the room.</span></h2>
+        <p>The process is broken — not the strategy. Your SDRs are spending their best hours building lists. Sheila's playbook is sitting in RingCentral untouched. And you're two bad hires away from another $50K problem. Let's fix all three.</p>
+        <a href="https://calendly.com/brody1schofield/30min" class="cta-button">Book a Follow-Up Call →</a>
+        <div class="cta-contact">
+            <p><a href="https://calendly.com/brody1schofield/30min">calendly.com/brody1schofield/30min</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> | <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+            <p style="margin-top: 14px; font-size: 11px; color: #334155;">This proposal is valid through March 12, 2026.</p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>
