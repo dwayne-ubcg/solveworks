@@ -491,6 +491,18 @@ a{color:var(--blue);text-decoration:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg>
       Expenses <span class="nav-badge" id="expenses-badge" style="display:none">0</span>
     </div>
+    <div class="nav-item" data-section="procurement" onclick="showSection('procurement')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Procurement <span class="nav-badge" id="procurement-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" data-section="partners" onclick="showSection('partners')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Partners
+    </div>
+    <div class="nav-item" data-section="roberto" onclick="showSection('roberto')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Roberto Legacy
+    </div>
   </div>
   <div class="sidebar-footer">
     <button class="btn-logout" onclick="logout()">← Logout</button>
@@ -844,11 +856,207 @@ a{color:var(--blue);text-decoration:none}
     </div>
   </div>
 
+  <!-- Procurement -->
+  <div class="section" id="sec-procurement">
+    <h1 class="page-title">Procurement</h1>
+    <p class="page-sub">Invoice pipeline · Kyle wires USD → Roberto pays supplier in EUR · <strong style="color:var(--red)">Golden Rule: Roberto never pays until wire confirmed cleared</strong></p>
+    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
+      <button onclick="openProcurementModal()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Invoice
+      </button>
+      <select id="proc-filter-status" onchange="renderProcurement()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-family:inherit">
+        <option value="all">All Statuses</option>
+        <option value="pending_wire">⏳ Pending Wire</option>
+        <option value="wire_sent">📤 Wire Sent</option>
+        <option value="wire_cleared">✅ Wire Cleared</option>
+        <option value="supplier_paid">💰 Supplier Paid</option>
+        <option value="complete">✔️ Complete</option>
+      </select>
+    </div>
+    <div id="proc-stats" class="stats-grid" style="margin-bottom:24px"></div>
+    <div id="proc-table-wrap">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);color:var(--text2);text-align:left">
+            <th style="padding:10px 12px">Invoice #</th>
+            <th style="padding:10px 12px">Supplier</th>
+            <th style="padding:10px 12px">EUR Amount</th>
+            <th style="padding:10px 12px">USD Wire (+5%)</th>
+            <th style="padding:10px 12px">Wire Status</th>
+            <th style="padding:10px 12px">⚠️ Pay Status</th>
+            <th style="padding:10px 12px">Date</th>
+            <th style="padding:10px 12px">Notes</th>
+            <th style="padding:10px 12px"></th>
+          </tr>
+        </thead>
+        <tbody id="proc-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Partners -->
+  <div class="section" id="sec-partners">
+    <h1 class="page-title">Partners</h1>
+    <p class="page-sub">Equity, capital contributions, and profit distributions</p>
+    <div id="partners-stats" class="stats-grid" style="margin-bottom:24px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+      <!-- Equity -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Equity Split</h3>
+        <div id="partners-equity"></div>
+      </div>
+      <!-- Investment Interest -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Investment Interest Tracking</h3>
+        <div id="partners-investment"></div>
+        <button onclick="openInvestmentModal()" style="margin-top:14px;padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Log Interest</button>
+      </div>
+    </div>
+    <!-- Distributions -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+      <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Profit Distributions</h3>
+      <div id="partners-distributions"></div>
+      <button onclick="openDistributionModal()" style="margin-top:14px;padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Log Distribution</button>
+    </div>
+  </div>
+
+  <!-- Roberto Legacy -->
+  <div class="section" id="sec-roberto">
+    <h1 class="page-title">Roberto — Legacy Inventory</h1>
+    <p class="page-sub">Legacy inventory = all stock as of Feb 20, 2026 · Roberto earns 50% of profit on each legacy sale</p>
+    <div id="roberto-stats" class="stats-grid" style="margin-bottom:24px"></div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:24px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Legacy Sales Log</h3>
+          <button onclick="openLegacySaleModal()" style="padding:7px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">+ Log Sale</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border);color:var(--text2);text-align:left">
+              <th style="padding:8px 10px">Date</th>
+              <th style="padding:8px 10px">Item</th>
+              <th style="padding:8px 10px">Sale Price</th>
+              <th style="padding:8px 10px">Cost</th>
+              <th style="padding:8px 10px">Profit</th>
+              <th style="padding:8px 10px">Roberto (50%)</th>
+              <th style="padding:8px 10px">Status</th>
+            </tr>
+          </thead>
+          <tbody id="legacy-tbody"></tbody>
+        </table>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px">
+        <h3 style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Monthly Payout Summary</h3>
+        <div id="legacy-monthly"></div>
+        <div style="margin-top:20px;padding:16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Total Owed to Roberto</div>
+          <div id="legacy-total-owed" style="font-size:28px;font-weight:700;color:var(--yellow)">$0.00</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:4px" id="legacy-paid-note"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Pipeline Lead Modal -->
   <div class="kanban-modal" id="pipeline-modal" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="kanban-modal-content" style="position:relative">
       <button class="km-close" onclick="document.getElementById('pipeline-modal').classList.remove('open')">&times;</button>
       <div id="pipeline-modal-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Procurement Modal -->
+<div class="modal-overlay" id="modal-procurement" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:520px;width:100%">
+    <h2 id="proc-modal-title">Add Invoice</h2>
+    <input type="hidden" id="proc-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Invoice #</label><input id="proc-invoice" class="modal-input" placeholder="INV-001" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Supplier</label><input id="proc-supplier" class="modal-input" placeholder="Supplier name" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">EUR Amount</label><input id="proc-eur" class="modal-input" type="number" placeholder="0.00" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Date</label><input id="proc-date" class="modal-input" type="date" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Wire Status</label>
+        <select id="proc-status" class="modal-input" style="width:100%">
+          <option value="pending_wire">⏳ Pending Wire</option>
+          <option value="wire_sent">📤 Wire Sent</option>
+          <option value="wire_cleared">✅ Wire Cleared</option>
+          <option value="supplier_paid">💰 Supplier Paid</option>
+          <option value="complete">✔️ Complete</option>
+        </select>
+      </div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Notes</label><input id="proc-notes" class="modal-input" placeholder="Optional notes" style="width:100%"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button onclick="document.getElementById('modal-procurement').classList.remove('open')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveProcurementEntry()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- Investment Modal -->
+<div class="modal-overlay" id="modal-investment" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:420px;width:100%">
+    <h2>Log Investment Interest</h2>
+    <div style="display:grid;gap:12px;margin-top:16px">
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Partner</label>
+        <select id="inv-partner" class="modal-input" style="width:100%">
+          <option value="Dwayne">Dwayne</option><option value="Darryl">Darryl</option><option value="Kyle">Kyle</option>
+        </select>
+      </div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Amount ($)</label><input id="inv-amount" class="modal-input" type="number" placeholder="0.00" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Date</label><input id="inv-date" class="modal-input" type="date" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Note</label><input id="inv-note" class="modal-input" placeholder="e.g. Q1 capital call" style="width:100%"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button onclick="document.getElementById('modal-investment').classList.remove('open')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveInvestment()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Distribution Modal -->
+<div class="modal-overlay" id="modal-distribution" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:420px;width:100%">
+    <h2>Log Distribution</h2>
+    <div style="display:grid;gap:12px;margin-top:16px">
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Partner</label>
+        <select id="dist-partner" class="modal-input" style="width:100%">
+          <option value="Dwayne">Dwayne</option><option value="Darryl">Darryl</option><option value="Kyle">Kyle</option><option value="All">All Partners</option>
+        </select>
+      </div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Amount ($)</label><input id="dist-amount" class="modal-input" type="number" placeholder="0.00" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Date</label><input id="dist-date" class="modal-input" type="date" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Note</label><input id="dist-note" class="modal-input" placeholder="e.g. Q1 profit distribution" style="width:100%"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button onclick="document.getElementById('modal-distribution').classList.remove('open')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveDistribution()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Legacy Sale Modal -->
+<div class="modal-overlay" id="modal-legacy" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-width:460px;width:100%">
+    <h2 id="legacy-modal-title">Log Legacy Sale</h2>
+    <input type="hidden" id="leg-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+      <div style="grid-column:1/-1"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Item / Wine</label><input id="leg-item" class="modal-input" placeholder="e.g. Château Margaux 2018 (6 bottles)" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Date</label><input id="leg-date" class="modal-input" type="date" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Sale Price ($)</label><input id="leg-sale-price" class="modal-input" type="number" placeholder="0.00" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Cost ($)</label><input id="leg-cost" class="modal-input" type="number" placeholder="0.00" style="width:100%"></div>
+      <div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Roberto Payout Status</label>
+        <select id="leg-status" class="modal-input" style="width:100%">
+          <option value="unpaid">⏳ Unpaid</option>
+          <option value="paid">✅ Paid</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+      <button onclick="document.getElementById('modal-legacy').classList.remove('open')" style="padding:10px 20px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveLegacySale()" style="padding:10px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Sale</button>
     </div>
   </div>
 </div>
@@ -2540,6 +2748,358 @@ updateExpMonthFilter();
 renderExpenses();
 }catch(e){console.error('Expenses error:',e)}
 
+})();
+
+// ============================================================
+// PROCUREMENT
+// ============================================================
+(function(){
+  let invoices = [];
+
+  function saveProcurement(){localStorage.setItem('7c-procurement',JSON.stringify(invoices));}
+
+  function loadProcurement(){
+    try{invoices=JSON.parse(localStorage.getItem('7c-procurement'));if(!Array.isArray(invoices))invoices=[];}catch(e){invoices=[];}
+  }
+
+  window.openProcurementModal = function(editId){
+    const inv = editId ? invoices.find(i=>i.id===editId) : null;
+    const modal = document.getElementById('modal-procurement');
+    document.getElementById('proc-modal-title').textContent = inv ? 'Edit Invoice' : 'Add Invoice';
+    document.getElementById('proc-id').value = inv ? inv.id : '';
+    document.getElementById('proc-invoice').value = inv ? inv.invoiceNum : '';
+    document.getElementById('proc-supplier').value = inv ? inv.supplier : '';
+    document.getElementById('proc-eur').value = inv ? inv.eurAmount : '';
+    document.getElementById('proc-date').value = inv ? inv.date : new Date().toISOString().slice(0,10);
+    document.getElementById('proc-status').value = inv ? inv.status : 'pending_wire';
+    document.getElementById('proc-notes').value = inv ? inv.notes : '';
+    modal.classList.add('open');
+  };
+
+  window.saveProcurementEntry = function(){
+    const id = document.getElementById('proc-id').value;
+    const eur = parseFloat(document.getElementById('proc-eur').value)||0;
+    const entry = {
+      id: id || Date.now().toString(),
+      invoiceNum: document.getElementById('proc-invoice').value.trim(),
+      supplier: document.getElementById('proc-supplier').value.trim(),
+      eurAmount: eur,
+      usdWire: +(eur * 1.05 * 1.11).toFixed(2), // ~1.11 EUR/USD + 5% buffer
+      date: document.getElementById('proc-date').value,
+      status: document.getElementById('proc-status').value,
+      notes: document.getElementById('proc-notes').value.trim()
+    };
+    if(id){const idx=invoices.findIndex(i=>i.id===id);if(idx>-1)invoices[idx]=entry;else invoices.push(entry);}
+    else invoices.push(entry);
+    saveProcurement();renderProcurement();
+    document.getElementById('modal-procurement').classList.remove('open');
+    toast('Invoice saved');
+  };
+
+  window.deleteProcurementEntry = function(id){
+    if(!confirm('Delete this invoice?'))return;
+    invoices=invoices.filter(i=>i.id!==id);
+    saveProcurement();renderProcurement();toast('Invoice deleted');
+  };
+
+  window.renderProcurement = function(){
+    try{
+      loadProcurement();
+      const filter = document.getElementById('proc-filter-status')?.value||'all';
+      const filtered = filter==='all' ? invoices : invoices.filter(i=>i.status===filter);
+
+      // Stats
+      const stats = document.getElementById('proc-stats');
+      if(stats){
+        const total = invoices.length;
+        const pending = invoices.filter(i=>i.status==='pending_wire'||i.status==='wire_sent').length;
+        const cleared = invoices.filter(i=>i.status==='wire_cleared').length;
+        const totalEur = invoices.reduce((s,i)=>s+i.eurAmount,0);
+        stats.innerHTML = `
+          <div class="stat-card"><div class="label">Total Invoices</div><div class="value blue">${total}</div></div>
+          <div class="stat-card"><div class="label">Awaiting Wire</div><div class="value yellow">${pending}</div></div>
+          <div class="stat-card"><div class="label">Wire Cleared</div><div class="value green">${cleared}</div></div>
+          <div class="stat-card"><div class="label">Total EUR</div><div class="value">€${totalEur.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>
+        `;
+      }
+
+      // Badge
+      const badge = document.getElementById('procurement-badge');
+      if(badge){
+        const urgent = invoices.filter(i=>i.status==='wire_cleared').length;
+        badge.textContent = urgent; badge.style.display = urgent>0?'':'none';
+        if(urgent>0){badge.style.background='var(--red)';badge.style.color='#fff';}
+      }
+
+      // Table
+      const tbody = document.getElementById('proc-tbody');
+      if(!tbody)return;
+      if(!filtered.length){tbody.innerHTML='<tr><td colspan="9" style="padding:40px;text-align:center;color:var(--text2)">No invoices yet</td></tr>';return;}
+
+      const statusLabel = {
+        pending_wire:'<span style="color:var(--yellow)">⏳ Pending Wire</span>',
+        wire_sent:'<span style="color:var(--blue)">📤 Wire Sent</span>',
+        wire_cleared:'<span style="color:var(--green)">✅ Wire Cleared</span>',
+        supplier_paid:'<span style="color:var(--green)">💰 Paid</span>',
+        complete:'<span style="color:var(--text2)">✔️ Complete</span>'
+      };
+      const payStatus = s => s==='wire_cleared'||s==='supplier_paid'||s==='complete'
+        ? '<span style="color:var(--green);font-weight:700">✅ OK TO PAY</span>'
+        : '<span style="color:var(--red);font-weight:700">⛔ DO NOT PAY</span>';
+
+      tbody.innerHTML = filtered.sort((a,b)=>b.date.localeCompare(a.date)).map(inv=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 12px;font-weight:600">${inv.invoiceNum||'—'}</td>
+          <td style="padding:10px 12px">${inv.supplier||'—'}</td>
+          <td style="padding:10px 12px">€${(inv.eurAmount||0).toLocaleString('en',{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 12px;color:var(--yellow)">$${(inv.usdWire||0).toLocaleString('en',{minimumFractionDigits:2})}</td>
+          <td style="padding:10px 12px">${statusLabel[inv.status]||inv.status}</td>
+          <td style="padding:10px 12px">${payStatus(inv.status)}</td>
+          <td style="padding:10px 12px;color:var(--text2)">${inv.date||'—'}</td>
+          <td style="padding:10px 12px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${inv.notes||''}</td>
+          <td style="padding:10px 12px;white-space:nowrap">
+            <button onclick="openProcurementModal('${inv.id}')" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;font-family:inherit">Edit</button>
+            <button onclick="deleteProcurementEntry('${inv.id}')" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;margin-left:4px">Del</button>
+          </td>
+        </tr>
+      `).join('');
+    }catch(e){console.error('Procurement error:',e);}
+  };
+
+  renderProcurement();
+})();
+
+// ============================================================
+// PARTNERS
+// ============================================================
+(function(){
+  let pdata = {equity:[],investments:[],distributions:[]};
+
+  function loadPartners(){
+    try{
+      const s = localStorage.getItem('7c-partners');
+      if(s) pdata = JSON.parse(s);
+      if(!pdata.equity||!pdata.equity.length) pdata.equity=[
+        {name:'Dwayne',pct:33.33,color:'#4080f0'},
+        {name:'Darryl',pct:33.33,color:'#40c080'},
+        {name:'Kyle',pct:33.34,color:'#f0c040'}
+      ];
+    }catch(e){pdata={equity:[{name:'Dwayne',pct:33.33,color:'#4080f0'},{name:'Darryl',pct:33.33,color:'#40c080'},{name:'Kyle',pct:33.34,color:'#f0c040'}],investments:[],distributions:[]};}
+  }
+  function savePartners(){localStorage.setItem('7c-partners',JSON.stringify(pdata));}
+
+  window.openInvestmentModal = function(){
+    document.getElementById('modal-investment').classList.add('open');
+  };
+  window.saveInvestment = function(){
+    const partner = document.getElementById('inv-partner').value;
+    const amount = parseFloat(document.getElementById('inv-amount').value)||0;
+    const date = document.getElementById('inv-date').value;
+    const note = document.getElementById('inv-note').value.trim();
+    if(!partner||!amount||!date){toast('Fill in all fields');return;}
+    loadPartners();
+    pdata.investments.push({id:Date.now().toString(),partner,amount,date,note});
+    savePartners();renderPartners();
+    document.getElementById('modal-investment').classList.remove('open');
+    toast('Investment logged');
+  };
+  window.openDistributionModal = function(){
+    document.getElementById('modal-distribution').classList.add('open');
+  };
+  window.saveDistribution = function(){
+    const partner = document.getElementById('dist-partner').value;
+    const amount = parseFloat(document.getElementById('dist-amount').value)||0;
+    const date = document.getElementById('dist-date').value;
+    const note = document.getElementById('dist-note').value.trim();
+    if(!partner||!amount||!date){toast('Fill in all fields');return;}
+    loadPartners();
+    pdata.distributions.push({id:Date.now().toString(),partner,amount,date,note});
+    savePartners();renderPartners();
+    document.getElementById('modal-distribution').classList.remove('open');
+    toast('Distribution logged');
+  };
+
+  window.renderPartners = function(){
+    try{
+      loadPartners();
+      // Equity
+      const eq = document.getElementById('partners-equity');
+      if(eq) eq.innerHTML = pdata.equity.map(p=>`
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:${p.color}22;border:2px solid ${p.color};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${p.color}">${p.name[0]}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${p.name}</div>
+            <div style="height:6px;background:var(--surface3);border-radius:3px;margin-top:6px;overflow:hidden">
+              <div style="height:100%;width:${p.pct}%;background:${p.color};border-radius:3px"></div>
+            </div>
+          </div>
+          <div style="font-size:20px;font-weight:700;color:${p.color}">${p.pct}%</div>
+        </div>
+      `).join('');
+
+      // Investment interest
+      const inv = document.getElementById('partners-investment');
+      if(inv){
+        if(!pdata.investments.length){inv.innerHTML='<div style="color:var(--text2);font-size:13px">No investment interest logged yet</div>';}
+        else{
+          const byPartner = {};
+          pdata.investments.forEach(i=>{byPartner[i.partner]=(byPartner[i.partner]||0)+i.amount;});
+          inv.innerHTML = Object.entries(byPartner).map(([p,a])=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+              <span>${p}</span><span style="font-weight:700;color:var(--green)">$${a.toLocaleString('en',{minimumFractionDigits:2})}</span>
+            </div>
+          `).join('')+`<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700"><span>Total</span><span style="color:var(--yellow)">$${pdata.investments.reduce((s,i)=>s+i.amount,0).toLocaleString('en',{minimumFractionDigits:2})}</span></div>`;
+        }
+      }
+
+      // Distributions
+      const dist = document.getElementById('partners-distributions');
+      if(dist){
+        if(!pdata.distributions.length){dist.innerHTML='<div style="color:var(--text2);font-size:13px">No distributions logged yet</div>';}
+        else{
+          dist.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="color:var(--text2);border-bottom:1px solid var(--border)">
+              <th style="padding:8px 0;text-align:left">Date</th>
+              <th style="padding:8px 0;text-align:left">Partner</th>
+              <th style="padding:8px 0;text-align:right">Amount</th>
+              <th style="padding:8px 0;text-align:left">Note</th>
+            </tr></thead>
+            <tbody>${pdata.distributions.sort((a,b)=>b.date.localeCompare(a.date)).map(d=>`
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:8px 0;color:var(--text2)">${d.date}</td>
+                <td style="padding:8px 0">${d.partner}</td>
+                <td style="padding:8px 0;text-align:right;color:var(--green);font-weight:600">$${d.amount.toLocaleString('en',{minimumFractionDigits:2})}</td>
+                <td style="padding:8px 0;color:var(--text2)">${d.note||''}</td>
+              </tr>
+            `).join('')}</tbody>
+          </table>`;
+        }
+      }
+
+      // Stats
+      const stats = document.getElementById('partners-stats');
+      if(stats){
+        const totalInv = pdata.investments.reduce((s,i)=>s+i.amount,0);
+        const totalDist = pdata.distributions.reduce((s,i)=>s+i.amount,0);
+        stats.innerHTML = `
+          <div class="stat-card"><div class="label">Partners</div><div class="value blue">3</div></div>
+          <div class="stat-card"><div class="label">Investment Interest</div><div class="value green">$${totalInv.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+          <div class="stat-card"><div class="label">Total Distributions</div><div class="value yellow">$${totalDist.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+        `;
+      }
+    }catch(e){console.error('Partners error:',e);}
+  };
+
+  renderPartners();
+})();
+
+// ============================================================
+// ROBERTO LEGACY
+// ============================================================
+(function(){
+  let sales = [];
+
+  function loadLegacy(){try{sales=JSON.parse(localStorage.getItem('7c-legacy'));if(!Array.isArray(sales))sales=[];}catch(e){sales=[];}}
+  function saveLegacy(){localStorage.setItem('7c-legacy',JSON.stringify(sales));}
+
+  window.openLegacySaleModal = function(editId){
+    const s = editId ? sales.find(x=>x.id===editId) : null;
+    document.getElementById('legacy-modal-title').textContent = s ? 'Edit Sale' : 'Log Legacy Sale';
+    document.getElementById('leg-id').value = s?s.id:'';
+    document.getElementById('leg-item').value = s?s.item:'';
+    document.getElementById('leg-date').value = s?s.date:new Date().toISOString().slice(0,10);
+    document.getElementById('leg-sale-price').value = s?s.salePrice:'';
+    document.getElementById('leg-cost').value = s?s.cost:'';
+    document.getElementById('leg-status').value = s?s.status:'unpaid';
+    document.getElementById('modal-legacy').classList.add('open');
+  };
+
+  window.saveLegacySale = function(){
+    const id = document.getElementById('leg-id').value;
+    const salePrice = parseFloat(document.getElementById('leg-sale-price').value)||0;
+    const cost = parseFloat(document.getElementById('leg-cost').value)||0;
+    const profit = salePrice - cost;
+    const robertoShare = profit > 0 ? profit * 0.5 : 0;
+    const entry = {
+      id: id||Date.now().toString(),
+      item: document.getElementById('leg-item').value.trim(),
+      date: document.getElementById('leg-date').value,
+      salePrice, cost, profit, robertoShare,
+      status: document.getElementById('leg-status').value
+    };
+    loadLegacy();
+    if(id){const idx=sales.findIndex(s=>s.id===id);if(idx>-1)sales[idx]=entry;else sales.push(entry);}
+    else sales.push(entry);
+    saveLegacy();renderRoberto();
+    document.getElementById('modal-legacy').classList.remove('open');
+    toast('Sale logged');
+  };
+
+  window.deleteLegacySale = function(id){
+    if(!confirm('Delete this sale?'))return;
+    loadLegacy();sales=sales.filter(s=>s.id!==id);saveLegacy();renderRoberto();toast('Sale deleted');
+  };
+
+  window.renderRoberto = function(){
+    try{
+      loadLegacy();
+      const totalSales = sales.reduce((s,x)=>s+x.salePrice,0);
+      const totalProfit = sales.reduce((s,x)=>s+x.profit,0);
+      const totalOwed = sales.filter(x=>x.status==='unpaid').reduce((s,x)=>s+x.robertoShare,0);
+      const totalPaid = sales.filter(x=>x.status==='paid').reduce((s,x)=>s+x.robertoShare,0);
+
+      const stats = document.getElementById('roberto-stats');
+      if(stats) stats.innerHTML=`
+        <div class="stat-card"><div class="label">Legacy Sales</div><div class="value blue">${sales.length}</div></div>
+        <div class="stat-card"><div class="label">Total Revenue</div><div class="value green">$${totalSales.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+        <div class="stat-card"><div class="label">Total Profit</div><div class="value blue">$${totalProfit.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+        <div class="stat-card"><div class="label">Owed to Roberto</div><div class="value yellow">$${totalOwed.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+        <div class="stat-card"><div class="label">Paid to Roberto</div><div class="value green">$${totalPaid.toLocaleString('en',{minimumFractionDigits:2})}</div></div>
+      `;
+
+      const owed = document.getElementById('legacy-total-owed');
+      if(owed) owed.textContent='$'+totalOwed.toLocaleString('en',{minimumFractionDigits:2});
+      const paidNote = document.getElementById('legacy-paid-note');
+      if(paidNote) paidNote.textContent=`$${totalPaid.toLocaleString('en',{minimumFractionDigits:2})} already paid`;
+
+      // Monthly summary
+      const monthly = {};
+      sales.forEach(s=>{const m=s.date.slice(0,7);if(!monthly[m])monthly[m]={sales:0,profit:0,roberto:0,paid:0};monthly[m].sales+=s.salePrice;monthly[m].profit+=s.profit;monthly[m].roberto+=s.robertoShare;if(s.status==='paid')monthly[m].paid+=s.robertoShare;});
+      const mon = document.getElementById('legacy-monthly');
+      if(mon){
+        const keys = Object.keys(monthly).sort().reverse();
+        if(!keys.length){mon.innerHTML='<div style="color:var(--text2);font-size:13px">No sales yet</div>';}
+        else mon.innerHTML=keys.map(m=>`
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600"><span>${m}</span><span style="color:var(--yellow)">$${monthly[m].roberto.toLocaleString('en',{minimumFractionDigits:2})}</span></div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">Revenue: $${monthly[m].sales.toLocaleString('en',{minimumFractionDigits:2})} · Paid: $${monthly[m].paid.toLocaleString('en',{minimumFractionDigits:2})}</div>
+          </div>
+        `).join('');
+      }
+
+      // Sales table
+      const tbody = document.getElementById('legacy-tbody');
+      if(!tbody)return;
+      if(!sales.length){tbody.innerHTML='<tr><td colspan="7" style="padding:40px;text-align:center;color:var(--text2)">No sales logged yet</td></tr>';return;}
+      tbody.innerHTML = sales.sort((a,b)=>b.date.localeCompare(a.date)).map(s=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px 10px;color:var(--text2)">${s.date}</td>
+          <td style="padding:8px 10px;font-weight:500">${s.item}</td>
+          <td style="padding:8px 10px">$${s.salePrice.toLocaleString('en',{minimumFractionDigits:2})}</td>
+          <td style="padding:8px 10px;color:var(--text2)">$${s.cost.toLocaleString('en',{minimumFractionDigits:2})}</td>
+          <td style="padding:8px 10px;color:var(--green)">$${s.profit.toLocaleString('en',{minimumFractionDigits:2})}</td>
+          <td style="padding:8px 10px;color:var(--yellow);font-weight:600">$${s.robertoShare.toLocaleString('en',{minimumFractionDigits:2})}</td>
+          <td style="padding:8px 10px">
+            <span style="padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600;background:${s.status==='paid'?'rgba(64,192,128,.15)':'rgba(240,192,64,.15)'};color:${s.status==='paid'?'var(--green)':'var(--yellow)'}">${s.status==='paid'?'✅ Paid':'⏳ Unpaid'}</span>
+            <button onclick="openLegacySaleModal('${s.id}')" style="margin-left:6px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;cursor:pointer;font-family:inherit">Edit</button>
+            <button onclick="deleteLegacySale('${s.id}')" style="padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--red);font-size:11px;cursor:pointer;font-family:inherit;margin-left:2px">Del</button>
+          </td>
+        </tr>
+      `).join('');
+    }catch(e){console.error('Legacy error:',e);}
+  };
+
+  renderRoberto();
 })();
 
 </script>
