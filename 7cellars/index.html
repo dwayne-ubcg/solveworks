@@ -1836,9 +1836,28 @@ function renderInventory(){
 
 /* ===== FINANCIALS ===== */
 let financialsData=null;
+function getBizExpByMonth(){
+  try{
+    const expenses=JSON.parse(localStorage.getItem('7c-bizexp'))||[];
+    const byMonth={};
+    expenses.forEach(e=>{
+      const m=e.date.slice(0,7);
+      byMonth[m]=(byMonth[m]||0)+e.amount;
+    });
+    return byMonth;
+  }catch(e){return{};}
+}
+
 function renderFinancials(){
   if(!financialsData)return;
-  const d=financialsData;
+  const d=JSON.parse(JSON.stringify(financialsData)); // clone to avoid mutating cached data
+  // Inject business expenses from localStorage into monthly data
+  const bizExpByMonth=getBizExpByMonth();
+  d.monthly.forEach(m=>{
+    m.expenses=(bizExpByMonth[m.month]||0);
+  });
+  // Recalculate summary operating expenses
+  d.summary.operatingExpenses=d.monthly.reduce((s,m)=>s+m.expenses,0);
   const s=d.summary;
   const hasData=s.revenue>0||s.cogs>0||d.monthly.length>0;
   if(!hasData){
@@ -1859,8 +1878,12 @@ function renderFinancials(){
   const trendIcon=trendPct>=0?'↑':'↓';
 
   // Summary cards — only show COGS/margin/profit when landed costs are entered
+  const totalBizExp=Object.values(getBizExpByMonth()).reduce((s,v)=>s+v,0);
   let cards=`<div class="stat-card"><div class="label">Revenue</div><div class="value green">$${s.revenue.toLocaleString()}</div>${s.revenuePrior?`<div class="trend ${trendDir}">${trendIcon} ${Math.abs(trendPct).toFixed(1)}% vs last month</div>`:''}</div>
-    <div class="stat-card"><div class="label">Orders</div><div class="value">${d.orderCount||0}</div></div>`;
+    <div class="stat-card"><div class="label">Orders</div><div class="value">${d.orderCount||0}</div></div>
+    ${totalBizExp>0?`<div class="stat-card"><div class="label">Operating Expenses</div><div class="value red">$${totalBizExp.toLocaleString('en',{minimumFractionDigits:2})}</div></div>`:''}
+    ${totalBizExp>0&&s.revenue>0?`<div class="stat-card"><div class="label">Revenue − Expenses</div><div class="value ${s.revenue-totalBizExp>=0?'green':'red'}">$${(s.revenue-totalBizExp).toLocaleString('en',{minimumFractionDigits:2})}</div></div>`:''}
+  `;
   if(hasCosts){
     cards+=`<div class="stat-card"><div class="label">Cost of Goods Sold</div><div class="value red">$${s.cogs.toLocaleString()}</div></div>
     <div class="stat-card"><div class="label">Gross Margin</div><div class="value blue">$${s.grossMargin.toLocaleString()}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.grossMarginPct}%</div></div>`;
@@ -1878,13 +1901,20 @@ function renderFinancials(){
     pnl+=`<tr class="pnl-indent"><td>Retail (Shopify)</td>${months.map(m=>`<td>$${m.retail.toLocaleString()}</td>`).join('')}</tr>`;
     pnl+=`<tr class="pnl-indent"><td>Wholesale (Cin7)</td>${months.map(m=>`<td>$${m.wholesale.toLocaleString()}</td>`).join('')}</tr>`;
     if(hasCosts){
-      const exp=d.expenseBreakdown||{};
       pnl+=`<tr><td>Less: Cost of Goods Sold</td>${months.map(m=>`<td style="color:var(--red)">($${m.cogs.toLocaleString()})</td>`).join('')}</tr>`;
       pnl+=`<tr class="pnl-subtotal"><td>= Gross Profit</td>${months.map(m=>`<td>$${(m.retail+m.wholesale-m.cogs).toLocaleString()}</td>`).join('')}</tr>`;
-      pnl+=`<tr><td><strong>Operating Expenses</strong></td>${months.map(m=>`<td style="color:var(--red)">($${m.expenses.toLocaleString()})</td>`).join('')}</tr>`;
-      pnl+=`<tr class="pnl-total"><td>= Net Profit</td>${months.map(m=>{const np=m.retail+m.wholesale-m.cogs-m.expenses;return`<td style="color:${np>=0?'var(--green)':'var(--red)'}">$${np.toLocaleString()}</td>`}).join('')}</tr>`;
     } else {
-      pnl+=`<tr><td colspan="${monthNames.length+1}" style="color:var(--text2);font-size:12px;padding-top:12px;font-style:italic">COGS, margins, and profit will appear once landed costs are entered in Cin7</td></tr>`;
+      pnl+=`<tr><td colspan="${monthNames.length+1}" style="color:var(--text2);font-size:12px;padding-top:8px;font-style:italic">COGS & gross margin will appear once landed costs are entered in Cin7</td></tr>`;
+    }
+    // Always show operating expenses and net profit if we have any expense data
+    const hasExpenses=months.some(m=>m.expenses>0);
+    if(hasExpenses||hasCosts){
+      pnl+=`<tr><td><strong>Operating Expenses</strong></td>${months.map(m=>`<td style="color:var(--red)">${m.expenses>0?`($${m.expenses.toLocaleString()})`:'—'}</td>`).join('')}</tr>`;
+      if(hasCosts){
+        pnl+=`<tr class="pnl-total"><td>= Net Profit</td>${months.map(m=>{const np=m.retail+m.wholesale-m.cogs-m.expenses;return`<td style="color:${np>=0?'var(--green)':'var(--red)'}">$${np.toLocaleString()}</td>`}).join('')}</tr>`;
+      } else {
+        pnl+=`<tr class="pnl-subtotal"><td>Revenue − Expenses</td>${months.map(m=>{const np=m.retail+m.wholesale-m.expenses;return`<td style="color:${np>=0?'var(--green)':'var(--red)'}">$${np.toLocaleString()}</td>`}).join('')}</tr>`;
+      }
     }
     pnl+=`</tbody></table></div>`;
     document.getElementById('fin-pnl').innerHTML=pnl;
