@@ -136,9 +136,23 @@ a{color:var(--blue);text-decoration:none}
 .kanban-toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;color:var(--text);z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
 .kanban-toast.show{transform:translateX(-50%) translateY(0)}
 
-/* Calendly */
-.calendly-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;height:700px}
-.calendly-wrap iframe{width:100%;height:100%;border:none;background:transparent}
+/* Calendly Events */
+.cal-events-list{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.cal-event-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;gap:16px;transition:all .2s cubic-bezier(.4,0,.2,1)}
+.cal-event-card:hover{border-color:#3a3a4a;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.cal-event-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4080f0,#6a5af9);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+.cal-event-info{flex:1;min-width:0}
+.cal-event-name{font-size:15px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-event-type{font-size:12px;color:var(--text2);margin-bottom:4px}
+.cal-event-time{font-size:13px;color:var(--accent);font-weight:600}
+.cal-event-duration{font-size:12px;color:var(--text2)}
+.cal-event-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:rgba(64,128,240,.15);color:#4080f0;border:1px solid rgba(64,128,240,.3);margin-left:8px}
+.cal-join-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#4080f0;color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;flex-shrink:0;transition:background .2s}
+.cal-join-btn:hover{background:#5590ff}
+.cal-empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.cal-empty-state .cal-empty-icon{font-size:48px;margin-bottom:12px}
+.cal-empty-state p{font-size:15px}
+.cal-sync-info{font-size:12px;color:var(--text3,#555);margin-top:16px;text-align:right}
 
 /* Documents */
 .docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
@@ -293,10 +307,13 @@ a{color:var(--blue);text-decoration:none}
 
   <!-- CALENDLY -->
   <div class="section" id="sec-calendly">
-    <h1 class="page-title">Calendly</h1>
+    <h1 class="page-title">Scheduled Calls</h1>
     <p class="page-sub">Upcoming bookings — <a href="https://calendly.com/brody1schofield" target="_blank">calendly.com/brody1schofield</a></p>
-    <div class="calendly-wrap">
-      <iframe src="https://calendly.com/brody1schofield?embed_type=Inline&background_color=0c1520&text_color=e4e4e8&primary_color=4080f0" allow="fullscreen" loading="lazy"></iframe>
+    <div id="cal-events-container">
+      <div class="cal-empty-state">
+        <div class="cal-empty-icon">📅</div>
+        <p>Loading upcoming bookings…</p>
+      </div>
     </div>
   </div>
 
@@ -646,6 +663,86 @@ async function renderHealth(){
   }
 }
 
+// ── Calendly Events ───────────────────────────────────────────────────────────
+async function renderCalendly(){
+  const container=document.getElementById('cal-events-container');
+  let data={events:[],updated:null};
+  try{
+    const r=await fetch('data/calendly.json?t='+Date.now());
+    if(!r.ok) throw new Error('not found');
+    data=await r.json();
+  } catch(e){
+    container.innerHTML='<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming bookings</p></div>';
+    return;
+  }
+
+  const events=data.events||[];
+  if(events.length===0){
+    container.innerHTML='<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming bookings</p></div>';
+    return;
+  }
+
+  // AST = UTC-4
+  const toAST=(iso)=>{
+    const d=new Date(iso);
+    return d.toLocaleString('en-US',{timeZone:'America/Halifax',month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit',hour12:true});
+  };
+  const durationMins=(s,e)=>{
+    const diff=(new Date(e)-new Date(s))/60000;
+    return diff>=60?`${diff/60}h`:`${diff}m`;
+  };
+  const initials=(name)=>name.split(' ').map(p=>p[0]||'').join('').slice(0,2).toUpperCase()||'?';
+
+  const now=new Date();
+  const upcoming=events.filter(ev=>new Date(ev.end_time)>now);
+  const past=events.filter(ev=>new Date(ev.end_time)<=now);
+
+  let html='<div class="cal-events-list">';
+
+  if(upcoming.length){
+    html+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Upcoming (${upcoming.length})</div>`;
+    upcoming.forEach(ev=>{
+      const dur=durationMins(ev.start_time,ev.end_time);
+      const joinBtn=ev.join_url?`<a class="cal-join-btn" href="${esc(ev.join_url)}" target="_blank">▶ Join</a>`:'';
+      html+=`
+        <div class="cal-event-card">
+          <div class="cal-event-avatar">${esc(initials(ev.invitee_name))}</div>
+          <div class="cal-event-info">
+            <div class="cal-event-name">${esc(ev.invitee_name)}<span class="cal-event-badge">${esc(ev.name)}</span></div>
+            ${ev.invitee_email?`<div class="cal-event-type">${esc(ev.invitee_email)}</div>`:''}
+            <div class="cal-event-time">${toAST(ev.start_time)} AST <span class="cal-event-duration">· ${dur}</span></div>
+          </div>
+          ${joinBtn}
+        </div>`;
+    });
+  }
+
+  if(past.length){
+    html+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 4px">Past (${past.length})</div>`;
+    past.forEach(ev=>{
+      const dur=durationMins(ev.start_time,ev.end_time);
+      html+=`
+        <div class="cal-event-card" style="opacity:.55">
+          <div class="cal-event-avatar" style="background:linear-gradient(135deg,#444,#333)">${esc(initials(ev.invitee_name))}</div>
+          <div class="cal-event-info">
+            <div class="cal-event-name">${esc(ev.invitee_name)}<span class="cal-event-badge" style="background:rgba(255,255,255,.06);color:var(--text2);border-color:rgba(255,255,255,.1)">${esc(ev.name)}</span></div>
+            ${ev.invitee_email?`<div class="cal-event-type">${esc(ev.invitee_email)}</div>`:''}
+            <div class="cal-event-time" style="color:var(--text2)">${toAST(ev.start_time)} AST <span class="cal-event-duration">· ${dur}</span></div>
+          </div>
+        </div>`;
+    });
+  }
+
+  html+='</div>';
+  if(data.updated){
+    html+=`<div class="cal-sync-info">Synced ${new Date(data.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
+  }
+  container.innerHTML=html;
+  // Update nav badge
+  const badge=document.querySelector('.nav-item[data-section="calendly"] .nav-badge');
+  if(badge) badge.textContent=upcoming.length;
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init(){
   loadLeads();
@@ -663,6 +760,7 @@ function init(){
   renderDocs();
   renderEmails();
   renderHealth();
+  renderCalendly();
 }
 
 if(localStorage.getItem('mc_auth_brody')==='1'){document.getElementById('login').classList.add('hidden');init()}

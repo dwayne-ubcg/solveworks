@@ -1,84 +1,107 @@
 #!/bin/bash
-# Mission Control data sync — Brody (Sunday)
-# Pulls data from brodyschofield@100.75.147.76 via SSH
+# Brody SolveWorks dashboard sync
+# Fetches Calendly events + invitees, updates data files, git pushes
+# Runs every 30 minutes via cron on Brody's Mac Mini
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DATA_DIR="$SCRIPT_DIR/data"
-REMOTE="brodyschofield@100.75.147.76"
-REMOTE_CLAWD="/Users/brodyschofield/clawd"
+ENV_FILE="$HOME/clawd/.env"
 
 mkdir -p "$DATA_DIR"
-echo "[$(date)] Starting Sunday sync..."
+echo "[$(date)] Starting Brody sync..."
 
-# 1. Memory recent (last 7 days) — pull files locally then build JSON
-TMPDIR_MEM=$(mktemp -d)
-ssh "$REMOTE" "find '$REMOTE_CLAWD/memory' -name '2*.md' -mtime -7 -type f 2>/dev/null | sort -r | head -14" | while read -r remotefile; do
-  fname=$(basename "$remotefile")
-  scp -q "$REMOTE:$remotefile" "$TMPDIR_MEM/$fname" 2>/dev/null
-done
-python3 -c "
-import os, json, glob
-tmpdir = '$TMPDIR_MEM'
-entries = []
-for f in sorted(glob.glob(os.path.join(tmpdir, '*.md')), reverse=True):
-    date_str = os.path.basename(f).replace('.md','')
-    with open(f) as fh:
-        entries.append({'date': date_str, 'content': fh.read()})
-print(json.dumps({'entries': entries}, indent=2))
-" > "$DATA_DIR/memory-recent.json"
-rm -rf "$TMPDIR_MEM"
+# Load env
+if [ -f "$ENV_FILE" ]; then
+  set -a; source "$ENV_FILE"; set +a
+fi
 
-# 2. Tasks from active-tasks.md
-ssh "$REMOTE" "cat '$REMOTE_CLAWD/memory/active-tasks.md' 2>/dev/null || echo ''" | python3 -c "
-import json, re, sys
-text = sys.stdin.read()
-tasks = []
-current_status = 'waiting'
-for line in text.split('\n'):
-    line = line.strip()
-    lower = line.lower()
-    if 'in progress' in lower or 'in-progress' in lower:
-        current_status = 'in-progress'
-    elif 'completed' in lower or 'done' in lower:
-        current_status = 'completed'
-    elif 'waiting' in lower or 'blocked' in lower or 'upcoming' in lower:
-        current_status = 'waiting'
-    elif line.startswith('- ') or line.startswith('* '):
-        name = re.sub(r'^[-*]\s*(\[.\]\s*)?', '', line).strip()
-        if name:
-            tasks.append({'name': name, 'status': current_status})
-print(json.dumps({'tasks': tasks}, indent=2))
-" > "$DATA_DIR/tasks.json"
+if [ -z "$CALENDLY_API_KEY" ]; then
+  echo "[$(date)] ERROR: CALENDLY_API_KEY not set"
+  exit 1
+fi
 
-# 3. Messages from Sunday (if dashboard/data/messages.json exists on remote)
-scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/messages.json" "$DATA_DIR/messages.json" 2>/dev/null || echo '{"messages":[]}' > "$DATA_DIR/messages.json"
+USER_URI="https://api.calendly.com/users/9f29f3f1-acbc-4080-ae34-fc31a37baddd"
 
-# 4. Dashboard metadata
-python3 -c "
-import json
-with open('$DATA_DIR/tasks.json') as f: tasks = json.load(f)
-t = tasks.get('tasks', [])
-stats = {
-    'inProgress': sum(1 for x in t if 'progress' in x.get('status','').lower()),
-    'completed': sum(1 for x in t if 'complet' in x.get('status','').lower()),
-    'waiting': sum(1 for x in t if x.get('status','').lower() in ('waiting','blocked')),
-    'agents': 1,
-    'lastSync': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
-    'timestamp': '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
+# 1. Fetch Calendly events + invitees → calendly.json
+python3 << PYEOF
+import json, subprocess, os
+from datetime import datetime, timezone
+
+API_KEY = os.environ['CALENDLY_API_KEY']
+USER_URI = "$USER_URI"
+DATA_DIR = "$DATA_DIR"
+
+def curl_get(url):
+    result = subprocess.run(
+        ["curl", "-s", "-H", f"Authorization: Bearer {API_KEY}", url],
+        capture_output=True, text=True
+    )
+    return json.loads(result.stdout)
+
+print(f"[{datetime.now()}] Fetching Calendly events...")
+resp = curl_get(f"https://api.calendly.com/scheduled_events?user={USER_URI}&status=active&sort=start_time:asc&count=20")
+events_raw = resp.get("collection", [])
+
+events = []
+for ev in events_raw:
+    uuid = ev["uri"].split("/")[-1]
+    try:
+        inv_resp = curl_get(f"https://api.calendly.com/scheduled_events/{uuid}/invitees")
+        invitees = inv_resp.get("collection", [])
+        invitee_name = invitees[0]["name"] if invitees else "Unknown"
+        invitee_email = invitees[0]["email"] if invitees else ""
+    except Exception as e:
+        print(f"  Warning: could not fetch invitees for {uuid}: {e}")
+        invitee_name = "Unknown"
+        invitee_email = ""
+
+    events.append({
+        "name": ev["name"],
+        "start_time": ev["start_time"],
+        "end_time": ev["end_time"],
+        "invitee_name": invitee_name,
+        "invitee_email": invitee_email,
+        "join_url": ev.get("location", {}).get("join_url", ""),
+        "uuid": uuid
+    })
+
+output = {
+    "events": events,
+    "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 }
-print(json.dumps(stats, indent=2))
-" > "$DATA_DIR/dashboard.json"
+with open(f"{DATA_DIR}/calendly.json", "w") as f:
+    json.dump(output, f, indent=2)
+print(f"[{datetime.now()}] Wrote {len(events)} events to calendly.json")
+PYEOF
 
-# 5. Git push
+# 2. Update client-health.json timestamps if it exists
+if [ -f "$DATA_DIR/client-health.json" ]; then
+  UPDATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  python3 -c "
+import json, sys
+with open('$DATA_DIR/client-health.json') as f:
+    data = json.load(f)
+data['updated'] = '$UPDATED'
+# Touch lastSeen for online clients
+for c in data.get('clients', []):
+    if c.get('status') == 'online':
+        c['lastSeen'] = '$UPDATED'
+with open('$DATA_DIR/client-health.json', 'w') as f:
+    json.dump(data, f, indent=2)
+print('Updated client-health.json timestamps')
+" 2>/dev/null || echo "[$(date)] Note: client-health.json update skipped"
+fi
+
+# 3. Git push
 cd "$SCRIPT_DIR/.."
 git add brody/
 if git diff --cached --quiet; then
   echo "[$(date)] No changes to push"
 else
-  git commit -m "Sync Sunday Mission Control data $(date +%Y-%m-%d_%H:%M)"
+  git commit -m "sync: brody data $(date +%Y-%m-%d_%H:%M)"
   git push
   echo "[$(date)] Pushed updates"
 fi
 
-echo "[$(date)] Sunday sync complete"
+echo "[$(date)] Brody sync complete"
