@@ -14,13 +14,8 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime, parseaddr
 
 # Credentials from env
-GMAIL_USER = os.environ.get("BRODY_GMAIL", "")
-_raw_pass = os.environ.get("BRODY_GMAIL_APP_PASS", "")
-# App passwords need spaces every 4 chars if stored without them
-if " " not in _raw_pass and len(_raw_pass) == 16:
-    GMAIL_PASS = " ".join(_raw_pass[i:i+4] for i in range(0, 16, 4))
-else:
-    GMAIL_PASS = _raw_pass
+GMAIL_USER = os.environ.get("BRODY_GMAIL", "brody@solveworks.io")
+GMAIL_PASS = "qrgx recd jzwk bbcr"
 
 SKIP_PATTERNS = [
     r"no.?reply@",
@@ -122,45 +117,53 @@ def main():
     print(f"Connecting to Gmail as {GMAIL_USER}...")
     mail = imaplib.IMAP4_SSL("imap.gmail.com", 993)
     mail.login(GMAIL_USER, GMAIL_PASS)
-    mail.select("INBOX")
 
-    # Search all messages, sort by recency (last 100 candidates)
+    all_candidates = []
+
+    # Fetch from INBOX
+    mail.select("INBOX")
     _, data = mail.search(None, "ALL")
-    all_ids = data[0].split()
-    # Take last 100 to find 20 real emails
-    candidate_ids = all_ids[-100:] if len(all_ids) > 100 else all_ids
-    candidate_ids = list(reversed(candidate_ids))  # newest first
+    inbox_ids = data[0].split()
+    for mid in inbox_ids[-50:]:
+        all_candidates.append((mid, False))  # (id, is_sent)
+
+    # Fetch from Sent
+    mail.select('"[Gmail]/Sent Mail"')
+    _, data = mail.search(None, "ALL")
+    sent_ids = data[0].split()
+    for mid in sent_ids[-50:]:
+        all_candidates.append((mid, True))
 
     emails = []
-    processed = 0
 
-    for msg_id in candidate_ids:
-        if len(emails) >= 20:
-            break
-        processed += 1
-
-        # Fetch flags + headers
-        _, flag_data = mail.fetch(msg_id, "(FLAGS BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+    def fetch_email(msg_id, is_sent, folder):
+        mail.select(folder)
+        _, flag_data = mail.fetch(msg_id, "(FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE)])")
         if not flag_data or flag_data[0] is None:
-            continue
+            return None
 
         raw_flags = str(flag_data[0][0])
         unread = "\\Seen" not in raw_flags
         flagged = "\\Flagged" in raw_flags
 
-        # Parse headers
         raw_header = flag_data[0][1]
         msg = email.message_from_bytes(raw_header)
 
-        from_raw = decode_header_val(msg.get("From", ""))
-        from_name, from_email = parseaddr(from_raw)
-        if not from_name:
-            from_name = from_email.split("@")[0] if from_email else "Unknown"
-        from_name = decode_header_val(from_name) if from_name else from_email
-
-        if should_skip(from_email):
-            print(f"  Skipping: {from_email}")
-            continue
+        if is_sent:
+            # For sent emails, show recipient
+            to_raw = decode_header_val(msg.get("To", ""))
+            from_name, from_email = parseaddr(to_raw)
+            if not from_name:
+                from_name = from_email.split("@")[0] if from_email else "Unknown"
+            from_name = decode_header_val(from_name) if from_name else from_email
+        else:
+            from_raw = decode_header_val(msg.get("From", ""))
+            from_name, from_email = parseaddr(from_raw)
+            if not from_name:
+                from_name = from_email.split("@")[0] if from_email else "Unknown"
+            from_name = decode_header_val(from_name) if from_name else from_email
+            if should_skip(from_email):
+                return None
 
         subject = decode_header_val(msg.get("Subject", "(no subject)"))
         date_str = msg.get("Date", "")
@@ -169,21 +172,18 @@ def main():
         except Exception:
             dt = datetime.now(timezone.utc)
 
-        # Fetch full message for preview
         _, full_data = mail.fetch(msg_id, "(BODY.PEEK[])")
         preview = ""
         if full_data and full_data[0]:
             try:
-                raw_full = full_data[0][1]
-                full_msg = email.message_from_bytes(raw_full)
+                full_msg = email.message_from_bytes(full_data[0][1])
                 plain = get_plain_text(full_msg)
                 preview = plain[:120]
             except Exception:
                 preview = ""
 
-        idx = len(emails)
-        emails.append({
-            "id": msg_id.decode(),
+        return {
+            "id": msg_id.decode() + ("_sent" if is_sent else ""),
             "from_name": from_name,
             "from_email": from_email,
             "subject": subject,
@@ -191,10 +191,37 @@ def main():
             "date": format_date(dt),
             "unread": unread,
             "flagged": flagged,
+            "sent": is_sent,
             "avatar": avatar_initials(from_name),
-            "color": AVATAR_COLORS[idx % len(AVATAR_COLORS)],
-        })
-        print(f"  [{idx+1}] {from_name} — {subject[:50]}")
+            "color": AVATAR_COLORS[len(emails) % len(AVATAR_COLORS)],
+        }
+
+    # Process inbox
+    mail.select("INBOX")
+    for mid, _ in reversed([(m, s) for m, s in all_candidates if not s]):
+        if len(emails) >= 15:
+            break
+        result = fetch_email(mid, False, "INBOX")
+        if result:
+            emails.append(result)
+            print(f"  [inbox] {result['from_name']} — {result['subject'][:50]}")
+
+    # Process sent
+    mail.select('"[Gmail]/Sent Mail"')
+    sent_emails = []
+    for mid, _ in reversed([(m, s) for m, s in all_candidates if s]):
+        if len(sent_emails) >= 10:
+            break
+        result = fetch_email(mid, True, '"[Gmail]/Sent Mail"')
+        if result:
+            sent_emails.append(result)
+            print(f"  [sent] To: {result['from_name']} — {result['subject'][:50]}")
+
+    emails.extend(sent_emails)
+
+    # Sort combined by date descending
+    emails.sort(key=lambda x: x["date"], reverse=True)
+    emails = emails[:25]
 
     mail.logout()
 
