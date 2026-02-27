@@ -169,15 +169,13 @@ def main():
         except Exception:
             dt = datetime.now(timezone.utc)
 
-        # Fetch body for preview
-        _, body_data = mail.fetch(msg_id, "(BODY.PEEK[TEXT])")
+        # Fetch full message for preview
+        _, full_data = mail.fetch(msg_id, "(BODY.PEEK[])")
         preview = ""
-        if body_data and body_data[0]:
+        if full_data and full_data[0]:
             try:
-                raw_body = body_data[0][1]
-                full_msg = email.message_from_bytes(
-                    raw_header + b"\r\n\r\n" + raw_body
-                )
+                raw_full = full_data[0][1]
+                full_msg = email.message_from_bytes(raw_full)
                 plain = get_plain_text(full_msg)
                 preview = plain[:120]
             except Exception:
