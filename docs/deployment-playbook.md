@@ -88,6 +88,29 @@ brew install --cask tailscale
 
 > **Why Dwayne's Tailnet?** All SolveWorks machines on one network = remote SSH access for management, monitoring, and emergency fixes. No client-side networking hassle.
 
+### ⚠️ MANDATORY: Tag the new device after approval
+
+All client machines MUST be tagged `tag:client` immediately after joining the tailnet. This prevents clients from seeing or removing each other's machines.
+
+```bash
+# Get the device ID from the machines list
+source ~/clawd/.env
+curl -s -H "Authorization: Bearer $TAILSCALE_API_KEY" \
+  "https://api.tailscale.com/api/v2/tailnet/urbanbutter.com/devices" | \
+  python3 -c "import sys,json; [print(d['id'], d['name'].split('.')[0]) for d in json.load(sys.stdin)['devices']]"
+
+# Tag the new client device (replace DEVICE_ID)
+curl -s -X POST \
+  -H "Authorization: Bearer $TAILSCALE_API_KEY" \
+  -H "Content-Type: application/json" \
+  "https://api.tailscale.com/api/v2/device/DEVICE_ID/tags" \
+  -d '{"tags": ["tag:client"]}' -w "HTTP: %{http_code}\n" -o /dev/null
+```
+
+**ACL rules (already configured):**
+- `tag:admin` machines (Dwayne's + Brody's): full access to everything
+- `tag:client` machines (all client installs): can only be reached by admin — cannot see or connect to other clients
+
 ---
 
 ## 4. SSH Key Exchange
