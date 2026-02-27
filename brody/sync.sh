@@ -75,7 +75,11 @@ with open(f"{DATA_DIR}/calendly.json", "w") as f:
 print(f"[{datetime.now()}] Wrote {len(events)} events to calendly.json")
 PYEOF
 
-# 2. Update client-health.json timestamps if it exists
+# 2. Fetch Gmail inbox → emails.json
+echo "[$(date)] Fetching Gmail inbox..."
+python3 "$SCRIPT_DIR/fetch_emails.py" && echo "[$(date)] emails.json updated" || echo "[$(date)] WARNING: Gmail fetch failed"
+
+# 3. Update client-health.json timestamps if it exists
 if [ -f "$DATA_DIR/client-health.json" ]; then
   UPDATED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   python3 -c "
@@ -93,7 +97,7 @@ print('Updated client-health.json timestamps')
 " 2>/dev/null || echo "[$(date)] Note: client-health.json update skipped"
 fi
 
-# 3. Git push
+# 4. Git push
 cd "$SCRIPT_DIR/.."
 git add brody/
 if git diff --cached --quiet; then

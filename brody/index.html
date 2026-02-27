@@ -328,17 +328,12 @@ a{color:var(--blue);text-decoration:none}
   <div class="section" id="sec-email">
     <h1 class="page-title">Email Triage</h1>
     <p class="page-sub">brody@solveworks.io</p>
-    <div class="email-connect-banner">
-      <div>
-        <strong>Connect Gmail to load live email</strong>
-        <p>Currently showing sample emails. OAuth integration required for live inbox.</p>
-      </div>
-      <button class="btn-connect" onclick="showToast('Gmail OAuth — coming soon!')">Connect Gmail</button>
-    </div>
     <div class="email-toolbar">
       <div class="email-filter-chip active" onclick="filterEmail('all',this)">All</div>
       <div class="email-filter-chip" onclick="filterEmail('unread',this)">Unread</div>
       <div class="email-filter-chip" onclick="filterEmail('flagged',this)">Flagged</div>
+      <span style="flex:1"></span>
+      <span id="email-updated" style="font-size:11px;color:var(--text2)"></span>
     </div>
     <div id="email-list"></div>
   </div>
@@ -586,14 +581,29 @@ function renderDocs(){
 }
 
 // ── Email ─────────────────────────────────────────────────────────────────────
-const EMAILS=[
-  {id:1,from:'Dwayne Schofield',email:'dwayne@solveworks.io',subject:'New client ready for install — Coastal Realty',preview:'Hey Brody, got a warm intro from...',time:'9:41 AM',unread:true,flagged:false,avatar:'DS',color:'#1a3050'},
-  {id:2,from:'Marcus Webb',email:'marcus@coastalrealty.ca',subject:'Re: SolveWorks Demo — follow up questions',preview:'Thanks for the call yesterday. A few questions...',time:'8:22 AM',unread:true,flagged:false,avatar:'MW',color:'#0a2a1a'},
-  {id:3,from:'Calendly',email:'notifications@calendly.com',subject:'New booking: Discovery Call with Sarah Chen',preview:'Sarah Chen has booked a 30-minute discovery...',time:'Yesterday',unread:false,flagged:true,avatar:'C',color:'#1a1a3a'},
-  {id:4,from:'Darryl Hamilton',email:'darryl@revaly.com',subject:'Brit is down — urgent',preview:'Hey can you check on Brit? She stopped responding...',time:'Yesterday',unread:false,flagged:true,avatar:'DH',color:'#2a0a0a'},
-  {id:5,from:'Drew Schofield',email:'drew@solveworks.io',subject:'Freedom weekly check-in',preview:'Everything looks good on my end. Freedom ran the...',time:'Mon',unread:false,flagged:false,avatar:'DS',color:'#2a1a0a'},
-];
+const AVATAR_COLORS=['#1a3050','#0a2a1a','#1a1a3a','#2a0a0a','#2a1a0a','#0a1a2a','#1a2a0a','#2a0a2a','#0a2a2a','#1a1a1a'];
+let EMAILS=[];
 let emailFilter='all';
+
+function emailInitials(name){
+  const p=name.trim().split(/\s+/);
+  return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():name.slice(0,2).toUpperCase();
+}
+function emailTimeLabel(dateStr){
+  const d=new Date(dateStr);
+  const now=new Date();
+  const diffMs=now-d;
+  const diffDays=Math.floor(diffMs/86400000);
+  if(diffDays===0){
+    return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  } else if(diffDays===1){
+    return 'Yesterday';
+  } else if(diffDays<7){
+    return d.toLocaleDateString([],{weekday:'short'});
+  } else {
+    return d.toLocaleDateString([],{month:'short',day:'numeric'});
+  }
+}
 function filterEmail(f,el){
   emailFilter=f;
   document.querySelectorAll('.email-filter-chip').forEach(c=>c.classList.remove('active'));
@@ -601,28 +611,45 @@ function filterEmail(f,el){
   renderEmails();
 }
 function renderEmails(){
+  const list=document.getElementById('email-list');
   let filtered=EMAILS;
   if(emailFilter==='unread')filtered=EMAILS.filter(e=>e.unread);
   if(emailFilter==='flagged')filtered=EMAILS.filter(e=>e.flagged);
-  document.getElementById('email-list').innerHTML=filtered.map((e,i)=>`
+  if(!filtered.length){
+    list.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text2);font-size:14px;">No emails${emailFilter!=='all'?' in this filter':''}</div>`;
+    return;
+  }
+  list.innerHTML=filtered.map((e,i)=>`
     <div class="email-item${e.unread?' unread':''}" style="animation-delay:${i*0.05}s">
-      <div class="email-avatar" style="background:${e.color}">${e.avatar}</div>
+      <div class="email-avatar" style="background:${e.color||AVATAR_COLORS[i%AVATAR_COLORS.length]}">${esc(e.avatar||emailInitials(e.from_name||'?'))}</div>
       <div class="email-body">
-        <div class="email-from">${esc(e.from)}</div>
-        <div class="email-subject">${esc(e.subject)}</div>
-        <div class="email-preview">${esc(e.preview)}</div>
+        <div class="email-from">${esc(e.from_name||e.from_email||'Unknown')}</div>
+        <div class="email-subject">${esc(e.subject||'(no subject)')}${e.flagged?' <span style="color:var(--yellow);font-size:11px">🚩</span>':''}</div>
+        <div class="email-preview">${esc(e.preview||'')}</div>
       </div>
       <div class="email-actions">
-        <span class="email-time">${e.time}</span>
-        <div class="email-btns">
-          <button class="email-btn reply" onclick="showToast('Reply — connect Gmail to enable')">Reply</button>
-          <button class="email-btn" onclick="showToast('Archived')">Archive</button>
-          <button class="email-btn flag" onclick="showToast('Flagged')">Flag</button>
-        </div>
+        <span class="email-time">${emailTimeLabel(e.date)}</span>
+        ${e.unread?'<span class="email-unread-dot"></span>':''}
       </div>
     </div>
   `).join('');
-  document.getElementById('email-badge').textContent=EMAILS.filter(e=>e.unread).length;
+  document.getElementById('email-badge').textContent=EMAILS.filter(e=>e.unread).length||'';
+}
+async function loadEmails(){
+  try{
+    const r=await fetch('data/emails.json?t='+Date.now());
+    const data=await r.json();
+    EMAILS=data.emails||[];
+    const upd=document.getElementById('email-updated');
+    if(upd&&data.updated){
+      const d=new Date(data.updated);
+      upd.textContent='Updated '+d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    }
+  } catch(e){
+    console.warn('emails.json not loaded',e);
+    EMAILS=[];
+  }
+  renderEmails();
 }
 
 // ── Client Health ─────────────────────────────────────────────────────────────
@@ -756,7 +783,7 @@ function init(){
   }
   renderKanban();
   renderDocs();
-  renderEmails();
+  loadEmails();
   renderHealth();
   renderCalendly();
 }
