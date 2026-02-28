@@ -51,31 +51,8 @@ for line in text.split('\n'):
 print(json.dumps({'tasks': tasks}, indent=2))
 " > "$DATA_DIR/tasks.json"
 
-# 3. Documents listing (clawd/ directory, skip node_modules, .git)
-ssh "$REMOTE" "
-  cd '$REMOTE_CLAWD'
-  python3 -c \"
-import json, os
-skip = {'.git', 'node_modules', '__pycache__', '.venv', 'venv'}
-folders = []
-for entry in sorted(os.listdir('.')):
-    if entry in skip or entry.startswith('.'):
-        continue
-    full = entry
-    if os.path.isdir(full):
-        files = []
-        for f in sorted(os.listdir(full)):
-            if not f.startswith('.') and os.path.isfile(os.path.join(full, f)):
-                files.append(f)
-        if files:
-            folders.append({'name': entry, 'files': files[:50]})
-    elif entry.endswith(('.md','.csv','.json','.txt','.pdf','.sh','.py')):
-        if not any(f['name']=='root' for f in folders):
-            folders.insert(0, {'name': 'root', 'files': []})
-        next(f for f in folders if f['name']=='root')['files'].append(entry)
-print(json.dumps({'folders': folders}, indent=2))
-\"
-" > "$DATA_DIR/documents.json" 2>/dev/null || echo '{"folders":[]}' > "$DATA_DIR/documents.json"
+# 3. Documents with content (clawd/ directory)
+scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/documents.json" "$DATA_DIR/documents.json" 2>/dev/null || echo '{"folders":[]}' > "$DATA_DIR/documents.json"
 
 # 4. Agents (just Freedom)
 ssh "$REMOTE" "cat '$REMOTE_CLAWD/SOUL.md' 2>/dev/null || echo ''" | python3 -c "
