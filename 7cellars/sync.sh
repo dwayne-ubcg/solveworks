@@ -247,7 +247,19 @@ while True:
 
 print(f"  {len(all_sales)} sales found, fetching details...")
 
-# Fetch each sale detail (with rate limiting)
+# Fetch ALL sale details once and cache them
+sale_details = {}
+for i, sale in enumerate(all_sales):
+    sid = sale['SaleID']
+    try:
+        sale_details[sid] = cin7_get(f'Sale?ID={sid}')
+    except Exception as e:
+        print(f"  ⚠️  Failed to fetch {sale['OrderNumber']}: {e}")
+    time.sleep(0.5)  # rate limit — Cin7 API throttles aggressively
+
+print(f"  Fetched {len(sale_details)}/{len(all_sales)} sale details")
+
+# Process financials from cached details
 monthly = defaultdict(lambda: {'retail': 0, 'wholesale': 0, 'cogs': 0, 'revenue': 0})
 cat_data = defaultdict(lambda: {'revenue': 0, 'cogs': 0})
 legacy = {'unitsSold': 0, 'revenue': 0, 'cogs': 0}
@@ -257,14 +269,9 @@ total_cogs = 0
 
 for i, sale in enumerate(all_sales):
     sid = sale['SaleID']
-    try:
-        detail = cin7_get(f'Sale?ID={sid}')
-    except Exception as e:
-        print(f"  ⚠️  Failed to fetch {sale['OrderNumber']}: {e}")
+    detail = sale_details.get(sid)
+    if not detail:
         continue
-
-    if i > 0 and i % 10 == 0:
-        time.sleep(1)  # rate limit
 
     order_date = sale.get('OrderDate', '')[:10]
     month_key = order_date[:7] if order_date else 'unknown'
@@ -399,12 +406,12 @@ with open('data/financials.json', 'w') as f:
 
 print(f"  ✅ financials.json: ${total_revenue:,.2f} revenue across {len(all_sales)} orders")
 
-# Enrich cin7-orders.json with totals and line items from detail calls
+# Enrich cin7-orders.json from cached sale details (no extra API calls)
 enriched = {'Total': len(all_sales), 'Page': 1, 'SaleList': []}
 for sale in all_sales:
     sid = sale['SaleID']
-    try:
-        detail = cin7_get(f'Sale?ID={sid}')
+    detail = sale_details.get(sid)
+    if detail:
         order = detail.get('Order', {})
         if not order.get('Lines'):
             order = detail.get('Quote', {})
@@ -420,12 +427,18 @@ for sale in all_sales:
             'Total': sale_total,
             'Lines': [{'Name': l.get('Name',''), 'Quantity': l.get('Quantity',0), 'Price': l.get('Price',0), 'Total': l.get('Total',0)} for l in lines]
         })
-    except:
+    else:
         enriched['SaleList'].append(sale)
 
 with open('data/cin7-orders.json', 'w') as f:
     json.dump(enriched, f, indent=2)
 print(f"  ✅ cin7-orders.json enriched with totals")
+
+# Cache sale details for customers step (avoids re-fetching)
+import json as _json
+with open('/tmp/7cellars-sale-details.json', 'w') as _f:
+    _json.dump({'all_sales': all_sales, 'sale_details': sale_details}, _f)
+print(f"  ✅ Cached {len(sale_details)} sale details for CRM step")
 FINEOF
 else
   echo "  ⚠️  No CIN7 credentials, skipping financials"
@@ -435,30 +448,17 @@ fi
 echo "👥 Building customers CRM data..."
 if [ -n "$CIN7_ACCOUNT_ID" ] && [ -n "$CIN7_API_KEY" ]; then
 python3 << 'CUSTEOF'
-import json, os, urllib.request, time
+import json, os, time
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-acct = os.environ['CIN7_ACCOUNT_ID']
-key = os.environ['CIN7_API_KEY']
-headers = {'api-auth-accountid': acct, 'api-auth-applicationkey': key}
+# Load cached sale details from financials step (saved to temp file)
+with open('/tmp/7cellars-sale-details.json', 'r') as f:
+    cache = json.load(f)
+all_sales = cache['all_sales']
+sale_details = cache['sale_details']
 
-def cin7_get(path):
-    req = urllib.request.Request(f'https://inventory.dearsystems.com/ExternalApi/v2/{path}', headers=headers)
-    with urllib.request.urlopen(req) as r:
-        return json.loads(r.read())
-
-# Fetch all sales (paginated)
-all_sales = []
-page = 1
-while True:
-    sl = cin7_get(f'SaleList?limit=50&page={page}')
-    all_sales.extend(sl.get('SaleList', []))
-    if len(all_sales) >= sl.get('Total', 0):
-        break
-    page += 1
-
-print(f"  {len(all_sales)} sales found, fetching details for CRM...")
+print(f"  {len(all_sales)} sales loaded from cache, building CRM...")
 
 # Group by customer
 customers = defaultdict(lambda: {
@@ -471,7 +471,6 @@ for i, sale in enumerate(all_sales):
     cid = sale.get('CustomerID', '')
     order_date = sale.get('OrderDate', '')[:10]
     order_num = sale.get('OrderNumber', '')
-    invoice_amt = float(sale.get('InvoiceAmount', 0) or sale.get('SaleInvoicesTotalAmount', 0) or 0)
 
     c = customers[cid]
     c['name'] = cname
@@ -480,17 +479,15 @@ for i, sale in enumerate(all_sales):
     if order_date > c['lastOrderDate']:
         c['lastOrderDate'] = order_date
 
-    # Fetch sale detail for line items — use Quote if Order has no lines (ESTIMATED sales)
-    try:
-        detail = cin7_get(f'Sale?ID={sale["SaleID"]}')
+    detail = sale_details.get(sale['SaleID'])
+    if detail:
         order = detail.get('Order', {})
         if not order.get('Lines'):
             order = detail.get('Quote', {})
         lines = order.get('Lines', [])
         items = [{'name': l.get('Name', ''), 'qty': int(l.get('Quantity', 0)), 'price': round(float(l.get('Price', 0)), 2), 'total': round(float(l.get('Total', 0)), 2)} for l in lines]
         order_total = float(order.get('Total', 0) or 0)
-    except Exception as e:
-        print(f"  ⚠️  Failed detail for {order_num}: {e}")
+    else:
         items = []
         order_total = 0
 
@@ -501,9 +498,6 @@ for i, sale in enumerate(all_sales):
         'total': round(order_total, 2),
         'items': items
     })
-
-    if i > 0 and i % 10 == 0:
-        time.sleep(1)
 
 # Calculate status and avg order value
 now = datetime.now()
