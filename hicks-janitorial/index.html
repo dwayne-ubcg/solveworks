@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Hicks Janitorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
+--border:#2a2a3a;--text:#e4e4e8;--text2:#9898b0;
+--yellow:#f0c040;--green:#40c080;--blue:#4080f0;--red:#f04060;--purple:#a060f0;
+--accent-light:#1a3050;--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;position:relative}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+a{color:var(--blue);text-decoration:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border)}
+
+/* Login */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:linear-gradient(-45deg,#0a0a0f,#0d1520,#0a1228,#0f0a1a);background-size:400% 400%;animation:loginGradient 15s ease infinite}
+#login.hidden{display:none}
+@keyframes loginGradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.login-box{background:rgba(18,18,26,.7);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(42,42,58,.6);border-radius:16px;padding:48px;width:360px;text-align:center;animation:loginBoxIn .6s cubic-bezier(.4,0,.2,1)}
+@keyframes loginBoxIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.login-box h1{font-size:20px;margin-bottom:8px;font-weight:700}
+.login-box p{color:var(--text2);font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .3s}
+.login-box input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(64,128,240,.15)}
+.login-box button{width:100%;padding:12px;margin-top:12px;background:var(--accent-light);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.login-box button:hover{background:#224070}
+.login-box button:active{transform:scale(.97)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* Sidebar */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;z-index:2;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-logo{padding:20px;font-size:15px;font-weight:700;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border)}
+.sidebar-logo span{color:var(--text)}
+.sidebar-logo .sub{display:block;font-size:10px;font-weight:500;letter-spacing:2px;color:var(--text2);margin-top:4px;text-transform:uppercase}
+.nav{flex:1;padding:12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .2s cubic-bezier(.4,0,.2,1);position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--blue);border-radius:0 3px 3px 0}
+.nav-item svg{width:18px;height:18px;opacity:.6;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.nav-badge{position:absolute;right:10px;font-size:11px;font-weight:700;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px;min-width:24px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.15);color:#fff}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.btn-logout{width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-logout:hover{background:var(--surface3);color:var(--text)}
+
+/* Main */
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:32px 40px;position:relative;z-index:1;min-height:0}
+.section{display:none}
+.section.active{display:block;animation:fadeInSection .4s cubic-bezier(.4,0,.2,1)}
+@keyframes fadeInSection{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.page-title{font-size:24px;font-weight:700;margin-bottom:4px;letter-spacing:-.02em}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .25s cubic-bezier(.4,0,.2,1);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
+.stat-card:nth-child(1){animation-delay:.05s}
+.stat-card:nth-child(2){animation-delay:.1s}
+.stat-card:nth-child(3){animation-delay:.15s}
+.stat-card:nth-child(4){animation-delay:.2s}
+.stat-card:hover{border-color:#3a3a4a;box-shadow:inset 0 0 30px rgba(255,255,255,.02)}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.stat-card:nth-child(1)::before{background:linear-gradient(180deg,var(--blue),rgba(64,128,240,.3))}
+.stat-card:nth-child(2)::before{background:linear-gradient(180deg,var(--green),rgba(64,192,128,.3))}
+.stat-card:nth-child(3)::before{background:linear-gradient(180deg,var(--yellow),rgba(240,192,64,.3))}
+.stat-card:nth-child(4)::before{background:linear-gradient(180deg,var(--purple),rgba(160,96,240,.3))}
+.stat-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}
+.stat-card .value{font-size:28px;font-weight:700}
+.stat-card .value.blue{color:var(--blue)}
+.stat-card .value.green{color:var(--green)}
+.stat-card .value.yellow{color:var(--yellow)}
+.stat-card .value.purple{color:var(--purple)}
+
+/* Kanban */
+.kanban-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.kanban-header h2{font-size:18px;font-weight:700}
+.btn-add{padding:9px 18px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn-add:hover{background:#5090ff}
+.btn-add:active{transform:scale(.96)}
+.kanban-columns{display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;min-height:400px}
+.kanban-col{min-width:220px;width:220px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:72vh}
+.kanban-col-header{padding:14px 14px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.kanban-col-header .kc-count{font-size:11px;font-weight:600;background:var(--surface2);padding:2px 8px;border-radius:10px;color:var(--text2)}
+.kanban-col-body{flex:1;overflow-y:auto;padding:10px;min-height:60px;transition:background .2s}
+.kanban-col-body.drag-over{background:rgba(64,128,240,.08);border-radius:0 0 var(--radius) var(--radius)}
+.kanban-card{background:rgba(20,30,46,.8);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:grab;transition:all .2s;user-select:none}
+.kanban-card:active{cursor:grabbing}
+.kanban-card:hover{border-color:#3a3a4a;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.kanban-card.dragging{opacity:.4;transform:scale(.96)}
+.kanban-card .kc-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.kanban-card .kc-contact{font-size:12px;color:var(--text2);margin-bottom:4px}
+.kanban-card .kc-notes{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kanban-card .kc-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* Frequency/Status Badges */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.badge-blue{background:rgba(64,128,240,.15);color:var(--blue);border:1px solid rgba(64,128,240,.3)}
+.badge-green{background:rgba(64,192,128,.15);color:var(--green);border:1px solid rgba(64,192,128,.3)}
+.badge-yellow{background:rgba(240,192,64,.15);color:var(--yellow);border:1px solid rgba(240,192,64,.3)}
+.badge-red{background:rgba(240,64,96,.15);color:var(--red);border:1px solid rgba(240,64,96,.3)}
+.badge-purple{background:rgba(160,96,240,.15);color:var(--purple);border:1px solid rgba(160,96,240,.3)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:150;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;animation:cardIn .3s ease;position:relative}
+.modal-content h2{font-size:18px;font-weight:700;margin-bottom:16px}
+.m-close{position:absolute;top:16px;right:20px;font-size:22px;color:var(--text2);cursor:pointer;background:none;border:none;line-height:1}
+.m-close:hover{color:var(--text)}
+.m-field{margin-bottom:14px}
+.m-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px}
+.m-field input,.m-field textarea,.m-field select{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.m-field input:focus,.m-field textarea:focus,.m-field select:focus{border-color:var(--blue)}
+.m-field textarea{resize:vertical;min-height:80px}
+.m-field select option{background:var(--surface2);color:var(--text)}
+.m-actions{display:flex;gap:10px;margin-top:4px}
+.m-save{flex:1;padding:10px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.m-save:hover{background:#5090ff}
+.m-delete{padding:10px 18px;background:transparent;border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.m-delete:hover{background:rgba(240,64,96,.15)}
+.m-stage-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.m-stage-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.m-stage-btn:hover{background:var(--surface2);color:var(--text)}
+.m-stage-btn.active{color:#fff}
+
+/* Schedule */
+.schedule-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px}
+.schedule-day{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);min-height:200px;display:flex;flex-direction:column}
+.schedule-day-header{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border);text-align:center}
+.schedule-day-body{padding:8px;flex:1;display:flex;flex-direction:column;gap:6px}
+.schedule-item{padding:8px 10px;border-radius:6px;font-size:12px;font-weight:600;border-left:3px solid;cursor:default}
+.schedule-item .si-building{margin-bottom:2px}
+.schedule-item .si-crew{font-size:10px;font-weight:500;opacity:.8}
+.crew-a{background:rgba(64,128,240,.1);border-left-color:var(--blue);color:var(--blue)}
+.crew-b{background:rgba(64,192,128,.1);border-left-color:var(--green);color:var(--green)}
+.crew-c{background:rgba(160,96,240,.1);border-left-color:var(--purple);color:var(--purple)}
+.crew-d{background:rgba(240,192,64,.1);border-left-color:var(--yellow);color:var(--yellow)}
+.schedule-add-btn{padding:6px;border:1px dashed var(--border);border-radius:6px;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit;text-align:center;margin-top:auto}
+.schedule-add-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--text2)}
+
+/* Invoices */
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.filter-chip{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.filter-chip.active{background:var(--accent-light);color:#fff;border-color:var(--accent-light)}
+.invoice-table{width:100%;border-collapse:separate;border-spacing:0}
+.invoice-table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);padding:12px 16px;border-bottom:1px solid var(--border)}
+.invoice-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.invoice-table tr{transition:background .15s}
+.invoice-table tbody tr:hover{background:var(--surface2)}
+.invoice-table .inv-client{font-weight:600}
+.inv-status{display:inline-block;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.inv-paid{background:rgba(64,192,128,.15);color:var(--green)}
+.inv-pending{background:rgba(240,192,64,.15);color:var(--yellow)}
+.inv-overdue{background:rgba(240,64,96,.15);color:var(--red)}
+.inv-actions{display:flex;gap:4px}
+.inv-btn{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.inv-btn:hover{background:var(--surface3);color:var(--text)}
+
+/* Staff */
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.staff-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all .25s cubic-bezier(.4,0,.2,1);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards;cursor:pointer}
+.staff-card:nth-child(1){animation-delay:.05s}
+.staff-card:nth-child(2){animation-delay:.1s}
+.staff-card:nth-child(3){animation-delay:.15s}
+.staff-card:nth-child(4){animation-delay:.2s}
+.staff-card:nth-child(5){animation-delay:.25s}
+.staff-card:hover{border-color:#3a3a4a;transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.staff-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.staff-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.staff-name{font-size:15px;font-weight:700}
+.staff-role{font-size:12px;color:var(--text2);margin-top:2px}
+.staff-details{font-size:12px;color:var(--text2);line-height:1.8}
+.staff-details a{color:var(--blue)}
+.staff-cert{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;margin-top:8px}
+.cert-verified{background:rgba(64,192,128,.15);color:var(--green);border:1px solid rgba(64,192,128,.3)}
+.cert-pending{background:rgba(240,192,64,.15);color:var(--yellow);border:1px solid rgba(240,192,64,.3)}
+.cert-expired{background:rgba(240,64,96,.15);color:var(--red);border:1px solid rgba(240,64,96,.3)}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;color:var(--text);z-index:200;transition:transform .3s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Mobile */
+.menu-toggle{display:none;position:fixed;top:16px;left:16px;z-index:10;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:16px}
+@media(max-width:768px){
+  body{flex-direction:column}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:50}
+  .sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.5)}
+  .main{padding:60px 20px 20px}
+  .menu-toggle{display:block}
+  .kanban-columns{flex-direction:column}
+  .kanban-col{min-width:100%;width:100%;max-height:none}
+  .schedule-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .invoice-table{font-size:12px}
+  .invoice-table th,.invoice-table td{padding:10px 8px}
+}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="login-box">
+    <h1>Mission Control</h1>
+    <p>Hicks Janitorial Services</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span>HICKS JANITORIAL</span>
+    <span class="sub">Mission Control</span>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" data-section="clients" onclick="showSection('clients')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>
+      Clients <span class="nav-badge" id="clients-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="schedule" onclick="showSection('schedule')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Schedule
+    </div>
+    <div class="nav-item" data-section="invoices" onclick="showSection('invoices')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Invoices <span class="nav-badge" id="invoices-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="staff" onclick="showSection('staff')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Staff <span class="nav-badge" id="staff-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="quotes" onclick="showSection('quotes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="12" height="4" rx="1"/><rect x="3" y="17" width="8" height="4" rx="1"/></svg>
+      Quotes <span class="nav-badge" id="quotes-badge">0</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- CLIENTS -->
+  <div class="section active" id="sec-clients">
+    <div class="kanban-header">
+      <div>
+        <h1 class="page-title">Clients</h1>
+        <p class="page-sub" style="margin-bottom:0">Manage your commercial cleaning contracts</p>
+      </div>
+      <button class="btn-add" onclick="openClientModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Client
+      </button>
+    </div>
+    <div class="stats-grid" id="clients-stats"></div>
+    <div class="kanban-columns" id="clients-board"></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="section" id="sec-schedule">
+    <div class="kanban-header">
+      <div>
+        <h1 class="page-title">Weekly Schedule</h1>
+        <p class="page-sub" style="margin-bottom:0">Cleaning assignments by day</p>
+      </div>
+      <button class="btn-add" onclick="openScheduleModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Assignment
+      </button>
+    </div>
+    <div class="schedule-grid" id="schedule-grid"></div>
+  </div>
+
+  <!-- INVOICES -->
+  <div class="section" id="sec-invoices">
+    <div class="kanban-header">
+      <div>
+        <h1 class="page-title">Invoices</h1>
+        <p class="page-sub" style="margin-bottom:0">Track billing and payments</p>
+      </div>
+      <button class="btn-add" onclick="openInvoiceModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Invoice
+      </button>
+    </div>
+    <div class="stats-grid" id="invoice-stats"></div>
+    <div class="filter-bar" id="invoice-filters">
+      <div class="filter-chip active" onclick="filterInvoices('all',this)">All</div>
+      <div class="filter-chip" onclick="filterInvoices('paid',this)">Paid</div>
+      <div class="filter-chip" onclick="filterInvoices('pending',this)">Pending</div>
+      <div class="filter-chip" onclick="filterInvoices('overdue',this)">Overdue</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="invoice-table">
+        <thead><tr><th>Client</th><th>Amount</th><th>Issued</th><th>Due</th><th>Status</th><th></th></tr></thead>
+        <tbody id="invoice-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- STAFF -->
+  <div class="section" id="sec-staff">
+    <div class="kanban-header">
+      <div>
+        <h1 class="page-title">Staff</h1>
+        <p class="page-sub" style="margin-bottom:0">Team members and availability</p>
+      </div>
+      <button class="btn-add" onclick="openStaffModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Staff
+      </button>
+    </div>
+    <div class="staff-grid" id="staff-grid"></div>
+  </div>
+
+  <!-- QUOTES -->
+  <div class="section" id="sec-quotes">
+    <div class="kanban-header">
+      <div>
+        <h1 class="page-title">Quotes Pipeline</h1>
+        <p class="page-sub" style="margin-bottom:0">Track prospects from inquiry to close</p>
+      </div>
+      <button class="btn-add" onclick="openQuoteModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Quote
+      </button>
+    </div>
+    <div class="kanban-columns" id="quotes-board"></div>
+  </div>
+
+</main>
+
+<!-- CLIENT MODAL -->
+<div class="modal-overlay" id="client-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-content">
+    <button class="m-close" onclick="closeAllModals()">×</button>
+    <h2 id="client-modal-title">Add Client</h2>
+    <div class="m-field"><label>Building Name</label><input type="text" id="cm-name" placeholder="e.g. TD Bank - Main St"></div>
+    <div class="m-field"><label>Contact Person</label><input type="text" id="cm-contact" placeholder="e.g. Jane Smith"></div>
+    <div class="m-field"><label>Service Frequency</label>
+      <select id="cm-freq"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="biweekly">Biweekly</option><option value="monthly">Monthly</option></select>
+    </div>
+    <div class="m-field"><label>Monthly Revenue ($)</label><input type="number" id="cm-revenue" placeholder="e.g. 1200"></div>
+    <div class="m-field"><label>Status</label>
+      <div class="m-stage-row" id="cm-stage-row"></div>
+    </div>
+    <div class="m-field"><label>Notes</label><textarea id="cm-notes" placeholder="Special instructions, access codes, etc."></textarea></div>
+    <div class="m-actions">
+      <button class="m-save" onclick="saveClient()">Save Client</button>
+      <button class="m-delete" id="cm-delete" onclick="deleteClient()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE MODAL -->
+<div class="modal-overlay" id="schedule-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-content">
+    <button class="m-close" onclick="closeAllModals()">×</button>
+    <h2 id="schedule-modal-title">Add Assignment</h2>
+    <div class="m-field"><label>Building</label><select id="sm-building"></select></div>
+    <div class="m-field"><label>Day</label>
+      <select id="sm-day"><option value="mon">Monday</option><option value="tue">Tuesday</option><option value="wed">Wednesday</option><option value="thu">Thursday</option><option value="fri">Friday</option><option value="sat">Saturday</option><option value="sun">Sunday</option></select>
+    </div>
+    <div class="m-field"><label>Crew / Team</label>
+      <select id="sm-crew"><option value="a">Crew A (Blue)</option><option value="b">Crew B (Green)</option><option value="c">Crew C (Purple)</option><option value="d">Crew D (Yellow)</option></select>
+    </div>
+    <div class="m-actions">
+      <button class="m-save" onclick="saveSchedule()">Save Assignment</button>
+      <button class="m-delete" id="sm-delete" onclick="deleteSchedule()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE MODAL -->
+<div class="modal-overlay" id="invoice-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-content">
+    <button class="m-close" onclick="closeAllModals()">×</button>
+    <h2 id="invoice-modal-title">New Invoice</h2>
+    <div class="m-field"><label>Client</label><select id="im-client"></select></div>
+    <div class="m-field"><label>Amount ($)</label><input type="number" id="im-amount" placeholder="e.g. 1200"></div>
+    <div class="m-field"><label>Date Issued</label><input type="date" id="im-issued"></div>
+    <div class="m-field"><label>Due Date</label><input type="date" id="im-due"></div>
+    <div class="m-field"><label>Status</label>
+      <select id="im-status"><option value="pending">Pending</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select>
+    </div>
+    <div class="m-actions">
+      <button class="m-save" onclick="saveInvoice()">Save Invoice</button>
+      <button class="m-delete" id="im-delete" onclick="deleteInvoice()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div class="modal-overlay" id="staff-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-content">
+    <button class="m-close" onclick="closeAllModals()">×</button>
+    <h2 id="staff-modal-title">Add Staff</h2>
+    <div class="m-field"><label>Name</label><input type="text" id="stm-name" placeholder="Full name"></div>
+    <div class="m-field"><label>Phone</label><input type="tel" id="stm-phone" placeholder="506-555-0123"></div>
+    <div class="m-field"><label>Email</label><input type="email" id="stm-email" placeholder="name@email.com"></div>
+    <div class="m-field"><label>Role</label>
+      <select id="stm-role"><option value="cleaner">Cleaner</option><option value="supervisor">Supervisor</option><option value="admin">Admin</option></select>
+    </div>
+    <div class="m-field"><label>Availability</label><input type="text" id="stm-avail" placeholder="e.g. Mon-Fri evenings"></div>
+    <div class="m-field"><label>Police Certificate</label>
+      <select id="stm-cert"><option value="verified">Verified</option><option value="pending">Pending</option><option value="expired">Expired</option></select>
+    </div>
+    <div class="m-field"><label>Notes</label><textarea id="stm-notes" placeholder="Any additional info..."></textarea></div>
+    <div class="m-actions">
+      <button class="m-save" onclick="saveStaff()">Save Staff</button>
+      <button class="m-delete" id="stm-delete" onclick="deleteStaff()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUOTE MODAL -->
+<div class="modal-overlay" id="quote-modal" onclick="if(event.target===this)closeAllModals()">
+  <div class="modal-content">
+    <button class="m-close" onclick="closeAllModals()">×</button>
+    <h2 id="quote-modal-title">Add Quote</h2>
+    <div class="m-field"><label>Prospect Name</label><input type="text" id="qm-name" placeholder="e.g. Maritime Dental Group"></div>
+    <div class="m-field"><label>Building Type</label><input type="text" id="qm-type" placeholder="e.g. Medical office, 3 floors"></div>
+    <div class="m-field"><label>Estimated Value ($/mo)</label><input type="number" id="qm-value" placeholder="e.g. 800"></div>
+    <div class="m-field"><label>Stage</label>
+      <div class="m-stage-row" id="qm-stage-row"></div>
+    </div>
+    <div class="m-field"><label>Notes</label><textarea id="qm-notes" placeholder="Details about the prospect..."></textarea></div>
+    <div class="m-actions">
+      <button class="m-save" onclick="saveQuote()">Save Quote</button>
+      <button class="m-delete" id="qm-delete" onclick="deleteQuote()" style="display:none">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Auth ─────────────────────────────────────────────────────────────────────
+const HASH='fa7d174fce3ff2747157532f0406dbd15b3cfb5b3e91b363a3fb0e1e26c6ec10';
+async function sha256(s){const d=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+async function tryLogin(){
+  const pw=document.getElementById('pw').value;
+  if(await sha256(pw)===HASH){
+    localStorage.setItem('mc_auth_hicks','1');
+    document.getElementById('login').classList.add('hidden');
+    init();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('pw').style.animation='shake .4s ease';
+    setTimeout(()=>document.getElementById('pw').style.animation='',400);
+  }
+}
+function logout(){localStorage.removeItem('mc_auth_hicks');location.reload()}
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function fmt$(n){return '$'+Number(n||0).toLocaleString()}
+function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'))}
+
+// ── Nav ──────────────────────────────────────────────────────────────────────
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
+  document.querySelector('.sidebar').classList.remove('open');
+  if(id==='schedule') renderSchedule();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CLIENTS (Kanban)
+// ══════════════════════════════════════════════════════════════════════════════
+const CLIENT_STAGES=[
+  {id:'active',        label:'Active',        color:'var(--green)',  bg:'rgba(64,192,128,.15)'},
+  {id:'on-hold',       label:'On Hold',       color:'var(--yellow)', bg:'rgba(240,192,64,.15)'},
+  {id:'pending-quote', label:'Pending Quote',  color:'var(--blue)',   bg:'rgba(64,128,240,.15)'},
+  {id:'lost',          label:'Lost',           color:'var(--red)',    bg:'rgba(240,64,96,.15)'},
+];
+
+let clients=[];
+function saveClients(){localStorage.setItem('hicks_clients',JSON.stringify(clients))}
+function loadClients(){try{clients=JSON.parse(localStorage.getItem('hicks_clients')||'[]')}catch(e){clients=[]}}
+
+function seedClients(){
+  clients=[
+    {id:uid(),name:'TD Bank - Main St',contact:'Karen White',freq:'daily',revenue:2200,stage:'active',notes:'M-F evening clean. Alarm code 4421. Key with security desk.'},
+    {id:uid(),name:'Moncton City Hall',contact:'Paul Landry',freq:'daily',revenue:3500,stage:'active',notes:'3 floors + council chambers. Weekend deep clean monthly.'},
+    {id:uid(),name:'Dr. Smith Dental',contact:'Dr. Sarah Smith',freq:'biweekly',revenue:650,stage:'active',notes:'Medical-grade sanitization required. Tuesday & Thursday evenings.'},
+    {id:uid(),name:'Atlantic Funeral Home',contact:'Mike Ferguson',freq:'weekly',revenue:800,stage:'on-hold',notes:'On hold until renovation complete. Expected back April 2026.'},
+  ];
+  saveClients();
+}
+
+function renderClientStats(){
+  const active=clients.filter(c=>c.stage==='active');
+  const revenue=active.reduce((s,c)=>s+(c.revenue||0),0);
+  const pending=clients.filter(c=>c.stage==='pending-quote').length;
+  document.getElementById('clients-stats').innerHTML=`
+    <div class="stat-card"><div class="label">Total Clients</div><div class="value blue">${clients.length}</div></div>
+    <div class="stat-card"><div class="label">Active</div><div class="value green">${active.length}</div></div>
+    <div class="stat-card"><div class="label">Monthly Revenue</div><div class="value yellow">${fmt$(revenue)}</div></div>
+    <div class="stat-card"><div class="label">Pending Quotes</div><div class="value purple">${pending}</div></div>
+  `;
+  document.getElementById('clients-badge').textContent=clients.length;
+}
+
+function renderClientsKanban(){
+  renderClientStats();
+  const board=document.getElementById('clients-board');
+  board.innerHTML=CLIENT_STAGES.map(st=>{
+    const cards=clients.filter(c=>c.stage===st.id);
+    const freqBadge=(f)=>{
+      const colors={daily:'badge-green',weekly:'badge-blue',biweekly:'badge-purple',monthly:'badge-yellow'};
+      return `<span class="badge ${colors[f]||'badge-blue'}">${f}</span>`;
+    };
+    const cardHtml=cards.map(c=>`
+      <div class="kanban-card${st.id==='active'?' active-glow':''}" draggable="true" data-id="${esc(c.id)}" data-board="clients"
+        ondragstart="dragStart(event)" onclick="openClientEdit('${esc(c.id)}')">
+        <div class="kc-name">${esc(c.name)}</div>
+        ${c.contact?`<div class="kc-contact">👤 ${esc(c.contact)}</div>`:''}
+        ${c.notes?`<div class="kc-notes">${esc(c.notes)}</div>`:''}
+        <div class="kc-meta">
+          ${freqBadge(c.freq)}
+          ${c.revenue?`<span style="font-size:10px;color:var(--text2);margin-left:auto">${fmt$(c.revenue)}/mo</span>`:''}
+        </div>
+      </div>
+    `).join('');
+    return `
+      <div class="kanban-col">
+        <div class="kanban-col-header" style="color:${st.color}">
+          ${st.label} <span class="kc-count">${cards.length}</span>
+        </div>
+        <div class="kanban-col-body" data-stage="${st.id}" data-board="clients"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="handleDrop(event,this)">
+          ${cardHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Client Modal
+let _editClientId=null;
+function buildClientStageRow(selected){
+  return CLIENT_STAGES.map(s=>`<button type="button" class="m-stage-btn${selected===s.id?' active':''}" style="${selected===s.id?'background:'+s.color+';border-color:'+s.color+';':''}" onclick="selectClientStage('${s.id}')">${s.label}</button>`).join('');
+}
+function selectClientStage(id){
+  document.querySelectorAll('#cm-stage-row .m-stage-btn').forEach(b=>{
+    const st=CLIENT_STAGES.find(s=>s.label===b.textContent);
+    if(st&&st.id===id){b.classList.add('active');b.style.background=st.color;b.style.borderColor=st.color}
+    else{b.classList.remove('active');b.style.background='';b.style.borderColor=''}
+  });
+  document.getElementById('cm-stage-row').dataset.selected=id;
+}
+function openClientModal(){
+  _editClientId=null;
+  document.getElementById('client-modal-title').textContent='Add Client';
+  document.getElementById('cm-name').value='';
+  document.getElementById('cm-contact').value='';
+  document.getElementById('cm-freq').value='weekly';
+  document.getElementById('cm-revenue').value='';
+  document.getElementById('cm-notes').value='';
+  document.getElementById('cm-delete').style.display='none';
+  document.getElementById('cm-stage-row').innerHTML=buildClientStageRow('active');
+  document.getElementById('cm-stage-row').dataset.selected='active';
+  document.getElementById('client-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('cm-name').focus(),100);
+}
+function openClientEdit(id){
+  const c=clients.find(x=>x.id===id);if(!c)return;
+  _editClientId=id;
+  document.getElementById('client-modal-title').textContent='Edit Client';
+  document.getElementById('cm-name').value=c.name||'';
+  document.getElementById('cm-contact').value=c.contact||'';
+  document.getElementById('cm-freq').value=c.freq||'weekly';
+  document.getElementById('cm-revenue').value=c.revenue||'';
+  document.getElementById('cm-notes').value=c.notes||'';
+  document.getElementById('cm-delete').style.display='block';
+  document.getElementById('cm-stage-row').innerHTML=buildClientStageRow(c.stage);
+  document.getElementById('cm-stage-row').dataset.selected=c.stage;
+  document.getElementById('client-modal').classList.add('open');
+}
+function saveClient(){
+  const name=document.getElementById('cm-name').value.trim();
+  if(!name){showToast('Building name is required');return}
+  const stage=document.getElementById('cm-stage-row').dataset.selected||'active';
+  const data={name,contact:document.getElementById('cm-contact').value.trim(),freq:document.getElementById('cm-freq').value,revenue:parseFloat(document.getElementById('cm-revenue').value)||0,stage,notes:document.getElementById('cm-notes').value.trim()};
+  if(_editClientId){Object.assign(clients.find(c=>c.id===_editClientId),data)}
+  else{clients.push({id:uid(),...data})}
+  saveClients();renderClientsKanban();closeAllModals();showToast(_editClientId?'Client updated':'Client added');
+}
+function deleteClient(){
+  if(!_editClientId)return;
+  clients=clients.filter(c=>c.id!==_editClientId);
+  saveClients();renderClientsKanban();closeAllModals();showToast('Client deleted');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DRAG & DROP (shared for clients + quotes)
+// ══════════════════════════════════════════════════════════════════════════════
+let _dragId=null,_dragBoard=null;
+function dragStart(e){
+  const card=e.target.closest('.kanban-card');
+  _dragId=card.dataset.id;
+  _dragBoard=card.dataset.board;
+  card.classList.add('dragging');
+  e.dataTransfer.effectAllowed='move';
+}
+function handleDrop(e,col){
+  e.preventDefault();
+  col.classList.remove('drag-over');
+  if(col.dataset.board!==_dragBoard)return;
+  const newStage=col.dataset.stage;
+  if(_dragBoard==='clients'){
+    const c=clients.find(x=>x.id===_dragId);
+    if(c&&c.stage!==newStage){c.stage=newStage;saveClients();renderClientsKanban();showToast(`Moved to ${CLIENT_STAGES.find(s=>s.id===newStage).label}`)}
+  } else if(_dragBoard==='quotes'){
+    const q=quotes.find(x=>x.id===_dragId);
+    if(q&&q.stage!==newStage){q.stage=newStage;saveQuotes();renderQuotesKanban();showToast(`Moved to ${QUOTE_STAGES.find(s=>s.id===newStage).label}`)}
+  }
+  _dragId=null;_dragBoard=null;
+}
+document.addEventListener('dragend',()=>{document.querySelectorAll('.kanban-card.dragging').forEach(c=>c.classList.remove('dragging'))});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SCHEDULE
+// ══════════════════════════════════════════════════════════════════════════════
+const DAYS=['mon','tue','wed','thu','fri','sat','sun'];
+const DAY_LABELS={mon:'Monday',tue:'Tuesday',wed:'Wednesday',thu:'Thursday',fri:'Friday',sat:'Saturday',sun:'Sunday'};
+const CREW_CLASSES={a:'crew-a',b:'crew-b',c:'crew-c',d:'crew-d'};
+const CREW_LABELS={a:'Crew A',b:'Crew B',c:'Crew C',d:'Crew D'};
+
+let scheduleItems=[];
+function saveScheduleData(){localStorage.setItem('hicks_schedule',JSON.stringify(scheduleItems))}
+function loadScheduleData(){try{scheduleItems=JSON.parse(localStorage.getItem('hicks_schedule')||'[]')}catch(e){scheduleItems=[]}}
+
+function seedSchedule(){
+  const activeClients=clients.filter(c=>c.stage==='active');
+  scheduleItems=[];
+  // TD Bank daily M-F
+  const td=activeClients.find(c=>c.name.includes('TD Bank'));
+  if(td){['mon','tue','wed','thu','fri'].forEach(d=>scheduleItems.push({id:uid(),building:td.name,day:d,crew:'a'}))}
+  // City Hall daily M-F
+  const ch=activeClients.find(c=>c.name.includes('City Hall'));
+  if(ch){['mon','tue','wed','thu','fri'].forEach(d=>scheduleItems.push({id:uid(),building:ch.name,day:d,crew:'b'}))}
+  // Dr. Smith biweekly Tue/Thu
+  const ds=activeClients.find(c=>c.name.includes('Dr. Smith'));
+  if(ds){['tue','thu'].forEach(d=>scheduleItems.push({id:uid(),building:ds.name,day:d,crew:'c'}))}
+  saveScheduleData();
+}
+
+function renderSchedule(){
+  // Populate building dropdown
+  const sel=document.getElementById('sm-building');
+  const activeNames=clients.filter(c=>c.stage==='active').map(c=>c.name);
+  sel.innerHTML=activeNames.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if(!activeNames.length) sel.innerHTML='<option value="">No active clients</option>';
+
+  const grid=document.getElementById('schedule-grid');
+  grid.innerHTML=DAYS.map(d=>{
+    const items=scheduleItems.filter(s=>s.day===d);
+    return `
+      <div class="schedule-day">
+        <div class="schedule-day-header">${DAY_LABELS[d]}</div>
+        <div class="schedule-day-body">
+          ${items.map(s=>`
+            <div class="schedule-item ${CREW_CLASSES[s.crew]||'crew-a'}" onclick="openScheduleEdit('${esc(s.id)}')">
+              <div class="si-building">${esc(s.building)}</div>
+              <div class="si-crew">${CREW_LABELS[s.crew]||'Crew A'}</div>
+            </div>
+          `).join('')}
+          <button class="schedule-add-btn" onclick="openScheduleModal('${d}')">+ Add</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+let _editScheduleId=null;
+function openScheduleModal(day){
+  _editScheduleId=null;
+  document.getElementById('schedule-modal-title').textContent='Add Assignment';
+  document.getElementById('sm-day').value=day||'mon';
+  document.getElementById('sm-crew').value='a';
+  document.getElementById('sm-delete').style.display='none';
+  // Refresh building dropdown
+  const sel=document.getElementById('sm-building');
+  const activeNames=clients.filter(c=>c.stage==='active').map(c=>c.name);
+  sel.innerHTML=activeNames.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  document.getElementById('schedule-modal').classList.add('open');
+}
+function openScheduleEdit(id){
+  const s=scheduleItems.find(x=>x.id===id);if(!s)return;
+  _editScheduleId=id;
+  document.getElementById('schedule-modal-title').textContent='Edit Assignment';
+  // Refresh building dropdown
+  const sel=document.getElementById('sm-building');
+  const activeNames=clients.filter(c=>c.stage==='active').map(c=>c.name);
+  sel.innerHTML=activeNames.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  sel.value=s.building;
+  document.getElementById('sm-day').value=s.day;
+  document.getElementById('sm-crew').value=s.crew;
+  document.getElementById('sm-delete').style.display='block';
+  document.getElementById('schedule-modal').classList.add('open');
+}
+function saveSchedule(){
+  const building=document.getElementById('sm-building').value;
+  if(!building){showToast('Select a building');return}
+  const day=document.getElementById('sm-day').value;
+  const crew=document.getElementById('sm-crew').value;
+  if(_editScheduleId){
+    const s=scheduleItems.find(x=>x.id===_editScheduleId);
+    s.building=building;s.day=day;s.crew=crew;
+  } else {
+    scheduleItems.push({id:uid(),building,day,crew});
+  }
+  saveScheduleData();renderSchedule();closeAllModals();showToast(_editScheduleId?'Assignment updated':'Assignment added');
+}
+function deleteSchedule(){
+  if(!_editScheduleId)return;
+  scheduleItems=scheduleItems.filter(s=>s.id!==_editScheduleId);
+  saveScheduleData();renderSchedule();closeAllModals();showToast('Assignment deleted');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INVOICES
+// ══════════════════════════════════════════════════════════════════════════════
+let invoices=[];
+let invoiceFilter='all';
+function saveInvoices(){localStorage.setItem('hicks_invoices',JSON.stringify(invoices))}
+function loadInvoices(){try{invoices=JSON.parse(localStorage.getItem('hicks_invoices')||'[]')}catch(e){invoices=[]}}
+
+function seedInvoices(){
+  const today=new Date();
+  const ym=(d)=>d.toISOString().split('T')[0];
+  const ago=(days)=>{const d=new Date(today);d.setDate(d.getDate()-days);return ym(d)};
+  const ahead=(days)=>{const d=new Date(today);d.setDate(d.getDate()+days);return ym(d)};
+  invoices=[
+    {id:uid(),client:'TD Bank - Main St',amount:2200,issued:ago(30),due:ago(0),status:'paid'},
+    {id:uid(),client:'Moncton City Hall',amount:3500,issued:ago(15),due:ahead(15),status:'pending'},
+    {id:uid(),client:'Dr. Smith Dental',amount:650,issued:ago(45),due:ago(15),status:'overdue'},
+    {id:uid(),client:'TD Bank - Main St',amount:2200,issued:ago(60),due:ago(30),status:'paid'},
+    {id:uid(),client:'Moncton City Hall',amount:3500,issued:ago(45),due:ago(15),status:'paid'},
+  ];
+  saveInvoices();
+}
+
+function renderInvoiceStats(){
+  const outstanding=invoices.filter(i=>i.status==='pending'||i.status==='overdue').reduce((s,i)=>s+(i.amount||0),0);
+  const paidMonth=invoices.filter(i=>{
+    if(i.status!=='paid')return false;
+    const d=new Date(i.issued);const now=new Date();
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  }).reduce((s,i)=>s+(i.amount||0),0);
+  const overdueCount=invoices.filter(i=>i.status==='overdue').length;
+  document.getElementById('invoice-stats').innerHTML=`
+    <div class="stat-card"><div class="label">Total Outstanding</div><div class="value blue">${fmt$(outstanding)}</div></div>
+    <div class="stat-card"><div class="label">Paid This Month</div><div class="value green">${fmt$(paidMonth)}</div></div>
+    <div class="stat-card"><div class="label">Overdue</div><div class="value yellow">${overdueCount}</div></div>
+    <div class="stat-card"><div class="label">Total Invoices</div><div class="value purple">${invoices.length}</div></div>
+  `;
+  document.getElementById('invoices-badge').textContent=invoices.filter(i=>i.status!=='paid').length||'';
+}
+
+function renderInvoices(){
+  renderInvoiceStats();
+  let filtered=invoices;
+  if(invoiceFilter!=='all') filtered=invoices.filter(i=>i.status===invoiceFilter);
+  const tbody=document.getElementById('invoice-tbody');
+  if(!filtered.length){
+    tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text2)">No invoices${invoiceFilter!=='all'?' in this filter':''}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=filtered.map(i=>`
+    <tr>
+      <td class="inv-client">${esc(i.client)}</td>
+      <td>${fmt$(i.amount)}</td>
+      <td>${i.issued||'—'}</td>
+      <td>${i.due||'—'}</td>
+      <td><span class="inv-status inv-${i.status}">${i.status}</span></td>
+      <td><div class="inv-actions"><button class="inv-btn" onclick="openInvoiceEdit('${esc(i.id)}')">Edit</button></div></td>
+    </tr>
+  `).join('');
+}
+
+function filterInvoices(f,el){
+  invoiceFilter=f;
+  document.querySelectorAll('#invoice-filters .filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderInvoices();
+}
+
+let _editInvoiceId=null;
+function openInvoiceModal(){
+  _editInvoiceId=null;
+  document.getElementById('invoice-modal-title').textContent='New Invoice';
+  const sel=document.getElementById('im-client');
+  sel.innerHTML=clients.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
+  document.getElementById('im-amount').value='';
+  document.getElementById('im-issued').value=new Date().toISOString().split('T')[0];
+  const due=new Date();due.setDate(due.getDate()+30);
+  document.getElementById('im-due').value=due.toISOString().split('T')[0];
+  document.getElementById('im-status').value='pending';
+  document.getElementById('im-delete').style.display='none';
+  document.getElementById('invoice-modal').classList.add('open');
+}
+function openInvoiceEdit(id){
+  const i=invoices.find(x=>x.id===id);if(!i)return;
+  _editInvoiceId=id;
+  document.getElementById('invoice-modal-title').textContent='Edit Invoice';
+  const sel=document.getElementById('im-client');
+  sel.innerHTML=clients.map(c=>`<option value="${esc(c.name)}">${esc(c.name)}</option>`).join('');
+  sel.value=i.client;
+  document.getElementById('im-amount').value=i.amount||'';
+  document.getElementById('im-issued').value=i.issued||'';
+  document.getElementById('im-due').value=i.due||'';
+  document.getElementById('im-status').value=i.status||'pending';
+  document.getElementById('im-delete').style.display='block';
+  document.getElementById('invoice-modal').classList.add('open');
+}
+function saveInvoice(){
+  const client=document.getElementById('im-client').value;
+  if(!client){showToast('Select a client');return}
+  const data={client,amount:parseFloat(document.getElementById('im-amount').value)||0,issued:document.getElementById('im-issued').value,due:document.getElementById('im-due').value,status:document.getElementById('im-status').value};
+  if(_editInvoiceId){Object.assign(invoices.find(i=>i.id===_editInvoiceId),data)}
+  else{invoices.push({id:uid(),...data})}
+  saveInvoices();renderInvoices();closeAllModals();showToast(_editInvoiceId?'Invoice updated':'Invoice created');
+}
+function deleteInvoice(){
+  if(!_editInvoiceId)return;
+  invoices=invoices.filter(i=>i.id!==_editInvoiceId);
+  saveInvoices();renderInvoices();closeAllModals();showToast('Invoice deleted');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// STAFF
+// ══════════════════════════════════════════════════════════════════════════════
+let staff=[];
+function saveStaffData(){localStorage.setItem('hicks_staff',JSON.stringify(staff))}
+function loadStaffData(){try{staff=JSON.parse(localStorage.getItem('hicks_staff')||'[]')}catch(e){staff=[]}}
+
+const STAFF_COLORS=['#1a3050','#0a2a1a','#1a1a3a','#2a1a0a','#0a2a2a'];
+function seedStaff(){
+  staff=[
+    {id:uid(),name:'Darryl Hicks',phone:'506-555-0100',email:'darryl@hicksjanitorial.ca',role:'admin',avail:'Mon-Fri, on call weekends',cert:'verified',notes:'Owner/operator. 40+ years experience.'},
+    {id:uid(),name:'Marie Boudreau',phone:'506-555-0101',email:'marie@hicksjanitorial.ca',role:'supervisor',avail:'Mon-Fri evenings',cert:'verified',notes:'Crew A lead. Key holder for all downtown accounts.'},
+    {id:uid(),name:'Jake Thompson',phone:'506-555-0102',email:'jake.t@email.com',role:'cleaner',avail:'Mon-Sat evenings',cert:'verified',notes:'Reliable. Trained on floor waxing and carpet extraction.'},
+    {id:uid(),name:'Priya Patel',phone:'506-555-0103',email:'priya.p@email.com',role:'cleaner',avail:'Tue-Sat evenings',cert:'pending',notes:'New hire — in training. Shadowing Marie on Crew A.'},
+    {id:uid(),name:'Chris LeBlanc',phone:'506-555-0104',email:'chris.lb@email.com',role:'cleaner',avail:'Mon-Fri evenings, Sat mornings',cert:'expired',notes:'Certificate expired Feb 2026. Renewal submitted.'},
+  ];
+  saveStaffData();
+}
+
+function renderStaff(){
+  const grid=document.getElementById('staff-grid');
+  const initials=(name)=>name.split(' ').map(p=>p[0]||'').join('').slice(0,2).toUpperCase();
+  const roleLabel=(r)=>r.charAt(0).toUpperCase()+r.slice(1);
+  const certBadge=(c)=>{
+    const cls={verified:'cert-verified',pending:'cert-pending',expired:'cert-expired'};
+    const icons={verified:'✓',pending:'⏳',expired:'⚠'};
+    return `<span class="staff-cert ${cls[c]||'cert-pending'}">${icons[c]||'?'} Police Check: ${c}</span>`;
+  };
+  grid.innerHTML=staff.map((s,i)=>`
+    <div class="staff-card" onclick="openStaffEdit('${esc(s.id)}')">
+      <div class="staff-header">
+        <div class="staff-avatar" style="background:${STAFF_COLORS[i%STAFF_COLORS.length]}">${initials(s.name)}</div>
+        <div>
+          <div class="staff-name">${esc(s.name)}</div>
+          <div class="staff-role">${roleLabel(s.role)}</div>
+        </div>
+      </div>
+      <div class="staff-details">
+        📱 ${esc(s.phone)}<br>
+        ✉️ <a href="mailto:${esc(s.email)}">${esc(s.email)}</a><br>
+        🕐 ${esc(s.avail)}
+        ${s.notes?`<br>📝 ${esc(s.notes)}`:''}
+      </div>
+      ${certBadge(s.cert)}
+    </div>
+  `).join('');
+  document.getElementById('staff-badge').textContent=staff.length;
+}
+
+let _editStaffId=null;
+function openStaffModal(){
+  _editStaffId=null;
+  document.getElementById('staff-modal-title').textContent='Add Staff';
+  document.getElementById('stm-name').value='';
+  document.getElementById('stm-phone').value='';
+  document.getElementById('stm-email').value='';
+  document.getElementById('stm-role').value='cleaner';
+  document.getElementById('stm-avail').value='';
+  document.getElementById('stm-cert').value='pending';
+  document.getElementById('stm-notes').value='';
+  document.getElementById('stm-delete').style.display='none';
+  document.getElementById('staff-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('stm-name').focus(),100);
+}
+function openStaffEdit(id){
+  const s=staff.find(x=>x.id===id);if(!s)return;
+  _editStaffId=id;
+  document.getElementById('staff-modal-title').textContent='Edit Staff';
+  document.getElementById('stm-name').value=s.name||'';
+  document.getElementById('stm-phone').value=s.phone||'';
+  document.getElementById('stm-email').value=s.email||'';
+  document.getElementById('stm-role').value=s.role||'cleaner';
+  document.getElementById('stm-avail').value=s.avail||'';
+  document.getElementById('stm-cert').value=s.cert||'pending';
+  document.getElementById('stm-notes').value=s.notes||'';
+  document.getElementById('stm-delete').style.display='block';
+  document.getElementById('staff-modal').classList.add('open');
+}
+function saveStaff(){
+  const name=document.getElementById('stm-name').value.trim();
+  if(!name){showToast('Name is required');return}
+  const data={name,phone:document.getElementById('stm-phone').value.trim(),email:document.getElementById('stm-email').value.trim(),role:document.getElementById('stm-role').value,avail:document.getElementById('stm-avail').value.trim(),cert:document.getElementById('stm-cert').value,notes:document.getElementById('stm-notes').value.trim()};
+  if(_editStaffId){Object.assign(staff.find(s=>s.id===_editStaffId),data)}
+  else{staff.push({id:uid(),...data})}
+  saveStaffData();renderStaff();closeAllModals();showToast(_editStaffId?'Staff updated':'Staff added');
+}
+function deleteStaff(){
+  if(!_editStaffId)return;
+  staff=staff.filter(s=>s.id!==_editStaffId);
+  saveStaffData();renderStaff();closeAllModals();showToast('Staff member removed');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QUOTES (Kanban)
+// ══════════════════════════════════════════════════════════════════════════════
+const QUOTE_STAGES=[
+  {id:'new-inquiry',      label:'New Inquiry',      color:'var(--blue)',   bg:'rgba(64,128,240,.15)'},
+  {id:'site-visit',       label:'Site Visit Booked', color:'var(--purple)', bg:'rgba(160,96,240,.15)'},
+  {id:'quote-sent',       label:'Quote Sent',        color:'var(--yellow)', bg:'rgba(240,192,64,.15)'},
+  {id:'won',              label:'Won',               color:'var(--green)',  bg:'rgba(64,192,128,.15)'},
+  {id:'lost',             label:'Lost',              color:'var(--red)',    bg:'rgba(240,64,96,.15)'},
+];
+
+let quotes=[];
+function saveQuotes(){localStorage.setItem('hicks_quotes',JSON.stringify(quotes))}
+function loadQuotes(){try{quotes=JSON.parse(localStorage.getItem('hicks_quotes')||'[]')}catch(e){quotes=[]}}
+
+function seedQuotes(){
+  quotes=[
+    {id:uid(),name:'Maritime Dental Group',type:'Medical office, 2 floors',value:900,stage:'quote-sent',notes:'Sent quote Feb 20. Follow up next week.',date:'Feb 20'},
+    {id:uid(),name:'Pizza Delight - Mountain Rd',type:'Restaurant',value:500,stage:'site-visit',notes:'Site visit scheduled for March 5.',date:'Feb 28'},
+    {id:uid(),name:'Costco Warehouse - Dieppe',type:'Retail, large floor area',value:4000,stage:'new-inquiry',notes:'Called in asking about overnight floor care.',date:'Mar 1'},
+  ];
+  saveQuotes();
+}
+
+function renderQuotesKanban(){
+  const board=document.getElementById('quotes-board');
+  board.innerHTML=QUOTE_STAGES.map(st=>{
+    const cards=quotes.filter(q=>q.stage===st.id);
+    const cardHtml=cards.map(q=>`
+      <div class="kanban-card${st.id==='won'?' active-glow':''}" draggable="true" data-id="${esc(q.id)}" data-board="quotes"
+        ondragstart="dragStart(event)" onclick="openQuoteEdit('${esc(q.id)}')">
+        <div class="kc-name">${esc(q.name)}</div>
+        ${q.type?`<div class="kc-contact">${esc(q.type)}</div>`:''}
+        ${q.notes?`<div class="kc-notes">${esc(q.notes)}</div>`:''}
+        <div class="kc-meta">
+          <span class="badge" style="background:${st.bg};color:${st.color};border:1px solid ${st.color}33">${st.label}</span>
+          ${q.value?`<span style="font-size:10px;color:var(--text2);margin-left:auto">${fmt$(q.value)}/mo</span>`:''}
+        </div>
+      </div>
+    `).join('');
+    return `
+      <div class="kanban-col">
+        <div class="kanban-col-header" style="color:${st.color}">
+          ${st.label} <span class="kc-count">${cards.length}</span>
+        </div>
+        <div class="kanban-col-body" data-stage="${st.id}" data-board="quotes"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="handleDrop(event,this)">
+          ${cardHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('quotes-badge').textContent=quotes.filter(q=>q.stage!=='won'&&q.stage!=='lost').length||'';
+}
+
+// Quote Modal
+let _editQuoteId=null;
+function buildQuoteStageRow(selected){
+  return QUOTE_STAGES.map(s=>`<button type="button" class="m-stage-btn${selected===s.id?' active':''}" style="${selected===s.id?'background:'+s.color+';border-color:'+s.color+';':''}" onclick="selectQuoteStage('${s.id}')">${s.label}</button>`).join('');
+}
+function selectQuoteStage(id){
+  document.querySelectorAll('#qm-stage-row .m-stage-btn').forEach(b=>{
+    const st=QUOTE_STAGES.find(s=>s.label===b.textContent);
+    if(st&&st.id===id){b.classList.add('active');b.style.background=st.color;b.style.borderColor=st.color}
+    else{b.classList.remove('active');b.style.background='';b.style.borderColor=''}
+  });
+  document.getElementById('qm-stage-row').dataset.selected=id;
+}
+function openQuoteModal(){
+  _editQuoteId=null;
+  document.getElementById('quote-modal-title').textContent='Add Quote';
+  document.getElementById('qm-name').value='';
+  document.getElementById('qm-type').value='';
+  document.getElementById('qm-value').value='';
+  document.getElementById('qm-notes').value='';
+  document.getElementById('qm-delete').style.display='none';
+  document.getElementById('qm-stage-row').innerHTML=buildQuoteStageRow('new-inquiry');
+  document.getElementById('qm-stage-row').dataset.selected='new-inquiry';
+  document.getElementById('quote-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('qm-name').focus(),100);
+}
+function openQuoteEdit(id){
+  const q=quotes.find(x=>x.id===id);if(!q)return;
+  _editQuoteId=id;
+  document.getElementById('quote-modal-title').textContent='Edit Quote';
+  document.getElementById('qm-name').value=q.name||'';
+  document.getElementById('qm-type').value=q.type||'';
+  document.getElementById('qm-value').value=q.value||'';
+  document.getElementById('qm-notes').value=q.notes||'';
+  document.getElementById('qm-delete').style.display='block';
+  document.getElementById('qm-stage-row').innerHTML=buildQuoteStageRow(q.stage);
+  document.getElementById('qm-stage-row').dataset.selected=q.stage;
+  document.getElementById('quote-modal').classList.add('open');
+}
+function saveQuote(){
+  const name=document.getElementById('qm-name').value.trim();
+  if(!name){showToast('Prospect name is required');return}
+  const stage=document.getElementById('qm-stage-row').dataset.selected||'new-inquiry';
+  const data={name,type:document.getElementById('qm-type').value.trim(),value:parseFloat(document.getElementById('qm-value').value)||0,stage,notes:document.getElementById('qm-notes').value.trim(),date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})};
+  if(_editQuoteId){Object.assign(quotes.find(q=>q.id===_editQuoteId),data)}
+  else{quotes.push({id:uid(),...data})}
+  saveQuotes();renderQuotesKanban();closeAllModals();showToast(_editQuoteId?'Quote updated':'Quote added');
+}
+function deleteQuote(){
+  if(!_editQuoteId)return;
+  quotes=quotes.filter(q=>q.id!==_editQuoteId);
+  saveQuotes();renderQuotesKanban();closeAllModals();showToast('Quote deleted');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════════
+function init(){
+  loadClients();
+  if(!clients.length) seedClients();
+  loadScheduleData();
+  if(!scheduleItems.length) seedSchedule();
+  loadInvoices();
+  if(!invoices.length) seedInvoices();
+  loadStaffData();
+  if(!staff.length) seedStaff();
+  loadQuotes();
+  if(!quotes.length) seedQuotes();
+
+  renderClientsKanban();
+  renderInvoices();
+  renderStaff();
+  renderQuotesKanban();
+}
+
+if(localStorage.getItem('mc_auth_hicks')==='1'){document.getElementById('login').classList.add('hidden');init()}
+</script>
+</body>
+</html>
