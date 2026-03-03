@@ -6,7 +6,9 @@ set -e
 cd "$(dirname "$0")"
 
 # Load environment
+set -a
 source ~/clawd/.env 2>/dev/null || true
+set +a
 
 echo "📦 Syncing 7 Cellars Dashboard data..."
 
