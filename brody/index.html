@@ -12,7 +12,7 @@
 --bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
 --border:#2a2a3a;--text:#e4e4e8;--text2:#9898b0;--accent:#0D1B2A;
 --accent-light:#1a3050;--yellow:#f0c040;--green:#40c080;--blue:#4080f0;
---red:#f04060;--purple:#a060f0;--radius:10px;
+--red:#f04060;--purple:#a060f0;--orange:#f09040;--radius:10px;
 }
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;position:relative}
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
@@ -48,6 +48,7 @@ a{color:var(--blue);text-decoration:none}
 .nav-item:hover{background:var(--surface2);color:var(--text)}
 .nav-item.active{background:var(--accent-light);color:#fff}
 .nav-item.active::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--blue);border-radius:0 3px 3px 0}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .nav-item svg{width:18px;height:18px;opacity:.6}
 .nav-item.active svg{opacity:1}
 .nav-badge{position:absolute;right:10px;font-size:11px;font-weight:700;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px;min-width:24px;text-align:center}
@@ -55,6 +56,11 @@ a{color:var(--blue);text-decoration:none}
 .sidebar-footer{padding:16px;border-top:1px solid var(--border)}
 .btn-logout{width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
 .btn-logout:hover{background:var(--surface3);color:var(--text)}
+
+/* Header bar with sync */
+.header-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.header-bar .page-title{margin-bottom:0}
+.header-bar .sync-time{font-size:12px;color:var(--text2);white-space:nowrap}
 
 /* Main */
 .main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:32px 40px;position:relative;z-index:1;min-height:0}
@@ -76,15 +82,44 @@ a{color:var(--blue);text-decoration:none}
 .stat-card:hover{border-color:#3a3a4a;box-shadow:inset 0 0 30px rgba(255,255,255,.02)}
 .stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
 .stat-card:nth-child(1)::before{background:linear-gradient(180deg,var(--blue),rgba(64,128,240,.3))}
-.stat-card:nth-child(2)::before{background:linear-gradient(180deg,var(--green),rgba(64,192,128,.3))}
-.stat-card:nth-child(3)::before{background:linear-gradient(180deg,var(--yellow),rgba(240,192,64,.3))}
-.stat-card:nth-child(4)::before{background:linear-gradient(180deg,var(--purple),rgba(160,96,240,.3))}
+.stat-card:nth-child(2)::before{background:linear-gradient(180deg,var(--orange),rgba(240,144,64,.3))}
+.stat-card:nth-child(3)::before{background:linear-gradient(180deg,var(--green),rgba(64,192,128,.3))}
+.stat-card:nth-child(4)::before{background:linear-gradient(180deg,var(--red),rgba(240,64,96,.3))}
 .stat-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}
 .stat-card .value{font-size:28px;font-weight:700}
 .stat-card .value.blue{color:var(--blue)}
 .stat-card .value.green{color:var(--green)}
 .stat-card .value.yellow{color:var(--yellow)}
 .stat-card .value.purple{color:var(--purple)}
+.stat-card .value.orange{color:var(--orange)}
+.stat-card .value.red{color:var(--red)}
+
+/* Home overview */
+.home-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards;position:relative;overflow:hidden}
+.home-card:nth-child(1){animation-delay:.05s}
+.home-card:nth-child(2){animation-delay:.1s}
+.home-card:nth-child(3){animation-delay:.15s}
+.home-card:nth-child(4){animation-delay:.2s}
+.home-card:hover{border-color:#3a3a4a;transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.home-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.home-card:nth-child(1)::before{background:linear-gradient(180deg,var(--orange),rgba(240,144,64,.3))}
+.home-card:nth-child(2)::before{background:linear-gradient(180deg,var(--blue),rgba(64,128,240,.3))}
+.home-card:nth-child(3)::before{background:linear-gradient(180deg,var(--purple),rgba(160,96,240,.3))}
+.home-card:nth-child(4)::before{background:linear-gradient(180deg,var(--green),rgba(64,192,128,.3))}
+.home-card .hc-icon{font-size:28px;margin-bottom:8px}
+.home-card .hc-value{font-size:32px;font-weight:700;margin-bottom:4px}
+.home-card .hc-label{font-size:12px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+
+.activity-feed{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.activity-feed h3{font-size:15px;font-weight:700;margin-bottom:16px;color:var(--text)}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.activity-content{flex:1;min-width:0}
+.activity-title{font-size:13px;font-weight:600}
+.activity-desc{font-size:12px;color:var(--text2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.activity-time{font-size:11px;color:var(--text2);white-space:nowrap;margin-top:2px}
 
 /* Kanban */
 .kanban-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
@@ -93,7 +128,7 @@ a{color:var(--blue);text-decoration:none}
 .btn-add:hover{background:#5090ff}
 .btn-add:active{transform:scale(.96)}
 .kanban-columns{display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;min-height:400px}
-.kanban-col{min-width:220px;width:220px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:72vh}
+.kanban-col{min-width:200px;width:200px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:72vh}
 .kanban-col-header{padding:14px 14px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
 .kanban-col-header .kc-count{font-size:11px;font-weight:600;background:var(--surface2);padding:2px 8px;border-radius:10px;color:var(--text2)}
 .kanban-col-body{flex:1;overflow-y:auto;padding:10px;min-height:60px;transition:background .2s}
@@ -152,7 +187,10 @@ a{color:var(--blue);text-decoration:none}
 .cal-empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
 .cal-empty-state .cal-empty-icon{font-size:48px;margin-bottom:12px}
 .cal-empty-state p{font-size:15px}
-.cal-sync-info{font-size:12px;color:var(--text3,#555);margin-top:16px;text-align:right}
+.cal-empty-state a{color:var(--blue)}
+.cal-sync-info{font-size:12px;color:var(--text2);margin-top:16px;text-align:right}
+.cal-toggle-past{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;margin-top:16px}
+.cal-toggle-past:hover{background:var(--surface3);color:var(--text)}
 
 /* Documents */
 .docs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
@@ -171,11 +209,6 @@ a{color:var(--blue);text-decoration:none}
 .doc-open:hover{background:var(--surface3);color:var(--text)}
 
 /* Email */
-.email-connect-banner{background:linear-gradient(135deg,#0a1628,#162840);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.email-connect-banner p{font-size:14px;color:var(--text2)}
-.email-connect-banner strong{color:var(--text)}
-.btn-connect{padding:9px 18px;background:var(--blue);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
-.btn-connect:hover{background:#5090ff}
 .email-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .email-filter-chip{padding:6px 14px;background:var(--surface);border:1px solid var(--border);border-radius:20px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
 .email-filter-chip.active{background:var(--accent-light);color:#fff;border-color:var(--accent-light)}
@@ -194,18 +227,20 @@ a{color:var(--blue);text-decoration:none}
 .email-preview{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .email-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
 .email-time{font-size:11px;color:var(--text2);white-space:nowrap}
-.email-btns{display:flex;gap:4px}
-.email-btn{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.email-btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.email-btn{padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
 .email-btn:hover{background:var(--surface3);color:var(--text)}
-.email-btn.reply{border-color:rgba(64,128,240,.3);color:var(--blue)}
-.email-btn.reply:hover{background:rgba(64,128,240,.15)}
+.email-btn.gmail{border-color:rgba(64,128,240,.3);color:var(--blue)}
+.email-btn.gmail:hover{background:rgba(64,128,240,.15)}
+.email-btn.pipeline{border-color:rgba(64,192,128,.3);color:var(--green)}
+.email-btn.pipeline:hover{background:rgba(64,192,128,.15)}
 .email-btn.flag{border-color:rgba(240,192,64,.3);color:var(--yellow)}
 .email-btn.flag:hover{background:rgba(240,192,64,.15)}
 .email-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;align-self:center}
 
 /* Health Monitor */
 .health-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px}
-.health-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .25s cubic-bezier(.4,0,.2,1);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
+.health-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .25s cubic-bezier(.4,0,.2,1);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards;display:block;text-decoration:none;color:inherit;cursor:pointer}
 .health-card:nth-child(1){animation-delay:.05s}
 .health-card:nth-child(2){animation-delay:.1s}
 .health-card:hover{border-color:#3a3a4a;transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
@@ -222,21 +257,34 @@ a{color:var(--blue);text-decoration:none}
 .status-badge.offline{background:rgba(240,64,96,.15);color:var(--red)}
 .status-badge.warning{background:rgba(240,192,64,.15);color:var(--yellow)}
 .hc-ip{font-size:12px;color:var(--text2);font-family:monospace;margin-top:10px;padding:6px 12px;background:var(--surface2);border-radius:6px;display:inline-block}
-.hc-lastseen{font-size:12px;color:var(--text2);margin-top:8px}
+.hc-detail{font-size:12px;color:var(--text2);margin-top:8px}
+.hc-detail strong{color:var(--text);font-weight:600}
 .health-update-note{font-size:12px;color:var(--text2);margin-top:16px;padding:10px 16px;background:var(--surface2);border-radius:8px}
 
 /* Mobile menu toggle */
 .menu-toggle{display:none;position:fixed;top:16px;left:16px;z-index:10;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:16px}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49}
 @media(max-width:768px){
   body{flex-direction:column}
-  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:50}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;transform:translateX(-100%);z-index:50;width:260px}
   .sidebar.open{transform:translateX(0);box-shadow:4px 0 24px rgba(0,0,0,.5)}
-  .main{padding:60px 20px 20px}
+  .sidebar.open~.sidebar-overlay{display:block}
+  .main{padding:60px 16px 20px}
   .menu-toggle{display:block}
   .kanban-columns{flex-direction:column}
   .kanban-col{min-width:100%;width:100%;max-height:none}
   .email-item{grid-template-columns:1fr}
-  .email-btns{display:none}
+  .email-avatar{display:none}
+  .home-cards{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .health-grid{grid-template-columns:1fr}
+  .header-bar{flex-direction:column;align-items:flex-start;gap:4px}
+  .nav-item{padding:12px 14px;min-height:44px}
+  .email-btn{padding:6px 12px;min-height:36px}
+}
+@media(max-width:480px){
+  .home-cards{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -252,7 +300,8 @@ a{color:var(--blue);text-decoration:none}
   </div>
 </div>
 
-<button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <nav class="sidebar">
   <div class="sidebar-logo">
@@ -260,7 +309,11 @@ a{color:var(--blue);text-decoration:none}
     <span class="sub">Mission Control</span>
   </div>
   <div class="nav">
-    <div class="nav-item active" data-section="pipeline" onclick="showSection('pipeline')">
+    <div class="nav-item active" data-section="home" onclick="showSection('home')">
+      <span class="nav-icon">🏠</span>
+      Home
+    </div>
+    <div class="nav-item" data-section="pipeline" onclick="showSection('pipeline')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="12" height="4" rx="1"/><rect x="3" y="17" width="8" height="4" rx="1"/></svg>
       Pipeline <span class="nav-badge" id="pipeline-badge">0</span>
     </div>
@@ -274,7 +327,7 @@ a{color:var(--blue);text-decoration:none}
     </div>
     <div class="nav-item" data-section="email" onclick="showSection('email')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      Email <span class="nav-badge" id="email-badge">5</span>
+      Email <span class="nav-badge" id="email-badge">0</span>
     </div>
     <div class="nav-item" data-section="health" onclick="showSection('health')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
@@ -288,8 +341,24 @@ a{color:var(--blue);text-decoration:none}
 
 <main class="main">
 
+  <!-- HOME OVERVIEW -->
+  <div class="section active" id="sec-home">
+    <div class="header-bar">
+      <div>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-sub" style="margin-bottom:0">Command center at a glance</p>
+      </div>
+      <span class="sync-time" id="global-sync"></span>
+    </div>
+    <div class="home-cards" id="home-cards"></div>
+    <div class="activity-feed" id="activity-feed">
+      <h3>Recent Activity</h3>
+      <div id="activity-list"><div style="color:var(--text2);font-size:13px;padding:12px 0">Loading…</div></div>
+    </div>
+  </div>
+
   <!-- PIPELINE -->
-  <div class="section active" id="sec-pipeline">
+  <div class="section" id="sec-pipeline">
     <div class="kanban-header">
       <div>
         <h1 class="page-title">Pipeline</h1>
@@ -343,7 +412,7 @@ a{color:var(--blue);text-decoration:none}
     <h1 class="page-title">Client Health</h1>
     <p class="page-sub">Real-time agent status for active SolveWorks clients</p>
     <div class="health-grid" id="health-grid"></div>
-    <div class="health-update-note">
+    <div class="health-update-note" id="health-update-note">
       📡 Status data pulled from <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:11px">brody/data/client-health.json</code> — updated by sync.sh on a cron schedule.
     </div>
   </div>
@@ -399,6 +468,11 @@ async function tryLogin(){
 }
 function logout(){localStorage.removeItem('mc_auth_brody');location.reload()}
 
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('open');
+}
+
 // ── Nav ───────────────────────────────────────────────────────────────────────
 function showSection(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -413,29 +487,47 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function showToast(msg){const t=document.getElementById('kanban-toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 
+// ── Global data stores ───────────────────────────────────────────────────────
+let CAL_DATA={events:[],updated:null};
+let EMAILS=[];
+let EMAIL_UPDATED=null;
+let HEALTH_DATA={clients:[],updated:null};
+let _syncTimestamps=[];
+
+function updateGlobalSync(){
+  const valid=_syncTimestamps.filter(Boolean).map(t=>new Date(t).getTime()).filter(t=>!isNaN(t));
+  if(valid.length){
+    const latest=new Date(Math.max(...valid));
+    const el=document.getElementById('global-sync');
+    if(el) el.textContent='Synced: '+latest.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  }
+}
+
 // ── Pipeline / Kanban ─────────────────────────────────────────────────────────
 const STAGES=[
-  {id:'call-booked',  label:'Call Booked',   color:'var(--blue)',   bg:'rgba(64,128,240,.15)'},
-  {id:'discovery',    label:'Discovery Done', color:'var(--purple)', bg:'rgba(160,96,240,.15)'},
-  {id:'install-done', label:'Install Done',   color:'var(--yellow)', bg:'rgba(240,192,64,.15)'},
-  {id:'active',       label:'Active Client',  color:'var(--green)',  bg:'rgba(64,192,128,.15)'},
-  {id:'churned',      label:'Churned',        color:'var(--red)',    bg:'rgba(240,64,96,.15)'},
+  {id:'new-lead',     label:'New Lead',      color:'var(--orange)',  bg:'rgba(240,144,64,.15)'},
+  {id:'call-booked',  label:'Call Booked',    color:'var(--blue)',    bg:'rgba(64,128,240,.15)'},
+  {id:'discovery',    label:'Discovery Done', color:'var(--purple)',  bg:'rgba(160,96,240,.15)'},
+  {id:'install-done', label:'Install Done',   color:'var(--yellow)',  bg:'rgba(240,192,64,.15)'},
+  {id:'active',       label:'Active Client',  color:'var(--green)',   bg:'rgba(64,192,128,.15)'},
+  {id:'churned',      label:'Churned',        color:'var(--red)',     bg:'rgba(240,64,96,.15)'},
 ];
 
 let leads=[];
-function saveLeads(){localStorage.setItem('brody_leads_v2',JSON.stringify(leads))}
-function loadLeads(){try{leads=JSON.parse(localStorage.getItem('brody_leads_v2')||'[]')}catch(e){leads=[]}}
+const LS_KEY='brody_leads_v3';
+function saveLeads(){localStorage.setItem(LS_KEY,JSON.stringify(leads))}
+function loadLeads(){try{leads=JSON.parse(localStorage.getItem(LS_KEY)||'[]')}catch(e){leads=[]}}
 
 function renderPipelineStats(){
+  const total=leads.length;
+  const newLeads=leads.filter(l=>l.stage==='new-lead').length;
   const active=leads.filter(l=>l.stage==='active').length;
-  const total=leads.filter(l=>l.stage!=='churned').length;
   const churned=leads.filter(l=>l.stage==='churned').length;
-  const installs=leads.filter(l=>l.stage==='install-done'||l.stage==='active').length;
   document.getElementById('pipeline-stats').innerHTML=`
     <div class="stat-card"><div class="label">Total Leads</div><div class="value blue">${total}</div></div>
+    <div class="stat-card"><div class="label">New Leads</div><div class="value orange">${newLeads}</div></div>
     <div class="stat-card"><div class="label">Active Clients</div><div class="value green">${active}</div></div>
-    <div class="stat-card"><div class="label">Installs Done</div><div class="value yellow">${installs}</div></div>
-    <div class="stat-card"><div class="label">Churned</div><div class="value purple">${churned}</div></div>
+    <div class="stat-card"><div class="label">Churned</div><div class="value red">${churned}</div></div>
   `;
   document.getElementById('pipeline-badge').textContent=total;
 }
@@ -510,15 +602,15 @@ function selectStage(id){
   });
   document.getElementById('km-stage-row').dataset.selected=id;
 }
-function openAddModal(){
+function openAddModal(prefillName,prefillNotes){
   _editId=null;
   document.getElementById('modal-title').textContent='Add Lead';
-  document.getElementById('km-name').value='';
+  document.getElementById('km-name').value=prefillName||'';
   document.getElementById('km-company').value='';
-  document.getElementById('km-notes').value='';
+  document.getElementById('km-notes').value=prefillNotes||'';
   document.getElementById('km-delete-btn').style.display='none';
-  document.getElementById('km-stage-row').innerHTML=buildStageRow('call-booked');
-  document.getElementById('km-stage-row').dataset.selected='call-booked';
+  document.getElementById('km-stage-row').innerHTML=buildStageRow('new-lead');
+  document.getElementById('km-stage-row').dataset.selected='new-lead';
   document.getElementById('kanban-modal').classList.add('open');
   setTimeout(()=>document.getElementById('km-name').focus(),100);
 }
@@ -539,7 +631,7 @@ function closeModal(){document.getElementById('kanban-modal').classList.remove('
 function saveModal(){
   const name=document.getElementById('km-name').value.trim();
   if(!name){showToast('Client name is required');return}
-  const stage=document.getElementById('km-stage-row').dataset.selected||'call-booked';
+  const stage=document.getElementById('km-stage-row').dataset.selected||'new-lead';
   if(_editId){
     const lead=leads.find(l=>l.id===_editId);
     lead.name=name;lead.company=document.getElementById('km-company').value.trim();
@@ -548,11 +640,13 @@ function saveModal(){
     leads.push({id:uid(),name,company:document.getElementById('km-company').value.trim(),notes:document.getElementById('km-notes').value.trim(),stage,date:new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'})});
   }
   saveLeads();renderKanban();closeModal();showToast(_editId?'Lead updated':'Lead added');
+  renderHome();
 }
 function deleteModal(){
   if(!_editId)return;
   leads=leads.filter(l=>l.id!==_editId);
   saveLeads();renderKanban();closeModal();showToast('Lead deleted');
+  renderHome();
 }
 
 // ── Documents ─────────────────────────────────────────────────────────────────
@@ -582,7 +676,6 @@ function renderDocs(){
 
 // ── Email ─────────────────────────────────────────────────────────────────────
 const AVATAR_COLORS=['#1a3050','#0a2a1a','#1a1a3a','#2a0a0a','#2a1a0a','#0a1a2a','#1a2a0a','#2a0a2a','#0a2a2a','#1a1a1a'];
-let EMAILS=[];
 let emailFilter='all';
 
 function emailInitials(name){
@@ -594,15 +687,19 @@ function emailTimeLabel(dateStr){
   const now=new Date();
   const diffMs=now-d;
   const diffDays=Math.floor(diffMs/86400000);
-  if(diffDays===0){
-    return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-  } else if(diffDays===1){
-    return 'Yesterday';
-  } else if(diffDays<7){
-    return d.toLocaleDateString([],{weekday:'short'});
-  } else {
-    return d.toLocaleDateString([],{month:'short',day:'numeric'});
+  if(diffDays===0) return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+  if(diffDays===1) return 'Yesterday';
+  if(diffDays<7) return d.toLocaleDateString([],{weekday:'short'});
+  return d.toLocaleDateString([],{month:'short',day:'numeric'});
+}
+function gmailUrl(email){
+  if(email.sent){
+    return `https://mail.google.com/mail/u/0/#sent?q=${encodeURIComponent(email.subject||'')}`;
   }
+  if(email.id && !email.id.includes('_sent')){
+    return `https://mail.google.com/mail/u/0/#inbox/${email.id}`;
+  }
+  return `https://mail.google.com/mail/u/0/#search/${encodeURIComponent(email.subject||'')}`;
 }
 function filterEmail(f,el){
   emailFilter=f;
@@ -619,27 +716,39 @@ function renderEmails(){
     list.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text2);font-size:14px;">No emails${emailFilter!=='all'?' in this filter':''}</div>`;
     return;
   }
-  list.innerHTML=filtered.map((e,i)=>`
+  list.innerHTML=filtered.map((e,i)=>{
+    const gUrl=gmailUrl(e);
+    const fromName=esc(e.from_name||e.from_email||'Unknown');
+    const fromEmail=esc(e.from_email||'');
+    return `
     <div class="email-item${e.unread?' unread':''}" style="animation-delay:${i*0.05}s">
       <div class="email-avatar" style="background:${e.color||AVATAR_COLORS[i%AVATAR_COLORS.length]}">${esc(e.avatar||emailInitials(e.from_name||'?'))}</div>
       <div class="email-body">
-        <div class="email-from">${esc(e.from_name||e.from_email||'Unknown')}${e.sent?' <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(64,128,240,.15);color:#4080f0;border:1px solid rgba(64,128,240,.3);vertical-align:middle;margin-left:5px">SENT</span>':''}</div>
+        <div class="email-from">${fromName}${e.sent?' <span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(64,128,240,.15);color:#4080f0;border:1px solid rgba(64,128,240,.3);vertical-align:middle;margin-left:5px">SENT</span>':''}</div>
         <div class="email-subject">${esc(e.subject||'(no subject)')}${e.flagged?' <span style="color:var(--yellow);font-size:11px">🚩</span>':''}</div>
         <div class="email-preview">${esc(e.preview||'')}</div>
       </div>
       <div class="email-actions">
         <span class="email-time">${emailTimeLabel(e.date)}</span>
         ${e.unread?'<span class="email-unread-dot"></span>':''}
+        <div class="email-btns">
+          <a class="email-btn gmail" href="${gUrl}" target="_blank" title="Open in Gmail">✉ Gmail</a>
+          <button class="email-btn pipeline" onclick="event.stopPropagation();openAddModal('${esc(e.from_name||'')}','Email: ${fromEmail} — ${esc(e.subject||'')}')" title="Add to Pipeline">+ Pipeline</button>
+        </div>
       </div>
-    </div>
-  `).join('');
-  document.getElementById('email-badge').textContent=EMAILS.filter(e=>e.unread).length||'';
+    </div>`;
+  }).join('');
+  // Update badge with actual unread count
+  const unread=EMAILS.filter(e=>e.unread).length;
+  document.getElementById('email-badge').textContent=unread||'';
 }
 async function loadEmails(){
   try{
     const r=await fetch('data/emails.json?t='+Date.now());
     const data=await r.json();
     EMAILS=data.emails||[];
+    EMAIL_UPDATED=data.updated||null;
+    _syncTimestamps.push(data.updated);
     const upd=document.getElementById('email-updated');
     if(upd&&data.updated){
       const d=new Date(data.updated);
@@ -653,22 +762,45 @@ async function loadEmails(){
 }
 
 // ── Client Health ─────────────────────────────────────────────────────────────
+const CLIENT_DASHBOARDS={
+  'Darryl':'https://solveworks.io/darryl/',
+  'Drew':'https://solveworks.io/drew/'
+};
+
+function uptimeLabel(lastSeen,status){
+  if(!lastSeen) return '';
+  const d=new Date(lastSeen);
+  const now=new Date();
+  const diffMs=now-d;
+  const diffH=Math.floor(diffMs/3600000);
+  const diffM=Math.floor(diffMs/60000);
+  if(status==='online'){
+    if(diffM<60) return `Online · last seen ${diffM}m ago`;
+    if(diffH<48) return `Online · last seen ${diffH}h ago`;
+    return `Online · last seen ${d.toLocaleDateString([],{month:'short',day:'numeric'})}`;
+  }
+  if(diffH<24) return `Offline since ${diffH}h ago`;
+  return `Offline since ${d.toLocaleDateString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
+}
+
 async function renderHealth(){
-  let data={clients:[],updated:null};
   try{
     const r=await fetch('data/client-health.json?t='+Date.now());
-    data=await r.json();
+    HEALTH_DATA=await r.json();
+    _syncTimestamps.push(HEALTH_DATA.updated);
   } catch(e){
-    // fallback static
-    data={clients:[
+    HEALTH_DATA={clients:[
       {name:'Darryl',agent:'Brit',ip:'100.83.184.91',status:'online',lastSeen:'2026-02-27T15:00:00Z'},
       {name:'Drew',agent:'Freedom',ip:'100.124.57.91',status:'online',lastSeen:'2026-02-27T15:00:00Z'}
     ],updated:'2026-02-27T15:00:00Z'};
   }
-  document.getElementById('health-grid').innerHTML=data.clients.map((c,i)=>{
+  document.getElementById('health-grid').innerHTML=HEALTH_DATA.clients.map((c,i)=>{
     const lastSeen=c.lastSeen?new Date(c.lastSeen).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Unknown';
+    const dashUrl=CLIENT_DASHBOARDS[c.name]||'#';
+    const uptime=uptimeLabel(c.lastSeen,c.status);
+    const lastTask=c.lastTask||'—';
     return `
-      <div class="health-card">
+      <a class="health-card" href="${esc(dashUrl)}" target="_blank">
         <div class="hc-header">
           <div>
             <div class="hc-name">${esc(c.name)}</div>
@@ -680,36 +812,39 @@ async function renderHealth(){
           </div>
         </div>
         <div class="hc-ip">🌐 ${esc(c.ip)}</div>
-        <div class="hc-lastseen">Last seen: ${lastSeen}</div>
-      </div>
+        <div class="hc-detail" style="margin-top:10px">${uptime}</div>
+        <div class="hc-detail"><strong>Last Task:</strong> ${esc(lastTask)}</div>
+        <div class="hc-detail" style="margin-top:4px;font-size:11px;color:var(--text2)">Last seen: ${lastSeen}</div>
+      </a>
     `;
   }).join('');
-  document.getElementById('health-badge').textContent=data.clients.length;
-  if(data.updated){
-    document.querySelector('.health-update-note').innerHTML+=`<br>Last sync: ${new Date(data.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
+  document.getElementById('health-badge').textContent=HEALTH_DATA.clients.length;
+  const noteEl=document.getElementById('health-update-note');
+  if(HEALTH_DATA.updated){
+    noteEl.innerHTML=`📡 Status data pulled from <code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:11px">brody/data/client-health.json</code> — Last sync: ${new Date(HEALTH_DATA.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}`;
   }
 }
 
 // ── Calendly Events ───────────────────────────────────────────────────────────
+let _showPast=false;
 async function renderCalendly(){
   const container=document.getElementById('cal-events-container');
-  let data={events:[],updated:null};
   try{
     const r=await fetch('data/calendly.json?t='+Date.now());
     if(!r.ok) throw new Error('not found');
-    data=await r.json();
+    CAL_DATA=await r.json();
+    _syncTimestamps.push(CAL_DATA.updated);
   } catch(e){
-    container.innerHTML='<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming bookings</p></div>';
+    container.innerHTML='<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming bookings.<br>Share your booking link: <a href="https://calendly.com/brody1schofield" target="_blank">calendly.com/brody1schofield</a></p></div>';
     return;
   }
 
-  const events=data.events||[];
+  const events=CAL_DATA.events||[];
   if(events.length===0){
-    container.innerHTML='<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming bookings</p></div>';
+    container.innerHTML='<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming calls.<br>Share your booking link: <a href="https://calendly.com/brody1schofield" target="_blank">calendly.com/brody1schofield</a></p></div>';
     return;
   }
 
-  // AST = UTC-4
   const toAST=(iso)=>{
     const d=new Date(iso);
     return d.toLocaleString('en-US',{timeZone:'America/Halifax',month:'short',day:'numeric',weekday:'short',hour:'numeric',minute:'2-digit',hour12:true});
@@ -722,7 +857,7 @@ async function renderCalendly(){
 
   const now=new Date();
   const upcoming=events.filter(ev=>new Date(ev.end_time)>now);
-  const past=events.filter(ev=>new Date(ev.end_time)<=now);
+  const past=events.filter(ev=>new Date(ev.end_time)<=now).sort((a,b)=>new Date(b.start_time)-new Date(a.start_time));
 
   let html='<div class="cal-events-list">';
 
@@ -742,14 +877,19 @@ async function renderCalendly(){
           ${joinBtn}
         </div>`;
     });
+  } else {
+    html+=`<div class="cal-empty-state"><div class="cal-empty-icon">📅</div><p>No upcoming calls.<br>Share your booking link: <a href="https://calendly.com/brody1schofield" target="_blank">calendly.com/brody1schofield</a></p></div>`;
   }
 
   if(past.length){
-    html+=`<div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin:16px 0 4px">Past (${past.length})</div>`;
+    html+=`<button class="cal-toggle-past" onclick="togglePastEvents()">
+      <span id="past-toggle-icon">${_showPast?'▼':'▶'}</span> ${_showPast?'Hide':'Show'} Past (${past.length})
+    </button>`;
+    html+=`<div id="past-events-list" style="display:${_showPast?'block':'none'};margin-top:12px">`;
     past.forEach(ev=>{
       const dur=durationMins(ev.start_time,ev.end_time);
       html+=`
-        <div class="cal-event-card" style="opacity:.55">
+        <div class="cal-event-card" style="opacity:.55;margin-bottom:12px">
           <div class="cal-event-avatar" style="background:linear-gradient(135deg,#444,#333)">${esc(initials(ev.invitee_name))}</div>
           <div class="cal-event-info">
             <div class="cal-event-name">${esc(ev.invitee_name)}<span class="cal-event-badge" style="background:rgba(255,255,255,.06);color:var(--text2);border-color:rgba(255,255,255,.1)">${esc(ev.name)}</span></div>
@@ -758,34 +898,142 @@ async function renderCalendly(){
           </div>
         </div>`;
     });
+    html+=`</div>`;
   }
 
   html+='</div>';
-  if(data.updated){
-    html+=`<div class="cal-sync-info">Synced ${new Date(data.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
+  if(CAL_DATA.updated){
+    html+=`<div class="cal-sync-info">Synced ${new Date(CAL_DATA.updated).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</div>`;
   }
   container.innerHTML=html;
-  // Update nav badge
-  const badge=document.querySelector('.nav-item[data-section="calendly"] .nav-badge');
-  if(badge) badge.textContent=upcoming.length;
+}
+
+function togglePastEvents(){
+  _showPast=!_showPast;
+  renderCalendly();
+}
+
+// ── Home Overview ─────────────────────────────────────────────────────────────
+function getUpcomingCallsThisWeek(){
+  const now=new Date();
+  const endOfWeek=new Date(now);
+  endOfWeek.setDate(now.getDate()+(7-now.getDay()));
+  endOfWeek.setHours(23,59,59,999);
+  return (CAL_DATA.events||[]).filter(ev=>{
+    const d=new Date(ev.start_time);
+    return d>now && d<=endOfWeek;
+  });
+}
+
+function renderHome(){
+  const newLeads=leads.filter(l=>l.stage==='new-lead'||l.stage==='call-booked').length;
+  const upcomingCalls=getUpcomingCallsThisWeek().length;
+  const unreadEmails=EMAILS.filter(e=>e.unread).length;
+  const offlineClients=(HEALTH_DATA.clients||[]).filter(c=>c.status!=='online');
+  const healthLabel=offlineClients.length===0?'All Clients Online':`${offlineClients.length} Client(s) Offline`;
+  const healthColor=offlineClients.length===0?'var(--green)':'var(--red)';
+
+  document.getElementById('home-cards').innerHTML=`
+    <div class="home-card" onclick="showSection('pipeline')">
+      <div class="hc-icon">📊</div>
+      <div class="hc-value" style="color:var(--orange)">${newLeads}</div>
+      <div class="hc-label">New Leads</div>
+    </div>
+    <div class="home-card" onclick="showSection('calendly')">
+      <div class="hc-icon">📞</div>
+      <div class="hc-value" style="color:var(--blue)">${upcomingCalls}</div>
+      <div class="hc-label">Calls This Week</div>
+    </div>
+    <div class="home-card" onclick="showSection('email')">
+      <div class="hc-icon">📧</div>
+      <div class="hc-value" style="color:var(--purple)">${unreadEmails}</div>
+      <div class="hc-label">Unread Emails</div>
+    </div>
+    <div class="home-card" onclick="showSection('health')">
+      <div class="hc-icon">🖥️</div>
+      <div class="hc-value" style="color:${healthColor};font-size:18px;line-height:1.6">${healthLabel}</div>
+      <div class="hc-label">Client Status</div>
+    </div>
+  `;
+
+  // Build activity feed from all sources
+  const activities=[];
+
+  // Emails (latest 10)
+  EMAILS.slice(0,10).forEach(e=>{
+    activities.push({
+      type:'email',
+      icon:'📧',
+      bg:'rgba(160,96,240,.15)',
+      title:e.sent?`Sent to ${e.from_name||e.from_email}`:`Email from ${e.from_name||e.from_email}`,
+      desc:e.subject||'(no subject)',
+      time:new Date(e.date),
+      section:'email'
+    });
+  });
+
+  // Calendar events (latest 5)
+  (CAL_DATA.events||[]).slice(0,5).forEach(ev=>{
+    activities.push({
+      type:'calendar',
+      icon:'📅',
+      bg:'rgba(64,128,240,.15)',
+      title:`Call with ${ev.invitee_name}`,
+      desc:ev.name,
+      time:new Date(ev.start_time),
+      section:'calendly'
+    });
+  });
+
+  // Pipeline leads
+  leads.forEach(l=>{
+    const stage=STAGES.find(s=>s.id===l.stage);
+    activities.push({
+      type:'pipeline',
+      icon:'📊',
+      bg:stage?stage.bg:'rgba(64,128,240,.15)',
+      title:`${l.name} — ${stage?stage.label:'Unknown'}`,
+      desc:l.company||l.notes||'',
+      time:l.date?new Date(l.date+', 2026'):new Date(0),
+      section:'pipeline'
+    });
+  });
+
+  // Sort by time, take latest 5
+  activities.sort((a,b)=>b.time-a.time);
+  const recent=activities.slice(0,5);
+
+  document.getElementById('activity-list').innerHTML=recent.length?recent.map(a=>`
+    <div class="activity-item" style="cursor:pointer" onclick="showSection('${a.section}')">
+      <div class="activity-icon" style="background:${a.bg}">${a.icon}</div>
+      <div class="activity-content">
+        <div class="activity-title">${esc(a.title)}</div>
+        <div class="activity-desc">${esc(a.desc)}</div>
+      </div>
+      <div class="activity-time">${emailTimeLabel(a.time.toISOString())}</div>
+    </div>
+  `).join(''):'<div style="color:var(--text2);padding:12px 0;font-size:13px">No recent activity</div>';
+
+  updateGlobalSync();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-function init(){
+async function init(){
   loadLeads();
-  // seed real clients if empty
+  // seed default leads if empty (v3 key — fresh start)
   if(leads.length===0){
     leads=[
+      {id:uid(),name:'Dru Agarwal',company:'Landmark Event Co',notes:'Inbound from website. YPO connection via Darryl Hicks. Multiple companies. Email sent.',stage:'new-lead',date:'Mar 3'},
+      {id:uid(),name:'Ali',company:'Parcca',notes:'Inbound from website. Interested in SEO content creation. Email sent.',stage:'new-lead',date:'Mar 3'},
       {id:uid(),name:'Darryl Hicks',company:'Revaly',notes:'Mac Mini installed. Brit agent running. Tailscale connected.',stage:'active',date:'Feb 21'},
-      {id:uid(),name:'Drew Millington',company:'Nmbr / SystemsbyAI',notes:'Mac Mini installed. Freedom agent running. Tailscale connected.',stage:'active',date:'Feb 25'},
+      {id:uid(),name:'Drew Millington',company:'Nmbr',notes:'Mac Mini installed. Freedom agent running. Tailscale connected.',stage:'active',date:'Feb 25'},
     ];
     saveLeads();
   }
   renderKanban();
   renderDocs();
-  loadEmails();
-  renderHealth();
-  renderCalendly();
+  await Promise.all([loadEmails(), renderHealth(), renderCalendly()]);
+  renderHome();
 }
 
 if(localStorage.getItem('mc_auth_brody')==='1'){document.getElementById('login').classList.add('hidden');init()}
