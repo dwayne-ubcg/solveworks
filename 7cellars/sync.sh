@@ -310,11 +310,13 @@ for i, sale in enumerate(all_sales):
         pid = line.get('ProductID', '')
         line_sku = line.get('SKU', '') or pid_to_sku.get(pid, '')
 
-        # Use our verified landed cost; fall back to Cin7's AverageCost only if we don't have it
+        # Use our verified landed cost; for uncosted wines, estimate at 50% of sell price
+        # (Cin7's AverageCost on legacy wines is unreliable — often set to retail price)
         if line_sku in landed_costs and landed_costs[line_sku] > 0:
             avg_cost = landed_costs[line_sku]
         else:
-            avg_cost = line.get('AverageCost', 0) or 0
+            line_price = line.get('Price', 0) or 0
+            avg_cost = line_price * 0.50 if line_price > 0 else 0
         line_cogs = avg_cost * qty
 
         sale_revenue += line_total
