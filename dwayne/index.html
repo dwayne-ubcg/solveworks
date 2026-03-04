@@ -154,6 +154,40 @@ a{color:var(--blue);text-decoration:none}
 .agent-status.active::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s ease-in-out infinite}
 .agent-status.standby::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);margin-right:6px}
 
+/* Fleet View */
+.fleet-summary{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;padding:16px 20px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius)}
+.fleet-stat{display:flex;flex-direction:column;gap:2px;min-width:120px}
+.fleet-stat .fs-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:500}
+.fleet-stat .fs-value{font-size:20px;font-weight:700}
+.fleet-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:32px}
+.fleet-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:20px;transition:all .25s cubic-bezier(.4,0,.2,1);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards;cursor:pointer}
+.fleet-card:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.fleet-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.fleet-card-name{font-size:18px;font-weight:700}
+.fleet-card-role{font-size:13px;color:var(--text2);margin-bottom:4px}
+.fleet-card-client{font-size:12px;color:var(--blue);margin-bottom:10px}
+.fleet-card-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.fleet-meta-tag{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text2)}
+.fleet-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+.fleet-badge.online{background:rgba(64,192,128,.15);color:var(--green)}
+.fleet-badge.online::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+.fleet-badge.idle{background:rgba(240,192,64,.15);color:var(--yellow)}
+.fleet-badge.idle::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--yellow)}
+.fleet-badge.down{background:rgba(240,64,96,.15);color:var(--red)}
+.fleet-badge.down::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--red)}
+.fleet-badge.unreachable{background:rgba(122,139,160,.12);color:var(--text2)}
+.fleet-badge.unreachable::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--text2)}
+.fleet-badge.on-demand{background:rgba(64,128,240,.15);color:var(--blue)}
+.fleet-badge.on-demand::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.fleet-gw{font-size:11px;margin-top:6px}
+.fleet-gw .healthy{color:var(--green)}.fleet-gw .degraded{color:var(--yellow)}.fleet-gw .down{color:var(--red)}
+.fleet-tasks{margin-top:10px;max-height:0;overflow:hidden;transition:max-height .3s cubic-bezier(.4,0,.2,1)}
+.fleet-card.expanded .fleet-tasks{max-height:400px}
+.fleet-tasks-inner{padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.7}
+.fleet-errors{margin-top:8px;font-size:12px;color:var(--red);line-height:1.5}
+.fleet-section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin:28px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+@media(max-width:1024px){.fleet-cards{grid-template-columns:1fr}}
+
 /* Business Cards */
 .biz-card{background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);border-radius:var(--radius);padding:24px;margin-bottom:16px;transition:all .25s;cursor:pointer;text-decoration:none;display:block;color:var(--text);opacity:0;animation:cardIn .5s cubic-bezier(.4,0,.2,1) forwards}
 .biz-card:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
@@ -396,7 +430,13 @@ const TZ='America/Halifax';
 const TEAM=[
   {id:'dwayne',name:'Dwayne',initials:'DW',color:'#4080f0'},
   {id:'mika',name:'Mika',initials:'MK',color:'#40c080'},
-  {id:'sage',name:'Sage',initials:'SG',color:'#f0c040'},
+  {id:'charlie',name:'Charlie',initials:'CH',color:'#f0c040'},
+  {id:'scout',name:'Scout',initials:'SC',color:'#60a0f0'},
+  {id:'sentinel',name:'Sentinel',initials:'SN',color:'#f04060'},
+  {id:'ledger',name:'Ledger',initials:'LG',color:'#a060f0'},
+  {id:'forge',name:'Forge',initials:'FG',color:'#f09040'},
+  {id:'herald',name:'Herald',initials:'HR',color:'#40c0c0'},
+  {id:'sage',name:'Sage',initials:'SG',color:'#c040a0'},
   {id:'reece',name:'Reece',initials:'RC',color:'#bc8cff'}
 ];
 const SECTIONS=[
@@ -405,7 +445,7 @@ const SECTIONS=[
   {id:'tasks',icon:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',label:'Tasks',badge:'tasks-badge'},
   {id:'meetings',icon:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',label:'Meetings',badge:'meetings-badge'},
   {id:'documents',icon:'<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>',label:'Documents',badge:'docs-badge'},
-  {id:'agents',icon:'<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/>',label:'Agents'},
+  {id:'agents',icon:'<circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/>',label:'Fleet View'},
   {id:'7cellars',icon:'<path d="M8 2h8l1 6H7L8 2z"/><path d="M7 8v12a2 2 0 002 2h6a2 2 0 002-2V8"/>',label:'7 Cellars'},
   {id:'solveworks',icon:'<circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/>',label:'SolveWorks'},
   {id:'health',icon:'<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>',label:'Health'},
@@ -625,13 +665,58 @@ async function init(){
   document.getElementById('sec-documents').innerHTML=dhtml;
   } catch(e){console.error('Documents error:',e)}
 
-  // Agents
+  // Fleet View
   try {
+  const EMOJIS={Mika:'🦊',Brit:'🤖',Freedom:'🗽',Sunday:'🔧',Scout:'🔭',Sentinel:'🛡️',Ledger:'📊',Forge:'📄',Herald:'✍️',Sage:'🍷',Reece:'🔍',Charlie:'⚡'};
+  const SUB_AGENTS=[
+    {name:'Scout',emoji:'🔭',role:'Sales Intel',client:'SolveWorks + 7 Cellars'},
+    {name:'Sentinel',emoji:'🛡️',role:'QA & Monitoring',client:'All'},
+    {name:'Ledger',emoji:'📊',role:'Financial Reporting',client:'7 Cellars'},
+    {name:'Forge',emoji:'📄',role:'Document Builder',client:'All'},
+    {name:'Herald',emoji:'✍️',role:'Content & SEO',client:'SolveWorks + 7 Cellars'},
+    {name:'Sage',emoji:'🍷',role:'Social Media',client:'7 Cellars'},
+    {name:'Reece',emoji:'🔍',role:'Deep Research',client:'All'},
+    {name:'Charlie',emoji:'⚡',role:'Coding',client:'All'}
+  ];
+  const fleet=await loadJSON('data/fleet.json');
   const agents=await loadJSON('data/agents.json');
-  const agentList=agents?.agents||[];
-  document.getElementById('sec-agents').innerHTML=`<h1 class="page-title">Agents</h1><p class="page-sub">Autonomous team members</p><div class="agents-grid">${agentList.length?agentList.map((a,i)=>`<div class="agent-card" style="animation-delay:${i*0.08}s"><span class="agent-status ${a.status==='active'?'active':'standby'}">${esc(a.status)}</span><div class="agent-name">${esc(a.name)}</div><div class="agent-role">${esc(a.role)}</div><div class="agent-desc">${esc(a.description||a.desc||'')}</div></div>`).join(''):emptyHTML('🤖','No agents','Agent profiles will appear once configured')}</div>`;
-  const sa=document.getElementById('stat-agents');if(sa)sa.textContent=agentList.filter(a=>a.status==='active').length;
-  } catch(e){console.error('Agents error:',e)}
+  const fleetAgents=fleet?.agents||[];
+  const lastSync=fleet?.lastSync;
+  const onlineCount=fleetAgents.filter(a=>a.status==='online').length;
+  const totalCrons=fleetAgents.reduce((s,a)=>s+(a.cronCount||0),0);
+  const totalErrors=fleetAgents.reduce((s,a)=>s+(a.errors?.length||0),0);
+  // Relative time helper
+  function relTime(iso){if(!iso)return'—';const d=Date.now()-new Date(iso).getTime();const m=Math.floor(d/60000);if(m<1)return'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago'}
+  // Status class map
+  function stClass(s){return({'online':'online','idle':'idle','down':'down','unreachable':'unreachable'})[s]||'unreachable'}
+  function stIcon(s){return({'online':'🟢','idle':'🟡','down':'🔴'})[s]||'⚪'}
+  // Build summary bar
+  let fhtml=`<h1 class="page-title">Fleet View</h1><p class="page-sub">Autonomous team — real-time status</p>`;
+  fhtml+=`<div class="fleet-summary"><div class="fleet-stat"><div class="fs-label">Agents Online</div><div class="fs-value" style="color:var(--green)">${onlineCount}<span style="font-size:14px;color:var(--text2);font-weight:400">/${fleetAgents.length}</span></div></div><div class="fleet-stat"><div class="fs-label">Total Crons</div><div class="fs-value" style="color:var(--blue)">${totalCrons}</div></div><div class="fleet-stat"><div class="fs-label">Last Sync</div><div class="fs-value" style="font-size:14px;color:var(--text2)">${relTime(lastSync)}</div></div>${totalErrors?`<div class="fleet-stat"><div class="fs-label">Alerts</div><div class="fs-value" style="color:var(--red)">${totalErrors}</div></div>`:''}</div>`;
+  // Fleet agent cards
+  fhtml+=`<div class="fleet-section-title">Fleet Agents (${fleetAgents.length})</div><div class="fleet-cards">`;
+  if(fleetAgents.length){fleetAgents.forEach((a,i)=>{
+    const emoji=EMOJIS[a.name]||'🤖';
+    const tasks=a.currentTasks||[];
+    const errors=a.errors||[];
+    const hasDetails=tasks.length||errors.length;
+    fhtml+=`<div class="fleet-card" style="animation-delay:${i*0.08}s" onclick="this.classList.toggle('expanded')"><div class="fleet-card-head"><span class="fleet-card-name">${emoji} ${esc(a.name)}</span><span class="fleet-badge ${stClass(a.status)}">${stIcon(a.status)} ${esc(a.status)}</span></div><div class="fleet-card-role">${esc(a.role)}</div><div class="fleet-card-client">👤 ${esc(a.client)}</div><div class="fleet-card-meta"><span class="fleet-meta-tag">🖥 ${esc(a.machine||'—')}</span><span class="fleet-meta-tag">⏱ ${a.cronCount||0} crons</span>${a.telegramBot?`<span class="fleet-meta-tag">💬 ${esc(a.telegramBot)}</span>`:''}</div><div class="fleet-gw">Gateway: <span class="${a.gatewayHealth==='healthy'?'healthy':a.gatewayHealth==='degraded'?'degraded':'down'}">${esc(a.gatewayHealth||'unknown')}</span></div>${hasDetails?`<div class="fleet-tasks"><div class="fleet-tasks-inner">${tasks.length?'<strong>Tasks:</strong><br>'+tasks.slice(0,5).map(t=>esc(t)).join('<br>'):''}${errors.length?`<div class="fleet-errors"><strong>Errors:</strong><br>${errors.map(e=>esc(e)).join('<br>')}</div>`:''}</div></div>`:''}</div>`;
+  })} else {fhtml+=emptyHTML('🤖','No fleet data','Run sync-fleet.sh to populate')}
+  fhtml+=`</div>`;
+  // Sub-agents section
+  const fleetNames=new Set(fleetAgents.map(a=>a.name));
+  const subs=SUB_AGENTS.filter(s=>!fleetNames.has(s.name));
+  if(subs.length){
+    fhtml+=`<div class="fleet-section-title">Sub-Agents — On Demand (${subs.length})</div><div class="fleet-cards">`;
+    subs.forEach((s,i)=>{
+      fhtml+=`<div class="fleet-card" style="animation-delay:${i*0.06}s"><div class="fleet-card-head"><span class="fleet-card-name">${s.emoji} ${esc(s.name)}</span><span class="fleet-badge on-demand">on-demand</span></div><div class="fleet-card-role">${esc(s.role)}</div><div class="fleet-card-client">👤 ${esc(s.client)}</div></div>`;
+    });
+    fhtml+=`</div>`;
+  }
+  document.getElementById('sec-agents').innerHTML=fhtml;
+  // Update dashboard stat
+  const sa=document.getElementById('stat-agents');if(sa)sa.textContent=onlineCount||fleetAgents.length||'—';
+  } catch(e){console.error('Fleet View error:',e)}
 
   // 7 Cellars
   try {
