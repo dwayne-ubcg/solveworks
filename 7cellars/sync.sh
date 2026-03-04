@@ -259,6 +259,23 @@ for i, sale in enumerate(all_sales):
 
 print(f"  Fetched {len(sale_details)}/{len(all_sales)} sale details")
 
+# Load our verified landed costs (overrides Cin7's stale AverageCost)
+landed_costs = {}  # SKU -> landed cost per bottle
+landed_path = os.path.expanduser('~/clawd/7cellars/cin7-all-landed-costs.json')
+if os.path.exists(landed_path):
+    with open(landed_path) as f:
+        lc_data = json.load(f)
+    for sku, v in lc_data.items():
+        if isinstance(v, dict):
+            landed_costs[sku] = v.get('landed_bt', 0) or 0
+    print(f"  Loaded {len(landed_costs)} SKUs with verified landed costs")
+
+# Also build a SKU lookup from prod_map (ProductID -> SKU)
+pid_to_sku = {}
+for pid, info in prod_map.items():
+    if info.get('sku'):
+        pid_to_sku[pid] = info['sku']
+
 # Process financials from cached details
 monthly = defaultdict(lambda: {'retail': 0, 'wholesale': 0, 'cogs': 0, 'revenue': 0})
 cat_data = defaultdict(lambda: {'revenue': 0, 'cogs': 0})
@@ -290,9 +307,15 @@ for i, sale in enumerate(all_sales):
     for line in lines:
         qty = line.get('Quantity', 0) or 0
         line_total = line.get('Total', 0) or 0
-        avg_cost = line.get('AverageCost', 0) or 0
-        line_cogs = avg_cost * qty
         pid = line.get('ProductID', '')
+        line_sku = line.get('SKU', '') or pid_to_sku.get(pid, '')
+
+        # Use our verified landed cost; fall back to Cin7's AverageCost only if we don't have it
+        if line_sku in landed_costs and landed_costs[line_sku] > 0:
+            avg_cost = landed_costs[line_sku]
+        else:
+            avg_cost = line.get('AverageCost', 0) or 0
+        line_cogs = avg_cost * qty
 
         sale_revenue += line_total
         sale_cogs += line_cogs
