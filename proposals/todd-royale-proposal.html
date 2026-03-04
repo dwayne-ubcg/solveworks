@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveWorks — AI Automation Proposal for Todd Royale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & PRINT === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .solution-card,
+            .package-card,
+            .roi-card,
+            .roi-grid,
+            .timeline-item,
+            .bonus-card,
+            .packages-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #94a3b8;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.8in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #0ea5e9;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+
+        .solution-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === PACKAGES === */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            page-break-inside: avoid;
+        }
+
+        .package-card.featured {
+            border: 2px solid #0ea5e9;
+            background: linear-gradient(180deg, #f0f9ff 0%, white 30%);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+
+        .package-name {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .package-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0a0a1a;
+            line-height: 1;
+        }
+
+        .package-price sup {
+            font-size: 16px;
+            font-weight: 600;
+            top: -10px;
+        }
+
+        .package-period {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .package-setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .package-features {
+            list-style: none;
+            text-align: left;
+            padding: 0;
+        }
+
+        .package-features li {
+            font-size: 11px;
+            color: #374151;
+            padding: 4px 0;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .package-tagline {
+            font-size: 11px;
+            color: #0ea5e9;
+            font-style: italic;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* === ROI SECTION === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === BONUS CARDS === */
+        .bonus-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 4px;
+        }
+
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #1e3a5f;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* === HOW YOU'LL USE IT — CHAT MOCK === */
+        .chat-mock {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+
+        .chat-bubble.user {
+            background: #0ea5e9;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.agent {
+            background: #1e293b;
+            color: #e2e8f0;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+
+        .chat-clear { clear: both; }
+
+        .chat-time {
+            text-align: center;
+            font-size: 9px;
+            color: #475569;
+            margin: 10px 0;
+            clear: both;
+        }
+
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #374151;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        /* === INVESTMENT === */
+        .investment-setup {
+            text-align: center;
+            background: linear-gradient(135deg, #050507, #0d1528);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .investment-note {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.7;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: COVER -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>AI Estimating<br>Co-Pilot for<br><span>Royale Floors &amp; Surfaces</span></h1>
+        <div class="cover-subtitle">Faster takeoffs. Sharper bids. Win the jobs that matter.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> March 4, 2026<br>
+            <strong>Valid through:</strong> March 18, 2026<br>
+            <strong>Prepared for:</strong> Todd Royale — Royale Floors &amp; Surfaces<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- PAGE 1B: PERSONAL LETTER -->
+    <div class="page">
+        <div class="content" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">A Note from Dwayne</div>
+            </div>
+
+            <div style="max-width: 560px; margin: 40px auto 0; padding: 0 10px;">
+                <p style="font-size: 15px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    Todd,
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    We met on a plane. You told me about estimating hospital flooring jobs — the hours spent measuring zones on blueprints, pricing materials across six different flooring types per building, making sure everything hits spec compliance for healthcare. Then doing it all again for the next bid. I haven't stopped thinking about it since.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    Thirty years in commercial flooring across Atlantic Canada. Hospitals, schools, institutional projects — the kind of work where one missed zone or wrong material spec can cost you the bid or worse, the margin. Your team is busy. You're hiring. And every hour an estimator spends on manual takeoffs is an hour you're not getting bids out the door.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    This isn't a generic AI pitch. I went back and mapped exactly what an AI estimating co-pilot would look like for your operation — blueprint analysis, multi-zone material takeoffs, spec compliance for healthcare and education, branded bid documents that go straight to the GC. Everything in this proposal is built around how your business actually works.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 40px;">
+                    Take a look. Tell me what I got wrong. I'm local — Halifax — so coffee works too.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 40px;">
+                    — Dwayne<br>
+                    <span style="font-size: 12px; color: #94a3b8;">SolveWorks | dwayne@solveworks.io</span>
+                </p>
+
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.7; margin-bottom: 0; font-style: italic;">
+                        "I could really use help with estimating."<br>
+                        <strong style="color: #64748b;">— Todd Royale, 35,000 feet somewhere over Atlantic Canada</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 2: WHAT WE HEARD -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>The <span>Estimating Problem</span></h2>
+            <div class="section-subtitle">What commercial flooring estimating actually looks like — and where it breaks down</div>
+
+            <p class="intro-text">
+                Royale Floors &amp; Surfaces has been installing commercial flooring across Atlantic Canada for over 30 years. Hospitals, schools, government buildings — the kind of projects where a single building can have <strong>eight different flooring types across dozens of zones.</strong> VCT in the hallways, porcelain in the lobbies, epoxy in the kitchens, rubber in the gyms, resilient sheet in the patient rooms. Every zone has different materials, different square footage, different compliance requirements.
+            </p>
+
+            <p class="intro-text">
+                Right now, estimating a major hospital project means manually reviewing architectural drawings, measuring each zone, looking up material quantities, applying your supplier pricing and markup, checking spec compliance for healthcare environments, and assembling a professional bid document for the GC. <strong>That process takes 2-3 days per project.</strong> When you're busy — and you are, you're actively hiring — those days are the bottleneck between an RFP landing on your desk and a bid going out the door.
+            </p>
+
+            <p class="intro-text">
+                In commercial flooring, the first quality bid back often wins. Speed isn't just efficiency — it's revenue.
+            </p>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">2-3 days</div>
+                    <div class="roi-label">Manual estimating time<br>per hospital/school project</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">8+</div>
+                    <div class="roi-label">Different flooring types<br>per institutional building</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">$60-80K</div>
+                    <div class="roi-label">Annual cost of a<br>dedicated commercial estimator</div>
+                </div>
+            </div>
+
+            <p class="disclaimer">* Industry-standard timelines for multi-zone institutional flooring estimates. Estimator salary range for Atlantic Canada commercial construction.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 3: SOLUTIONS (1 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions</div>
+            </div>
+
+            <h2>What We'll <span>Build</span></h2>
+            <div class="section-subtitle">An AI estimating co-pilot built for commercial flooring — not generic construction software</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📐</div>
+                        <div>
+                            <h3>Blueprint &amp; Floor Plan Analysis</h3>
+                            <div class="solution-card-desc">AI reads the drawings. You review the numbers.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Send a floor plan PDF to your agent. It reads the architectural drawings, identifies each zone by room type, measures square footage per area, and maps which flooring type is specified for each zone. Hallways, patient rooms, operating theatres, cafeterias, lobbies — all broken out automatically. <strong>What used to take hours of manual measurement gets done in minutes.</strong> You review and adjust, not start from scratch.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Reads architectural PDFs</span>
+                    <span class="benefit-tag">Auto-identifies zones by room type</span>
+                    <span class="benefit-tag">Calculates square footage per area</span>
+                    <span class="benefit-tag">Maps flooring specs to zones</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🧮</div>
+                        <div>
+                            <h3>Material Takeoff Automation</h3>
+                            <div class="solution-card-desc">Your pricing. Your suppliers. Your markup. Calculated instantly.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Once zones are identified, the agent calculates exact material quantities — vinyl tile, porcelain, epoxy, resilient sheet, rubber, natural stone — based on the square footage plus waste factors for each material type. It applies <strong>your actual supplier pricing and your markup</strong>, not generic cost databases. When your supplier prices change, you update the agent once and every future estimate reflects the new numbers. Adhesives, underlayment, transitions, and prep materials are included per zone.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Your supplier pricing loaded</span>
+                    <span class="benefit-tag">Waste factors per material type</span>
+                    <span class="benefit-tag">Prep materials included</span>
+                    <span class="benefit-tag">Custom markup rules</span>
+                    <span class="benefit-tag">Transitions &amp; accessories</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4: SOLUTIONS (2 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🏥</div>
+                        <div>
+                            <h3>Multi-Zone Job Handling</h3>
+                            <div class="solution-card-desc">One pass. Every zone. Every flooring type.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>A hospital isn't one flooring job — it's twenty. VCT in the corridors, porcelain tile in the main lobby, epoxy resinous systems in the commercial kitchen, rubber flooring in the gymnasium, resilient sheet in patient rooms, concrete polishing in mechanical areas. <strong>The agent handles every zone in a single pass</strong> — breaking out materials, quantities, pricing, and labour estimates per zone, then rolling it all into one consolidated bid. No more flipping between spreadsheet tabs trying to reconcile zone-by-zone numbers.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">All zones in one estimate</span>
+                    <span class="benefit-tag">Zone-by-zone breakdown</span>
+                    <span class="benefit-tag">Consolidated totals</span>
+                    <span class="benefit-tag">Per-zone labour estimates</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">✅</div>
+                        <div>
+                            <h3>Spec Compliance Checking</h3>
+                            <div class="solution-card-desc">Hospitals and schools have rules. The agent knows them.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Healthcare facilities require antimicrobial flooring in patient areas, specific slip resistance ratings in wet zones, fire code compliance throughout, and infection control standards in surgical suites. Schools have their own set — impact resistance in gyms, chemical resistance in labs, accessibility requirements. <strong>The agent flags compliance requirements per zone automatically</strong> — so you catch a missing antimicrobial spec before the bid goes out, not after the GC calls you about it.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Antimicrobial requirements flagged</span>
+                    <span class="benefit-tag">Slip resistance ratings checked</span>
+                    <span class="benefit-tag">Fire code compliance</span>
+                    <span class="benefit-tag">Accessibility standards</span>
+                    <span class="benefit-tag">Zone-specific alerts</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 12px; padding: 22px 24px; margin-top: 16px;">
+                <h3 style="font-size: 14px; color: #0369a1; margin-bottom: 8px;">💡 How These Work Together</h3>
+                <p style="font-size: 12px; color: #1e3a5f; margin-bottom: 0; line-height: 1.7;">Send a floor plan. The agent reads the blueprint, identifies every zone, calculates materials with your pricing, flags compliance issues, and produces a bid-ready document. <strong>The entire estimating workflow — from PDF to professional bid — in one conversation instead of two to three days of manual work.</strong></p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4B: BRANDED PROPOSALS + PIPELINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📄</div>
+                        <div>
+                            <h3>Branded Proposal Generation</h3>
+                            <div class="solution-card-desc">Professional bid documents, ready for the GC.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Once the estimate is approved, the agent generates a branded Royale Floors &amp; Surfaces bid document — zone-by-zone breakdown, material specifications, pricing summary, compliance notes, and project timeline. <strong>A professional PDF that goes directly to the general contractor or building owner.</strong> No more reformatting spreadsheets into presentable documents. Your bids look the same whether you spent three days on them or three hours.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Royale Floors branded</span>
+                    <span class="benefit-tag">Zone-by-zone detail</span>
+                    <span class="benefit-tag">Compliance documentation</span>
+                    <span class="benefit-tag">PDF ready for GC</span>
+                    <span class="benefit-tag">Consistent formatting</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📋</div>
+                        <div>
+                            <h3>Bid Pipeline &amp; Tracking</h3>
+                            <div class="solution-card-desc">Every RFP tracked from landing to close.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>A visual Kanban board tracks every opportunity through the pipeline: New RFPs, Estimating, Bid Submitted, Won, Lost. See your total pipeline value at a glance. Track how long each estimate takes, your win rate by project type (hospitals vs. schools vs. commercial), and revenue by category. <strong>When a GC asks "where's that bid?" you have the answer in seconds.</strong> Over time, the data shows you which project types are most profitable and where you're losing bids.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Kanban pipeline board</span>
+                    <span class="benefit-tag">Win/loss tracking</span>
+                    <span class="benefit-tag">Average bid turnaround time</span>
+                    <span class="benefit-tag">Revenue by project type</span>
+                    <span class="benefit-tag">Deadline alerts</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🖥️</div>
+                        <div>
+                            <h3>Mission Control Dashboard</h3>
+                            <div class="solution-card-desc">Your entire operation on one screen.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>One view: active bids and their status, total pipeline value, estimating queue (what's next), win/loss rates by quarter, upcoming bid deadlines, and recent activity. <strong>Open one screen at the start of the day and know exactly where every project stands.</strong> No digging through email threads, spreadsheets, or Procore to figure out what's pending.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Active bids at a glance</span>
+                    <span class="benefit-tag">Pipeline value</span>
+                    <span class="benefit-tag">Win/loss rates</span>
+                    <span class="benefit-tag">Estimating queue</span>
+                    <span class="benefit-tag">Deadline tracking</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 5: HOW YOU'LL USE IT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">How You'll Use It</div>
+            </div>
+
+            <h2>How You'll <span>Use It</span></h2>
+            <div class="section-subtitle">No new software to learn. Text your agent — like you'd text anyone on your crew.</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Tuesday Morning • via Telegram &nbsp;·&nbsp; <em>Numbers illustrative — built from your actual pricing during onboarding</em></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Todd</div>
+                    New RFP just came in — Halifax Infirmary, Wing C renovation. Sending the floor plans now.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Todd</div>
+                    📎 Halifax-Infirmary-WingC-FloorPlans.pdf
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Got it. Analyzing Wing C floor plans now...<br><br>
+                    <strong>14 zones identified across 3 floors:</strong><br>
+                    • Corridors (4,200 sq ft) — VCT specified<br>
+                    • Patient Rooms x12 (6,400 sq ft) — Resilient sheet<br>
+                    • Nursing Stations x3 (1,800 sq ft) — Porcelain tile<br>
+                    • Commercial Kitchen (900 sq ft) — Epoxy resinous<br>
+                    • Lobby &amp; Waiting (2,100 sq ft) — Porcelain tile<br>
+                    • Utility/Mechanical (1,400 sq ft) — Concrete polish<br><br>
+                    Total: 16,800 sq ft across 6 flooring types.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Todd</div>
+                    Looks right. Run the estimate with our current pricing.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Estimate complete using your supplier pricing + 22% markup:<br><br>
+                    <strong>Materials:</strong> $94,200<br>
+                    <strong>Prep &amp; accessories:</strong> $12,600<br>
+                    <strong>Total bid:</strong> $106,800<br><br>
+                    ⚠️ <strong>Compliance flags:</strong><br>
+                    • Patient rooms require antimicrobial-rated resilient sheet<br>
+                    • Kitchen epoxy must meet CFIA slip resistance standards<br>
+                    • All corridors need fire-rated adhesive per NFPA 101<br><br>
+                    Want me to generate the bid document?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Todd</div>
+                    Yes. Royale letterhead, addressed to Pomerleau Construction.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Done. Bid document generated — zone breakdown, material specs, compliance notes, and pricing summary all included. PDF ready to send. Added to pipeline as "Halifax Infirmary Wing C — Bid Submitted."
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">💬</div>
+                    <div>
+                        <div class="usage-point-text">Text your agent, get estimates</div>
+                        <div class="usage-point-desc">Send floor plans via Telegram — same as texting your foreman</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">📐</div>
+                    <div>
+                        <div class="usage-point-text">Your pricing, always current</div>
+                        <div class="usage-point-desc">Supplier costs and markup loaded — update once, applies everywhere</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚠️</div>
+                    <div>
+                        <div class="usage-point-text">Compliance built in</div>
+                        <div class="usage-point-desc">Healthcare and education specs flagged before the bid goes out</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚡</div>
+                    <div>
+                        <div class="usage-point-text">Hours, not days</div>
+                        <div class="usage-point-desc">From floor plan to professional bid document in a fraction of the time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6: THE ROI -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">The Numbers</div>
+            </div>
+
+            <h2>The Math on <span>Faster Bids</span></h2>
+            <div class="section-subtitle">In commercial flooring, speed wins contracts. Here's what that looks like.</div>
+
+            <p class="intro-text">
+                A dedicated commercial estimator costs $60,000 to $80,000 per year. A major hospital or school project takes that estimator 2-3 full days to produce a bid. When you're juggling multiple RFPs with overlapping deadlines — and you are, you're busy enough to be hiring — some bids get rushed, some get delayed, and some don't get submitted at all.
+            </p>
+
+            <p class="intro-text">
+                In commercial construction, <strong>the first quality bid back often wins the job.</strong> General contractors working on tight timelines appreciate the sub who gets them numbers fast. If you're consistently a day or two ahead of the competition on bid turnaround, you're not just saving estimating hours — you're winning work.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">❌ Today — Manual Estimating</div>
+                    <p style="font-size: 11.5px; color: #374151; line-height: 1.8; margin-bottom: 0;">
+                        RFP arrives → manually review floor plans → measure each zone → look up materials → calculate quantities → apply pricing → check specs → format bid document → review → submit. 2-3 days per project. Multiply by every RFP on your desk.
+                    </p>
+                </div>
+                <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">✓ With Your AI Estimating Co-Pilot</div>
+                    <p style="font-size: 11.5px; color: #1e3a5f; line-height: 1.8; margin-bottom: 0;">
+                        RFP arrives → send floor plan to agent → zones, materials, pricing calculated → compliance flagged → bid document generated → you review and approve. <strong>Hours instead of days. Same quality, fraction of the time.</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">1 bid</div>
+                    <div class="roi-label">One extra win per quarter<br>from faster turnaround pays<br>for the system many times over</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">2-3x</div>
+                    <div class="roi-label">More bids submitted per week<br>with the same team</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">$0</div>
+                    <div class="roi-label">Missed bids because<br>the estimator was buried<br>on another project</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">📊 The Real Cost of Slow Estimating</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">If a single institutional flooring project is worth $100K-$500K in revenue, and you miss even one bid per quarter because the estimator was tied up on another project — that's more lost revenue than the entire system costs for a year. <strong style="color: #e2e8f0;">The question isn't whether you can afford AI estimating. It's whether you can afford not to have it.</strong></p>
+            </div>
+
+            <p class="disclaimer">* Based on standard commercial flooring estimating timelines and Atlantic Canada market rates.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6B: FAQ -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Questions &amp; Answers</div>
+            </div>
+
+            <h2>Common <span>Questions</span></h2>
+            <div class="section-subtitle">Straight answers — no pitch</div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">📐 "How accurate are the blueprint measurements?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">The agent reads architectural PDFs and calculates area measurements from scaled drawings. It's not replacing your experienced eye — you review every estimate before it goes out. But it eliminates the manual measuring and math that takes hours. Think of it as a very fast junior estimator that does the grunt work while you verify the numbers.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🔧 "Can it handle our specific supplier pricing and product lines?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">Yes. During onboarding we load your actual supplier pricing, product catalogs, and markup rules. When prices change, you tell the agent and it updates. Every estimate uses your real numbers, not generic industry averages.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🏥 "Does it actually know healthcare flooring compliance?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">It flags known requirements — antimicrobial ratings, slip resistance standards, fire code adhesive specs, infection control zones. It doesn't replace your knowledge of local building codes, but it catches the specs that are easy to miss when you're moving fast on a multi-zone estimate. You've seen the standards a thousand times. The agent makes sure nothing slips through.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">⏱️ "How long until we're up and running?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">Three to four weeks from kickoff. Week one is loading your pricing, product catalog, and typical project structures. Weeks two and three we build and test with a real project you've already completed — so you can verify accuracy against known numbers. Week four is live deployment with hands-on support.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">📱 "Do I need to learn new software?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">No. You text your agent via Telegram — same as texting anyone on your crew. Send a floor plan, get an estimate back. Approve it, get a bid document. The dashboard is a single web page you can check from your phone or office computer. No training courses. No login credentials to forget.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🚪 "What if we cancel?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">No long-term contracts. Month-to-month. If you cancel, automations stop and you keep the Mac Mini hardware. Your pricing data and project history are always yours. We'd rather earn your business every month than lock you into something you can't exit.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 7: TIMELINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>How It <span>Works</span></h2>
+            <div class="section-subtitle">From kickoff to live estimating in weeks, not months</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Discovery &amp; Data Loading</div>
+                        <h3>Load Your Pricing &amp; Product Catalog</h3>
+                        <p>We load your supplier pricing for every flooring type you install — vinyl tile, resilient sheet, porcelain, natural stone, epoxy, rubber, concrete polish. We set up your markup rules, waste factors per material, and prep material defaults. We also pull a completed project you've already bid and estimated as our calibration baseline.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 2-3 — Build &amp; Calibrate</div>
+                        <h3>Test Against Real Projects</h3>
+                        <p>We run the agent against your completed project — the one you already know the answer to. You compare the AI estimate to your manual estimate and we calibrate until the numbers match. Blueprint analysis, material takeoffs, compliance flags, bid document generation — all tested with your real data. Mission Control dashboard goes live with your pipeline.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Go Live</div>
+                        <h3>First Real Bid with AI Support</h3>
+                        <p>Your next RFP goes through the agent. You send the floor plans, the agent produces the estimate, you review and approve, the bid document gets generated. We're on standby during go-live week to handle any edge cases — unusual zone layouts, specialty materials, non-standard compliance requirements.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Optimize</div>
+                        <h3>Get Faster, Get Smarter</h3>
+                        <p>As you use the system, it learns your patterns — typical zone configurations for hospitals vs. schools, your preferred product lines per application, common spec requirements by building type. Supplier pricing updates get loaded as they change. We monitor accuracy and refine the estimating models based on your feedback.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">4 wks</div>
+                    <div class="roi-label">From kickoff to<br>first live bid</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">No</div>
+                    <div class="roi-label">New software for<br>you or your team to learn</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">Real</div>
+                    <div class="roi-label">Calibrated against<br>your own completed projects</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 8: INVESTMENT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Investment</div>
+            </div>
+
+            <h2>Your <span>Investment</span></h2>
+            <div class="section-subtitle">All pricing in USD. No surprises. Cancel anytime.</div>
+
+            <div class="investment-setup" style="margin-top: 20px;">
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px;">
+                    <div class="roi-number" style="font-size: 42px; font-weight: 800; color: #0ea5e9;">$2,500</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #64748b;">USD</div>
+                </div>
+                <div class="roi-label" style="font-size: 13px; margin-top: 6px;">One-time setup — discovery, pricing data load, calibration, blueprint analysis build, dashboard, deploy &amp; onboarding</div>
+                <div style="margin-top: 8px; font-size: 11px; color: #475569;">Founding customer rate — covers the custom vertical build for commercial flooring estimating</div>
+            </div>
+
+            <div class="packages-grid" style="grid-template-columns: 1fr;">
+                <div class="package-card featured" style="max-width: 480px; margin: 0 auto;">
+                    <div class="package-badge">Founding Customer</div>
+                    <div class="package-name">Monthly Service</div>
+                    <div style="display: flex; align-items: baseline; justify-content: center; gap: 6px;">
+                        <div class="package-price"><sup>$</sup>250</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">USD</div>
+                    </div>
+                    <div class="package-period">/month</div>
+                    <div class="package-setup">You manage your own Anthropic account — full transparency on AI usage costs</div>
+                    <ul class="package-features">
+                        <li>Blueprint &amp; floor plan analysis — PDF to zone breakdown</li>
+                        <li>Material takeoff automation with your supplier pricing</li>
+                        <li>Multi-zone job handling — all flooring types in one pass</li>
+                        <li>Spec compliance checking for healthcare &amp; education</li>
+                        <li>Branded bid document generation</li>
+                        <li>Bid pipeline &amp; win/loss tracking</li>
+                        <li>Mission Control Dashboard</li>
+                        <li>Ongoing optimization, support, and model refinement</li>
+                    </ul>
+                    <div class="package-tagline">Built for commercial flooring estimating. Not generic AI.</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 24px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 10px;">🖥️ Hardware — Your Agent Needs a Home</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.7; margin-bottom: 12px;">Your AI agent runs on a dedicated Mac Mini — a small, silent computer that powers everything 24/7. Your data stays in your environment. We deliver it to your Halifax office pre-configured and ready to plug in.</p>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 16px; max-width: 320px; margin: 0 auto;">
+                    <div style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px;">Mac Mini — Pre-Configured &amp; Delivered</div>
+                    <p style="font-size: 12px; color: #94a3b8; line-height: 1.6;">We supply, configure, and deliver to your office. Plug in, connect to WiFi, done.</p>
+                    <div style="margin-top: 10px;">
+                        <div style="font-size: 18px; font-weight: 700; color: #0ea5e9; line-height: 1;">~$600 <span style="font-size: 11px; font-weight: 600; color: #64748b;">USD</span></div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 3px;">One-time hardware cost</div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="investment-note" style="margin-top: 20px;">
+                <strong>No long-term contracts. Cancel anytime.</strong><br>
+                All SolveWorks pricing in USD.<br>
+                Anthropic AI usage billed directly through your own account — fully transparent, no markups. We recommend the <strong style="color: #374151;">Anthropic Max plan ($100 USD/month)</strong> — we set it up during onboarding.
+            </p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Todd Royale</span>
+        </div>
+    </div>
+
+    <!-- PAGE 9: CTA -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>30 years of flooring<br>expertise. Now with an<br>estimating co-pilot that<br><span style="color: #0ea5e9;">works as fast as you think.</span></h2>
+        <p>You know the specs. You know the materials. You know what wins bids. Let the AI handle the measuring, calculating, and formatting — so you can focus on winning the next job.</p>
+        <a href="mailto:dwayne@solveworks.io" class="cta-button">Get in Touch →</a>
+        <div class="cta-contact">
+            <p><a href="mailto:dwayne@solveworks.io">dwayne@solveworks.io</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> | <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+            <p style="margin-top: 14px; font-size: 11px; color: #334155;">This proposal is valid through March 18, 2026.</p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>
