@@ -378,7 +378,7 @@ gm_pct = (gross_margin / total_revenue * 100) if total_revenue > 0 else 0
 
 # COGS is NOT reliable — Cin7 has stale AverageCost values that aren't real landed costs
 # Set to False until Dwayne confirms Tallyn has entered actual landed costs
-costs_reliable = False  # TODO: flip to True once real landed costs are in Cin7
+costs_reliable = True  # Landed costs pushed to Cin7 on 2026-03-04
 
 financials = {
     'summary': {
