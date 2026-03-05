@@ -259,7 +259,7 @@ for i, sale in enumerate(all_sales):
 
 print(f"  Fetched {len(sale_details)}/{len(all_sales)} sale details")
 
-# Load our verified landed costs (overrides Cin7's stale AverageCost)
+# Load REAL landed costs (Attr5 = total landed cost per bottle — NEVER use AverageCost)
 landed_costs = {}  # SKU -> landed cost per bottle
 landed_path = os.path.expanduser('~/clawd/7cellars/cin7-all-landed-costs.json')
 if os.path.exists(landed_path):
