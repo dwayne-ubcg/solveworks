@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveWorks | Secure Payment</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy-950: #0A1628;
+            --navy-900: #0D1B2A;
+            --navy-800: #122340;
+            --navy-700: #1A2D4A;
+            --navy-600: #233754;
+            --accent-500: #0ea5e9;
+            --accent-400: #38bdf8;
+            --accent-300: #7dd3fc;
+            --success: #22c55e;
+            --white: #ffffff;
+            --white-70: rgba(255, 255, 255, 0.7);
+            --white-50: rgba(255, 255, 255, 0.5);
+            --white-10: rgba(255, 255, 255, 0.1);
+            --white-05: rgba(255, 255, 255, 0.05);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--navy-950);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Background effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .page-wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 640px;
+            padding: 40px 20px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header / Logo */
+        .logo-area {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo-area img {
+            height: 40px;
+            margin-bottom: 8px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Welcome */
+        .welcome {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .welcome h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 8px;
+        }
+
+        .welcome p {
+            font-size: 15px;
+            color: var(--white-50);
+        }
+
+        /* Payment Cards */
+        .payment-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .payment-card:hover {
+            border-color: rgba(14, 165, 233, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .card-icon.setup {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(14, 165, 233, 0.05));
+            border: 1px solid rgba(14, 165, 233, 0.2);
+        }
+
+        .card-icon.monthly {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .card-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--white-50);
+        }
+
+        .card-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .price-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding: 16px 0;
+            border-top: 1px solid var(--white-05);
+            border-bottom: 1px solid var(--white-05);
+        }
+
+        .price-amount {
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--white);
+        }
+
+        .price-currency {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--white-50);
+            margin-left: 4px;
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: var(--white-50);
+        }
+
+        .pay-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: var(--white);
+        }
+
+        .pay-button.setup-btn {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+        }
+
+        .pay-button.setup-btn:hover {
+            box-shadow: 0 6px 24px rgba(14, 165, 233, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .pay-button.monthly-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+        }
+
+        .pay-button.monthly-btn:hover {
+            box-shadow: 0 6px 24px rgba(34, 197, 94, 0.45);
+            transform: translateY(-1px);
+        }
+
+        .pay-button:active {
+            transform: translateY(0);
+        }
+
+        .pay-button svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Secure badge */
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--white-50);
+        }
+
+        .secure-badge svg {
+            width: 14px;
+            height: 14px;
+            color: var(--success);
+        }
+
+        /* Trust indicators */
+        .trust-strip {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 32px;
+            padding: 16px 0;
+            flex-wrap: wrap;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--white-50);
+        }
+
+        .trust-item svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent-400);
+        }
+
+        /* Footer */
+        .page-footer {
+            text-align: center;
+            padding: 32px 20px 24px;
+            font-size: 13px;
+            color: var(--white-50);
+            width: 100%;
+        }
+
+        .page-footer .stripe-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .page-footer .stripe-badge svg {
+            height: 18px;
+            opacity: 0.5;
+        }
+
+        /* Error state */
+        .error-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .error-state h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .error-state p {
+            color: var(--white-50);
+            font-size: 15px;
+        }
+
+        /* Loading shimmer */
+        .loading {
+            opacity: 0;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .payment-card:nth-child(2) { animation-delay: 0.1s; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .page-wrapper { padding: 24px 16px 16px; }
+            .payment-card { padding: 24px; }
+            .price-amount { font-size: 30px; }
+            .welcome h1 { font-size: 20px; }
+            .trust-strip { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-wrapper" id="app">
+        <!-- Populated by JS -->
+    </div>
+
+    <footer class="page-footer">
+        SolveWorks &copy; 2026 &mdash; Secure payments powered by
+        <span class="stripe-badge">
+            <svg viewBox="0 0 60 25" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.3 10.3 0 0 1-4.56.97c-4.31 0-6.84-2.58-6.84-7.14 0-4.07 2.32-7.24 6.3-7.24 3.72 0 5.97 2.86 5.97 7.14 0 .5-.04 1.02-.06 1.35zm-4.15-5.67c0-.97-.64-2.82-2.38-2.82-1.76 0-2.56 1.68-2.72 2.82h5.1zM36.95 19.94V0l4.07-.65v7.17c.74-.56 1.76-.93 2.96-.93 3.18 0 5.34 2.86 5.3 6.98-.04 4.88-2.86 7.46-5.98 7.46-1.02 0-2.36-.37-3.32-1.26l-.17 1.17h-3.86zm4.07-3.2c.56.48 1.19.74 1.97.74 1.56 0 2.72-1.35 2.74-3.7 0-2.14-1.02-3.58-2.68-3.58-.8 0-1.5.3-2.03.82v5.72zM25.71 5.87l.24 1.58c.93-1.28 2.2-1.82 3.58-1.82.93 0 1.67.19 2.24.52l-.97 3.72c-.52-.24-1.1-.39-1.84-.39-1.06 0-2.22.56-2.86 1.74l.02 8.72h-4.23V5.87h3.82zm-9.52 0c1.19 0 2.38.3 3.38.82l-1.24 3.2a5.54 5.54 0 0 0-2.1-.48c-1.64 0-2.86 1.43-2.86 3.72 0 2.36 1.24 3.52 3.04 3.52.76 0 1.6-.24 2.3-.63l.97 3.2c-.93.56-2.48.97-3.9.97-4.36 0-6.84-3.04-6.84-7.14 0-4.56 3.1-7.18 7.25-7.18zM4.23 2.14l4.08-.67v3.9h3.36v3.34H8.31v4.82c0 1.56.65 2.14 1.68 2.14.52 0 1.02-.11 1.52-.3l.65 3.2c-.86.37-1.98.63-3.34.63-3.74 0-4.59-2.42-4.59-5.28V8.71H2.4V5.37h1.83V2.14z"/>
+            </svg>
+        </span>
+    </footer>
+
+    <script>
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const client = params.get('client');
+            const setup = params.get('setup');
+            const monthly = params.get('monthly');
+            const setupLink = params.get('setup_link');
+            const monthlyLink = params.get('monthly_link');
+
+            const app = document.getElementById('app');
+
+            // Format currency
+            function formatAmount(amount) {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                }).format(amount);
+            }
+
+            // Validate — need at least a client name and one payment option
+            if (!client || (!setup && !monthly)) {
+                app.innerHTML = `
+                    <div class="logo-area">
+                        <div class="logo-text">SolveWorks</div>
+                    </div>
+                    <div class="error-state">
+                        <h2>Invalid Payment Link</h2>
+                        <p>This link appears to be incomplete. Please contact your SolveWorks representative for a valid payment link.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <div class="logo-area loading">
+                    <div class="logo-text">SolveWorks</div>
+                </div>
+                <div class="welcome loading">
+                    <h1>Welcome, ${client.replace(/[<>"'&]/g, '')}</h1>
+                    <p>Complete your payment securely below</p>
+                </div>
+            `;
+
+            // Setup fee card
+            if (setup) {
+                const setupAmount = parseFloat(setup);
+                const btnHref = setupLink ? decodeURIComponent(setupLink) : '#';
+                const btnDisabled = !setupLink ? ' style="opacity:0.5;pointer-events:none;" title="Payment link not configured"' : '';
+
+                html += `
+                <div class="payment-card loading">
+                    <div class="card-header">
+                        <div class="card-icon setup">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#0ea5e9;width:24px;height:24px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-label">One-time</div>
+                            <div class="card-title">Setup &amp; Onboarding Fee</div>
+                        </div>
+                    </div>
+                    <div class="price-row">
+                        <div>
+                            <span class="price-amount">${formatAmount(setupAmount)}</span>
+                            <span class="price-currency">USD</span>
+                        </div>
+                        <span class="price-period">one-time</span>
+                    </div>
+                    <a href="${btnHref}" class="pay-button setup-btn"${btnDisabled}>
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Pay ${formatAmount(setupAmount)}
+                    </a>
+                    <div class="secure-badge">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        256-bit SSL encrypted &bull; Secure checkout
+                    </div>
+                </div>
+                `;
+            }
+
+            // Monthly subscription card
+            if (monthly) {
+                const monthlyAmount = parseFloat(monthly);
+                const btnHref = monthlyLink ? decodeURIComponent(monthlyLink) : '#';
+                const btnDisabled = !monthlyLink ? ' style="opacity:0.5;pointer-events:none;" title="Payment link not configured"' : '';
+
+                html += `
+                <div class="payment-card loading">
+                    <div class="card-header">
+                        <div class="card-icon monthly">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color:#22c55e;width:24px;height:24px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="card-label">Recurring</div>
+                            <div class="card-title">Monthly Subscription</div>
+                        </div>
+                    </div>
+                    <div class="price-row">
+                        <div>
+                            <span class="price-amount">${formatAmount(monthlyAmount)}</span>
+                            <span class="price-currency">USD</span>
+                        </div>
+                        <span class="price-period">per month</span>
+                    </div>
+                    <a href="${btnHref}" class="pay-button monthly-btn"${btnDisabled}>
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Subscribe — ${formatAmount(monthlyAmount)}/mo
+                    </a>
+                    <div class="secure-badge">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        256-bit SSL encrypted &bull; Cancel anytime
+                    </div>
+                </div>
+                `;
+            }
+
+            // Trust strip
+            html += `
+                <div class="trust-strip loading">
+                    <div class="trust-item">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        SSL Secured
+                    </div>
+                    <div class="trust-item">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                        Stripe Payments
+                    </div>
+                    <div class="trust-item">
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        PCI Compliant
+                    </div>
+                </div>
+            `;
+
+            app.innerHTML = html;
+        })();
+    </script>
+</body>
+</html>
