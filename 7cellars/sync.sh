@@ -283,6 +283,8 @@ legacy = {'unitsSold': 0, 'revenue': 0, 'cogs': 0}
 product_margins = {}  # sku -> {name, revenue, cogs}
 total_revenue = 0
 total_cogs = 0
+costed_revenue = 0  # Revenue from wines with verified landed costs only
+uncosted_revenue = 0  # Revenue from wines without cost data
 
 for i, sale in enumerate(all_sales):
     sid = sale['SaleID']
@@ -310,17 +312,22 @@ for i, sale in enumerate(all_sales):
         pid = line.get('ProductID', '')
         line_sku = line.get('SKU', '') or pid_to_sku.get(pid, '')
 
-        # Use our verified landed cost; for uncosted wines, estimate at 50% of sell price
-        # (Cin7's AverageCost on legacy wines is unreliable — often set to retail price)
-        if line_sku in landed_costs and landed_costs[line_sku] > 0:
+        # Use ONLY verified landed costs — skip uncosted wines from margin calcs entirely
+        has_verified_cost = line_sku in landed_costs and landed_costs[line_sku] > 0
+        if has_verified_cost:
             avg_cost = landed_costs[line_sku]
         else:
-            line_price = line.get('Price', 0) or 0
-            avg_cost = line_price * 0.50 if line_price > 0 else 0
+            avg_cost = 0  # Don't guess — exclude from margin calculations
         line_cogs = avg_cost * qty
 
         sale_revenue += line_total
         sale_cogs += line_cogs
+
+        # Track costed vs uncosted revenue
+        if has_verified_cost:
+            costed_revenue += line_total
+        else:
+            uncosted_revenue += line_total
 
         # Category margins
         pinfo = prod_map.get(pid, {})
@@ -377,10 +384,10 @@ for cat in sorted(cat_data.keys()):
         'marginPct': round(mpct, 1)
     })
 
-# Top/bottom margin products
+# Top/bottom margin products — only include wines with verified costs
 pm_list = []
 for sku, d in product_margins.items():
-    if d['revenue'] > 0:
+    if d['revenue'] > 0 and d['cogs'] > 0:  # Must have both revenue AND verified cost
         mpct = (d['revenue'] - d['cogs']) / d['revenue'] * 100
         pm_list.append({'product': d['name'], 'revenue': round(d['revenue'], 2), 'cogs': round(d['cogs'], 2), 'marginPct': round(mpct, 1)})
 
@@ -398,24 +405,26 @@ legacy['unitsSold'] = int(legacy['unitsSold'])
 legacy['revenue'] = round(legacy['revenue'], 2)
 legacy['cogs'] = round(legacy['cogs'], 2)
 
-gross_margin = total_revenue - total_cogs
-gm_pct = (gross_margin / total_revenue * 100) if total_revenue > 0 else 0
+# Margin calc uses ONLY costed revenue (wines with verified landed costs)
+gross_margin = costed_revenue - total_cogs
+gm_pct = (gross_margin / costed_revenue * 100) if costed_revenue > 0 else 0
 
-# COGS is NOT reliable — Cin7 has stale AverageCost values that aren't real landed costs
-# Set to False until Dwayne confirms Tallyn has entered actual landed costs
-costs_reliable = True  # Landed costs pushed to Cin7 on 2026-03-04
+print(f"  Revenue: ${total_revenue:,.2f} (costed: ${costed_revenue:,.2f}, uncosted: ${uncosted_revenue:,.2f})")
+print(f"  COGS: ${total_cogs:,.2f} | Gross Margin: {gm_pct:.1f}% (on costed sales only)")
 
 financials = {
     'summary': {
         'revenue': round(total_revenue, 2),
         'revenuePrior': 0,
-        'cogs': 0 if not costs_reliable else round(total_cogs, 2),
-        'grossMargin': 0 if not costs_reliable else round(gross_margin, 2),
-        'grossMarginPct': 0 if not costs_reliable else round(gm_pct, 1),
+        'cogs': round(total_cogs, 2),
+        'costedRevenue': round(costed_revenue, 2),
+        'uncostedRevenue': round(uncosted_revenue, 2),
+        'grossMargin': round(gross_margin, 2),
+        'grossMarginPct': round(gm_pct, 1),
         'operatingExpenses': 0,
-        'netProfit': round(gross_margin, 2) if costs_reliable else 0
+        'netProfit': round(gross_margin, 2)
     },
-    'costsReliable': costs_reliable,
+    'costsReliable': True,
     'orderCount': len(all_sales),
     'monthly': monthly_arr,
     'expenseBreakdown': {'salary': 0, 'rent': 0, 'utilities': 0, 'importDuties': 0, 'other': 0},
