@@ -74,8 +74,9 @@
         .imessage-bubble.blue { background: #007AFF; }
 
         /* Scroll reveal */
-        .sw-reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .sw-reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         .sw-reveal.visible { opacity: 1; transform: translateY(0); }
+        @media (prefers-reduced-motion: reduce) { .sw-reveal { opacity: 1; transform: none; } }
         .sw-reveal-delay-1 { transition-delay: 0.1s; }
         .sw-reveal-delay-2 { transition-delay: 0.2s; }
         .sw-reveal-delay-3 { transition-delay: 0.3s; }
@@ -688,8 +689,10 @@
     (function(){
         const obs = new IntersectionObserver((entries) => {
             entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
-        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        }, { threshold: 0.05, rootMargin: '0px 0px 50px 0px' });
         document.querySelectorAll('.sw-reveal').forEach(el => obs.observe(el));
+        // Ensure above-fold content is visible immediately
+        setTimeout(() => { document.querySelectorAll('.sw-reveal').forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight + 100) el.classList.add('visible'); }); }, 100);
     })();
     </script>
 </body>
