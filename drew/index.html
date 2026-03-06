@@ -1404,7 +1404,7 @@ async function init(){
       totalActive+=activeLeads.length;
       html+=`<div class="kanban-board-group"><div class="kb-group-header"><div class="kb-group-dot" style="background:${esc(board.color)}"></div><span class="kb-group-name">${esc(board.name)}</span><span class="kb-group-count">(${leads.length} cards)</span></div><div class="kanban-columns">`;
       stages.forEach(st=>{
-        const colLeads=leads.filter(l=>getLeadStage(board.id,l.id,l.stage)===st.id);
+        const colLeads=leads.filter(l=>getLeadStage(board.id,l.id,l.stage)===st.id).sort((a,b)=>{const da=a.added||a.id||'',db=b.added||b.id||'';return db.localeCompare(da)});
         html+=`<div class="kanban-col"><div class="kanban-col-header" style="color:${st.color}">${st.label} <span class="kc-count">${colLeads.length}</span></div><div class="kanban-col-body" data-stage="${st.id}" data-board="${board.id}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event,this)">`;
         colLeads.forEach(lead=>{
           const extra=st.id==='closed-won'?' won-glow':st.id==='closed-lost'?' lost-dim':st.id==='dead'?' dead-dim':st.id==='disqualified'?' disqualified-dim':'';
