@@ -1886,11 +1886,21 @@ function renderFinancials(){
   `;
   if(hasCosts){
     cards+=`<div class="stat-card"><div class="label">Cost of Goods Sold</div><div class="value red">$${s.cogs.toLocaleString()}</div></div>
-    <div class="stat-card"><div class="label">Gross Margin</div><div class="value blue">$${s.grossMargin.toLocaleString()}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.grossMarginPct}%</div></div>`;
+    <div class="stat-card"><div class="label">Gross Margin</div><div class="value blue">$${s.grossMargin.toLocaleString()}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">${s.grossMarginPct}% (on costed sales)</div></div>`;
   } else {
     cards+=`<div class="stat-card"><div class="label">Gross Margin</div><div class="value" style="color:var(--text2);font-size:16px">Awaiting landed costs</div></div>`;
   }
   document.getElementById('fin-stats').innerHTML=cards;
+
+  // Uncosted revenue warning
+  if(s.uncostedRevenue && s.uncostedRevenue > 0) {
+    const pct = (s.uncostedRevenue / s.revenue * 100).toFixed(1);
+    document.getElementById('fin-stats').insertAdjacentHTML('afterend',
+      `<div id="uncosted-banner" style="background:rgba(240,192,64,.1);border:1px solid rgba(240,192,64,.25);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#f0c040;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">⚠️</span>
+        <span><strong>$${s.uncostedRevenue.toLocaleString('en',{minimumFractionDigits:2})}</strong> (${pct}%) of revenue has no landed cost data — margin % is calculated on costed sales only. ${Math.round(s.uncostedRevenue/s.revenue*11)} products need invoice costs added.</span>
+      </div>`);
+  }
 
   // P&L table — revenue-only view until landed costs are entered
   const months=d.monthly.slice(0,4);
