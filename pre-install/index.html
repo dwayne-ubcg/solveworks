@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Install Checklist — SolveWorks</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { overflow-x: hidden; scroll-behavior: smooth; }
+        body { background-color: #0A1628 !important; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.15), transparent); }
+        .grid-bg { background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+
+        /* Progress bar */
+        .progress-fill { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Step cards */
+        .step-card { transition: all 0.3s ease; }
+        .step-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, padding 0.3s ease; opacity: 0; }
+        .step-content.expanded { max-height: 2000px; opacity: 1; }
+        .step-header { cursor: pointer; user-select: none; }
+        .step-header:hover { background: rgba(255, 255, 255, 0.02); }
+        .step-chevron { transition: transform 0.3s ease; }
+        .step-chevron.rotated { transform: rotate(180deg); }
+
+        /* Checkboxes */
+        .custom-check { appearance: none; -webkit-appearance: none; width: 22px; height: 22px; min-width: 22px; border: 2px solid rgba(255,255,255,0.15); border-radius: 6px; background: rgba(255,255,255,0.03); cursor: pointer; position: relative; transition: all 0.2s ease; }
+        .custom-check:checked { background: #0ea5e9; border-color: #0ea5e9; }
+        .custom-check:checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 14px; font-weight: 700; }
+        .custom-check:hover { border-color: rgba(14, 165, 233, 0.5); }
+
+        .sub-step { transition: all 0.2s ease; }
+        .sub-step.completed span.step-text { text-decoration: line-through; color: rgba(148, 163, 184, 0.5); }
+
+        /* Step number badge */
+        .step-number { transition: all 0.3s ease; }
+        .step-number.completed { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); }
+        .step-number.completed span { color: #22c55e; }
+
+        /* Celebration */
+        .celebration { animation: celebrate 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes celebrate { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+
+        /* Info callout */
+        .callout-info { background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.15); }
+        .callout-warn { background: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.15); }
+        .callout-reassure { background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.15); }
+
+        /* Code block */
+        .code-block { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); font-family: 'SF Mono', 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-dark-950 text-white font-sans antialiased grid-bg">
+
+    <!-- Sticky Progress Bar -->
+    <div id="progressBar" class="fixed top-0 left-0 right-0 z-50 bg-dark-950/90 backdrop-blur-lg border-b border-white/5">
+        <div class="max-w-4xl mx-auto px-6 py-3 flex items-center gap-4">
+            <span class="text-sm text-slate-400 whitespace-nowrap"><span id="progressCount">0</span> of 7</span>
+            <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                <div id="progressFill" class="progress-fill h-full bg-gradient-to-r from-accent-500 to-accent-400 rounded-full" style="width: 0%"></div>
+            </div>
+            <span id="progressPercent" class="text-sm font-medium text-accent-400 whitespace-nowrap">0%</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="pt-16 py-6 px-6 border-b border-white/5">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <a href="https://solveworks.io" class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-accent-500/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-accent-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold text-white">SolveWorks</span>
+            </a>
+            <span class="text-sm text-slate-500">Pre-Install Setup</span>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero-gradient pt-16 pb-12 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-8">
+                <span class="w-2 h-2 rounded-full bg-success pulse-dot"></span>
+                <span class="text-sm text-green-300 font-medium">Let's get you set up</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Pre-Install<br><span class="text-gradient">Checklist</span>
+            </h1>
+            <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-8">
+                Complete these steps before your install day. No call needed — just follow along and send us the info at the end.
+            </p>
+            <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                <span class="text-lg">⏱️</span>
+                <span class="text-sm text-slate-300 font-medium">About 15–20 minutes</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Celebration Banner (hidden by default) -->
+    <div id="celebrationBanner" class="hidden px-6 pt-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="celebration glass rounded-2xl p-8 text-center border-success/20" style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2);">
+                <div class="text-5xl mb-4">🎉</div>
+                <h2 class="text-2xl font-bold mb-2 text-white">You're all set!</h2>
+                <p class="text-slate-400">Send us your info and we'll take it from here.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Steps -->
+    <section class="py-12 px-6">
+        <div class="max-w-4xl mx-auto space-y-4">
+
+            <!-- Step 1 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="1">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(1)">
+                    <div id="stepNum1" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">1</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Unbox & Power On Your Mac Mini</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">Plug in, set up macOS, and write down your credentials</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content1">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-4">
+                        <div class="space-y-3">
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="1" data-sub="1">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 1, 1)">
+                                <span class="step-text text-sm text-slate-300">Plug in power + ethernet (or connect to WiFi)</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="1" data-sub="2">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 1, 2)">
+                                <span class="step-text text-sm text-slate-300">Complete the macOS setup wizard (Apple ID, language, etc.)</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="1" data-sub="3">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 1, 3)">
+                                <span class="step-text text-sm text-slate-300">Write down the <strong class="text-white">username</strong> and <strong class="text-white">password</strong> you create — we'll need this</span>
+                            </label>
+                        </div>
+                        <div class="callout-warn rounded-xl p-4 mt-4">
+                            <p class="text-sm text-yellow-200/80"><strong class="text-yellow-300">⚠️ Important:</strong> Don't skip writing down your Mac username and password. You'll send these to us in the final step so we can configure your machine remotely.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="2">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(2)">
+                    <div id="stepNum2" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">2</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Enable Remote Login</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">So we can configure your machine without you touching Terminal</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content2">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-4">
+                        <div class="space-y-3">
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="2" data-sub="1">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 2, 1)">
+                                <span class="step-text text-sm text-slate-300">Open <strong class="text-white">System Settings</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="2" data-sub="2">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 2, 2)">
+                                <span class="step-text text-sm text-slate-300">Go to <strong class="text-white">General → Sharing</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="2" data-sub="3">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 2, 3)">
+                                <span class="step-text text-sm text-slate-300">Turn on <strong class="text-white">Remote Login</strong></span>
+                            </label>
+                        </div>
+                        <div class="callout-info rounded-xl p-4">
+                            <p class="text-sm text-accent-300/80"><strong class="text-accent-300">💡 Why?</strong> This lets us configure your machine remotely so you never have to touch Terminal again.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="3">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(3)">
+                    <div id="stepNum3" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">3</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Disable Sleep</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">Your agent runs 24/7 — the machine needs to stay awake</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content3">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-4">
+                        <div class="space-y-3">
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="3" data-sub="1">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 3, 1)">
+                                <span class="step-text text-sm text-slate-300">Open <strong class="text-white">System Settings</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="3" data-sub="2">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 3, 2)">
+                                <span class="step-text text-sm text-slate-300">Go to <strong class="text-white">Energy</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="3" data-sub="3">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 3, 3)">
+                                <span class="step-text text-sm text-slate-300">Set "Turn display off after" to <strong class="text-white">Never</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="3" data-sub="4">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 3, 4)">
+                                <span class="step-text text-sm text-slate-300">If there's a "Prevent automatic sleeping" option, turn it <strong class="text-white">ON</strong></span>
+                            </label>
+                        </div>
+                        <div class="callout-info rounded-xl p-4">
+                            <p class="text-sm text-accent-300/80"><strong class="text-accent-300">💡 Why?</strong> Your agent runs 24/7 — the machine needs to stay awake so it's always ready to work for you.</p>
+
+                            <h4 class="text-sm font-semibold text-white mt-6 mb-3">While you're in Settings, also do these:</h4>
+
+                            <label class="step-check flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" class="sub-check mt-1 w-4 h-4 rounded border-slate-600 text-accent-500 focus:ring-accent-500 bg-dark-800">
+                                <span class="step-text text-sm text-slate-300"><strong class="text-white">Enable Auto-Login:</strong> Go to <strong class="text-white">Users & Groups → Automatic Login</strong> → select your user. <em class="text-slate-500">If power goes out, your machine restarts and logs back in automatically.</em></span>
+                            </label>
+
+                            <label class="step-check flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" class="sub-check mt-1 w-4 h-4 rounded border-slate-600 text-accent-500 focus:ring-accent-500 bg-dark-800">
+                                <span class="step-text text-sm text-slate-300"><strong class="text-white">Disable Screen Lock:</strong> Go to <strong class="text-white">Lock Screen</strong> → set "Require password after screen saver begins or display is turned off" to <strong class="text-white">Never</strong>.</span>
+                            </label>
+
+                            <label class="step-check flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" class="sub-check mt-1 w-4 h-4 rounded border-slate-600 text-accent-500 focus:ring-accent-500 bg-dark-800">
+                                <span class="step-text text-sm text-slate-300"><strong class="text-white">Turn off automatic macOS updates:</strong> Go to <strong class="text-white">General → Software Update → Automatic Updates</strong> → turn off "Install macOS updates". <em class="text-slate-500">We handle updates during maintenance windows so your agent isn't interrupted.</em></span>
+                            </label>
+
+                            <label class="step-check flex items-start gap-3 cursor-pointer">
+                                <input type="checkbox" class="sub-check mt-1 w-4 h-4 rounded border-slate-600 text-accent-500 focus:ring-accent-500 bg-dark-800">
+                                <span class="step-text text-sm text-slate-300"><strong class="text-white">WiFi auto-connect:</strong> If on WiFi, make sure <strong class="text-white">Auto-Join</strong> is checked for your network. <em class="text-slate-500">Ethernet is preferred if possible — more reliable.</em></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="4">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(4)">
+                    <div id="stepNum4" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">4</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Install Tailscale</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">Secure network connection so we can reach your machine</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content4">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-4">
+                        <div class="space-y-3">
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="4" data-sub="1">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 4, 1)">
+                                <span class="step-text text-sm text-slate-300">Open the <strong class="text-white">App Store</strong> on your Mac Mini</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="4" data-sub="2">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 4, 2)">
+                                <span class="step-text text-sm text-slate-300">Search for <strong class="text-white">Tailscale</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="4" data-sub="3">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 4, 3)">
+                                <span class="step-text text-sm text-slate-300">Click <strong class="text-white">Get / Install</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="4" data-sub="4">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 4, 4)">
+                                <span class="step-text text-sm text-slate-300">Open Tailscale from the <strong class="text-white">menu bar</strong> (top-right of your screen)</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="4" data-sub="5">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 4, 5)">
+                                <span class="step-text text-sm text-slate-300"><strong class="text-white">We'll send you a sign-in link</strong> — click it to join our secure network</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="4" data-sub="6">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 4, 6)">
+                                <span class="step-text text-sm text-slate-300">Once connected, Tailscale will show an IP address like <strong class="text-white">100.x.x.x</strong> — <strong class="text-yellow-300">save this!</strong></span>
+                            </label>
+                        </div>
+                        <div class="callout-warn rounded-xl p-4">
+                            <p class="text-sm text-yellow-200/80"><strong class="text-yellow-300">📝 Save your Tailscale IP</strong> — you'll send it to us in the final step. It looks like <code class="code-block px-2 py-0.5 rounded text-xs text-accent-300">100.x.x.x</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="5">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(5)">
+                    <div id="stepNum5" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">5</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Create Your Telegram Bot</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">This is how you'll talk to your AI agent every day</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content5">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-4">
+                        <div class="space-y-3">
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="1">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 1)">
+                                <span class="step-text text-sm text-slate-300">On your <strong class="text-white">phone</strong>, open Telegram (download it first if you don't have it)</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="2">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 2)">
+                                <span class="step-text text-sm text-slate-300">Search for <strong class="text-white">@BotFather</strong> and start a chat</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="3">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 3)">
+                                <span class="step-text text-sm text-slate-300">Send the message: <code class="code-block px-2 py-0.5 rounded text-xs text-accent-300">/newbot</code></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="4">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 4)">
+                                <span class="step-text text-sm text-slate-300">Choose a <strong class="text-white">name</strong> for your assistant (e.g. "My AI Assistant")</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="5">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 5)">
+                                <span class="step-text text-sm text-slate-300">Choose a <strong class="text-white">username</strong> (must end in <code class="code-block px-2 py-0.5 rounded text-xs text-accent-300">bot</code>, e.g. <code class="code-block px-2 py-0.5 rounded text-xs text-accent-300">mycompany_ai_bot</code>)</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="6">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 6)">
+                                <span class="step-text text-sm text-slate-300">BotFather will give you a <strong class="text-white">token</strong> — a long string of letters and numbers. <strong class="text-yellow-300">Save this!</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="5" data-sub="7">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 5, 7)">
+                                <span class="step-text text-sm text-slate-300"><strong class="text-white">Message your new bot</strong> from Telegram (just say "hello") — this registers your account</span>
+                            </label>
+                        </div>
+                        <div class="callout-info rounded-xl p-4">
+                            <p class="text-sm text-accent-300/80"><strong class="text-accent-300">💡 Tip:</strong> The bot token looks something like <code class="code-block px-2 py-0.5 rounded text-xs text-accent-300">1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ</code> — copy the whole thing.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="6">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(6)">
+                    <div id="stepNum6" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">6</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Claude Max Account</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">Your AI subscription — one quick Terminal command, then never again</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content6">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-4">
+                        <div class="space-y-3">
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="1">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 1)">
+                                <span class="step-text text-sm text-slate-300">Go to <strong class="text-white"><a href="https://claude.ai" target="_blank" class="text-accent-400 hover:text-accent-300 underline underline-offset-2">claude.ai</a></strong> on your Mac Mini's browser</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="2">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 2)">
+                                <span class="step-text text-sm text-slate-300">Sign up for <strong class="text-white">Claude Max</strong> ($100/mo) — this is your AI subscription, billed directly to you</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="3">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 3)">
+                                <span class="step-text text-sm text-slate-300">Open <strong class="text-white">Terminal</strong> — press <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-xs font-mono">Cmd</kbd> + <kbd class="px-1.5 py-0.5 rounded bg-white/10 text-xs font-mono">Space</kbd>, type "Terminal", hit Enter</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="4">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 4)">
+                                <span class="step-text text-sm text-slate-300">Type exactly: <code class="code-block px-3 py-1 rounded text-sm text-accent-300 inline-block mt-1">npx claude setup-token</code> and press Enter</span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="5">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 5)">
+                                <span class="step-text text-sm text-slate-300">A browser window will open — click <strong class="text-white">Authorize</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="6">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 6)">
+                                <span class="step-text text-sm text-slate-300">Back in Terminal, a token will appear — <strong class="text-yellow-300">copy and save it!</strong></span>
+                            </label>
+                            <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="6" data-sub="7">
+                                <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 6, 7)">
+                                <span class="step-text text-sm text-slate-300">Close Terminal — you're done with it forever 🎉</span>
+                            </label>
+                        </div>
+                        <div class="callout-reassure rounded-xl p-4">
+                            <p class="text-sm text-green-300/80"><strong class="text-green-300">😊 Don't worry:</strong> This is the only time you'll ever touch Terminal. Promise. Just copy-paste the command, click Authorize, and you're done. We wouldn't ask if it wasn't necessary!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="step-card glass rounded-2xl overflow-hidden" data-step="7">
+                <div class="step-header flex items-center gap-4 p-6 md:p-8" onclick="toggleStep(7)">
+                    <div id="stepNum7" class="step-number flex-shrink-0 w-12 h-12 rounded-xl bg-accent-500/15 border border-accent-500/25 flex items-center justify-center">
+                        <span class="text-xl font-bold text-accent-400">7</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-lg md:text-xl font-semibold">Send Us Your Info</h3>
+                        <p class="text-sm text-slate-500 mt-1 hidden md:block">Almost done — just share these details and we'll handle the rest</p>
+                    </div>
+                    <svg class="step-chevron w-5 h-5 text-slate-500 flex-shrink-0" id="chevron7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="step-content" id="content7">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 pt-0 space-y-6">
+                        <p class="text-slate-400 text-sm">You're almost done! Send the following to your SolveWorks contact:</p>
+
+                        <!-- Info summary card -->
+                        <div class="rounded-2xl p-6 md:p-8 space-y-5" style="background: rgba(14, 165, 233, 0.04); border: 1px solid rgba(14, 165, 233, 0.12);">
+                            <h4 class="text-base font-semibold text-white flex items-center gap-2">
+                                <span>📋</span> Your Setup Info
+                            </h4>
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02]">
+                                    <span class="text-slate-500 text-sm mt-0.5">1.</span>
+                                    <div>
+                                        <span class="text-sm text-white font-medium">Mac username:</span>
+                                        <span class="text-sm text-slate-500 ml-2">_______________</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02]">
+                                    <span class="text-slate-500 text-sm mt-0.5">2.</span>
+                                    <div>
+                                        <span class="text-sm text-white font-medium">Mac password:</span>
+                                        <span class="text-sm text-slate-500 ml-2">_______________</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02]">
+                                    <span class="text-slate-500 text-sm mt-0.5">3.</span>
+                                    <div>
+                                        <span class="text-sm text-white font-medium">Tailscale IP:</span>
+                                        <span class="text-sm text-slate-500 ml-2">100. ___ . ___ . ___</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02]">
+                                    <span class="text-slate-500 text-sm mt-0.5">4.</span>
+                                    <div>
+                                        <span class="text-sm text-white font-medium">Telegram bot token:</span>
+                                        <span class="text-sm text-slate-500 ml-2">_______________</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02]">
+                                    <span class="text-slate-500 text-sm mt-0.5">5.</span>
+                                    <div>
+                                        <span class="text-sm text-white font-medium">Claude setup token:</span>
+                                        <span class="text-sm text-slate-500 ml-2">_______________</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02]">
+                                    <span class="text-slate-500 text-sm mt-0.5">6.</span>
+                                    <div>
+                                        <span class="text-sm text-white font-medium">Confirmed:</span>
+                                        <span class="text-sm text-slate-400 ml-2">I messaged my new bot on Telegram ✓</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="callout-info rounded-xl p-4">
+                            <p class="text-sm text-accent-300/80"><strong class="text-accent-300">📤 How to send:</strong> Screenshot this card or type out the info and send it via Telegram to your SolveWorks contact, or email it to <a href="mailto:dwayne@solveworks.io" class="text-accent-400 hover:text-accent-300 underline underline-offset-2">dwayne@solveworks.io</a>. We'll handle everything from here.</p>
+                        </div>
+
+                        <label class="sub-step flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] cursor-pointer" data-step="7" data-sub="1">
+                            <input type="checkbox" class="custom-check mt-0.5" onchange="toggleSubStep(this, 7, 1)">
+                            <span class="step-text text-sm text-slate-300"><strong class="text-white">I've sent my info to SolveWorks</strong></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Security Note -->
+    <section class="pb-12 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass rounded-2xl p-6 md:p-8 border-white/5">
+                <div class="flex items-start gap-4">
+                    <span class="text-2xl flex-shrink-0">🔐</span>
+                    <div>
+                        <h3 class="font-semibold mb-2 text-white">About Your Security</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">Your credentials are stored locally on <strong class="text-slate-300">YOUR</strong> machine. We use them once during setup and never retain them. Your agent runs on your hardware — your data never leaves your environment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-white/5">
+        <div class="max-w-4xl mx-auto text-center">
+            <p class="text-slate-400 mb-6">Questions? We're here to help.</p>
+            <div class="inline-flex flex-col items-center gap-1 mb-8">
+                <a href="mailto:dwayne@solveworks.io" class="text-accent-400 hover:text-accent-300 text-sm">dwayne@solveworks.io</a>
+                <span class="text-slate-500 text-sm">902-680-1113</span>
+            </div>
+            <div class="pt-8 border-t border-white/5">
+                <p class="text-xs text-slate-600">SolveWorks — Your AI. Only yours.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // State management
+        const STORAGE_KEY = 'solveworks-preinstall';
+        const TOTAL_STEPS = 7;
+
+        // Sub-steps required per step to mark it complete
+        const STEP_SUBS = { 1: 3, 2: 3, 3: 4, 4: 6, 5: 7, 6: 7, 7: 1 };
+
+        let state = loadState();
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) return JSON.parse(saved);
+            } catch (e) {}
+            return { steps: {}, expandedStep: 1 };
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            } catch (e) {}
+        }
+
+        function isStepComplete(step) {
+            const subs = state.steps[step] || {};
+            const required = STEP_SUBS[step];
+            let count = 0;
+            for (let i = 1; i <= required; i++) {
+                if (subs[i]) count++;
+            }
+            return count >= required;
+        }
+
+        function getCompletedCount() {
+            let count = 0;
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                if (isStepComplete(i)) count++;
+            }
+            return count;
+        }
+
+        function updateProgress() {
+            const completed = getCompletedCount();
+            const percent = Math.round((completed / TOTAL_STEPS) * 100);
+            document.getElementById('progressCount').textContent = completed;
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+
+            // Update step number badges
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                const badge = document.getElementById('stepNum' + i);
+                if (isStepComplete(i)) {
+                    badge.classList.add('completed');
+                    badge.querySelector('span').textContent = '✓';
+                } else {
+                    badge.classList.remove('completed');
+                    badge.querySelector('span').textContent = i;
+                }
+            }
+
+            // Celebration
+            const banner = document.getElementById('celebrationBanner');
+            if (completed === TOTAL_STEPS) {
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function toggleStep(step) {
+            const content = document.getElementById('content' + step);
+            const chevron = document.getElementById('chevron' + step);
+
+            if (state.expandedStep === step) {
+                // Collapse
+                content.classList.remove('expanded');
+                chevron.classList.remove('rotated');
+                state.expandedStep = null;
+            } else {
+                // Collapse current
+                if (state.expandedStep) {
+                    const prevContent = document.getElementById('content' + state.expandedStep);
+                    const prevChevron = document.getElementById('chevron' + state.expandedStep);
+                    if (prevContent) prevContent.classList.remove('expanded');
+                    if (prevChevron) prevChevron.classList.remove('rotated');
+                }
+                // Expand new
+                content.classList.add('expanded');
+                chevron.classList.add('rotated');
+                state.expandedStep = step;
+
+                // Smooth scroll to step
+                setTimeout(() => {
+                    const card = content.closest('.step-card');
+                    const rect = card.getBoundingClientRect();
+                    const offset = window.scrollY + rect.top - 80;
+                    window.scrollTo({ top: offset, behavior: 'smooth' });
+                }, 50);
+            }
+            saveState();
+        }
+
+        function toggleSubStep(checkbox, step, sub) {
+            if (!state.steps[step]) state.steps[step] = {};
+            state.steps[step][sub] = checkbox.checked;
+
+            // Update visual
+            const label = checkbox.closest('.sub-step');
+            if (checkbox.checked) {
+                label.classList.add('completed');
+            } else {
+                label.classList.remove('completed');
+            }
+
+            saveState();
+            updateProgress();
+
+            // Auto-advance to next step when current is complete
+            if (isStepComplete(step) && step < TOTAL_STEPS) {
+                setTimeout(() => {
+                    toggleStep(step + 1);
+                }, 600);
+            }
+        }
+
+        // Initialize on load
+        function init() {
+            // Restore checkbox states
+            document.querySelectorAll('.sub-step').forEach(label => {
+                const step = parseInt(label.dataset.step);
+                const sub = parseInt(label.dataset.sub);
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                if (state.steps[step] && state.steps[step][sub]) {
+                    checkbox.checked = true;
+                    label.classList.add('completed');
+                }
+            });
+
+            // Expand the right step
+            const expandStep = state.expandedStep || findFirstIncomplete();
+            if (expandStep) {
+                const content = document.getElementById('content' + expandStep);
+                const chevron = document.getElementById('chevron' + expandStep);
+                if (content) content.classList.add('expanded');
+                if (chevron) chevron.classList.add('rotated');
+                state.expandedStep = expandStep;
+            }
+
+            updateProgress();
+        }
+
+        function findFirstIncomplete() {
+            for (let i = 1; i <= TOTAL_STEPS; i++) {
+                if (!isStepComplete(i)) return i;
+            }
+            return TOTAL_STEPS;
+        }
+
+        init();
+    </script>
+
+</body>
+</html>
