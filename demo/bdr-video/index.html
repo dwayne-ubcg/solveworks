@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>SolveWorks BDR Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; }
+
+/* Scene container */
+.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.5s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* Play button */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+
+/* Progress bar */
+#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; transition: width 0.5s linear; }
+
+/* Glass card */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+/* Colors */
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+.bg-accent { background: #0ea5e9; }
+
+/* Tag colors */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
+.tag-saas { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-hrtech { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-fintech { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-logistics { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tag-consulting { background: rgba(236,72,153,0.2); color: #f472b6; }
+.tag-martech { background: rgba(6,182,212,0.2); color: #22d3ee; }
+.tag-itservices { background: rgba(100,116,139,0.2); color: #94a3b8; }
+.tag-cloud { background: rgba(99,102,241,0.2); color: #818cf8; }
+.tag-telecom { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.tag-professional { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+/* Validation badges */
+.badge-valid { background: rgba(34,197,94,0.2); color: #4ade80; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.badge-catchall { background: rgba(234,179,8,0.2); color: #facc15; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+.badge-invalid { background: rgba(239,68,68,0.2); color: #f87171; padding: 2px 8px; border-radius: 4px; font-size: 12px; text-decoration: line-through; }
+
+/* New badge */
+.new-badge { background: rgba(34,197,94,0.15); color: #4ade80; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes expandIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes typing { from { width: 0; } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+
+.animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+.slide-right { animation: slideInRight 0.5s ease forwards; opacity: 0; }
+.slide-left { animation: slideInLeft 0.5s ease forwards; opacity: 0; }
+
+/* Sidebar */
+.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; }
+.sidebar-logo { padding: 0 24px 30px; font-size: 20px; font-weight: 700; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; }
+
+/* Table */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.data-table th { text-align: left; padding: 12px 16px; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.data-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.data-table tr { opacity: 0; }
+.data-table tr.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Filter chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); }
+
+/* Contact card */
+.contact-card { padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; }
+.contact-card.visible { animation: expandIn 0.5s ease forwards; }
+.avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+
+/* Email typewriter */
+.email-body { font-size: 14px; line-height: 1.7; color: #cbd5e1; }
+.email-body .cursor { display: inline-block; width: 2px; height: 18px; background: #0ea5e9; animation: blink 0.6s infinite; vertical-align: text-bottom; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Timeline */
+.timeline-item { display: flex; align-items: flex-start; gap: 16px; padding: 16px 0; opacity: 0; position: relative; }
+.timeline-item.visible { animation: fadeInUp 0.4s ease forwards; }
+.timeline-dot { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; z-index: 1; }
+.timeline-line { position: absolute; left: 19px; top: 56px; width: 2px; height: 0; background: linear-gradient(180deg, #0ea5e9, rgba(14,165,233,0.2)); transition: height 0.5s ease; }
+
+/* Schedule item */
+.schedule-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); opacity: 0; margin-bottom: 8px; }
+.schedule-item.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Funnel */
+.funnel-step { text-align: center; flex: 1; padding: 20px; position: relative; }
+.funnel-number { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.funnel-arrow { color: #0ea5e9; font-size: 28px; display: flex; align-items: center; padding: 0 8px; }
+
+/* Gauge */
+.gauge-ring { width: 120px; height: 120px; border-radius: 50%; border: 8px solid rgba(255,255,255,0.08); position: relative; }
+.gauge-fill { position: absolute; top: -8px; left: -8px; width: 120px; height: 120px; border-radius: 50%; border: 8px solid transparent; border-top-color: #4ade80; border-right-color: #4ade80; border-bottom-color: #4ade80; transform: rotate(0deg); }
+
+/* News item */
+.news-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; }
+.news-item.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Cost comparison */
+.cost-card { padding: 32px; border-radius: 16px; text-align: center; flex: 1; }
+.cost-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); animation: pulseGlow 2s infinite; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="play-circle">
+    <div class="play-triangle"></div>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progressBar" style="width: 0%"></div>
+
+<!-- ==================== SCENE 0: OPENING HOOK ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-question" style="font-size: 42px; font-weight: 300; line-height: 1.5; opacity: 0; max-width: 900px; margin: 0 auto;">
+      What if you could hire a sales team of 20...<br>for <span style="color: #0ea5e9; font-weight: 600;">$500 a month</span>?
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: HIT LIST ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <span style="color: #fff;">Solve</span><span style="color: #0ea5e9;">Works</span>
+      </div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Pipeline
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Contacts
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Sequences
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+      <div style="flex: 1;"></div>
+      <div class="sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.06); margin-top: 8px; padding-top: 20px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+    <!-- Main content -->
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Target Companies</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automatically discovered based on your ideal customer profile</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 32px; font-weight: 800; color: #0ea5e9;" id="s1-counter">0</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">companies<br>found today</span>
+          </div>
+        </div>
+      </div>
+      <!-- Filter bar -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div class="chip">🇨🇦 Canada</div>
+        <div class="chip">25–2,500 employees</div>
+        <div class="chip">SaaS / Tech / Professional Services</div>
+        <div style="margin-left: auto;">
+          <span class="text-slate-500" style="font-size: 13px;">Last scan: 2 minutes ago</span>
+        </div>
+      </div>
+      <!-- Table -->
+      <div class="glass" style="border-radius: 12px; overflow: hidden;">
+        <table class="data-table" id="s1-table">
+          <thead>
+            <tr style="opacity:1;">
+              <th style="width: 30px;"></th>
+              <th>Company</th>
+              <th>Industry</th>
+              <th>Employees</th>
+              <th>Location</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="s1-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: DECISION MAKERS ==================== -->
+<div class="scene" id="scene2">
+  <div style="width: 1920px; height: 1080px; display: flex;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Pipeline</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Sequences</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 40px 48px; overflow: hidden;">
+      <!-- Company header -->
+      <div id="s2-header" style="opacity: 0; margin-bottom: 32px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+          <a style="color: #64748b; font-size: 13px; cursor: pointer;">← Back to Pipeline</a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <div style="width: 56px; height: 56px; border-radius: 12px; background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(168,85,247,0.1)); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #c084fc;">R</div>
+          <div>
+            <h1 style="font-size: 30px; font-weight: 700;">Ridgeline HR</h1>
+            <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 13px; color: #94a3b8;">
+              <span>👥 340 employees</span>
+              <span>📍 Toronto, ON</span>
+              <span>💰 Series B</span>
+              <span class="tag tag-hrtech">HR Tech</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Decision Makers -->
+      <div id="s2-section" style="opacity: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="font-size: 20px; font-weight: 600;">Decision Makers <span class="text-accent">(4 found)</span></h2>
+          <div class="glass" style="padding: 8px 16px; font-size: 13px;">
+            <span id="s2-counter" style="color: #0ea5e9; font-weight: 700;">0</span>
+            <span class="text-slate-400"> contacts found across </span>
+            <span style="color: #0ea5e9; font-weight: 700;">87</span>
+            <span class="text-slate-400"> companies</span>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;" id="s2-cards"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: EMAIL VALIDATION ==================== -->
+<div class="scene" id="scene3">
+  <div style="width: 1920px; height: 1080px; display: flex;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Pipeline</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Sequences</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 40px 48px; overflow: hidden;">
+      <div style="display: flex; gap: 40px; height: 100%;">
+        <!-- Validation list -->
+        <div style="flex: 1;">
+          <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 8px;">Email Validation</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-bottom: 24px;">Verifying deliverability for all discovered contacts</p>
+          <div class="glass" style="padding: 20px; border-radius: 12px;">
+            <div id="s3-emails" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          </div>
+          <!-- Summary stats -->
+          <div id="s3-stats" style="display: flex; gap: 16px; margin-top: 24px; opacity: 0;">
+            <div class="glass" style="flex: 1; padding: 16px; text-align: center; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #4ade80;">342</div>
+              <div class="text-slate-400" style="font-size: 12px;">Validated</div>
+            </div>
+            <div class="glass" style="flex: 1; padding: 16px; text-align: center; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #f87171;">12</div>
+              <div class="text-slate-400" style="font-size: 12px;">Invalid (removed)</div>
+            </div>
+            <div class="glass" style="flex: 1; padding: 16px; text-align: center; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #facc15;">28</div>
+              <div class="text-slate-400" style="font-size: 12px;">Catch-all (flagged)</div>
+            </div>
+            <div class="glass" style="flex: 1; padding: 16px; text-align: center; border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #0ea5e9;">96.5%</div>
+              <div class="text-slate-400" style="font-size: 12px;">Deliverability</div>
+            </div>
+          </div>
+        </div>
+        <!-- Sender Health -->
+        <div style="width: 300px;">
+          <div class="glass" style="padding: 28px; border-radius: 16px; text-align: center;" id="s3-health" >
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 24px;">Sender Health</h3>
+            <div style="width: 160px; height: 160px; border-radius: 50%; border: 10px solid rgba(255,255,255,0.06); margin: 0 auto; position: relative; display: flex; align-items: center; justify-content: center;">
+              <svg width="160" height="160" style="position: absolute; top: -10px; left: -10px; transform: rotate(-90deg);">
+                <circle cx="80" cy="80" r="70" fill="none" stroke="#4ade80" stroke-width="10" stroke-dasharray="440" id="s3-gauge" stroke-dashoffset="440" stroke-linecap="round" style="transition: stroke-dashoffset 2s ease;"/>
+              </svg>
+              <div>
+                <div style="font-size: 36px; font-weight: 800; color: #4ade80;">A+</div>
+                <div class="text-slate-400" style="font-size: 12px;">Excellent</div>
+              </div>
+            </div>
+            <div style="margin-top: 24px; text-align: left;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;"><span class="text-slate-400">SPF Record</span><span style="color: #4ade80;">✓ Pass</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;"><span class="text-slate-400">DKIM</span><span style="color: #4ade80;">✓ Pass</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;"><span class="text-slate-400">DMARC</span><span style="color: #4ade80;">✓ Pass</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span class="text-slate-400">Domain Age</span><span style="color: #4ade80;">3+ years</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: PERSONALIZED OUTREACH ==================== -->
+<div class="scene" id="scene4">
+  <div style="width: 1920px; height: 1080px; display: flex;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Sequences</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
+      <!-- Part A: Side by side emails -->
+      <div id="s4-emails" style="display: flex; gap: 24px; height: 100%;">
+        <div class="glass" style="flex: 1; padding: 28px; border-radius: 16px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <div class="avatar" style="background: rgba(14,165,233,0.2); color: #38bdf8; width: 36px; height: 36px; font-size: 13px;">SC</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">To: Sarah Chen, CEO</div>
+              <div class="text-slate-400" style="font-size: 12px;">Ridgeline HR</div>
+            </div>
+            <div style="margin-left: auto;"><span class="tag tag-hrtech" style="font-size: 11px;">Personalized</span></div>
+          </div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 8px;">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Subject:</strong> Ridgeline's Q1 growth and a CRM gap you might not see yet</div>
+            <div class="email-body" id="s4-email-left"></div>
+          </div>
+        </div>
+        <div class="glass" style="flex: 1; padding: 28px; border-radius: 16px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+            <div class="avatar" style="background: rgba(34,197,94,0.2); color: #4ade80; width: 36px; height: 36px; font-size: 13px;">MW</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">To: Marcus Webb, CFO</div>
+              <div class="text-slate-400" style="font-size: 12px;">Ridgeline HR</div>
+            </div>
+            <div style="margin-left: auto;"><span class="tag tag-fintech" style="font-size: 11px;">Personalized</span></div>
+          </div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 8px;">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Subject:</strong> What Ridgeline is probably overpaying for CRM</div>
+            <div class="email-body" id="s4-email-right"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Part B: Sequence Timeline -->
+      <div id="s4-timeline" style="display: none; height: 100%;">
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">7-Touch Sequence</h2>
+        <p class="text-slate-400" style="font-size: 14px; margin-bottom: 24px;">Automated multi-channel outreach over 28 days</p>
+        <div class="glass" style="padding: 28px; border-radius: 16px;">
+          <div style="display: flex; gap: 24px;" id="s4-sequence"></div>
+        </div>
+        <div style="display: flex; gap: 20px; margin-top: 24px;" id="s4-seq-stats" style="opacity: 0;">
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #0ea5e9;">312</span>
+            <span class="text-slate-400" style="font-size: 13px;">active sequences</span>
+          </div>
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #0ea5e9;">87</span>
+            <span class="text-slate-400" style="font-size: 13px;">companies</span>
+          </div>
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #0ea5e9;">342</span>
+            <span class="text-slate-400" style="font-size: 13px;">contacts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: AUTO SENDING ==================== -->
+<div class="scene" id="scene5">
+  <div style="width: 1920px; height: 1080px; display: flex;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Sequences</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Send Schedule</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated sending with smart timing</p>
+        </div>
+      </div>
+      <!-- Day columns -->
+      <div class="glass" style="padding: 24px; border-radius: 16px;">
+        <div style="display: flex; gap: 2px;" id="s5-calendar">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+      <!-- Weekly stats -->
+      <div id="s5-stats" style="display: flex; gap: 20px; margin-top: 24px; opacity: 0;">
+        <div class="glass" style="flex: 1; padding: 20px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: #0ea5e9;" id="s5-scheduled">0</div>
+          <div class="text-slate-400" style="font-size: 13px;">Emails Scheduled This Week</div>
+        </div>
+        <div class="glass" style="flex: 1; padding: 20px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: #4ade80;" id="s5-sent">0</div>
+          <div class="text-slate-400" style="font-size: 13px;">Sent</div>
+        </div>
+        <div class="glass" style="flex: 1; padding: 20px; border-radius: 12px; text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: #4ade80;">0</div>
+          <div class="text-slate-400" style="font-size: 13px;">Bounces</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: RE-ENGAGEMENT & NEWS ==================== -->
+<div class="scene" id="scene6">
+  <div style="width: 1920px; height: 1080px; display: flex;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Sequences</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
+      <div style="display: flex; gap: 28px; height: 100%;">
+        <!-- Left: Re-engagement -->
+        <div style="flex: 1;" id="s6-left">
+          <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Re-engagement Sequences</h2>
+          <!-- Original sequence greyed -->
+          <div class="glass" style="padding: 20px; border-radius: 12px; opacity: 0.4; margin-bottom: 16px;">
+            <div style="font-size: 13px; color: #64748b; margin-bottom: 8px;">Original Sequence — Completed</div>
+            <div style="display: flex; gap: 8px;">
+              <div style="width: 40px; height: 4px; border-radius: 2px; background: #334155;"></div>
+              <div style="width: 40px; height: 4px; border-radius: 2px; background: #334155;"></div>
+              <div style="width: 40px; height: 4px; border-radius: 2px; background: #334155;"></div>
+              <div style="width: 40px; height: 4px; border-radius: 2px; background: #334155;"></div>
+              <div style="width: 40px; height: 4px; border-radius: 2px; background: #334155;"></div>
+            </div>
+          </div>
+          <div style="text-align: center; color: #475569; font-size: 13px; margin: 12px 0;">⏳ 3 months later...</div>
+          <!-- Re-engagement card -->
+          <div class="glass" id="s6-reengage" style="padding: 24px; border-radius: 14px; border: 1px solid rgba(14,165,233,0.3); opacity: 0; animation: pulseGlow 2s infinite;">
+            <div style="font-size: 14px; font-weight: 600; color: #0ea5e9; margin-bottom: 12px;">🔄 Re-engagement Triggered</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;"><strong style="color: #cbd5e1;">Subject:</strong> Something changed at Ridgeline since we last connected</div>
+            <div style="font-size: 13px; line-height: 1.6; color: #cbd5e1;">
+              Sarah — it's been a few months. I noticed Ridgeline just opened a Vancouver office. That kind of expansion usually means your team is scaling fast — and your current tools might not keep up.<br><br>
+              Worth revisiting the conversation?
+            </div>
+          </div>
+        </div>
+        <!-- Right: News Monitor -->
+        <div style="flex: 1;" id="s6-right" >
+          <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 20px;">Company News Monitor</h2>
+          <p class="text-slate-400" style="font-size: 13px; margin-bottom: 20px;">Tracking triggers across your target accounts</p>
+          <div id="s6-news"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 7: BOTTOM LINE ==================== -->
+<div class="scene" id="scene7">
+  <div style="width: 1920px; height: 1080px; padding: 60px 80px; display: flex; flex-direction: column; justify-content: center;">
+    <div style="text-align: center; margin-bottom: 12px;">
+      <span style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; font-weight: 600;">90-Day Results</span>
+    </div>
+    <!-- Funnel -->
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 48px;" id="s7-funnel">
+      <div class="funnel-step"><div class="funnel-number" id="s7-f1">0</div><div class="text-slate-400" style="font-size: 13px; margin-top: 6px;">Companies<br>Identified</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s7-f2">0</div><div class="text-slate-400" style="font-size: 13px; margin-top: 6px;">Contacts<br>Found</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s7-f3">0</div><div class="text-slate-400" style="font-size: 13px; margin-top: 6px;">Emails Validated<br><span style="color: #4ade80;">(96.5%)</span></div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s7-f4">0</div><div class="text-slate-400" style="font-size: 13px; margin-top: 6px;">Emails<br>Sent</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s7-f5">0</div><div class="text-slate-400" style="font-size: 13px; margin-top: 6px;">Replies</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s7-f6">0</div><div class="text-slate-400" style="font-size: 13px; margin-top: 6px;">Meetings<br>Booked</div></div>
+    </div>
+    <!-- Cost comparison -->
+    <div id="s7-cost" style="display: flex; gap: 32px; align-items: center; justify-content: center; opacity: 0; margin-bottom: 32px;">
+      <div class="cost-card cost-red" style="max-width: 380px;">
+        <div style="font-size: 14px; color: #f87171; margin-bottom: 8px; font-weight: 600;">Traditional Approach</div>
+        <div style="font-size: 42px; font-weight: 800; color: #fca5a5;">~$120,000</div>
+        <div class="text-slate-400" style="font-size: 14px;">/month for 20 BDRs</div>
+      </div>
+      <div style="font-size: 28px; color: #475569;">vs</div>
+      <div class="cost-card cost-green" style="max-width: 380px;">
+        <div style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px; font-weight: 600;">Your AI Agent</div>
+        <div style="font-size: 42px; font-weight: 800; color: #38bdf8;">$500</div>
+        <div class="text-slate-400" style="font-size: 14px;">/month</div>
+      </div>
+    </div>
+    <!-- Monthly savings -->
+    <div id="s7-savings" style="text-align: center; opacity: 0; margin-bottom: 24px;">
+      <div class="glass" style="display: inline-block; padding: 16px 40px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.3);">
+        <span class="text-slate-400" style="font-size: 16px;">Monthly savings: </span>
+        <span style="font-size: 28px; font-weight: 800; color: #4ade80;">$119,500</span>
+      </div>
+    </div>
+    <!-- ROI -->
+    <div id="s7-roi" style="text-align: center; opacity: 0;">
+      <div class="glass" style="display: inline-block; padding: 20px 48px; border-radius: 14px; border: 1px solid rgba(34,197,94,0.2);">
+        <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px;">If 5% of meetings convert at $10K ACV</div>
+        <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$173,500 new ARR per quarter</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 8: CLOSING CTA ==================== -->
+<div class="scene" id="scene8">
+  <div style="text-align: center;">
+    <div id="s8-logo" style="opacity: 0;">
+      <div style="font-size: 72px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+    </div>
+    <div id="s8-tagline" style="opacity: 0; font-size: 22px; color: #94a3b8; margin-top: 16px; font-weight: 300;">Your AI. Only yours.</div>
+    <div id="s8-url" style="opacity: 0; font-size: 18px; color: #0ea5e9; margin-top: 20px; font-weight: 500;">solveworks.io</div>
+    <div id="s8-cta" style="opacity: 0; font-size: 18px; color: #cbd5e1; margin-top: 28px; font-weight: 300; max-width: 600px; margin-left: auto; margin-right: auto;">Ready to see what it does for your business? Let's talk.</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const SCENE_DURATIONS = [20.1, 67.8, 49.8, 31.6, 97.5, 31.6, 48.0, 62.4, 24.8];
+const TOTAL_DURATION = SCENE_DURATIONS.reduce((a,b) => a+b, 0);
+let currentScene = -1;
+let presentationStartTime = 0;
+let sceneStartTime = 0;
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function animateCounter(el, target, duration = 2000) {
+  const start = performance.now();
+  const initial = 0;
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(initial + (target - initial) * eased);
+    el.textContent = current.toLocaleString();
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function typeText(el, text, speed = 35, startDelay = 0) {
+  let i = 0;
+  el.innerHTML = '<span class="cursor"></span>';
+  setTimeout(() => {
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        const char = text[i];
+        if (char === '\n') {
+          el.innerHTML = text.substring(0, i + 1).replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+        } else {
+          el.innerHTML = text.substring(0, i + 1).replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+        }
+        i++;
+      } else {
+        clearInterval(interval);
+        // Remove cursor after done
+        setTimeout(() => {
+          el.innerHTML = text.replace(/\n/g, '<br>');
+        }, 2000);
+      }
+    }, speed);
+  }, startDelay);
+}
+
+function fadeIn(el, delay = 0, duration = 500) {
+  setTimeout(() => {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = '1';
+  }, delay);
+}
+
+function fadeOut(el, delay = 0, duration = 500) {
+  setTimeout(() => {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = '0';
+  }, delay);
+}
+
+// ============================================================
+// SCENE MANAGEMENT
+// ============================================================
+function showScene(index) {
+  // Hide all scenes
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  // Show target
+  const scene = document.getElementById('scene' + index);
+  if (scene) {
+    scene.classList.add('active');
+    currentScene = index;
+    sceneStartTime = performance.now();
+    // Trigger scene-specific animations
+    window['initScene' + index]?.();
+  }
+}
+
+function advanceScene() {
+  const nextScene = currentScene + 1;
+  if (nextScene >= SCENE_DURATIONS.length) {
+    // End — fade to black
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    return;
+  }
+  showScene(nextScene);
+  // Schedule next advance
+  setTimeout(advanceScene, SCENE_DURATIONS[nextScene] * 1000);
+}
+
+function updateProgress() {
+  if (currentScene < 0) return;
+  const elapsed = (performance.now() - presentationStartTime) / 1000;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  if (pct < 100) requestAnimationFrame(updateProgress);
+}
+
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  presentationStartTime = performance.now();
+  showScene(0);
+  setTimeout(advanceScene, SCENE_DURATIONS[0] * 1000);
+  requestAnimationFrame(updateProgress);
+}
+
+// ============================================================
+// SCENE 0: Opening Hook
+// ============================================================
+function initScene0() {
+  const q = document.getElementById('s0-question');
+  const logo = document.getElementById('s0-logo');
+  // 0-3s: black
+  // 3-8s: text fades in
+  fadeIn(q, 3000, 1000);
+  // 12-17s: text fades out, logo fades in
+  fadeOut(q, 12000, 800);
+  fadeIn(logo, 13000, 1000);
+}
+
+// ============================================================
+// SCENE 1: Hit List
+// ============================================================
+const S1_COMPANIES = [
+  { name: 'NorthPeak Analytics', tag: 'SaaS', tagClass: 'tag-saas', emp: 180, loc: 'Toronto, ON' },
+  { name: 'Ridgeline HR', tag: 'HR Tech', tagClass: 'tag-hrtech', emp: 340, loc: 'Toronto, ON' },
+  { name: 'Canopy Financial', tag: 'FinTech', tagClass: 'tag-fintech', emp: 520, loc: 'Vancouver, BC' },
+  { name: 'TrueNorth Logistics', tag: 'Logistics', tagClass: 'tag-logistics', emp: 95, loc: 'Calgary, AB' },
+  { name: 'BrightPath Solutions', tag: 'Consulting', tagClass: 'tag-consulting', emp: 210, loc: 'Montreal, QC' },
+  { name: 'Cascade Digital', tag: 'MarTech', tagClass: 'tag-martech', emp: 150, loc: 'Ottawa, ON' },
+  { name: 'Horizon Technologies', tag: 'SaaS', tagClass: 'tag-saas', emp: 890, loc: 'Toronto, ON' },
+  { name: 'Maple Systems', tag: 'IT Services', tagClass: 'tag-itservices', emp: 430, loc: 'Winnipeg, MB' },
+  { name: 'Summit Cloud', tag: 'Cloud', tagClass: 'tag-cloud', emp: 275, loc: 'Vancouver, BC' },
+  { name: 'Northern Signal', tag: 'Telecom', tagClass: 'tag-telecom', emp: 620, loc: 'Edmonton, AB' },
+  { name: 'Pinnacle Data', tag: 'SaaS', tagClass: 'tag-saas', emp: 310, loc: 'Toronto, ON' },
+  { name: 'Cedar Analytics', tag: 'FinTech', tagClass: 'tag-fintech', emp: 145, loc: 'Halifax, NS' },
+  { name: 'Arctic Systems', tag: 'Cloud', tagClass: 'tag-cloud', emp: 780, loc: 'Ottawa, ON' },
+  { name: 'Lakeshore Tech', tag: 'IT Services', tagClass: 'tag-itservices', emp: 200, loc: 'Hamilton, ON' },
+  { name: 'Boreal Consulting', tag: 'Consulting', tagClass: 'tag-consulting', emp: 85, loc: 'Quebec City, QC' },
+  { name: 'Granite Software', tag: 'SaaS', tagClass: 'tag-saas', emp: 460, loc: 'Waterloo, ON' },
+  { name: 'Aspen HR Solutions', tag: 'HR Tech', tagClass: 'tag-hrtech', emp: 125, loc: 'Victoria, BC' },
+  { name: 'Prairie Digital', tag: 'MarTech', tagClass: 'tag-martech', emp: 290, loc: 'Saskatoon, SK' },
+  { name: 'Shield Security', tag: 'SaaS', tagClass: 'tag-saas', emp: 550, loc: 'Toronto, ON' },
+  { name: 'Aurora Networks', tag: 'Telecom', tagClass: 'tag-telecom', emp: 410, loc: 'Calgary, AB' },
+];
+
+function initScene1() {
+  const tbody = document.getElementById('s1-tbody');
+  tbody.innerHTML = '';
+  // Animate counter
+  animateCounter(document.getElementById('s1-counter'), 87, 4000);
+  // Add rows with stagger
+  S1_COMPANIES.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="width: 30px; color: #475569; font-size: 12px;">${i + 1}</td>
+      <td style="font-weight: 600;">${c.name}</td>
+      <td><span class="tag ${c.tagClass}">${c.tag}</span></td>
+      <td class="text-slate-300">${c.emp.toLocaleString()}</td>
+      <td class="text-slate-400">${c.loc}</td>
+      <td><span class="new-badge">● New</span></td>
+    `;
+    tbody.appendChild(tr);
+    setTimeout(() => tr.classList.add('visible'), 2000 + i * 1500);
+  });
+}
+
+// ============================================================
+// SCENE 2: Decision Makers
+// ============================================================
+const S2_CONTACTS = [
+  { initials: 'SC', name: 'Sarah Chen', title: 'CEO', email: 'sarah.chen@ridgelinehr.ca', badge: 'valid', badgeText: '✅ Verified', note: 'Posted on LinkedIn 3 days ago about Q1 hiring plans', color: 'rgba(14,165,233,0.2)', textColor: '#38bdf8' },
+  { initials: 'MW', name: 'Marcus Webb', title: 'CFO', email: 'm.webb@ridgelinehr.ca', badge: 'valid', badgeText: '✅ Verified', note: 'Spoke at Toronto FinTech Summit', color: 'rgba(34,197,94,0.2)', textColor: '#4ade80' },
+  { initials: 'PS', name: 'Priya Sharma', title: 'VP Sales', email: 'p.sharma@ridgelinehr.ca', badge: 'catchall', badgeText: '⚠️ Catch-all', note: '15 years in enterprise sales', color: 'rgba(234,179,8,0.2)', textColor: '#facc15' },
+  { initials: 'JP', name: 'Jason Park', title: 'Director of IT', email: 'j.park@ridgelinehr.ca', badge: 'valid', badgeText: '✅ Verified', note: 'Led CRM migration at previous company', color: 'rgba(168,85,247,0.2)', textColor: '#c084fc' },
+];
+
+function initScene2() {
+  fadeIn(document.getElementById('s2-header'), 500, 600);
+  fadeIn(document.getElementById('s2-section'), 1500, 600);
+  const container = document.getElementById('s2-cards');
+  container.innerHTML = '';
+  S2_CONTACTS.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'contact-card';
+    card.innerHTML = `
+      <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <div class="avatar" style="background: ${c.color}; color: ${c.textColor};">${c.initials}</div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 16px; font-weight: 600;">${c.name}</div>
+              <div class="text-slate-400" style="font-size: 13px;">${c.title}</div>
+            </div>
+            <span class="badge-${c.badge}">${c.badgeText}</span>
+          </div>
+          <div style="margin-top: 10px; font-size: 13px; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            ${c.email}
+            <span style="margin-left: 8px; opacity: 0.6;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </span>
+          </div>
+          <div style="margin-top: 8px; font-size: 12px; color: #64748b; font-style: italic;">"${c.note}"</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 3000 + i * 2000);
+  });
+  // Counter
+  setTimeout(() => animateCounter(document.getElementById('s2-counter'), 342, 3000), 4000);
+}
+
+// ============================================================
+// SCENE 3: Email Validation
+// ============================================================
+const S3_EMAILS = [
+  { email: 'sarah.chen@ridgelinehr.ca', status: 'valid', label: 'Valid' },
+  { email: 'm.webb@ridgelinehr.ca', status: 'valid', label: 'Valid' },
+  { email: 'info@canopyfinancial.ca', status: 'catchall', label: 'Catch-All' },
+  { email: 'old.contact@northpeak.io', status: 'invalid', label: 'Invalid' },
+  { email: 'j.park@ridgelinehr.ca', status: 'valid', label: 'Valid' },
+  { email: 't.nguyen@truenorth.ca', status: 'valid', label: 'Valid' },
+  { email: 'a.kumar@brightpath.ca', status: 'valid', label: 'Valid' },
+  { email: 'sales@cascadedigital.io', status: 'invalid', label: 'Invalid' },
+  { email: 'l.martinez@horizontech.ca', status: 'valid', label: 'Valid' },
+  { email: 'r.thompson@maplesys.ca', status: 'valid', label: 'Valid' },
+  { email: 'd.wong@summitcloud.ca', status: 'valid', label: 'Valid' },
+  { email: 'noreply@northernsignal.io', status: 'catchall', label: 'Catch-All' },
+  { email: 'k.johnson@pinnacledata.ca', status: 'valid', label: 'Valid' },
+  { email: 'bounce@cedaranalytics.ca', status: 'invalid', label: 'Invalid' },
+  { email: 'f.chen@arcticsystems.ca', status: 'valid', label: 'Valid' },
+];
+
+function initScene3() {
+  const container = document.getElementById('s3-emails');
+  container.innerHTML = '';
+  const icons = { valid: '✅', catchall: '⚠️', invalid: '❌' };
+  const colors = { valid: '#4ade80', catchall: '#facc15', invalid: '#f87171' };
+  
+  S3_EMAILS.forEach((e, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = `display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 8px; opacity: 0; font-size: 14px; ${e.status === 'invalid' ? 'background: rgba(239,68,68,0.05);' : ''}`;
+    row.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span>${icons[e.status]}</span>
+        <span style="${e.status === 'invalid' ? 'text-decoration: line-through; color: #64748b;' : 'color: #cbd5e1;'}">${e.email}</span>
+      </div>
+      <span class="badge-${e.status}">${e.label}</span>
+    `;
+    container.appendChild(row);
+    setTimeout(() => {
+      row.style.transition = 'opacity 0.3s ease';
+      row.style.opacity = '1';
+    }, 1000 + i * 1200);
+  });
+  // Stats
+  fadeIn(document.getElementById('s3-stats'), 20000, 800);
+  // Gauge
+  setTimeout(() => {
+    document.getElementById('s3-gauge').style.strokeDashoffset = '44';
+  }, 2000);
+}
+
+// ============================================================
+// SCENE 4: Personalized Outreach
+// ============================================================
+const S4_LEFT_TEXT = `Sarah — saw your LinkedIn post about expanding the sales team this quarter. Congrats.
+
+That kind of growth is exciting, but it usually exposes a gap: your current CRM wasn't built for a team that size.
+
+Apex CRM was built specifically for Canadian companies scaling from 50 to 500 in sales. We handle the complexity so your new reps ramp faster, not slower.
+
+Worth a 15-minute look?`;
+
+const S4_RIGHT_TEXT = `Marcus — companies at Ridgeline's stage typically spend 40-60% more on CRM than they need to, mostly because they're on platforms built for enterprises 10x their size.
+
+Apex CRM saves mid-market companies an average of $4,200/month versus Salesforce — with comparable pipeline visibility and half the admin overhead.
+
+Happy to run a quick cost comparison if that's useful.`;
+
+const S4_SEQUENCE = [
+  { day: 'Day 1', icon: '✉️', title: 'Initial email', desc: 'Personalized intro based on company research', color: '#0ea5e9' },
+  { day: 'Day 3', icon: '🔗', title: 'LinkedIn connection', desc: 'Custom note referencing mutual connections', color: '#818cf8' },
+  { day: 'Day 7', icon: '✉️', title: 'Follow-up', desc: 'Different angle, industry-specific stat', color: '#0ea5e9' },
+  { day: 'Day 10', icon: '✉️', title: 'Value-add', desc: 'Case study from similar company', color: '#4ade80' },
+  { day: 'Day 15', icon: '✉️', title: 'Quick question', desc: 'One-line email, easy to reply to', color: '#0ea5e9' },
+  { day: 'Day 21', icon: '✉️', title: 'Break-up', desc: 'No hard feelings, door is open', color: '#fb923c' },
+  { day: 'Day 28', icon: '✉️', title: 'Final touch', desc: 'Soft close with specific offer', color: '#f472b6' },
+];
+
+function initScene4() {
+  // Type emails
+  typeText(document.getElementById('s4-email-left'), S4_LEFT_TEXT, 30, 1000);
+  typeText(document.getElementById('s4-email-right'), S4_RIGHT_TEXT, 25, 10000);
+  
+  // Part B: switch to timeline at 45s
+  setTimeout(() => {
+    document.getElementById('s4-emails').style.display = 'none';
+    document.getElementById('s4-timeline').style.display = 'block';
+    
+    const container = document.getElementById('s4-sequence');
+    container.innerHTML = '';
+    
+    S4_SEQUENCE.forEach((item, i) => {
+      const step = document.createElement('div');
+      step.style.cssText = 'flex: 1; text-align: center; position: relative; opacity: 0;';
+      step.innerHTML = `
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: ${item.color}20; border: 2px solid ${item.color}; display: flex; align-items: center; justify-content: center; font-size: 20px; margin: 0 auto 12px;">${item.icon}</div>
+        <div style="font-size: 11px; color: ${item.color}; font-weight: 600; margin-bottom: 4px;">${item.day}</div>
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">${item.title}</div>
+        <div style="font-size: 11px; color: #64748b; line-height: 1.4;">${item.desc}</div>
+        ${i < S4_SEQUENCE.length - 1 ? `<div style="position: absolute; top: 24px; right: -50%; width: 100%; height: 2px; background: linear-gradient(90deg, ${item.color}40, ${S4_SEQUENCE[i+1].color}40); z-index: -1;"></div>` : ''}
+      `;
+      container.appendChild(step);
+      setTimeout(() => {
+        step.style.transition = 'opacity 0.5s ease';
+        step.style.opacity = '1';
+      }, 1000 + i * 3000);
+    });
+    
+    // Stats
+    const statsEl = document.getElementById('s4-seq-stats');
+    fadeIn(statsEl, 25000, 800);
+  }, 45000);
+}
+
+// ============================================================
+// SCENE 5: Auto Sending
+// ============================================================
+const S5_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const S5_SENDS = [
+  { time: '9:15 AM', name: 'Sarah Chen', company: 'Ridgeline HR', touch: 'Touch 1', status: 'sent' },
+  { time: '10:42 AM', name: 'James Wilson', company: 'NorthPeak', touch: 'Touch 3', status: 'sent' },
+  { time: '11:08 AM', name: 'Lisa Park', company: 'Canopy', touch: 'Touch 1', status: 'scheduled' },
+  { time: '1:30 PM', name: 'David Kim', company: 'Horizon', touch: 'Touch 2', status: 'scheduled' },
+  { time: '2:55 PM', name: 'Amanda Chen', company: 'Summit', touch: 'Touch 1', status: 'scheduled' },
+  { time: '4:10 PM', name: 'Marcus Webb', company: 'Ridgeline', touch: 'Touch 1', status: 'scheduled' },
+];
+
+function initScene5() {
+  const cal = document.getElementById('s5-calendar');
+  cal.innerHTML = '';
+  
+  S5_DAYS.forEach((day, di) => {
+    const isWeekend = di >= 5;
+    const isToday = di === 0;
+    const col = document.createElement('div');
+    col.style.cssText = `flex: 1; padding: 16px; border-radius: 10px; ${isToday ? 'background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.2);' : 'background: rgba(255,255,255,0.02);'} ${isWeekend ? 'opacity: 0.4;' : ''} min-height: 500px;`;
+    
+    let content = `<div style="font-size: 12px; font-weight: 600; color: ${isToday ? '#0ea5e9' : '#64748b'}; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em;">${day}</div>`;
+    content += `<div style="font-size: 11px; color: #475569; margin-bottom: 16px;">${isToday ? 'Today' : ''}</div>`;
+    
+    if (isWeekend) {
+      content += `<div style="text-align: center; padding: 40px 0; font-size: 24px;">⏸️</div>
+        <div style="text-align: center; font-size: 12px; color: #475569;">Paused</div>`;
+    } else if (di === 0) {
+      // Today - sends appear via animation
+      content += '<div id="s5-today-sends"></div>';
+    } else {
+      // Other weekdays - show some scheduled
+      const count = Math.floor(Math.random() * 3) + 2;
+      for (let j = 0; j < count; j++) {
+        const hour = 9 + Math.floor(Math.random() * 7);
+        const min = Math.floor(Math.random() * 60);
+        content += `<div style="padding: 8px; margin-bottom: 6px; border-radius: 6px; background: rgba(14,165,233,0.08); font-size: 11px;">
+          <div style="color: #64748b;">${hour}:${min.toString().padStart(2, '0')} AM</div>
+          <div style="color: #94a3b8; margin-top: 2px;">🔵 Scheduled</div>
+        </div>`;
+      }
+    }
+    
+    col.innerHTML = content;
+    cal.appendChild(col);
+  });
+  
+  // Animate today's sends
+  const todayContainer = document.getElementById('s5-today-sends');
+  if (todayContainer) {
+    S5_SENDS.forEach((s, i) => {
+      setTimeout(() => {
+        const el = document.createElement('div');
+        el.className = 'schedule-item';
+        el.style.cssText = 'margin-bottom: 6px; padding: 8px 10px; opacity: 0;';
+        const statusIcon = s.status === 'sent' ? '🟢' : '🔵';
+        const statusText = s.status === 'sent' ? 'Sent' : 'Scheduled';
+        el.innerHTML = `
+          <div style="font-size: 11px;">
+            <div style="color: #64748b; margin-bottom: 2px;">${s.time}</div>
+            <div style="color: #cbd5e1; font-weight: 500;">${s.name}</div>
+            <div style="color: #64748b; font-size: 10px;">${s.company} · ${s.touch}</div>
+            <div style="margin-top: 3px;">${statusIcon} <span style="color: ${s.status === 'sent' ? '#4ade80' : '#38bdf8'}; font-size: 10px;">${statusText}</span></div>
+          </div>
+        `;
+        todayContainer.appendChild(el);
+        el.classList.add('visible');
+      }, 2000 + i * 2500);
+    });
+  }
+  
+  // Stats
+  fadeIn(document.getElementById('s5-stats'), 20000, 800);
+  setTimeout(() => {
+    animateCounter(document.getElementById('s5-scheduled'), 847, 2000);
+    animateCounter(document.getElementById('s5-sent'), 312, 2000);
+  }, 20000);
+}
+
+// ============================================================
+// SCENE 6: Re-engagement & News
+// ============================================================
+const S6_NEWS = [
+  { company: 'Ridgeline HR', event: 'Announced Vancouver office expansion', time: '2 hours ago', triggered: true },
+  { company: 'NorthPeak Analytics', event: 'New VP of Sales hired', time: 'yesterday', triggered: true },
+  { company: 'Canopy Financial', event: 'Series A announced, $8M raised', time: '3 days ago', triggered: true },
+  { company: 'BrightPath Solutions', event: 'Published Q4 growth report', time: '4 days ago', triggered: false },
+  { company: 'Horizon Technologies', event: 'CEO quoted in Globe and Mail', time: '1 week ago', triggered: false },
+];
+
+function initScene6() {
+  // Re-engagement card
+  fadeIn(document.getElementById('s6-reengage'), 3000, 800);
+  
+  // News items - start at 20s
+  const newsContainer = document.getElementById('s6-news');
+  newsContainer.innerHTML = '';
+  
+  S6_NEWS.forEach((n, i) => {
+    const item = document.createElement('div');
+    item.className = 'news-item';
+    item.innerHTML = `
+      <div style="font-size: 20px; flex-shrink: 0;">🔔</div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-weight: 600; font-size: 14px;">${n.company}</span>
+          <span style="font-size: 11px; color: #64748b;">${n.time}</span>
+        </div>
+        <div style="font-size: 13px; color: #94a3b8;">"${n.event}"</div>
+        ${n.triggered ? '<div style="margin-top: 6px; font-size: 12px; color: #0ea5e9; display: flex; align-items: center; gap: 6px;">→ 📧 Triggered outreach</div>' : ''}
+      </div>
+    `;
+    newsContainer.appendChild(item);
+    setTimeout(() => item.classList.add('visible'), 20000 + i * 3000);
+  });
+}
+
+// ============================================================
+// SCENE 7: Bottom Line
+// ============================================================
+function initScene7() {
+  // Funnel numbers count up
+  const funnelData = [
+    { id: 's7-f1', target: 2847, delay: 1000 },
+    { id: 's7-f2', target: 8541, delay: 3000 },
+    { id: 's7-f3', target: 7923, delay: 5000 },
+    { id: 's7-f4', target: 23769, delay: 7000 },
+    { id: 's7-f5', target: 1412, delay: 9000 },
+    { id: 's7-f6', target: 347, delay: 11000 },
+  ];
+  
+  funnelData.forEach(f => {
+    setTimeout(() => animateCounter(document.getElementById(f.id), f.target, 2500), f.delay);
+  });
+  
+  // Cost comparison at 20s
+  fadeIn(document.getElementById('s7-cost'), 20000, 800);
+  // Savings
+  fadeIn(document.getElementById('s7-savings'), 28000, 800);
+  // ROI at 35s
+  fadeIn(document.getElementById('s7-roi'), 35000, 800);
+}
+
+// ============================================================
+// SCENE 8: Closing CTA
+// ============================================================
+function initScene8() {
+  fadeIn(document.getElementById('s8-logo'), 2000, 1000);
+  fadeIn(document.getElementById('s8-tagline'), 5000, 800);
+  fadeIn(document.getElementById('s8-url'), 8000, 800);
+  fadeIn(document.getElementById('s8-cta'), 11000, 800);
+  // Fade to black at end
+  setTimeout(() => {
+    document.querySelectorAll('.scene').forEach(s => {
+      s.style.transition = 'opacity 1.5s ease';
+      s.style.opacity = '0';
+    });
+  }, 22000);
+}
+</script>
+</body>
+</html>
