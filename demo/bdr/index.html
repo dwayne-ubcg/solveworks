@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI BDR Demo — SolveWorks</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { overflow-x: hidden; scroll-behavior: smooth; }
+        body { background-color: #0A1628 !important; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+        .glass:hover { border-color: rgba(255,255,255,0.1); }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14,165,233,0.15), transparent); }
+        .grid-bg { background-image: linear-gradient(rgba(14,165,233,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.3); } }
+        .sparkline { display: inline-block; width: 60px; height: 20px; }
+        .sparkline-bar { display: inline-block; width: 4px; margin-right: 2px; border-radius: 2px; vertical-align: bottom; background: rgba(14,165,233,0.5); animation: sparkle 1.5s ease-in-out infinite; }
+        .sparkline-bar:nth-child(1) { height: 30%; animation-delay: 0s; }
+        .sparkline-bar:nth-child(2) { height: 50%; animation-delay: 0.1s; }
+        .sparkline-bar:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+        .sparkline-bar:nth-child(4) { height: 65%; animation-delay: 0.3s; }
+        .sparkline-bar:nth-child(5) { height: 55%; animation-delay: 0.4s; }
+        .sparkline-bar:nth-child(6) { height: 80%; animation-delay: 0.5s; }
+        .sparkline-bar:nth-child(7) { height: 70%; animation-delay: 0.6s; }
+        .sparkline-bar:nth-child(8) { height: 95%; animation-delay: 0.7s; }
+        @keyframes sparkle { 0%,100% { opacity:.6; } 50% { opacity:1; } }
+
+        /* Kanban */
+        .kanban-col { min-height: 300px; }
+        .kanban-card { cursor: grab; transition: all 0.2s ease; }
+        .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); border-color: rgba(14,165,233,0.3); }
+        .kanban-card.dragging { opacity: 0.5; transform: rotate(2deg); }
+        .kanban-col.drag-over { background: rgba(14,165,233,0.05); border-color: rgba(14,165,233,0.3); }
+
+        /* Modal */
+        .modal-backdrop { background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); }
+        .modal-enter { animation: modalIn 0.3s ease; }
+        @keyframes modalIn { from { opacity:0; transform: scale(0.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+        /* Sequence progress */
+        .seq-progress { height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .seq-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); transition: width 0.5s ease; }
+
+        /* Status badges */
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+        .badge-sent { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .badge-opened { background: rgba(168,85,247,0.15); color: #c084fc; }
+        .badge-replied { background: rgba(14,165,233,0.15); color: #38bdf8; }
+        .badge-scheduled { background: rgba(251,191,36,0.15); color: #fbbf24; }
+
+        /* Fade in */
+        .fade-in { opacity: 0; transform: translateY(10px); animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { to { opacity:1; transform: translateY(0); } }
+
+        /* Industry tags */
+        .tag { display: inline-block; padding: 1px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .tag-saas { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .tag-manufacturing { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .tag-finance { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .tag-retail { background: rgba(236,72,153,0.15); color: #f472b6; }
+        .tag-healthcare { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+        .tag-logistics { background: rgba(168,85,247,0.15); color: #c084fc; }
+        .tag-energy { background: rgba(251,146,60,0.15); color: #fb923c; }
+        .tag-realestate { background: rgba(14,165,233,0.15); color: #38bdf8; }
+
+        /* Live indicator */
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: livePulse 2s ease infinite; }
+        @keyframes livePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); } 50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); } }
+
+        .copy-btn { transition: all 0.2s ease; }
+        .copy-btn:hover { background: rgba(14,165,233,0.2); }
+        .copy-btn.copied { background: rgba(34,197,94,0.2); color: #4ade80; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="bg-dark-950 text-white font-sans antialiased grid-bg min-h-screen">
+
+<!-- Header -->
+<header class="fixed w-full top-0 z-50 border-b border-white/5" style="background: rgba(10,22,40,0.9); backdrop-filter: blur(20px);">
+    <div class="max-w-[1600px] mx-auto px-6 py-3 flex items-center justify-between">
+        <a href="https://solveworks.io" class="text-2xl font-bold tracking-tight">
+            <span class="text-white">Solve</span><span class="text-gradient">Works</span>
+        </a>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm text-slate-400">
+                <div class="live-dot"></div>
+                <span>Last synced: 2 min ago</span>
+            </div>
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-accent-500/15 text-accent-400 border border-accent-500/20">AI BDR Demo</span>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="max-w-[1600px] mx-auto px-6 pt-20 pb-12 hero-gradient">
+
+    <!-- Stats Bar -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 fade-in" style="animation-delay:0.1s">
+        <div class="glass rounded-xl p-5">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-400 text-sm">🏢 Companies Found</span>
+                <div class="sparkline"><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span></div>
+            </div>
+            <div class="text-3xl font-bold text-white counter" data-target="847">0</div>
+            <div class="text-xs text-green-400 mt-1">↑ 12% this week</div>
+        </div>
+        <div class="glass rounded-xl p-5">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-400 text-sm">👤 Decision Makers</span>
+                <div class="sparkline"><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span></div>
+            </div>
+            <div class="text-3xl font-bold text-white counter" data-target="2341">0</div>
+            <div class="text-xs text-green-400 mt-1">↑ 8% this week</div>
+        </div>
+        <div class="glass rounded-xl p-5">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-400 text-sm">✉️ Emails Validated</span>
+                <div class="sparkline"><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span></div>
+            </div>
+            <div class="text-3xl font-bold text-white counter" data-target="1892">0</div>
+            <div class="text-xs text-slate-400 mt-1">92% valid rate</div>
+        </div>
+        <div class="glass rounded-xl p-5">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-slate-400 text-sm">📧 Sequences Active</span>
+                <div class="sparkline"><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span><span class="sparkline-bar"></span></div>
+            </div>
+            <div class="text-3xl font-bold text-white counter" data-target="634">0</div>
+            <div class="text-xs text-green-400 mt-1">↑ 23% this week</div>
+        </div>
+    </section>
+
+    <!-- Prospect Pipeline (Kanban) -->
+    <section class="mb-8 fade-in" style="animation-delay:0.2s">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-white">Prospect Pipeline</h2>
+            <span class="text-xs text-slate-500">Drag cards between stages</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4" id="kanban">
+            <!-- Columns rendered by JS -->
+        </div>
+    </section>
+
+    <!-- Two column layout: Sequences + Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+        <!-- Outreach Sequences (2/3) -->
+        <section class="lg:col-span-2 fade-in" style="animation-delay:0.3s">
+            <h2 class="text-lg font-semibold text-white mb-4">Active Outreach Sequences</h2>
+            <div class="space-y-3" id="sequences">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- Sidebar: News + Content -->
+        <aside class="space-y-6 fade-in" style="animation-delay:0.4s">
+            <!-- News & Triggers -->
+            <div>
+                <h2 class="text-lg font-semibold text-white mb-4">News & Triggers</h2>
+                <div class="space-y-3" id="newsFeed">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Re-engagement Queue -->
+            <div>
+                <h2 class="text-lg font-semibold text-white mb-4">Re-engagement Queue</h2>
+                <div class="space-y-3" id="reengagement">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Daily Content -->
+            <div>
+                <h2 class="text-lg font-semibold text-white mb-4">Daily Content</h2>
+                <div class="space-y-3" id="dailyContent">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+</main>
+
+<!-- Contact Modal -->
+<div id="contactModal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop">
+    <div class="glass rounded-2xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto modal-enter" id="contactModalContent">
+        <!-- Filled by JS -->
+    </div>
+</div>
+
+<!-- Sequence Detail Modal -->
+<div id="sequenceModal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop">
+    <div class="glass rounded-2xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto modal-enter" id="sequenceModalContent">
+        <!-- Filled by JS -->
+    </div>
+</div>
+
+<!-- Draft Email Modal -->
+<div id="draftModal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop">
+    <div class="glass rounded-2xl w-full max-w-2xl mx-4 max-h-[85vh] overflow-y-auto modal-enter" id="draftModalContent">
+        <!-- Filled by JS -->
+    </div>
+</div>
+
+<script>
+// =====================================================
+// DATA — All hardcoded, easy to modify
+// =====================================================
+
+const companies = [
+    { id: 1, name: "Northvale Analytics", industry: "SaaS", tag: "saas", employees: 120, location: "Toronto, ON", contactsFound: 4, stage: "discovered" },
+    { id: 2, name: "Pacific Ridge Manufacturing", industry: "Manufacturing", tag: "manufacturing", employees: 450, location: "Vancouver, BC", contactsFound: 5, stage: "discovered" },
+    { id: 3, name: "Maple Leaf Financial Group", industry: "Finance", tag: "finance", employees: 890, location: "Calgary, AB", contactsFound: 3, stage: "discovered" },
+    { id: 4, name: "Cascade Digital Solutions", industry: "SaaS", tag: "saas", employees: 85, location: "Ottawa, ON", contactsFound: 4, stage: "contacts" },
+    { id: 5, name: "Aurora Health Systems", industry: "Healthcare", tag: "healthcare", employees: 1200, location: "Toronto, ON", contactsFound: 5, stage: "contacts" },
+    { id: 6, name: "Westcoast Logistics", industry: "Logistics", tag: "logistics", employees: 340, location: "Vancouver, BC", contactsFound: 3, stage: "contacts" },
+    { id: 7, name: "Prairie Wind Energy", industry: "Energy", tag: "energy", employees: 210, location: "Edmonton, AB", contactsFound: 4, stage: "validated" },
+    { id: 8, name: "Harbourfront Properties", industry: "Real Estate", tag: "realestate", employees: 95, location: "Halifax, NS", contactsFound: 3, stage: "validated" },
+    { id: 9, name: "Summit Retail Group", industry: "Retail", tag: "retail", employees: 1850, location: "Montreal, QC", contactsFound: 5, stage: "validated" },
+    { id: 10, name: "Boreal Tech Partners", industry: "SaaS", tag: "saas", employees: 65, location: "Waterloo, ON", contactsFound: 4, stage: "sequenced" },
+    { id: 11, name: "Ridgeline Construction", industry: "Manufacturing", tag: "manufacturing", employees: 520, location: "Calgary, AB", contactsFound: 3, stage: "sequenced" },
+    { id: 12, name: "Canopy Health Clinic", industry: "Healthcare", tag: "healthcare", employees: 180, location: "Victoria, BC", contactsFound: 4, stage: "sequenced" },
+    { id: 13, name: "Horizon Tech Solutions", industry: "SaaS", tag: "saas", employees: 290, location: "Toronto, ON", contactsFound: 5, stage: "replied" },
+    { id: 14, name: "Glacier Point Capital", industry: "Finance", tag: "finance", employees: 150, location: "Vancouver, BC", contactsFound: 3, stage: "replied" },
+    { id: 15, name: "Northern Compass Media", industry: "SaaS", tag: "saas", employees: 42, location: "Montreal, QC", contactsFound: 3, stage: "replied" },
+    { id: 16, name: "Clearwater Distribution", industry: "Logistics", tag: "logistics", employees: 380, location: "Winnipeg, MB", contactsFound: 4, stage: "discovered" },
+    { id: 17, name: "Silverbirch Financial", industry: "Finance", tag: "finance", employees: 230, location: "Toronto, ON", contactsFound: 3, stage: "contacts" },
+    { id: 18, name: "Timberline Software", industry: "SaaS", tag: "saas", employees: 75, location: "Ottawa, ON", contactsFound: 4, stage: "validated" },
+    { id: 19, name: "Evergreen Retail Co.", industry: "Retail", tag: "retail", employees: 640, location: "Vancouver, BC", contactsFound: 3, stage: "sequenced" },
+    { id: 20, name: "Ironwood Engineering", industry: "Manufacturing", tag: "manufacturing", employees: 310, location: "Hamilton, ON", contactsFound: 4, stage: "replied" },
+];
+
+const contacts = {
+    1: [
+        { name: "Sarah Chen", title: "CEO", email: "sarah.chen@northvale.io", phone: "(416) 555-0142", linkedin: "linkedin.com/in/sarahchen-nv", validation: "valid" },
+        { name: "Marcus Webb", title: "VP Sales", email: "m.webb@northvale.io", phone: "(416) 555-0143", linkedin: "linkedin.com/in/marcuswebb", validation: "valid" },
+        { name: "Lisa Patel", title: "CFO", email: "l.patel@northvale.io", phone: "(416) 555-0144", linkedin: "linkedin.com/in/lisapatel-nv", validation: "valid" },
+        { name: "Jordan Kim", title: "Director of Engineering", email: "j.kim@northvale.io", phone: "(416) 555-0145", linkedin: "linkedin.com/in/jordankim", validation: "catchall" },
+    ],
+    2: [
+        { name: "Mike Torres", title: "VP Sales", email: "m.torres@pacificridge.ca", phone: "(604) 555-0201", linkedin: "linkedin.com/in/miketorres-pr", validation: "valid" },
+        { name: "Helen Nakamura", title: "CEO", email: "h.nakamura@pacificridge.ca", phone: "(604) 555-0202", linkedin: "linkedin.com/in/helennakamura", validation: "valid" },
+        { name: "Robert Chen", title: "CFO", email: "r.chen@pacificridge.ca", phone: "(604) 555-0203", linkedin: "linkedin.com/in/robertchen-pr", validation: "valid" },
+        { name: "Diane Koval", title: "Director of Operations", email: "d.koval@pacificridge.ca", phone: "(604) 555-0204", linkedin: "linkedin.com/in/dianekoval", validation: "catchall" },
+        { name: "Steve Park", title: "VP Manufacturing", email: "s.park@pacificridge.ca", phone: "(604) 555-0205", linkedin: "linkedin.com/in/stevepark-pr", validation: "valid" },
+    ],
+    3: [
+        { name: "David Park", title: "CFO", email: "d.park@mapleleaffinancial.ca", phone: "(403) 555-0301", linkedin: "linkedin.com/in/davidpark-mlf", validation: "valid" },
+        { name: "Sandra Osei", title: "CEO", email: "s.osei@mapleleaffinancial.ca", phone: "(403) 555-0302", linkedin: "linkedin.com/in/sandraosei", validation: "valid" },
+        { name: "Kevin Tran", title: "VP Technology", email: "k.tran@mapleleaffinancial.ca", phone: "(403) 555-0303", linkedin: "linkedin.com/in/kevintran-mlf", validation: "invalid" },
+    ],
+    4: [
+        { name: "James Wilson", title: "CEO", email: "j.wilson@cascadedigital.ca", phone: "(613) 555-0401", linkedin: "linkedin.com/in/jameswilson-cd", validation: "valid" },
+        { name: "Priya Sharma", title: "VP Engineering", email: "p.sharma@cascadedigital.ca", phone: "(613) 555-0402", linkedin: "linkedin.com/in/priyasharma", validation: "valid" },
+        { name: "Tom Nguyen", title: "Head of Sales", email: "t.nguyen@cascadedigital.ca", phone: "(613) 555-0403", linkedin: "linkedin.com/in/tomnguyen-cd", validation: "valid" },
+        { name: "Maria Costa", title: "CFO", email: "m.costa@cascadedigital.ca", phone: "(613) 555-0404", linkedin: "linkedin.com/in/mariacosta", validation: "catchall" },
+    ],
+    5: [
+        { name: "Dr. Rebecca Liu", title: "CEO", email: "r.liu@aurorahealth.ca", phone: "(416) 555-0501", linkedin: "linkedin.com/in/rebeccaliu-ah", validation: "valid" },
+        { name: "Nathan Brooks", title: "CFO", email: "n.brooks@aurorahealth.ca", phone: "(416) 555-0502", linkedin: "linkedin.com/in/nathanbrooks", validation: "valid" },
+        { name: "Angela Martin", title: "VP Operations", email: "a.martin@aurorahealth.ca", phone: "(416) 555-0503", linkedin: "linkedin.com/in/angelamartin", validation: "valid" },
+        { name: "Chris Dubois", title: "Director IT", email: "c.dubois@aurorahealth.ca", phone: "(416) 555-0504", linkedin: "linkedin.com/in/chrisdubois", validation: "valid" },
+        { name: "Samantha Gill", title: "VP HR", email: "s.gill@aurorahealth.ca", phone: "(416) 555-0505", linkedin: "linkedin.com/in/samanthagill", validation: "catchall" },
+    ],
+    6: [
+        { name: "Derek Fong", title: "CEO", email: "d.fong@westcoastlogistics.ca", phone: "(604) 555-0601", linkedin: "linkedin.com/in/derekfong-wl", validation: "valid" },
+        { name: "Karen Olsen", title: "VP Sales", email: "k.olsen@westcoastlogistics.ca", phone: "(604) 555-0602", linkedin: "linkedin.com/in/karenolsen", validation: "valid" },
+        { name: "Ray Gupta", title: "CFO", email: "r.gupta@westcoastlogistics.ca", phone: "(604) 555-0603", linkedin: "linkedin.com/in/raygupta-wl", validation: "valid" },
+    ],
+    7: [
+        { name: "Jennifer Olsen", title: "CEO", email: "j.olsen@prairiewind.ca", phone: "(780) 555-0701", linkedin: "linkedin.com/in/jenniferolsen-pw", validation: "valid" },
+        { name: "Brandon Lee", title: "VP Business Dev", email: "b.lee@prairiewind.ca", phone: "(780) 555-0702", linkedin: "linkedin.com/in/brandonlee", validation: "valid" },
+        { name: "Alicia Moreau", title: "CFO", email: "a.moreau@prairiewind.ca", phone: "(780) 555-0703", linkedin: "linkedin.com/in/aliciamoreau", validation: "valid" },
+        { name: "Tyler Grant", title: "Director of Engineering", email: "t.grant@prairiewind.ca", phone: "(780) 555-0704", linkedin: "linkedin.com/in/tylergrant-pw", validation: "catchall" },
+    ],
+    8: [
+        { name: "Catherine Burke", title: "CEO", email: "c.burke@harbourfrontprop.ca", phone: "(902) 555-0801", linkedin: "linkedin.com/in/catherineburke-hf", validation: "valid" },
+        { name: "Ian MacDonald", title: "VP Sales", email: "i.macdonald@harbourfrontprop.ca", phone: "(902) 555-0802", linkedin: "linkedin.com/in/ianmacdonald", validation: "valid" },
+        { name: "Nadia Hassan", title: "CFO", email: "n.hassan@harbourfrontprop.ca", phone: "(902) 555-0803", linkedin: "linkedin.com/in/nadiahassan-hf", validation: "valid" },
+    ],
+    9: [
+        { name: "Philippe Bouchard", title: "CEO", email: "p.bouchard@summitretail.ca", phone: "(514) 555-0901", linkedin: "linkedin.com/in/philippebouchard", validation: "valid" },
+        { name: "Emily Zhang", title: "VP Marketing", email: "e.zhang@summitretail.ca", phone: "(514) 555-0902", linkedin: "linkedin.com/in/emilyzhang-sr", validation: "valid" },
+        { name: "Marc Tremblay", title: "CFO", email: "m.tremblay@summitretail.ca", phone: "(514) 555-0903", linkedin: "linkedin.com/in/marctremblay", validation: "valid" },
+        { name: "Laura Singh", title: "VP Operations", email: "l.singh@summitretail.ca", phone: "(514) 555-0904", linkedin: "linkedin.com/in/laurasingh-sr", validation: "valid" },
+        { name: "Daniel Roy", title: "Head of E-commerce", email: "d.roy@summitretail.ca", phone: "(514) 555-0905", linkedin: "linkedin.com/in/danielroy", validation: "catchall" },
+    ],
+    10: [
+        { name: "Alex Firth", title: "CEO", email: "a.firth@borealtech.io", phone: "(519) 555-1001", linkedin: "linkedin.com/in/alexfirth-bt", validation: "valid" },
+        { name: "Rachel Moore", title: "VP Sales", email: "r.moore@borealtech.io", phone: "(519) 555-1002", linkedin: "linkedin.com/in/rachelmoore", validation: "valid" },
+        { name: "Dev Kapoor", title: "CTO", email: "d.kapoor@borealtech.io", phone: "(519) 555-1003", linkedin: "linkedin.com/in/devkapoor-bt", validation: "valid" },
+        { name: "Megan Clark", title: "CFO", email: "m.clark@borealtech.io", phone: "(519) 555-1004", linkedin: "linkedin.com/in/meganclark", validation: "valid" },
+    ],
+    11: [
+        { name: "Frank DeLuca", title: "CEO", email: "f.deluca@ridgelineconstruction.ca", phone: "(403) 555-1101", linkedin: "linkedin.com/in/frankdeluca-rc", validation: "valid" },
+        { name: "Amy Richardson", title: "VP Operations", email: "a.richardson@ridgelineconstruction.ca", phone: "(403) 555-1102", linkedin: "linkedin.com/in/amyrichardson", validation: "valid" },
+        { name: "George Tso", title: "CFO", email: "g.tso@ridgelineconstruction.ca", phone: "(403) 555-1103", linkedin: "linkedin.com/in/georgetso-rc", validation: "catchall" },
+    ],
+    12: [
+        { name: "Dr. Susan Pham", title: "CEO", email: "s.pham@canopyhealth.ca", phone: "(250) 555-1201", linkedin: "linkedin.com/in/susanpham-ch", validation: "valid" },
+        { name: "Brian Walsh", title: "VP Growth", email: "b.walsh@canopyhealth.ca", phone: "(250) 555-1202", linkedin: "linkedin.com/in/brianwalsh", validation: "valid" },
+        { name: "Tanya Reeves", title: "CFO", email: "t.reeves@canopyhealth.ca", phone: "(250) 555-1203", linkedin: "linkedin.com/in/tanyareeves-ch", validation: "valid" },
+        { name: "Omar Khalil", title: "Director HR", email: "o.khalil@canopyhealth.ca", phone: "(250) 555-1204", linkedin: "linkedin.com/in/omarkhalil", validation: "valid" },
+    ],
+    13: [
+        { name: "Amanda Foster", title: "VP Sales", email: "a.foster@horizontech.ca", phone: "(416) 555-1301", linkedin: "linkedin.com/in/amandafoster-ht", validation: "valid" },
+        { name: "Ryan Chow", title: "CEO", email: "r.chow@horizontech.ca", phone: "(416) 555-1302", linkedin: "linkedin.com/in/ryanchow", validation: "valid" },
+        { name: "Nicole Baxter", title: "CFO", email: "n.baxter@horizontech.ca", phone: "(416) 555-1303", linkedin: "linkedin.com/in/nicolebaxter-ht", validation: "valid" },
+        { name: "Ethan Mori", title: "VP Engineering", email: "e.mori@horizontech.ca", phone: "(416) 555-1304", linkedin: "linkedin.com/in/ethanmori", validation: "valid" },
+        { name: "Grace Lee", title: "Director of Marketing", email: "g.lee@horizontech.ca", phone: "(416) 555-1305", linkedin: "linkedin.com/in/gracelee-ht", validation: "catchall" },
+    ],
+    14: [
+        { name: "Thomas Regan", title: "CEO", email: "t.regan@glacierpoint.ca", phone: "(604) 555-1401", linkedin: "linkedin.com/in/thomasregan-gp", validation: "valid" },
+        { name: "Lisa Huang", title: "VP Investments", email: "l.huang@glacierpoint.ca", phone: "(604) 555-1402", linkedin: "linkedin.com/in/lisahuang", validation: "valid" },
+        { name: "Patrick O'Brien", title: "CFO", email: "p.obrien@glacierpoint.ca", phone: "(604) 555-1403", linkedin: "linkedin.com/in/patrickobrien-gp", validation: "valid" },
+    ],
+    15: [
+        { name: "Claire Fontaine", title: "CEO", email: "c.fontaine@northerncompass.ca", phone: "(514) 555-1501", linkedin: "linkedin.com/in/clairefontaine-nc", validation: "valid" },
+        { name: "Jake Morrison", title: "Head of Sales", email: "j.morrison@northerncompass.ca", phone: "(514) 555-1502", linkedin: "linkedin.com/in/jakemorrison", validation: "valid" },
+        { name: "Anika Rao", title: "VP Content", email: "a.rao@northerncompass.ca", phone: "(514) 555-1503", linkedin: "linkedin.com/in/anikarao-nc", validation: "valid" },
+    ],
+    16: [
+        { name: "Doug Fenton", title: "CEO", email: "d.fenton@clearwaterdist.ca", phone: "(204) 555-1601", linkedin: "linkedin.com/in/dougfenton-cw", validation: "valid" },
+        { name: "Sonia Brar", title: "VP Sales", email: "s.brar@clearwaterdist.ca", phone: "(204) 555-1602", linkedin: "linkedin.com/in/soniabrar", validation: "valid" },
+        { name: "Wayne Mitchell", title: "CFO", email: "w.mitchell@clearwaterdist.ca", phone: "(204) 555-1603", linkedin: "linkedin.com/in/waynemitchell-cw", validation: "valid" },
+        { name: "Julie Farnham", title: "Director of Logistics", email: "j.farnham@clearwaterdist.ca", phone: "(204) 555-1604", linkedin: "linkedin.com/in/juliefarnham", validation: "catchall" },
+    ],
+    17: [
+        { name: "Richard Lamb", title: "CEO", email: "r.lamb@silverbirch.ca", phone: "(416) 555-1701", linkedin: "linkedin.com/in/richardlamb-sb", validation: "valid" },
+        { name: "Tina Wu", title: "VP Wealth Management", email: "t.wu@silverbirch.ca", phone: "(416) 555-1702", linkedin: "linkedin.com/in/tinawu", validation: "valid" },
+        { name: "Harold Kim", title: "CFO", email: "h.kim@silverbirch.ca", phone: "(416) 555-1703", linkedin: "linkedin.com/in/haroldkim-sb", validation: "valid" },
+    ],
+    18: [
+        { name: "Liam Connors", title: "CEO", email: "l.connors@timberlinesoft.io", phone: "(613) 555-1801", linkedin: "linkedin.com/in/liamconnors-ts", validation: "valid" },
+        { name: "Nina Petrovic", title: "VP Product", email: "n.petrovic@timberlinesoft.io", phone: "(613) 555-1802", linkedin: "linkedin.com/in/ninapetrovic", validation: "valid" },
+        { name: "Ben Archer", title: "Head of Sales", email: "b.archer@timberlinesoft.io", phone: "(613) 555-1803", linkedin: "linkedin.com/in/benarcher-ts", validation: "valid" },
+        { name: "Dana Forrest", title: "CFO", email: "d.forrest@timberlinesoft.io", phone: "(613) 555-1804", linkedin: "linkedin.com/in/danaforrest", validation: "valid" },
+    ],
+    19: [
+        { name: "Vanessa Cho", title: "CEO", email: "v.cho@evergreenretail.ca", phone: "(604) 555-1901", linkedin: "linkedin.com/in/vanessacho-er", validation: "valid" },
+        { name: "Michael Brandt", title: "VP Sales", email: "m.brandt@evergreenretail.ca", phone: "(604) 555-1902", linkedin: "linkedin.com/in/michaelbrandt", validation: "valid" },
+        { name: "Jessica Okafor", title: "CFO", email: "j.okafor@evergreenretail.ca", phone: "(604) 555-1903", linkedin: "linkedin.com/in/jessicaokafor-er", validation: "catchall" },
+    ],
+    20: [
+        { name: "Paul Henderson", title: "CEO", email: "p.henderson@ironwoodeng.ca", phone: "(905) 555-2001", linkedin: "linkedin.com/in/paulhenderson-ie", validation: "valid" },
+        { name: "Michelle Sato", title: "VP Business Dev", email: "m.sato@ironwoodeng.ca", phone: "(905) 555-2002", linkedin: "linkedin.com/in/michellesato", validation: "valid" },
+        { name: "Andrew Foss", title: "CFO", email: "a.foss@ironwoodeng.ca", phone: "(905) 555-2003", linkedin: "linkedin.com/in/andrewfoss-ie", validation: "valid" },
+        { name: "Caroline Dubé", title: "Director HR", email: "c.dube@ironwoodeng.ca", phone: "(905) 555-2004", linkedin: "linkedin.com/in/carolinedube", validation: "valid" },
+    ],
+};
+
+const stages = [
+    { id: "discovered", label: "Discovered", count: 312, borderColor: "#3b82f6" },
+    { id: "contacts", label: "Contacts Found", count: 245, borderColor: "#8b5cf6" },
+    { id: "validated", label: "Emails Validated", count: 189, borderColor: "#22c55e" },
+    { id: "sequenced", label: "Sequenced", count: 156, borderColor: "#f97316" },
+    { id: "replied", label: "Replied", count: 43, borderColor: "#0ea5e9" },
+];
+
+const sequences = [
+    {
+        contactName: "Sarah Chen", company: "Northvale Analytics", title: "CEO",
+        step: 3, totalSteps: 7,
+        subject: "Quick thought on scaling Northvale's outbound",
+        preview: "Hi Sarah, I noticed Northvale Analytics recently expanded your Toronto team by 15% — congrats on the growth. When companies hit that inflection point, outbound usually becomes the bottleneck before pipeline does...",
+        nextSend: "Mar 8 at 9:15 AM EST", status: "opened",
+    },
+    {
+        contactName: "Mike Torres", company: "Pacific Ridge Manufacturing", title: "VP Sales",
+        step: 1, totalSteps: 7,
+        subject: "Congrats on the Q4 numbers, Mike",
+        preview: "Hi Mike, saw Pacific Ridge posted 23% revenue growth in Q4 — impressive in this market. I work with manufacturing companies scaling their sales ops and wanted to share how one of our clients automated 80% of their lead qualification...",
+        nextSend: "Mar 7 at 10:30 AM EST", status: "sent",
+    },
+    {
+        contactName: "David Park", company: "Maple Leaf Financial Group", title: "CFO",
+        step: 5, totalSteps: 7,
+        subject: "Re: BrightPath integration — quick ROI question",
+        preview: "Hi David, with the BrightPath acquisition closing, I imagine the integration costs are top of mind. We helped another financial services firm cut post-M&A operational overhead by 34% using AI-driven process automation...",
+        nextSend: "Mar 9 at 8:45 AM EST", status: "replied",
+    },
+    {
+        contactName: "Dr. Rebecca Liu", company: "Aurora Health Systems", title: "CEO",
+        step: 2, totalSteps: 7,
+        subject: "Patient intake → 40% faster (Aurora case)",
+        preview: "Hi Rebecca, I know Aurora Health is expanding across the GTA. One challenge I keep hearing from healthcare CEOs: patient intake workflows that don't scale. We built an AI agent for a similar clinic that cut intake processing by 40%...",
+        nextSend: "Mar 10 at 11:00 AM EST", status: "opened",
+    },
+    {
+        contactName: "Alex Firth", company: "Boreal Tech Partners", title: "CEO",
+        step: 4, totalSteps: 7,
+        subject: "Your Waterloo team + AI outbound = 🚀",
+        preview: "Hi Alex, Boreal Tech caught my eye — 65-person team punching way above your weight in the Waterloo ecosystem. I've been talking to a few founders your size about replacing their SDR team with an AI that books 3x more meetings...",
+        nextSend: "Mar 7 at 2:00 PM EST", status: "sent",
+    },
+    {
+        contactName: "Lisa Patel", company: "Northvale Analytics", title: "CFO",
+        step: 2, totalSteps: 7,
+        subject: "ROI on sales automation — Northvale-specific numbers",
+        preview: "Hi Lisa, I know the CFO lens is different from Sarah's — so I ran some quick numbers for Northvale specifically. At your current headcount and growth rate, an AI BDR could save roughly $180K/year in SDR salaries while increasing pipeline by 2-3x...",
+        nextSend: "Mar 8 at 9:45 AM EST", status: "scheduled",
+    },
+    {
+        contactName: "Philippe Bouchard", company: "Summit Retail Group", title: "CEO",
+        step: 6, totalSteps: 7,
+        subject: "Re: Let's set up a demo — Thursday works",
+        preview: "Thanks Philippe! Thursday at 2 PM works perfectly. I'll send a calendar invite with a quick agenda. Looking forward to showing you how the AI BDR handles multi-location retail outreach — especially relevant given Summit's expansion plans...",
+        nextSend: "Mar 11 at 9:00 AM EST", status: "replied",
+    },
+    {
+        contactName: "Amanda Foster", company: "Horizon Tech Solutions", title: "VP Sales",
+        step: 7, totalSteps: 7,
+        subject: "One last thing — Horizon's competitor is already using AI for outbound",
+        preview: "Hi Amanda, I don't usually play the competitor card, but I thought you should know — a company in your exact space just deployed AI-powered outbound and their meeting-book rate jumped 4x in 60 days. Happy to share the anonymized case study...",
+        nextSend: "Sequence complete", status: "opened",
+    },
+];
+
+const newsItems = [
+    {
+        icon: "🔔", text: "Northvale Analytics posted 3 new job listings for Account Executives",
+        action: "📧 Triggered: Hiring growth sequence to CEO Sarah Chen", time: "2 hours ago",
+        draft: { to: "Sarah Chen (CEO)", subject: "Scaling the sales team? Here's a force multiplier", body: "Hi Sarah,\n\nI noticed Northvale just posted three AE roles — congrats, that's a strong growth signal.\n\nBefore you hire all three, here's a thought: what if an AI BDR could feed your existing AEs 3x more qualified meetings? One of our clients avoided two hires entirely and still doubled their pipeline.\n\nWorth a 15-minute chat to see if the math works for Northvale?\n\nBest,\nAI BDR Agent" }
+    },
+    {
+        icon: "📰", text: "Pacific Ridge Manufacturing announces Q4 revenue up 23%",
+        action: "📧 Triggered: Growth congrats + intro to VP Sales Mike Torres", time: "5 hours ago",
+        draft: { to: "Mike Torres (VP Sales)", subject: "23% growth → time to systemize outbound?", body: "Hi Mike,\n\nJust saw the Q4 numbers — 23% revenue growth is no joke, especially in manufacturing.\n\nUsually when companies hit this pace, the sales process that got you here starts creaking. Manual prospecting, inconsistent follow-up, leads falling through cracks.\n\nWe've built AI agents specifically for manufacturing companies scaling outbound. Would love to show you a quick demo.\n\nCheers,\nAI BDR Agent" }
+    },
+    {
+        icon: "🤝", text: "Maple Leaf Financial acquired BrightPath Consulting",
+        action: "📧 Triggered: M&A integration pitch to CFO David Park", time: "Yesterday",
+        draft: { to: "David Park (CFO)", subject: "Post-acquisition ops — a faster way to integrate", body: "Hi David,\n\nCongrats on the BrightPath acquisition. M&A integration is where ops either level up or grind to a halt.\n\nWe recently helped a financial services firm automate their post-acquisition workflow — cut integration time by 40% and saved $200K in the first year.\n\nGiven the timing, thought this might be relevant. Happy to share the case study.\n\nBest,\nAI BDR Agent" }
+    },
+    {
+        icon: "🏆", text: "Aurora Health Systems wins 'Best Workplace' award in healthcare category",
+        action: "📧 Triggered: Culture-focused outreach to VP HR Samantha Gill", time: "Yesterday",
+        draft: { to: "Samantha Gill (VP HR)", subject: "Best Workplace + AI = unstoppable team", body: "Hi Samantha,\n\nCongratulations on the Best Workplace award — that's a testament to the culture you've built at Aurora Health.\n\nCompanies with great culture often struggle with one thing: scaling without losing the human touch. That's exactly where AI agents shine — handling repetitive outreach so your team can focus on relationship-building.\n\nWould love to share how we're helping healthcare companies grow without burning out their people.\n\nBest,\nAI BDR Agent" }
+    },
+    {
+        icon: "💰", text: "Boreal Tech Partners closes $8M Series A funding round",
+        action: "📧 Triggered: Post-funding growth sequence to CEO Alex Firth", time: "2 days ago",
+        draft: { to: "Alex Firth (CEO)", subject: "Post-Series A playbook: scale pipeline before headcount", body: "Hi Alex,\n\nHuge congrats on the $8M raise! The Waterloo ecosystem is paying attention.\n\nHere's what I've seen with post-Series A companies: the instinct is to immediately hire 5-10 SDRs. But the smartest founders I know are deploying AI outbound first — getting 3-5x the pipeline at 1/10th the cost, then hiring AEs to close.\n\nWant to see how it works? 15 minutes, I'll show you the full workflow.\n\nBest,\nAI BDR Agent" }
+    },
+    {
+        icon: "📊", text: "Summit Retail Group expands into Western Canada with 12 new locations",
+        action: "📧 Triggered: Expansion playbook to VP Operations Laura Singh", time: "3 days ago",
+        draft: { to: "Laura Singh (VP Operations)", subject: "12 new locations → your supply chain needs AI", body: "Hi Laura,\n\nSaw the Western Canada expansion news — 12 new locations is ambitious! With that kind of growth, vendor management and supply chain coordination becomes exponentially more complex.\n\nWe've helped retail operations teams automate vendor outreach and procurement workflows. One client cut their vendor onboarding time from 3 weeks to 3 days.\n\nWorth exploring for the expansion?\n\nBest,\nAI BDR Agent" }
+    },
+];
+
+const reengagementQueue = [
+    { name: "James Wilson", title: "CEO", company: "Cascade Digital Solutions", reason: "No reply to initial 7-email sequence", strategy: "Re-engagement scheduled: Apr 15 — New angle: competitor intelligence report", opens: "0/7" },
+    { name: "Amanda Foster", title: "VP Sales", company: "Horizon Tech Solutions", reason: "Opened 4/7 emails, no reply", strategy: "Case study sequence starting Apr 2 — using healthcare-to-SaaS crossover angle", opens: "4/7" },
+    { name: "Derek Fong", title: "CEO", company: "Westcoast Logistics", reason: "Replied 'not now' to Email 3", strategy: "Nurture sequence: monthly industry digest starting May 1", opens: "3/7" },
+    { name: "Frank DeLuca", title: "CEO", company: "Ridgeline Construction", reason: "Opened Email 1 only, went cold", strategy: "Video prospecting sequence starting Apr 8 — personalized Loom", opens: "1/7" },
+    { name: "Richard Lamb", title: "CEO", company: "Silverbirch Financial", reason: "OOO auto-reply until Mar 20", strategy: "Resume sequence Mar 21 with refreshed subject lines", opens: "2/7" },
+];
+
+const linkedInPost = `🚀 The math on AI BDRs is getting hard to ignore.
+
+We ran the numbers across 12 Canadian companies using AI-powered outbound:
+→ 3.2x more qualified meetings booked
+→ 73% reduction in cost-per-meeting
+→ Average reply rate: 11.4% (vs. 2-3% industry avg)
+
+The companies winning aren't replacing salespeople — they're giving each rep a tireless AI teammate that handles research, personalization, and follow-up at scale.
+
+Still think AI outbound is "just spam"? The data says otherwise.
+
+#SalesAutomation #AIinSales #B2BSales #CanadianBusiness`;
+
+const blogArticle = {
+    title: "5 Signs Your Canadian Business Needs a Better CRM",
+    searchVolume: "2,400/mo",
+    difficulty: "Medium",
+    excerpt: "If your sales team is still managing leads in spreadsheets, you're leaving money on the table. Here are five warning signs that your current system is costing you deals — and what to do about it."
+};
+
+// =====================================================
+// RENDERING
+// =====================================================
+
+function getTagClass(tag) { return `tag-${tag}`; }
+
+function getValidationBadge(v) {
+    if (v === "valid") return '<span class="text-green-400 text-xs">✅ Valid</span>';
+    if (v === "catchall") return '<span class="text-yellow-400 text-xs">⚠️ Catch-all</span>';
+    return '<span class="text-red-400 text-xs">❌ Invalid</span>';
+}
+
+function getStatusBadge(s) {
+    const map = { sent: ['badge-sent','Sent ✓'], opened: ['badge-opened','Opened 👁️'], replied: ['badge-replied','Replied 💬'], scheduled: ['badge-scheduled','Scheduled ⏰'] };
+    const [cls, label] = map[s] || ['badge-sent','Sent ✓'];
+    return `<span class="badge ${cls}">${label}</span>`;
+}
+
+// --- Kanban ---
+function renderKanban() {
+    const kanban = document.getElementById('kanban');
+    kanban.innerHTML = stages.map(stage => {
+        const cards = companies.filter(c => c.stage === stage.id);
+        return `
+        <div class="kanban-col glass rounded-xl p-3 transition-colors" data-stage="${stage.id}"
+             ondragover="event.preventDefault(); this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="handleDrop(event, '${stage.id}'); this.classList.remove('drag-over')">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background:${stage.borderColor}"></div>
+                    <span class="text-sm font-semibold text-white">${stage.label}</span>
+                </div>
+                <span class="text-xs text-slate-500">${stage.count}</span>
+            </div>
+            <div class="space-y-2" data-stage-cards="${stage.id}">
+                ${cards.map(c => renderCard(c, stage.borderColor)).join('')}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderCard(c, borderColor) {
+    return `
+    <div class="kanban-card glass rounded-lg p-3 cursor-pointer" draggable="true"
+         style="border-left: 3px solid ${borderColor}"
+         data-id="${c.id}"
+         ondragstart="handleDragStart(event, ${c.id})"
+         ondragend="this.classList.remove('dragging')"
+         onclick="showContacts(${c.id})">
+        <div class="flex items-center justify-between mb-1.5">
+            <span class="text-sm font-semibold text-white">${c.name}</span>
+            <div class="w-2 h-2 rounded-full pulse-dot" style="background:#22c55e"></div>
+        </div>
+        <div class="flex items-center gap-2 mb-1.5">
+            <span class="tag ${getTagClass(c.tag)}">${c.industry}</span>
+            <span class="text-xs text-slate-500">${c.employees} emp</span>
+        </div>
+        <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400">📍 ${c.location}</span>
+            <span class="text-xs text-slate-400">👤 ${c.contactsFound}</span>
+        </div>
+    </div>`;
+}
+
+// --- Drag and Drop ---
+let draggedId = null;
+function handleDragStart(e, id) {
+    draggedId = id;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+function handleDrop(e, newStage) {
+    e.preventDefault();
+    if (draggedId === null) return;
+    const company = companies.find(c => c.id === draggedId);
+    if (company) {
+        company.stage = newStage;
+        renderKanban();
+    }
+    draggedId = null;
+}
+
+// --- Contact Modal ---
+function showContacts(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    const companyContacts = contacts[companyId] || [];
+    const modal = document.getElementById('contactModal');
+    const content = document.getElementById('contactModalContent');
+
+    content.innerHTML = `
+    <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-white">${company.name}</h3>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="tag ${getTagClass(company.tag)}">${company.industry}</span>
+                    <span class="text-sm text-slate-400">${company.employees} employees</span>
+                    <span class="text-sm text-slate-400">📍 ${company.location}</span>
+                </div>
+            </div>
+            <button onclick="closeModal('contactModal')" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+        </div>
+        <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Decision Makers (${companyContacts.length})</h4>
+        <div class="space-y-3">
+            ${companyContacts.map(ct => `
+            <div class="glass rounded-lg p-4">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-white font-semibold">${ct.name}</span>
+                            ${getValidationBadge(ct.validation)}
+                        </div>
+                        <span class="text-sm text-accent-400">${ct.title}</span>
+                        <div class="mt-2 space-y-1 text-xs text-slate-400">
+                            <div>📧 ${ct.email}</div>
+                            <div>📱 ${ct.phone}</div>
+                            <div>🔗 ${ct.linkedin}</div>
+                        </div>
+                    </div>
+                    <button onclick="showSequenceForContact('${ct.name}', '${company.name}')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent-500/15 text-accent-400 hover:bg-accent-500/25 transition-colors">View Sequence</button>
+                </div>
+            </div>`).join('')}
+        </div>
+    </div>`;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function showSequenceForContact(contactName, companyName) {
+    const seq = sequences.find(s => s.contactName === contactName && s.company === companyName);
+    if (seq) {
+        showSequenceDetail(seq);
+    } else {
+        // Generate a generic one
+        showSequenceDetail({
+            contactName, company: companyName, title: "",
+            step: 1, totalSteps: 7,
+            subject: `Introduction — how AI can help ${companyName}`,
+            preview: `Hi ${contactName.split(' ')[0]}, I've been following ${companyName}'s growth and wanted to share a quick idea on how AI-powered outbound could accelerate your pipeline...`,
+            nextSend: "Mar 12 at 10:00 AM EST", status: "scheduled"
+        });
+    }
+}
+
+// --- Sequence Detail Modal ---
+function showSequenceDetail(seq) {
+    const modal = document.getElementById('sequenceModal');
+    const content = document.getElementById('sequenceModalContent');
+    const pct = Math.round((seq.step / seq.totalSteps) * 100);
+
+    const emailSteps = [];
+    for (let i = 1; i <= seq.totalSteps; i++) {
+        let st = i < seq.step ? 'sent' : (i === seq.step ? seq.status : 'scheduled');
+        let subj = i === seq.step ? seq.subject : `Email ${i} of ${seq.totalSteps}`;
+        emailSteps.push({ step: i, status: st, subject: subj });
+    }
+
+    content.innerHTML = `
+    <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h3 class="text-xl font-bold text-white">Sequence: ${seq.contactName}</h3>
+                <div class="text-sm text-slate-400">${seq.title ? seq.title + ' at ' : ''}${seq.company}</div>
+            </div>
+            <button onclick="closeModal('sequenceModal')" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+        </div>
+        <div class="mb-4">
+            <div class="flex items-center justify-between text-sm mb-2">
+                <span class="text-slate-400">Email ${seq.step} of ${seq.totalSteps}</span>
+                <span class="text-accent-400 font-semibold">${pct}%</span>
+            </div>
+            <div class="seq-progress"><div class="seq-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="glass rounded-lg p-4 mb-4">
+            <div class="text-xs text-slate-500 mb-1">Current email subject:</div>
+            <div class="text-white font-semibold mb-2">${seq.subject}</div>
+            <div class="text-sm text-slate-300 leading-relaxed">${seq.preview}</div>
+        </div>
+        <div class="flex items-center justify-between mb-4 text-sm">
+            <div class="text-slate-400">Next send: <span class="text-white">${seq.nextSend}</span></div>
+            ${getStatusBadge(seq.status)}
+        </div>
+        <h4 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">Sequence Timeline</h4>
+        <div class="space-y-2">
+            ${emailSteps.map(es => `
+            <div class="flex items-center gap-3 text-sm">
+                <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${es.status === 'sent' || es.status === 'opened' || es.status === 'replied' ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-slate-500'}">${es.step}</div>
+                <span class="flex-1 ${es.status === 'scheduled' ? 'text-slate-500' : 'text-white'}">${es.subject}</span>
+                ${getStatusBadge(es.status)}
+            </div>`).join('')}
+        </div>
+    </div>`;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// --- Sequences Section ---
+function renderSequences() {
+    const el = document.getElementById('sequences');
+    el.innerHTML = sequences.map(seq => {
+        const pct = Math.round((seq.step / seq.totalSteps) * 100);
+        return `
+        <div class="glass rounded-xl p-4 cursor-pointer hover:border-accent-500/20 transition-colors" onclick='showSequenceDetail(${JSON.stringify(seq).replace(/'/g, "\\'")})'>
+            <div class="flex items-start justify-between mb-2">
+                <div>
+                    <span class="text-white font-semibold">${seq.contactName}</span>
+                    <span class="text-slate-500 text-sm ml-2">${seq.title} at ${seq.company}</span>
+                </div>
+                ${getStatusBadge(seq.status)}
+            </div>
+            <div class="text-sm text-slate-300 mb-2">📩 ${seq.subject}</div>
+            <div class="text-xs text-slate-400 mb-3 line-clamp-2">${seq.preview}</div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500">Email ${seq.step}/${seq.totalSteps}</span>
+                    <div class="seq-progress w-24"><div class="seq-fill" style="width:${pct}%"></div></div>
+                </div>
+                <span class="text-xs text-slate-500">Next: ${seq.nextSend}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// --- News Feed ---
+function renderNewsFeed() {
+    const el = document.getElementById('newsFeed');
+    el.innerHTML = newsItems.map(item => `
+    <div class="glass rounded-xl p-4">
+        <div class="flex items-start gap-2 mb-2">
+            <span class="text-lg">${item.icon}</span>
+            <div>
+                <div class="text-sm text-white">${item.text}</div>
+                <div class="text-xs text-accent-400 mt-1">${item.action}</div>
+            </div>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+            <span class="text-xs text-slate-500">${item.time}</span>
+            <button onclick='showDraft(${JSON.stringify(item.draft).replace(/'/g, "\\'")})' class="text-xs text-accent-400 hover:text-accent-300 font-semibold">View Draft →</button>
+        </div>
+    </div>`).join('');
+}
+
+// --- Draft Modal ---
+function showDraft(draft) {
+    const modal = document.getElementById('draftModal');
+    const content = document.getElementById('draftModalContent');
+    content.innerHTML = `
+    <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-white">Triggered Email Draft</h3>
+            <button onclick="closeModal('draftModal')" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+        </div>
+        <div class="space-y-3">
+            <div class="flex gap-2 text-sm"><span class="text-slate-500 w-12">To:</span><span class="text-white">${draft.to}</span></div>
+            <div class="flex gap-2 text-sm"><span class="text-slate-500 w-12">Subj:</span><span class="text-white font-semibold">${draft.subject}</span></div>
+            <div class="border-t border-white/5 pt-3">
+                <div class="text-sm text-slate-300 whitespace-pre-line leading-relaxed">${draft.body}</div>
+            </div>
+        </div>
+        <div class="mt-4 flex gap-2">
+            <button class="px-4 py-2 rounded-lg text-sm font-semibold bg-accent-500 text-white hover:bg-accent-600 transition-colors">✅ Approve & Send</button>
+            <button class="px-4 py-2 rounded-lg text-sm font-semibold bg-white/5 text-slate-300 hover:bg-white/10 transition-colors">✏️ Edit Draft</button>
+        </div>
+    </div>`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// --- Re-engagement ---
+function renderReengagement() {
+    const el = document.getElementById('reengagement');
+    el.innerHTML = reengagementQueue.map(item => `
+    <div class="glass rounded-xl p-4">
+        <div class="flex items-center justify-between mb-1">
+            <span class="text-sm text-white font-semibold">${item.name}</span>
+            <span class="text-xs text-slate-500">Opens: ${item.opens}</span>
+        </div>
+        <div class="text-xs text-accent-400 mb-1">${item.title} · ${item.company}</div>
+        <div class="text-xs text-slate-500 mb-1.5">${item.reason}</div>
+        <div class="text-xs text-slate-300">📋 ${item.strategy}</div>
+    </div>`).join('');
+}
+
+// --- Daily Content ---
+function renderDailyContent() {
+    const el = document.getElementById('dailyContent');
+    el.innerHTML = `
+    <div class="glass rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">💼</span>
+            <span class="text-sm font-semibold text-white">LinkedIn Post — Ready for Review</span>
+        </div>
+        <div class="text-xs text-slate-300 leading-relaxed mb-3 whitespace-pre-line line-clamp-4">${linkedInPost.substring(0, 200)}...</div>
+        <button onclick="copyToClipboard(this)" class="copy-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-slate-300 hover:bg-accent-500/15 hover:text-accent-400 transition-all" data-text="${linkedInPost.replace(/"/g, '&quot;')}">📋 Copy to Clipboard</button>
+    </div>
+    <div class="glass rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">📝</span>
+            <span class="text-sm font-semibold text-white">Blog Article Draft</span>
+        </div>
+        <div class="text-sm text-white font-medium mb-1">${blogArticle.title}</div>
+        <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs text-slate-500">🔍 ${blogArticle.searchVolume}</span>
+            <span class="text-xs text-slate-500">📊 Difficulty: ${blogArticle.difficulty}</span>
+        </div>
+        <div class="text-xs text-slate-400 mb-3">${blogArticle.excerpt}</div>
+        <button class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-slate-300 hover:bg-accent-500/15 hover:text-accent-400 transition-all">📄 View Full Draft</button>
+    </div>`;
+}
+
+// --- Utility ---
+function closeModal(id) {
+    const m = document.getElementById(id);
+    m.classList.add('hidden');
+    m.classList.remove('flex');
+}
+
+// Close modals on backdrop click
+['contactModal','sequenceModal','draftModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+        if (e.target === this) closeModal(id);
+    });
+});
+
+// Close modals on Escape
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        ['contactModal','sequenceModal','draftModal'].forEach(closeModal);
+    }
+});
+
+function copyToClipboard(btn) {
+    const text = btn.getAttribute('data-text').replace(/&quot;/g, '"');
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✅ Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.textContent = '📋 Copy to Clipboard';
+            btn.classList.remove('copied');
+        }, 2000);
+    });
+}
+
+// --- Animated Counters ---
+function animateCounters() {
+    document.querySelectorAll('.counter').forEach(el => {
+        const target = parseInt(el.dataset.target);
+        const duration = 1500;
+        const start = performance.now();
+        function update(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out quad
+            const eased = 1 - (1 - progress) * (1 - progress);
+            el.textContent = Math.floor(eased * target).toLocaleString();
+            if (progress < 1) requestAnimationFrame(update);
+            else el.textContent = target.toLocaleString();
+        }
+        requestAnimationFrame(update);
+    });
+}
+
+// --- Init ---
+renderKanban();
+renderSequences();
+renderNewsFeed();
+renderReengagement();
+renderDailyContent();
+animateCounters();
+</script>
+</body>
+</html>
