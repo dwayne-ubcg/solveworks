@@ -163,7 +163,7 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
   transition: opacity 0.3s ease, transform 0.3s ease;
   font-family: 'Inter', sans-serif; user-select: none;
 }
-#controlBar.hidden { opacity: 0; transform: translateY(100%); pointer-events: none; }
+#controlBar.initially-hidden { display: none; }
 #controlBar button { background: none; border: none; color: #fff; cursor: pointer; padding: 6px; font-size: 18px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s; }
 #controlBar button:hover { background: rgba(255,255,255,0.15); }
 #controlBar .cb-time { font-size: 13px; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
@@ -1078,7 +1078,7 @@ function updateProgress() {
 // ============================================================
 function startPresentation() {
   document.getElementById('playBtn').classList.add('hidden');
-  var cb=document.getElementById('controlBar'); cb.style.display='flex'; cb.classList.remove('hidden');
+  var cb=document.getElementById('controlBar'); cb.classList.remove('initially-hidden'); cb.style.display='flex';
   startTime = performance.now();
 
   voiceover.play().catch(() => {});
@@ -1120,10 +1120,10 @@ function startPresentation() {
   }
 
   function _cbShowBar() {
-    _cbBar.classList.remove('hidden');
+    // bar always visible
     clearTimeout(_cbHideTimer);
     _cbHideTimer = setTimeout(() => {
-      if (!_cbPaused) _cbBar.classList.add('hidden');
+      // auto-hide disabled
     }, 5000);
   }
 
@@ -1246,7 +1246,7 @@ function startPresentation() {
   const _cbObs = new MutationObserver(() => {
     const playBtn = document.getElementById('playBtn') || document.getElementById('play-btn');
     if (playBtn && (playBtn.classList.contains('hidden') || playBtn.style.display === 'none')) {
-      _cbBar.classList.remove('hidden');
+      // bar always visible
       _cbShowBar();
       _cbObs.disconnect();
     }
@@ -1256,7 +1256,7 @@ function startPresentation() {
 </script>
 
 <!-- Playback Control Bar -->
-<div id="controlBar" style="display:none;">
+<div id="controlBar" class="initially-hidden">
   <button id="cbRestart" title="Restart">⏮</button>
   <button id="cbPlayPause" title="Play/Pause">⏸</button>
   <div class="cb-time" id="cbTimeDisplay">0:00 / 0:00</div>
