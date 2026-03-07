@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>National Floor Systems — AI Estimating Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#e2e8f0; overflow:hidden; position:relative; }
+.animations-paused * { animation-play-state: paused !important; transition: none !important; }
+
+#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+#playBtn .inner { text-align:center; }
+#playBtn .play-circle { width:120px; height:120px; border-radius:50%; background:rgba(14,165,233,0.15); border:3px solid #0ea5e9; display:flex; align-items:center; justify-content:center; margin:0 auto 30px; transition:transform 0.3s, background 0.3s; }
+#playBtn:hover .play-circle { transform:scale(1.1); background:rgba(14,165,233,0.3); }
+#playBtn .play-triangle { width:0; height:0; border-style:solid; border-width:25px 0 25px 45px; border-color:transparent transparent transparent #0ea5e9; margin-left:8px; }
+#playBtn h1 { font-size:42px; font-weight:700; color:white; margin-bottom:12px; }
+#playBtn p { font-size:20px; color:#94a3b8; }
+
+.scene { position:absolute; top:0; left:0; width:1920px; height:1080px; opacity:0; transition:opacity 0.8s ease; pointer-events:none; }
+.scene.active { opacity:1; }
+
+.header { position:absolute; top:0; left:0; width:1920px; height:64px; background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; padding:0 40px; z-index:100; }
+.logo { font-size:20px; font-weight:700; color:white; }
+.logo span { color:#0ea5e9; }
+.header-nav { margin-left:auto; display:flex; gap:28px; }
+.header-nav a { color:#94a3b8; font-size:14px; text-decoration:none; font-weight:500; }
+
+.scene-title { position:absolute; top:80px; left:60px; z-index:50; }
+.scene-title h2 { font-size:36px; font-weight:700; color:white; margin-bottom:8px; }
+.scene-title p { font-size:18px; color:#64748b; font-weight:400; }
+
+.blueprint-area { position:absolute; top:150px; left:50%; transform:translateX(-50%); width:1600px; height:800px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; }
+.bp-grid { position:absolute; top:0; left:0; width:100%; height:100%; background-image:linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size:40px 40px; }
+.bp-zone { position:absolute; border:2px solid; opacity:0; }
+.bp-zone .label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:14px; font-weight:600; text-align:center; line-height:1.2; }
+
+.stat-panel { position:absolute; top:150px; right:60px; width:450px; }
+.stat-card { background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px 24px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; opacity:0; transform:translateX(20px); }
+.stat-card .label { font-size:14px; color:#94a3b8; }
+.stat-card .value { font-size:20px; font-weight:700; }
+
+.spec-table { position:absolute; top:150px; left:60px; width:1100px; }
+.spec-header { display:grid; grid-template-columns:1fr 1fr 1fr 100px; gap:16px; padding:12px 20px; background:rgba(14,165,233,0.08); border-radius:8px 8px 0 0; }
+.spec-header span { font-size:12px; font-weight:600; color:#0ea5e9; text-transform:uppercase; }
+.spec-row { display:grid; grid-template-columns:1fr 1fr 1fr 100px; gap:16px; padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.04); opacity:0; }
+.spec-row .status { text-align:center; }
+.spec-row .tag { padding:4px 12px; border-radius:12px; font-size:11px; font-weight:600; }
+.tag-ok { background:rgba(34,197,94,0.15); color:#22c55e; }
+.tag-warn { background:rgba(245,158,11,0.15); color:#f59e0b; }
+
+.bid-table { position:absolute; top:150px; left:60px; width:1700px; }
+.bid-row { display:grid; grid-template-columns:180px 100px 100px 140px 140px; gap:16px; padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.04); opacity:0; }
+
+.close-scene { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+.close-logo { font-size:64px; font-weight:800; color:white; margin-bottom:16px; }
+.close-logo span { color:#0ea5e9; }
+.close-tagline { font-size:28px; color:#94a3b8; margin-bottom:40px; }
+.close-url { font-size:36px; font-weight:700; color:#0ea5e9; }
+
+@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes scanLine { from { top:0; } to { top:100%; } }
+.scan-line { position:absolute; left:0; width:100%; height:3px; background:linear-gradient(90deg, transparent, #0ea5e9, transparent); opacity:0.8; z-index:10; }
+</style>
+</head>
+<body>
+
+<div id="playBtn" onclick="startDemo()">
+  <div class="inner">
+    <div class="play-circle"><div class="play-triangle"></div></div>
+    <h1>National Floor Systems</h1>
+    <p>Commercial Flooring Estimating AI Demo</p>
+  </div>
+</div>
+
+<div id="fakeCursor" style="position:absolute; top:540px; left:960px; z-index:9000; pointer-events:none; display:none;">
+  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" style="width:28px;height:28px;filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.5));">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
+  </svg>
+</div>
+
+<!-- SCENE 1: Pain -->
+<div id="scene1" class="scene">
+  <div class="header"><div class="logo">National<span>Floor</span>Systems</div><div class="header-nav"><a>Dashboard</a><a>Bids</a><a>Projects</a><a>Suppliers</a></div></div>
+  <div class="scene-title"><h2>The Challenge</h2><p>Large commercial bids are complex and time-consuming</p></div>
+  <div style="position:absolute; top:200px; left:60px; display:flex; gap:30px;">
+    <div class="stat-card" style="width:300px;flex-direction:column;padding:32px;border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.08);opacity:1;"><div style="font-size:52px;font-weight:800;color:#ef4444;">3 Days</div><div style="font-size:14px;color:#94a3b8;margin-top:8px;text-align:center;">Per Takeoff</div></div>
+    <div class="stat-card" style="width:300px;flex-direction:column;padding:32px;border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.08);opacity:1;"><div style="font-size:52px;font-weight:800;color:#ef4444;">14 Specs</div><div style="font-size:14px;color:#94a3b8;margin-top:8px;text-align:center;">Per Floor</div></div>
+    <div class="stat-card" style="width:300px;flex-direction:column;padding:32px;border-color:rgba(239,68,68,0.25);background:rgba(239,68,68,0.08);opacity:1;"><div style="font-size:52px;font-weight:800;color:#ef4444;">200K sq ft</div><div style="font-size:14px;color:#94a3b8;margin-top:8px;text-align:center;">To Measure</div></div>
+  </div>
+  <div style="position:absolute;top:480px;left:60px;right:60px;font-size:24px;color:#cbd5e1;line-height:1.6;font-style:italic;">"A hospital bid lands in your inbox. Six floors, fourteen different flooring specs, two hundred thousand square feet. Your estimator spends three days on the takeoff. Miss one zone and you're eating the cost."</div>
+</div>
+
+<!-- SCENE 2: Blueprint Intake -->
+<div id="scene2" class="scene">
+  <div class="header"><div class="logo">National<span>Floor</span>Systems</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9;">Bids</a><a>Projects</a><a>Suppliers</a></div></div>
+  <div class="scene-title"><h2>Blueprint Intake</h2><p>AI scans floor plans and identifies zones automatically</p></div>
+  <div class="blueprint-area">
+    <div class="bp-grid"></div>
+    <div class="bp-zone" id="zone1" style="top:50px;left:50px;width:300px;height:200px;background:rgba(168,85,247,0.1);border-color:#a855f7;"><div class="label" style="color:#a855f7;">Lobby<br>Carpet Tile</div></div>
+    <div class="bp-zone" id="zone2" style="top:50px;left:350px;width:900px;height:80px;background:rgba(14,165,233,0.1);border-color:#0ea5e9;"><div class="label" style="color:#0ea5e9;">Corridors<br>LVT</div></div>
+    <div class="bp-zone" id="zone3" style="top:130px;left:350px;width:450px;height:500px;background:rgba(34,197,94,0.1);border-color:#22c55e;"><div class="label" style="color:#22c55e;">Patient Rooms<br>Sheet Vinyl</div></div>
+    <div class="bp-zone" id="zone4" style="top:130px;left:800px;width:450px;height:300px;background:rgba(245,158,11,0.1);border-color:#f59e0b;"><div class="label" style="color:#f59e0b;">Labs<br>Rubber</div></div>
+    <div class="scan-line" id="scanLine2" style="display:none;"></div>
+  </div>
+  <div class="stat-panel" style="right:auto;left:60px;top:400px;width:300px;">
+    <div class="stat-card" id="sc1"><span class="label">Total Zones</span><span class="value" style="color:#0ea5e9;">14</span></div>
+    <div class="stat-card" id="sc2"><span class="label">Total Area</span><span class="value" style="color:#0ea5e9;">212,500 sq ft</span></div>
+    <div class="stat-card" id="sc3"><span class="label">Total Specs</span><span class="value" style="color:#0ea5e9;">8</span></div>
+  </div>
+</div>
+
+<!-- SCENE 3: Spec Matching -->
+<div id="scene3" class="scene">
+    <div class="header"><div class="logo">National<span>Floor</span>Systems</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9;">Bids</a><a>Projects</a><a>Suppliers</a></div></div>
+    <div class="scene-title"><h2>Specification Matching</h2><p>AI cross-references architect specs against supplier catalogs</p></div>
+    <div class="spec-table">
+        <div class="spec-header"><span>Material Spec</span><span>Supplier Catalog Match</span><span>Lead Time</span><span style="text-align:center;">Status</span></div>
+        <div class="spec-row" id="spec1"><span>Carpet Tile - CT-01</span><span>Shaw Contract - "Collective" #5T308</span><span>4-6 weeks</span><div class="status"><span class="tag tag-ok">✓ OK</span></div></div>
+        <div class="spec-row" id="spec2"><span>LVT - LVT-01</span><span>Mannington - "Amtico" #AR0W8110</span><span>2 weeks</span><div class="status"><span class="tag tag-ok">✓ OK</span></div></div>
+        <div class="spec-row" id="spec3"><span>Sheet Vinyl - SV-01</span><span>Armstrong - "Medintech" #87301</span><span>1 week</span><div class="status"><span class="tag tag-ok">✓ OK</span></div></div>
+        <div class="spec-row" id="spec4"><span>Rubber - RB-01</span><span>Johnsonite - "Triumph" #40</span><span>8-10 weeks</span><div class="status"><span class="tag tag-warn">! LONG</span></div></div>
+        <div class="spec-row" id="spec5"><span>Epoxy - EP-01</span><span>Sherwin-Williams - "Resuflor"</span><span>In Stock</span><div class="status"><span class="tag tag-ok">✓ OK</span></div></div>
+        <div class="spec-row" id="spec6"><span>Base - WB-01</span><span>Generic 4" Rubber Base #100</span><span>In Stock</span><div class="status"><span class="tag tag-ok">✓ OK</span></div></div>
+    </div>
+</div>
+
+<!-- SCENE 4: Multi-Zone Takeoff -->
+<div id="scene4" class="scene">
+    <div class="header"><div class="logo">National<span>Floor</span>Systems</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9;">Bids</a><a>Projects</a><a>Suppliers</a></div></div>
+    <div class="scene-title"><h2>Multi-Zone Takeoff</h2><p>Every zone quantified with material, waste, and pallet counts</p></div>
+    <div class="bid-table">
+        <div class="spec-header" style="grid-template-columns:300px 150px 150px 150px 150px;"><span>Zone</span><span>Material</span><span>Area (sq ft)</span><span>Waste (10%)</span><span>Pallets</span></div>
+        <div class="bid-row" id="tk1" style="grid-template-columns:300px 150px 150px 150px 150px;"><span>Lobby & Waiting Areas</span><span style="color:#a855f7;">Carpet Tile</span><span>4,200</span><span>420</span><span>3</span></div>
+        <div class="bid-row" id="tk2" style="grid-template-columns:300px 150px 150px 150px 150px;"><span>Main Corridors</span><span style="color:#0ea5e9;">LVT</span><span>12,800</span><span>1,280</span><span>8</span></div>
+        <div class="bid-row" id="tk3" style="grid-template-columns:300px 150px 150px 150px 150px;"><span>Patient Rooms (68)</span><span style="color:#22c55e;">Sheet Vinyl</span><span>68,000</span><span>6,800</span><span>23</span></div>
+        <div class="bid-row" id="tk4" style="grid-template-columns:300px 150px 150px 150px 150px;"><span>Labs & Procedure Rooms</span><span style="color:#f59e0b;">Rubber</span><span>22,500</span><span>2,250</span><span>11</span></div>
+        <div class="bid-row" id="tk5" style="grid-template-columns:300px 150px 150px 150px 150px;"><span>Operating Rooms (4)</span><span style="color:#ef4444;">Epoxy</span><span>4,800</span><span>240</span><span>N/A</span></div>
+    </div>
+</div>
+
+<!-- SCENE 5: Bid Assembly -->
+<div id="scene5" class="scene">
+    <div class="header"><div class="logo">National<span>Floor</span>Systems</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9;">Bids</a><a>Projects</a><a>Suppliers</a></div></div>
+    <div class="scene-title"><h2>Automated Bid Assembly</h2><p>From takeoff to full proposal in minutes</p></div>
+    <div style="position:absolute; top:150px; left:60px; width:800px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:40px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.08);"><h3>Bid #NFS-4811: Mercy General Hospital</h3></div>
+        <div class="stat-card" id="ba1" style="opacity:1;"><span class="label">Total Material Cost</span><span class="value" style="color:#e2e8f0;">$1,180,500</span></div>
+        <div class="stat-card" id="ba2" style="opacity:1;"><span class="label">Labor Estimate (2,400 hours)</span><span class="value" style="color:#e2e8f0;">$180,000</span></div>
+        <div class="stat-card" id="ba3" style="opacity:1;"><span class="label">Freight & Delivery</span><span class="value" style="color:#e2e8f0;">$28,500</span></div>
+        <div class="stat-card" id="ba4" style="opacity:1;"><span class="label">Contingency (5%)</span><span class="value" style="color:#e2e8f0;">$69,450</span></div>
+        <div class="stat-card" id="ba5" style="opacity:1;"><span class="label">Subtotal</span><span class="value" style="color:#e2e8f0;">$1,458,450</span></div>
+        <div class="stat-card" id="ba6" style="opacity:1;background:rgba(14,165,233,0.08);border-color:rgba(14,165,233,0.3);"><span class="label" style="font-weight:700;font-size:16px;color:white;">Total Bid (15% Margin)</span><span class="value" style="color:#0ea5e9;font-size:24px;">$1,677,217</span></div>
+    </div>
+</div>
+
+<!-- SCENE 6: Bid Tracking -->
+<div id="scene6" class="scene">
+    <div class="header"><div class="logo">National<span>Floor</span>Systems</div><div class="header-nav"><a style="color:#0ea5e9;">Dashboard</a><a>Bids</a><a>Projects</a><a>Suppliers</a></div></div>
+    <div class="scene-title"><h2>Bid Tracking Dashboard</h2><p>Manage your entire sales pipeline in one place</p></div>
+    <div class="bid-table">
+      <div class="spec-header" style="grid-template-columns:1fr 180px 180px 180px;"><span>Project</span><span>Status</span><span>Value</span><span>Submitted</span></div>
+      <div class="bid-row" id="bt1" style="grid-template-columns:1fr 180px 180px 180px;"><span>Mercy General Hospital</span><span style="color:#f59e0b;">Pending</span><span>$1,677,217</span><span>Today</span></div>
+      <div class="bid-row" id="bt2" style="grid-template-columns:1fr 180px 180px 180px;"><span>Northwood High School</span><span style="color:#22c55e;">Won</span><span>$892,000</span><span>2 weeks ago</span></div>
+      <div class="bid-row" id="bt3" style="grid-template-columns:1fr 180px 180px 180px;"><span>Downtown Office Tower</span><span style="color:#ef4444;">Lost</span><span>$2,450,000</span><span>1 month ago</span></div>
+      <div class="bid-row" id="bt4" style="grid-template-columns:1fr 180px 180px 180px;"><span>Oakridge Corporate Campus</span><span style="color:#f59e0b;">Pending</span><span>$3,100,000</span><span>3 days ago</span></div>
+    </div>
+    <div style="position:absolute; bottom:60px; left:60px; display:flex; gap:30px;">
+      <div class="stat-card" id="bs1" style="opacity:1;width:300px;flex-direction:column;padding:32px;"><div style="font-size:52px;font-weight:800;color:#0ea5e9;">$7.2M</div><div style="font-size:14px;color:#94a3b8;margin-top:8px;">Pipeline Value</div></div>
+      <div class="stat-card" id="bs2" style="opacity:1;width:300px;flex-direction:column;padding:32px;"><div style="font-size:52px;font-weight:800;color:#22c55e;">28%</div><div style="font-size:14px;color:#94a3b8;margin-top:8px;">Win Rate (YTD)</div></div>
+      <div class="stat-card" id="bs3" style="opacity:1;width:300px;flex-direction:column;padding:32px;"><div style="font-size:52px;font-weight:800;color:#e2e8f0;">$980K</div><div style="font-size:14px;color:#94a3b8;margin-top:8px;">Avg. Bid Size</div></div>
+    </div>
+</div>
+
+<!-- SCENE 7: Close -->
+<div id="scene7" class="scene">
+  <div class="close-scene">
+    <div class="close-logo">Solve<span>Works</span></div>
+    <div class="close-tagline">More bids out the door, tighter numbers, fewer mistakes.</div>
+    <div class="close-url">solveworks.io</div>
+  </div>
+</div>
+
+<audio id="voiceover" preload="auto"><source src="voiceover.mp3" type="audio/mpeg"></audio>
+
+<script>
+window.__demoPaused = false;
+function delay(ms) {
+  return new Promise(resolve => {
+    let remaining = ms;
+    let start = Date.now();
+    function tick() {
+      if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
+      let elapsed = Date.now() - start;
+      remaining -= elapsed;
+      if (remaining <= 0) { resolve(); }
+      else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
+    }
+    setTimeout(tick, Math.min(ms, 50));
+  });
+}
+
+var voiceover = document.getElementById('voiceover');
+var cursor = document.getElementById('fakeCursor');
+
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function animateEl(id, props, dur) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  Object.assign(el.style, { transition: `all ${dur||500}ms ease`, opacity:'1', transform:'translateY(0) translateX(0)' });
+  if (props) Object.assign(el.style, props);
+}
+
+async function startDemo() {
+  document.getElementById('playBtn').style.display = 'none';
+  voiceover.play().catch(()=>{});
+  cursor.style.display = 'block';
+
+  // Scene 1: Pain (0:00 - 12s)
+  showScene('scene1');
+  await delay(1000);
+  document.querySelectorAll('#scene1 .stat-card').forEach((c,i) => {
+    setTimeout(()=>{ c.style.animation = 'fadeInUp 0.6s ease forwards'; }, i*400);
+  });
+  await delay(11000);
+
+  // Scene 2: Blueprint Intake (12s - 24s)
+  showScene('scene2');
+  var sl = document.getElementById('scanLine2');
+  sl.style.display = 'block';
+  sl.style.animation = 'scanLine 3s linear forwards';
+  await delay(500);
+  for(let i=1; i<=4; i++){ animateEl('zone'+i); await delay(700); }
+  await delay(500);
+  for(let i=1; i<=3; i++){ animateEl('sc'+i); await delay(400); }
+  await delay(6000);
+
+  // Scene 3: Spec Matching (24s - 36s)
+  showScene('scene3');
+  await delay(500);
+  for(let i=1; i<=6; i++){ animateEl('spec'+i); await delay(500); }
+  await delay(8000);
+
+  // Scene 4: Multi-Zone Takeoff (36s - 52s)
+  showScene('scene4');
+  await delay(500);
+  for(let i=1; i<=5; i++){ animateEl('tk'+i); await delay(800); }
+  await delay(10000);
+  
+  // Scene 5: Bid Assembly (52s - 66s)
+  showScene('scene5');
+  await delay(500);
+  for(let i=1; i<=6; i++){ 
+      var el = document.getElementById('ba'+i);
+      el.style.opacity = 0; el.style.transform = 'translateX(20px)';
+      el.style.animation = 'fadeInUp 0.5s ease forwards';
+      await delay(600); 
+  }
+  await delay(8000);
+
+  // Scene 6: Bid Tracking (66s - 78s)
+  showScene('scene6');
+  await delay(500);
+  for(let i=1; i<=4; i++){ animateEl('bt'+i); await delay(600); }
+  await delay(1000);
+  for(let i=1; i<=3; i++){ animateEl('bs'+i); await delay(600); }
+  await delay(5000);
+
+  // Scene 7: Close (78s - end)
+  showScene('scene7');
+  document.querySelector('.close-scene').style.animation = 'fadeInUp 1s ease forwards';
+}
+</script>
+
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.textContent=paused?"":"";
+    flash.style.opacity=paused?"1":"0";
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a){if(paused)a.pause();else a.play().catch(function(){});}
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused)document.body.classList.add("animations-paused");
+    else{window.__demoPaused=false;document.body.classList.remove("animations-paused");}
+  }
+  document.addEventListener("touchstart",function(e){if(!started)return;e.preventDefault();try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  document.addEventListener("click",function(e){if(!started||e.target.closest("#playBtn"))return;try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  function upd(){
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
+})();
+</script>
+</body>
+</html>
