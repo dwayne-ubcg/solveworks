@@ -333,7 +333,7 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
 <script>
 var voiceover = new Audio('voiceover.mp3');
 var cursor = document.getElementById('fakeCursor');
-var cursorRing = document.getElementById('cursorRing');
+var cursorRing = null; // removed
 
 window.__demoPaused = false;
 function delay(ms) {
@@ -359,14 +359,14 @@ function moveCursor(x, y) {
 function clickAt(x, y) {
   moveCursor(x, y);
   return delay(300).then(function() {
-    cursor.classList.add('cursor-click');
+    /* click ripple */ (function(){ var r=document.createElement("div"); r.className="click-ripple"; r.style.position="absolute"; r.style.top=cursor.style.top; r.style.left=cursor.style.left; document.body.appendChild(r); setTimeout(function(){r.remove();},600); })();
     cursorRing.style.animation = 'none';
     cursorRing.offsetHeight;
     cursorRing.style.animation = '';
-    cursor.classList.add('cursor-click');
+    /* click ripple */ (function(){ var r=document.createElement("div"); r.className="click-ripple"; r.style.position="absolute"; r.style.top=cursor.style.top; r.style.left=cursor.style.left; document.body.appendChild(r); setTimeout(function(){r.remove();},600); })();
     return delay(400);
   }).then(function() {
-    cursor.classList.remove('cursor-click');
+    /* ripple auto-removes */
   });
 }
 
