@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; user-select: none; }
+html, body { width: 1920px; height: 1080px; overflow: visible; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; user-select: none; }
 
 /* ============ PLAY BUTTON ============ */
 #playBtn { position: fixed; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; gap: 24px; }
@@ -1068,6 +1068,7 @@ document.getElementById('playBtn').addEventListener('click', startPresentation);
     }
   });
 
+  window._cbToggle = function() { if(_cbPaused){_cbResume()}else{_cbPause()} };
   function _cbPause() {
     _cbPaused = true;
     _cbPauseTime = performance.now();
@@ -1154,6 +1155,10 @@ document.getElementById('playBtn').addEventListener('click', startPresentation);
     }
     requestAnimationFrame(_cbUpdateLoop);
 
+  // Stop audio on page close/navigate
+  window.addEventListener('beforeunload', () => { const a=_cbGetAudio(); if(a){a.pause(); a.currentTime=0;} });
+  window.addEventListener('pagehide', () => { const a=_cbGetAudio(); if(a){a.pause(); a.currentTime=0;} });
+
 
   }
   requestAnimationFrame(_cbUpdateLoop);
@@ -1186,8 +1191,8 @@ document.getElementById('playBtn').addEventListener('click', startPresentation);
 
 <!-- Playback Control Bar -->
 <div id="controlBar" class="initially-hidden">
-  <button id="cbRestart" title="Restart">⏮</button>
-  <button id="cbPlayPause" title="Play/Pause">⏸</button>
+  <button id="cbRestart" title="Restart" onclick="location.reload()">⏮</button>
+  <button id="cbPlayPause" title="Play/Pause" onclick="window._cbToggle&&window._cbToggle()">⏸</button>
   <div class="cb-time" id="cbTimeDisplay">0:00 / 0:00</div>
   <div class="cb-scrubber" id="cbScrubber">
     <div class="cb-scrubber-fill" id="cbScrubberFill"></div>

@@ -1203,6 +1203,7 @@ init();
     }
   });
 
+  window._cbToggle = function() { if(_cbPaused){_cbResume()}else{_cbPause()} };
   function _cbPause() {
     _cbPaused = true;
     _cbPauseTime = performance.now();
@@ -1289,6 +1290,10 @@ init();
     }
     requestAnimationFrame(_cbUpdateLoop);
 
+  // Stop audio on page close/navigate
+  window.addEventListener('beforeunload', () => { const a=_cbGetAudio(); if(a){a.pause(); a.currentTime=0;} });
+  window.addEventListener('pagehide', () => { const a=_cbGetAudio(); if(a){a.pause(); a.currentTime=0;} });
+
 
   }
   requestAnimationFrame(_cbUpdateLoop);
@@ -1321,8 +1326,8 @@ init();
 
 <!-- Playback Control Bar -->
 <div id="controlBar" class="initially-hidden">
-  <button id="cbRestart" title="Restart">⏮</button>
-  <button id="cbPlayPause" title="Play/Pause">⏸</button>
+  <button id="cbRestart" title="Restart" onclick="location.reload()">⏮</button>
+  <button id="cbPlayPause" title="Play/Pause" onclick="window._cbToggle&&window._cbToggle()">⏸</button>
   <div class="cb-time" id="cbTimeDisplay">0:00 / 0:00</div>
   <div class="cb-scrubber" id="cbScrubber">
     <div class="cb-scrubber-fill" id="cbScrubberFill"></div>
