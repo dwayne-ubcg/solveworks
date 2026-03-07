@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bowers Construction — Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0A1628;--surface:#111d2e;--surface2:#1a2942;--surface3:#223350;
+--border:#1e3048;--border-hover:#2a4060;--text:#e4e8ee;--text2:#7a8da6;
+--accent:#0ea5e9;--accent-light:#0c8bc4;--accent-glow:rgba(14,165,233,.15);
+--green:#34d399;--yellow:#fbbf24;--red:#f87171;--purple:#a78bfa;--blue:#0ea5e9;--cyan:#22d3ee;--orange:#fb923c;
+--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+
+.sidebar{width:250px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;z-index:2}
+.sidebar-header{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+.sidebar-header h1{font-size:14px;font-weight:800;letter-spacing:-.02em;line-height:1.3}
+.sidebar-header .sub{display:block;font-size:10px;font-weight:600;letter-spacing:2px;color:var(--text2);margin-top:6px;text-transform:uppercase}
+.nav{flex:1;padding:12px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .2s;position:relative;margin-bottom:2px}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(14,165,233,.12);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--accent);border-radius:0 3px 3px 0}
+.nav-item svg{width:18px;height:18px;opacity:.5;flex-shrink:0}.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;font-size:11px;font-weight:700;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px}
+.nav-item.active .nav-badge{background:rgba(14,165,233,.2);color:var(--accent)}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border);font-size:10px;color:var(--text2);line-height:1.5}
+.sidebar-footer a{color:var(--accent);text-decoration:none}
+.sidebar-footer .sw-logo{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-weight:600;font-size:11px;color:var(--text2)}
+
+.main{flex:1;overflow-y:auto;padding:32px 40px;min-height:0}
+.section{display:none;animation:fadeIn .4s ease}.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.page-title{font-size:24px;font-weight:800;margin-bottom:4px;letter-spacing:-.02em}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .25s;opacity:0;animation:cardIn .5s ease forwards}
+.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}
+.stat-card:hover{border-color:var(--border-hover);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.stat-card:nth-child(1)::before{background:var(--accent)}.stat-card:nth-child(2)::before{background:var(--yellow)}.stat-card:nth-child(3)::before{background:var(--green)}.stat-card:nth-child(4)::before{background:var(--purple)}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.stat-value{font-size:32px;font-weight:800;letter-spacing:-.02em}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:4px}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:all .25s}
+.card:hover{border-color:var(--border-hover)}
+.card-title{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card-title .badge{font-size:11px;font-weight:600;background:var(--accent-glow);color:var(--accent);padding:3px 10px;border-radius:10px}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:16px}
+
+.kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px}
+.kanban-col{min-width:210px;flex:1;background:rgba(17,29,46,.5);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:65vh}
+.kanban-header{padding:12px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.kanban-header .count{font-size:10px;background:var(--surface3);padding:2px 7px;border-radius:8px;color:var(--text2)}
+.kanban-body{flex:1;overflow-y:auto;padding:10px}
+.k-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:default;transition:all .2s}
+.k-card:hover{border-color:var(--accent);box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.k-card .k-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.k-card .k-value{font-size:12px;color:var(--green);font-weight:600;margin-bottom:4px}
+.k-card .k-detail{font-size:11px;color:var(--text2);line-height:1.4}
+.k-card .k-date{font-size:10px;color:var(--text2);margin-top:6px}
+.k-card .k-tag{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;margin-top:6px}
+.k-tag.hot{background:rgba(248,113,113,.15);color:var(--red)}
+.k-tag.warm{background:rgba(251,191,36,.15);color:var(--yellow)}
+.k-tag.new{background:rgba(14,165,233,.15);color:var(--accent)}
+
+.progress-bar{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.progress-fill.blue{background:linear-gradient(90deg,var(--accent),var(--cyan))}.progress-fill.green{background:linear-gradient(90deg,#22c55e,var(--green))}.progress-fill.yellow{background:linear-gradient(90deg,var(--orange),var(--yellow))}.progress-fill.purple{background:linear-gradient(90deg,#8b5cf6,var(--purple))}
+
+.feed-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.feed-item:last-child{border-bottom:none}
+.feed-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.feed-icon.ai{background:rgba(14,165,233,.15)}.feed-icon.client{background:rgba(52,211,153,.15)}.feed-icon.sub{background:rgba(251,191,36,.15)}.feed-icon.alert{background:rgba(248,113,113,.15)}.feed-icon.team{background:rgba(167,139,250,.15)}
+.feed-content{flex:1}.feed-content p{font-size:13px;line-height:1.5}.feed-content .feed-time{font-size:11px;color:var(--text2);margin-top:3px}
+
+.briefing-box{background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(52,211,153,.05));border:1px solid rgba(14,165,233,.2);border-radius:var(--radius);padding:24px}
+.briefing-box h3{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.briefing-item{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px}
+.briefing-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.briefing-item .dot.blue{background:var(--accent)}.briefing-item .dot.green{background:var(--green)}.briefing-item .dot.yellow{background:var(--yellow)}.briefing-item .dot.red{background:var(--red)}
+
+/* Team Grid */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.team-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;transition:all .25s}
+.team-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.team-avatar{width:48px;height:48px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:20px;font-weight:700;color:var(--accent)}
+.team-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.team-role{font-size:11px;color:var(--text2);margin-bottom:8px}
+.team-task{font-size:12px;color:var(--text);background:var(--surface3);padding:6px 10px;border-radius:6px;display:inline-block}
+
+/* Review Stars */
+.stars{color:var(--yellow);font-size:18px;letter-spacing:2px}
+.review-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px;transition:all .2s}
+.review-card:hover{border-color:var(--border-hover)}
+.review-text{font-size:13px;line-height:1.6;font-style:italic;color:var(--text);margin-bottom:8px}
+.review-author{font-size:12px;color:var(--text2);font-weight:600}
+.review-response{margin-top:10px;padding:10px;background:var(--accent-glow);border-radius:6px;border-left:3px solid var(--accent);font-size:12px;line-height:1.5}
+.review-response .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:4px}
+
+.sw-corner{position:fixed;top:18px;right:24px;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);font-weight:600;z-index:10;opacity:.6}
+.sw-corner:hover{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="sw-corner">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+SolveWorks
+</div>
+
+<div class="sidebar">
+<div class="sidebar-header">
+<h1>Bowers Construction</h1>
+<span class="sub">Mission Control</span>
+</div>
+<div class="nav">
+<div class="nav-item active" data-section="overview">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+Overview
+</div>
+<div class="nav-item" data-section="pipeline">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+Pipeline
+<span class="nav-badge">9</span>
+</div>
+<div class="nav-item" data-section="projects">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M5 20V10l7-7 7 7v10"/><rect x="9" y="14" width="6" height="6"/></svg>
+Projects
+<span class="nav-badge">6</span>
+</div>
+<div class="nav-item" data-section="team">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+Team
+<span class="nav-badge">5</span>
+</div>
+<div class="nav-item" data-section="clients">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+Clients
+</div>
+<div class="nav-item" data-section="activity">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="20" cy="4" r="2" fill="var(--accent)"/></svg>
+AI Activity
+<span class="nav-badge">14</span>
+</div>
+<div class="nav-item" data-section="reviews">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+Reviews
+<span class="nav-badge">5.0★</span>
+</div>
+</div>
+<div class="sidebar-footer">
+<div class="sw-logo">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>
+Powered by SolveWorks
+</div>
+Your AI. Only yours. &bull; <a href="https://solveworks.io" target="_blank">solveworks.io</a>
+</div>
+</div>
+
+<div class="main">
+
+<!-- OVERVIEW -->
+<div class="section active" id="overview">
+<div class="page-title">Good afternoon, Bowers team ☀️</div>
+<div class="page-sub">Saturday, March 7 — 6 active builds, everything on track</div>
+
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-label">Active Builds</div>
+<div class="stat-value" style="color:var(--accent)">6</div>
+<div class="stat-sub">4 Halifax · 1 Bedford · 1 Fredericton</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Pending Consultations</div>
+<div class="stat-value" style="color:var(--yellow)">9</div>
+<div class="stat-sub">3 discovery calls this week</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">This Month Revenue</div>
+<div class="stat-value" style="color:var(--green)">$1.2M</div>
+<div class="stat-sub">↑ 8% vs February</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Client Satisfaction</div>
+<div class="stat-value" style="color:var(--purple)">5.0★</div>
+<div class="stat-sub">47 Google reviews — perfect score</div>
+</div>
+</div>
+
+<div class="briefing-box" style="margin-bottom:20px">
+<h3>☕ Morning Briefing</h3>
+<div style="font-size:13px;color:var(--text);margin-bottom:12px;line-height:1.5">Good morning Bowers team — busy day ahead. 3 site visits, 2 client meetings, and a new overnight inquiry from a Chester couple looking at a lakehouse build.</div>
+<div class="briefing-item"><div class="dot green"></div><strong>Caleb</strong> — 2 site visits: Scott Residence (9 AM), Bedford Commons Lot 12 (1 PM)</div>
+<div class="briefing-item"><div class="dot blue"></div><strong>Dave</strong> — Bedford Commons all day, foundation pour prep</div>
+<div class="briefing-item"><div class="dot yellow"></div><strong>Patterson framing walk-through</strong> at 2 PM — client attending</div>
+<div class="briefing-item"><div class="dot red"></div><strong>New inquiry overnight</strong> — Thompson family from Chester, lakehouse project. AI responded with portfolio + availability.</div>
+<div class="briefing-item"><div class="dot blue"></div><strong>Atlantic Home Warranty</strong> inspection confirmed for Thursday (Scott Residence)</div>
+</div>
+
+<div class="card-grid">
+<div class="card">
+<div class="card-title">Recent AI Actions <span class="badge">Last 24h</span></div>
+<div class="feed-item">
+<div class="feed-icon ai">🤖</div>
+<div class="feed-content">
+<p>Responded to website design consultation request from Thompson family — booked discovery call for Monday</p>
+<div class="feed-time">1 hour ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon client">📸</div>
+<div class="feed-content">
+<p>Sent progress photos to <strong>Scott family</strong> — trim carpentry looking beautiful</p>
+<div class="feed-time">3 hours ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon sub">🔍</div>
+<div class="feed-content">
+<p>Confirmed <strong>Atlantic Home Warranty</strong> inspection for Thursday at Scott Residence</p>
+<div class="feed-time">Yesterday at 3:15 PM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">📧</div>
+<div class="feed-content">
+<p>Generated weekly update for all <strong>6 active clients</strong> — photos, milestones, next steps</p>
+<div class="feed-time">Yesterday at 8:00 AM</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Team Status — Today</div>
+<div class="team-grid">
+<div class="team-card">
+<div class="team-avatar">C</div>
+<div class="team-name">Caleb</div>
+<div class="team-role">Site Supervisor</div>
+<div class="team-task">2 site visits today</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">D</div>
+<div class="team-name">Dave</div>
+<div class="team-role">Project Lead</div>
+<div class="team-task">Bedford Commons</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">D</div>
+<div class="team-name">Dominic</div>
+<div class="team-role">Carpenter</div>
+<div class="team-task">Scott Residence</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">S</div>
+<div class="team-name">Sawyer</div>
+<div class="team-role">Apprentice</div>
+<div class="team-task">Material pickup</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">V</div>
+<div class="team-name">Virginia</div>
+<div class="team-role">Office Admin</div>
+<div class="team-task">Invoicing & scheduling</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- PIPELINE -->
+<div class="section" id="pipeline">
+<div class="page-title">Lead Pipeline</div>
+<div class="page-sub">9 prospects in various stages — $4.2M potential value</div>
+
+<div class="kanban">
+<div class="kanban-col">
+<div class="kanban-header">Website Inquiry <span class="count">3</span></div>
+<div class="kanban-body">
+<div class="k-card">
+<div class="k-name">Thompson Lakehouse</div>
+<div class="k-value">Chester, NS</div>
+<div class="k-detail">Couple inquired overnight about lakefront custom build. AI responded with portfolio and availability.</div>
+<div class="k-date">1 hour ago</div>
+<span class="k-tag new">NEW</span>
+</div>
+<div class="k-card">
+<div class="k-name">Blackwood Estate</div>
+<div class="k-value">Fall River, NS</div>
+<div class="k-detail">Executive home on 5-acre lot. Wants open concept with walk-out basement.</div>
+<div class="k-date">2 days ago</div>
+<span class="k-tag warm">FOLLOW UP</span>
+</div>
+<div class="k-card">
+<div class="k-name">Jenkins Renovation</div>
+<div class="k-value">Bedford, NS</div>
+<div class="k-detail">Kitchen + main floor reno, older home. Budget ~$180K.</div>
+<div class="k-date">3 days ago</div>
+<span class="k-tag warm">FOLLOW UP</span>
+</div>
+</div>
+</div>
+<div class="kanban-col">
+<div class="kanban-header">Discovery Call <span class="count">2</span></div>
+<div class="kanban-body">
+<div class="k-card">
+<div class="k-name">The MacDonalds</div>
+<div class="k-value">Bedford Custom</div>
+<div class="k-detail">Young family, first custom build. Discovery call Monday 10 AM. Loved our Google reviews.</div>
+<div class="k-date">Call booked 2 days ago</div>
+<span class="k-tag new">MONDAY</span>
+</div>
+<div class="k-card">
+<div class="k-name">Fraser Family</div>
+<div class="k-value">Hammonds Plains</div>
+<div class="k-detail">Referral from Scott family. Want a craftsman-style 3-bed. Call Wednesday.</div>
+<div class="k-date">Referral received last week</div>
+<span class="k-tag new">WEDNESDAY</span>
+</div>
+</div>
+</div>
+<div class="kanban-col">
+<div class="kanban-header">Design Meeting <span class="count">2</span></div>
+<div class="kanban-body">
+<div class="k-card">
+<div class="k-name">O'Brien Custom</div>
+<div class="k-value">Dartmouth, NS</div>
+<div class="k-detail">Second design meeting scheduled. Narrowing down floor plan. Budget $650K.</div>
+<div class="k-date">Meeting Thursday 1 PM</div>
+</div>
+<div class="k-card">
+<div class="k-name">Wilson Build</div>
+<div class="k-value">Fredericton, NB</div>
+<div class="k-detail">Lot purchased, initial designs reviewed. Finalizing master bedroom layout.</div>
+<div class="k-date">Meeting next Monday</div>
+</div>
+</div>
+</div>
+<div class="kanban-col">
+<div class="kanban-header">Proposal Sent <span class="count">1</span></div>
+<div class="kanban-body">
+<div class="k-card">
+<div class="k-name">Blackwood Estate</div>
+<div class="k-value">Fall River — $780K</div>
+<div class="k-detail">Proposal sent March 4. Executive home, 3,200 sqft. Awaiting response.</div>
+<div class="k-date">Sent 3 days ago</div>
+<span class="k-tag warm">PENDING</span>
+</div>
+</div>
+</div>
+<div class="kanban-col">
+<div class="kanban-header">Signed <span class="count">1</span></div>
+<div class="kanban-body">
+<div class="k-card">
+<div class="k-name">Bedford Commons Lot 12</div>
+<div class="k-value">Bedford — $520K</div>
+<div class="k-detail">Signed last week. Foundation pour scheduled Monday. Permit approved.</div>
+<div class="k-date">Signed Feb 28</div>
+<span class="k-tag hot">STARTING</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- PROJECTS -->
+<div class="section" id="projects">
+<div class="page-title">Active Projects</div>
+<div class="page-sub">6 builds in progress — Bedford, Halifax, Fredericton</div>
+
+<div class="card">
+<div class="card-title">Scott Residence <span class="badge" style="background:rgba(52,211,153,.15);color:var(--green)">82% Complete</span></div>
+<div class="progress-bar"><div class="progress-fill green" style="width:82%"></div></div>
+<div style="display:flex;gap:28px;margin-top:12px;font-size:13px;flex-wrap:wrap">
+<div><span style="color:var(--text2)">Location:</span> Bedford, NS</div>
+<div><span style="color:var(--text2)">Type:</span> Custom Home</div>
+<div><span style="color:var(--text2)">Assigned:</span> Dominic</div>
+<div><span style="color:var(--text2)">Est. Completion:</span> April 2026</div>
+</div>
+<div style="margin-top:12px;font-size:13px">
+<div class="briefing-item"><div class="dot green"></div>Trim carpentry this week — Dominic on site</div>
+<div class="briefing-item"><div class="dot blue"></div>Atlantic Home Warranty inspection Thursday</div>
+<div class="briefing-item"><div class="dot yellow"></div>Final paint selection with client next week</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Patterson Home <span class="badge" style="background:rgba(14,165,233,.15);color:var(--accent)">55% Complete</span></div>
+<div class="progress-bar"><div class="progress-fill blue" style="width:55%"></div></div>
+<div style="display:flex;gap:28px;margin-top:12px;font-size:13px;flex-wrap:wrap">
+<div><span style="color:var(--text2)">Location:</span> Halifax, NS</div>
+<div><span style="color:var(--text2)">Type:</span> Custom Home</div>
+<div><span style="color:var(--text2)">Assigned:</span> Caleb</div>
+<div><span style="color:var(--text2)">Est. Completion:</span> July 2026</div>
+</div>
+<div style="margin-top:12px;font-size:13px">
+<div class="briefing-item"><div class="dot green"></div>Framing complete ✓</div>
+<div class="briefing-item"><div class="dot blue"></div>Client walk-through today at 2 PM</div>
+<div class="briefing-item"><div class="dot yellow"></div>Roofing starts next Tuesday</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Fredericton Custom <span class="badge" style="background:rgba(167,139,250,.15);color:var(--purple)">67% Complete</span></div>
+<div class="progress-bar"><div class="progress-fill purple" style="width:67%"></div></div>
+<div style="display:flex;gap:28px;margin-top:12px;font-size:13px;flex-wrap:wrap">
+<div><span style="color:var(--text2)">Location:</span> Fredericton, NB</div>
+<div><span style="color:var(--text2)">Type:</span> Custom Home</div>
+<div><span style="color:var(--text2)">Assigned:</span> Remote crew</div>
+<div><span style="color:var(--text2)">Est. Completion:</span> June 2026</div>
+</div>
+<div style="margin-top:12px;font-size:13px">
+<div class="briefing-item"><div class="dot blue"></div>Siding installation in progress</div>
+<div class="briefing-item"><div class="dot green"></div>Windows installed last week ✓</div>
+<div class="briefing-item"><div class="dot yellow"></div>Interior rough-ins starting March 12</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Bedford Commons Lot 12 <span class="badge" style="background:rgba(251,191,36,.15);color:var(--yellow)">23% Complete</span></div>
+<div class="progress-bar"><div class="progress-fill yellow" style="width:23%"></div></div>
+<div style="display:flex;gap:28px;margin-top:12px;font-size:13px;flex-wrap:wrap">
+<div><span style="color:var(--text2)">Location:</span> Bedford, NS</div>
+<div><span style="color:var(--text2)">Type:</span> Spec Home</div>
+<div><span style="color:var(--text2)">Assigned:</span> Dave</div>
+<div><span style="color:var(--text2)">Est. Completion:</span> October 2026</div>
+</div>
+<div style="margin-top:12px;font-size:13px">
+<div class="briefing-item"><div class="dot red"></div>Foundation pour Monday — weather dependent</div>
+<div class="briefing-item"><div class="dot yellow"></div>Concrete truck confirmed for 7 AM</div>
+<div class="briefing-item"><div class="dot blue"></div>Framing materials ordered, delivery March 14</div>
+</div>
+</div>
+
+<div class="card-grid">
+<div class="card">
+<div class="card-title">Murphy Residence <span class="badge">38%</span></div>
+<div class="progress-bar"><div class="progress-fill yellow" style="width:38%"></div></div>
+<div style="font-size:12px;color:var(--text2);margin-top:8px">Halifax — Foundation & framing underway. Sawyer assisting.</div>
+</div>
+<div class="card">
+<div class="card-title">Harbour View Reno <span class="badge">45%</span></div>
+<div class="progress-bar"><div class="progress-fill blue" style="width:45%"></div></div>
+<div style="font-size:12px;color:var(--text2);margin-top:8px">Halifax — Full main-floor renovation. Electrical complete.</div>
+</div>
+</div>
+</div>
+
+<!-- TEAM -->
+<div class="section" id="team">
+<div class="page-title">Team Dashboard</div>
+<div class="page-sub">5 team members — assignments and availability</div>
+
+<div class="team-grid" style="margin-bottom:20px">
+<div class="team-card">
+<div class="team-avatar">C</div>
+<div class="team-name">Caleb</div>
+<div class="team-role">Site Supervisor / Co-Owner</div>
+<div class="team-task">2 site visits today</div>
+<div style="font-size:11px;color:var(--text2);margin-top:8px">Scott Residence 9AM · Bedford Lot 12 1PM</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">D</div>
+<div class="team-name">Dave</div>
+<div class="team-role">Project Lead</div>
+<div class="team-task">Bedford Commons</div>
+<div style="font-size:11px;color:var(--text2);margin-top:8px">Foundation pour prep all day</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">D</div>
+<div class="team-name">Dominic</div>
+<div class="team-role">Lead Carpenter</div>
+<div class="team-task">Scott Residence</div>
+<div style="font-size:11px;color:var(--text2);margin-top:8px">Trim carpentry — crown moulding</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">S</div>
+<div class="team-name">Sawyer</div>
+<div class="team-role">Apprentice</div>
+<div class="team-task">Material pickup</div>
+<div style="font-size:11px;color:var(--text2);margin-top:8px">Kent Building Supplies 8AM, deliver to Murphy site</div>
+</div>
+<div class="team-card">
+<div class="team-avatar">V</div>
+<div class="team-name">Virginia</div>
+<div class="team-role">Office Administrator</div>
+<div class="team-task">Invoicing & scheduling</div>
+<div style="font-size:11px;color:var(--text2);margin-top:8px">3 invoices to send, 2 calls to return</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Weekly Workload</div>
+<div style="display:grid;grid-template-columns:120px 1fr;gap:10px;font-size:13px;align-items:center">
+<div style="font-weight:600">Caleb</div>
+<div>
+<div class="progress-bar" style="margin:0"><div class="progress-fill blue" style="width:85%"></div></div>
+<div style="font-size:11px;color:var(--text2);margin-top:2px">5 site visits · 2 client meetings · 85% capacity</div>
+</div>
+<div style="font-weight:600">Dave</div>
+<div>
+<div class="progress-bar" style="margin:0"><div class="progress-fill green" style="width:90%"></div></div>
+<div style="font-size:11px;color:var(--text2);margin-top:2px">Bedford Commons full week · 90% capacity</div>
+</div>
+<div style="font-weight:600">Dominic</div>
+<div>
+<div class="progress-bar" style="margin:0"><div class="progress-fill green" style="width:75%"></div></div>
+<div style="font-size:11px;color:var(--text2);margin-top:2px">Scott Residence 4 days · Murphy 1 day · 75% capacity</div>
+</div>
+<div style="font-weight:600">Sawyer</div>
+<div>
+<div class="progress-bar" style="margin:0"><div class="progress-fill yellow" style="width:60%"></div></div>
+<div style="font-size:11px;color:var(--text2);margin-top:2px">Pickups & assists · 60% capacity — available for extra</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- CLIENTS -->
+<div class="section" id="clients">
+<div class="page-title">Client Communications</div>
+<div class="page-sub">6 active clients — last updates and satisfaction</div>
+
+<div class="card">
+<div class="card-title">Recent Client Updates</div>
+<div class="feed-item">
+<div class="feed-icon client">📸</div>
+<div class="feed-content">
+<p>Sent <strong>8 progress photos</strong> to Scott family — trim carpentry looking fantastic. They replied "absolutely love it!"</p>
+<div class="feed-time">3 hours ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">📧</div>
+<div class="feed-content">
+<p>Weekly update sent to <strong>all 6 active clients</strong> — personalized photos, milestones, and next steps for each project</p>
+<div class="feed-time">Yesterday at 8:00 AM — auto-generated</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon client">📞</div>
+<div class="feed-content">
+<p><strong>Patterson family</strong> confirmed attendance for framing walk-through today at 2 PM</p>
+<div class="feed-time">Yesterday at 4:00 PM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">🏠</div>
+<div class="feed-content">
+<p>Sent <strong>Fredericton client</strong> video walkthrough of siding installation — they're thrilled with the colour choice</p>
+<div class="feed-time">2 days ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon client">✅</div>
+<div class="feed-content">
+<p><strong>Murphy family</strong> approved bathroom tile selection via email — order placed with supplier</p>
+<div class="feed-time">3 days ago</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Client Satisfaction Tracker</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center">
+<div style="padding:16px;background:var(--surface2);border-radius:8px">
+<div style="font-size:28px;font-weight:800;color:var(--green)">100%</div>
+<div style="font-size:12px;color:var(--text2);margin-top:4px">On-Time Updates</div>
+</div>
+<div style="padding:16px;background:var(--surface2);border-radius:8px">
+<div style="font-size:28px;font-weight:800;color:var(--accent)">5.0★</div>
+<div style="font-size:12px;color:var(--text2);margin-top:4px">Average Rating</div>
+</div>
+<div style="padding:16px;background:var(--surface2);border-radius:8px">
+<div style="font-size:28px;font-weight:800;color:var(--yellow)">0</div>
+<div style="font-size:12px;color:var(--text2);margin-top:4px">Open Concerns</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- AI ACTIVITY -->
+<div class="section" id="activity">
+<div class="page-title">AI Activity Feed</div>
+<div class="page-sub">14 actions in the last 24 hours — your agent never sleeps</div>
+
+<div class="card">
+<div class="card-title">Today <span class="badge">9 actions</span></div>
+<div class="feed-item">
+<div class="feed-icon ai">🤖</div>
+<div class="feed-content">
+<p>Responded to overnight website inquiry from <strong>Thompson family</strong> (Chester) — sent portfolio of lakehouse builds, booked discovery call for Monday 3 PM.</p>
+<div class="feed-time">1 hour ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon client">📸</div>
+<div class="feed-content">
+<p>Compiled and sent progress photos to <strong>Scott family</strong> — 8 images of trim carpentry work, personalized message.</p>
+<div class="feed-time">3 hours ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">📋</div>
+<div class="feed-content">
+<p>Prepared morning briefing for Bowers team — site visits, client meetings, material deliveries, weather check.</p>
+<div class="feed-time">5 hours ago — 6:00 AM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon sub">🔍</div>
+<div class="feed-content">
+<p>Confirmed <strong>Atlantic Home Warranty</strong> inspection for Thursday — Scott Residence, 10 AM.</p>
+<div class="feed-time">5 hours ago — 6:15 AM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">🌤️</div>
+<div class="feed-content">
+<p>Checked weather for Monday foundation pour — clear skies, 4°C. Green light for Bedford Commons Lot 12.</p>
+<div class="feed-time">5 hours ago — 6:20 AM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon team">👥</div>
+<div class="feed-content">
+<p>Updated team schedule — assigned Sawyer to material pickup for Murphy Residence, confirmed Dominic at Scott Residence.</p>
+<div class="feed-time">5 hours ago — 6:25 AM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">⭐</div>
+<div class="feed-content">
+<p>Detected new 5-star Google review from <strong>the Hendersons</strong> — drafted thank-you response for your approval.</p>
+<div class="feed-time">6 hours ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">📊</div>
+<div class="feed-content">
+<p>Generated weekly revenue report — $1.2M this month, 6 draws processed, 2 invoices pending.</p>
+<div class="feed-time">7 hours ago</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon client">🔔</div>
+<div class="feed-content">
+<p>Sent reminder to <strong>Patterson family</strong> about today's 2 PM framing walk-through.</p>
+<div class="feed-time">8 hours ago</div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Yesterday <span class="badge">5 actions</span></div>
+<div class="feed-item">
+<div class="feed-icon ai">📧</div>
+<div class="feed-content">
+<p>Generated and sent weekly update for <strong>all 6 active clients</strong> — personalized progress reports with photos.</p>
+<div class="feed-time">Yesterday at 8:00 AM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">📞</div>
+<div class="feed-content">
+<p>Confirmed <strong>Patterson family</strong> attendance for Saturday framing walk-through.</p>
+<div class="feed-time">Yesterday at 4:00 PM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon sub">🏗️</div>
+<div class="feed-content">
+<p>Confirmed concrete delivery for Monday — <strong>Bedford Commons Lot 12</strong> foundation pour at 7 AM.</p>
+<div class="feed-time">Yesterday at 2:30 PM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon ai">📋</div>
+<div class="feed-content">
+<p>Updated Fredericton project schedule — siding 80% complete, interior rough-ins shifted to March 12.</p>
+<div class="feed-time">Yesterday at 11:00 AM</div>
+</div>
+</div>
+<div class="feed-item">
+<div class="feed-icon alert">⚠️</div>
+<div class="feed-content">
+<p>Flagged: Kent Building Supplies back-ordered on 2×6 stock — found alternate supplier, pending Dave's approval.</p>
+<div class="feed-time">Yesterday at 9:45 AM</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- REVIEWS -->
+<div class="section" id="reviews">
+<div class="page-title">Reviews & Reputation</div>
+<div class="page-sub">5.0★ across 47 Google reviews — A+ BBB rating — Atlantic Home Warranty Member</div>
+
+<div class="stats-grid" style="margin-bottom:20px">
+<div class="stat-card">
+<div class="stat-label">Google Rating</div>
+<div class="stat-value" style="color:var(--yellow)">5.0★</div>
+<div class="stat-sub">47 reviews — perfect score</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">BBB Rating</div>
+<div class="stat-value" style="color:var(--green)">A+</div>
+<div class="stat-sub">Zero complaints</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Referral Rate</div>
+<div class="stat-value" style="color:var(--accent)">68%</div>
+<div class="stat-sub">New clients from referrals</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Review Response</div>
+<div class="stat-value" style="color:var(--purple)">100%</div>
+<div class="stat-sub">All reviews responded to</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Recent Reviews <span class="badge">New This Week</span></div>
+
+<div class="review-card">
+<div class="stars">★★★★★</div>
+<div class="review-text">"We couldn't be happier with our new home. The entire Bowers team — especially Caleb and Dave — made the process smooth and stress-free. Their attention to detail is incredible and they truly care about their clients. Highly recommend!"</div>
+<div class="review-author">— The Henderson Family · 2 days ago</div>
+<div class="review-response">
+<div class="label">🤖 AI-Drafted Response (Pending Approval)</div>
+Thank you so much, Henderson family! It was a pleasure building your dream home. Caleb and Dave truly enjoyed working with you, and we're so glad the attention to detail shows. Welcome home! 🏠
+</div>
+</div>
+
+<div class="review-card">
+<div class="stars">★★★★★</div>
+<div class="review-text">"From the first meeting to handing us the keys, Bowers Construction exceeded every expectation. The communication throughout the build was exceptional — we always knew exactly where things stood. Justin and his team are the real deal."</div>
+<div class="review-author">— Mark & Sarah W. · 1 week ago</div>
+<div class="review-response">
+<div class="label">✅ Response Sent</div>
+Mark and Sarah, thank you for trusting us with your home! Clear communication is something we pride ourselves on, and it means the world to hear it made a difference. Enjoy your beautiful new space!
+</div>
+</div>
+
+<div class="review-card">
+<div class="stars">★★★★★</div>
+<div class="review-text">"Third time building with Bowers and they just keep getting better. Honest, fair, and they stand behind their work. The warranty support alone is worth it. These guys are family."</div>
+<div class="review-author">— Dave T. · 2 weeks ago</div>
+<div class="review-response">
+<div class="label">✅ Response Sent</div>
+Dave, three builds together is something truly special. Thank you for your continued trust — you ARE family to us. We'll always be here for anything you need. 🙏
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-title">Review Insights</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px">
+<div>
+<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:10px">Most Mentioned Keywords</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">communication (23×)</span>
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">quality (19×)</span>
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">trust (17×)</span>
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">family (14×)</span>
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">detail (12×)</span>
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">recommend (11×)</span>
+<span style="padding:4px 10px;background:var(--surface2);border-radius:6px;font-size:12px">honest (9×)</span>
+</div>
+</div>
+<div>
+<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:10px">Team Members Mentioned</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<span style="padding:4px 10px;background:rgba(14,165,233,.15);border-radius:6px;font-size:12px;color:var(--accent)">Caleb (18×)</span>
+<span style="padding:4px 10px;background:rgba(14,165,233,.15);border-radius:6px;font-size:12px;color:var(--accent)">Justin (15×)</span>
+<span style="padding:4px 10px;background:rgba(14,165,233,.15);border-radius:6px;font-size:12px;color:var(--accent)">Dave (12×)</span>
+<span style="padding:4px 10px;background:rgba(14,165,233,.15);border-radius:6px;font-size:12px;color:var(--accent)">Dominic (7×)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+    const target = item.dataset.section;
+    document.getElementById(target).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
