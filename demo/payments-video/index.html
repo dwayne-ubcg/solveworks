@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>Payment Processing — AI Operations Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
+.animations-paused * { animation-play-state:paused!important; }
+@keyframes rippleOut { 0% { transform:translate(-50%,-50%) scale(0.3); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
+@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideRight { from { transform:translateX(-30px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+@keyframes pulseGlow { 0%,100% { box-shadow:0 0 20px rgba(14,165,233,0.2); } 50% { box-shadow:0 0 40px rgba(14,165,233,0.5); } }
+@keyframes flowPulse { 0% { opacity:0.3; } 50% { opacity:1; } 100% { opacity:0.3; } }
+@keyframes checkPop { 0% { transform:scale(0); } 60% { transform:scale(1.3); } 100% { transform:scale(1); } }
+@keyframes slideInCard { from { transform:translateX(-40px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+@keyframes countUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+@keyframes alertPulse { 0%,100% { border-color:rgba(239,68,68,0.3); } 50% { border-color:rgba(239,68,68,0.8); } }
+@keyframes typeIn { from { width:0; } to { width:100%; } }
+
+/* Play button */
+#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+.play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; box-shadow:0 0 60px rgba(14,165,233,0.4); transition:transform 0.3s; }
+.play-circle:hover { transform:scale(1.1); }
+.play-circle::after { content:''; width:0; height:0; border-top:24px solid transparent; border-bottom:24px solid transparent; border-left:40px solid white; margin-left:8px; }
+#playBtn h2 { margin-top:24px; font-size:28px; font-weight:600; color:#94a3b8; }
+#playBtn.hidden { display:none; }
+
+#app { position:absolute; top:0; left:0; width:1920px; height:1032px; opacity:0; transition:opacity 0.5s; }
+
+/* Sidebar */
+.sidebar { position:absolute; left:0; top:0; width:260px; height:1032px; background:#0F1D32; border-right:1px solid rgba(255,255,255,0.06); padding:24px 0; z-index:100; }
+.sidebar-logo { padding:0 24px 28px; font-size:20px; font-weight:800; color:#fff; display:flex; align-items:center; gap:10px; }
+.sidebar-logo .logo-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; font-size:18px; }
+.sidebar-logo span { color:#0ea5e9; }
+.sidebar-divider { height:1px; background:rgba(255,255,255,0.06); margin:8px 24px 16px; }
+.sidebar-section { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:#475569; padding:8px 24px 8px; font-weight:600; }
+.sidebar-item { padding:11px 24px; font-size:13.5px; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s; border-left:3px solid transparent; }
+.sidebar-item:hover, .sidebar-item.active { color:#fff; background:rgba(14,165,233,0.08); border-left-color:#0ea5e9; }
+.sidebar-item .icon { font-size:16px; width:20px; text-align:center; }
+.sidebar-badge { background:#ef4444; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:auto; font-weight:600; }
+
+/* Main area */
+.main { position:absolute; left:260px; top:0; width:1660px; height:1032px; overflow:hidden; }
+.scene { position:absolute; top:0; left:0; width:1660px; height:1032px; opacity:0; transition:opacity 0.7s ease; padding:36px 40px; pointer-events:none; }
+.scene.active { opacity:1; pointer-events:auto; }
+
+/* ============ SCENE 1: PAIN ============ */
+.pain-wrapper { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+.pain-title { font-size:20px; color:#64748b; font-weight:500; margin-bottom:48px; letter-spacing:0.5px; }
+.workflow-chain { display:flex; align-items:center; gap:0; margin-bottom:60px; }
+.workflow-step { display:flex; flex-direction:column; align-items:center; gap:10px; opacity:0; transform:scale(0.8); transition:all 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.workflow-step.show { opacity:1; transform:scale(1); }
+.workflow-step.show.active { transform:scale(1.08); }
+.step-box { width:140px; height:80px; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:2px solid rgba(255,255,255,0.08); background:#1E293B; transition:all 0.4s; }
+.workflow-step.active .step-box { border-color:#0ea5e9; background:rgba(14,165,233,0.12); box-shadow:0 0 30px rgba(14,165,233,0.2); }
+.step-box .step-icon { font-size:24px; }
+.step-box .step-label { font-size:11px; font-weight:600; color:#94a3b8; }
+.workflow-arrow { font-size:20px; color:#334155; margin:0 6px; opacity:0; transition:opacity 0.3s; }
+.workflow-arrow.show { opacity:1; color:#475569; }
+.pain-tagline { font-size:40px; font-weight:800; color:#fff; letter-spacing:-0.5px; opacity:0; transform:translateY(20px); transition:all 0.6s; }
+.pain-tagline.show { opacity:1; transform:translateY(0); }
+.pain-tagline span { color:#ef4444; }
+
+/* ============ SCENE 2: DASHBOARD ============ */
+.dash-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.dash-header h1 { font-size:26px; font-weight:700; }
+.dash-header .dash-date { font-size:13px; color:#64748b; }
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:24px; }
+.stat-card { background:#1E293B; border-radius:14px; padding:22px 24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateY(15px); transition:all 0.5s; }
+.stat-card.show { opacity:1; transform:translateY(0); }
+.stat-card .stat-label { font-size:12px; color:#64748b; text-transform:uppercase; letter-spacing:1px; font-weight:600; }
+.stat-card .stat-value { font-size:36px; font-weight:800; margin-top:6px; color:#fff; }
+.stat-card .stat-value.blue { color:#0ea5e9; }
+.stat-card .stat-value.green { color:#22c55e; }
+.stat-card .stat-value.amber { color:#f59e0b; }
+.stat-card .stat-change { font-size:11px; margin-top:4px; color:#22c55e; font-weight:500; }
+.dash-bottom { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.briefing-card { background:#1E293B; border-radius:14px; padding:24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:opacity 0.6s; }
+.briefing-card.show { opacity:1; }
+.briefing-card h3 { font-size:15px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.briefing-item { padding:8px 0; font-size:13px; color:#94a3b8; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px; }
+.briefing-item:last-child { border:none; }
+.briefing-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.dot-blue { background:#0ea5e9; }
+.dot-green { background:#22c55e; }
+.dot-amber { background:#f59e0b; }
+.dot-red { background:#ef4444; }
+.activity-card { background:#1E293B; border-radius:14px; padding:24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:opacity 0.6s; }
+.activity-card.show { opacity:1; }
+.activity-card h3 { font-size:15px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.activity-item { padding:8px 0; font-size:12px; color:#64748b; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; }
+.activity-item:last-child { border:none; }
+.activity-item .activity-text { color:#94a3b8; }
+.activity-item .activity-time { color:#475569; font-size:11px; }
+
+/* ============ SCENE 3: AUTOMATED ONBOARDING ============ */
+.onboard-header { font-size:24px; font-weight:700; margin-bottom:6px; }
+.onboard-sub { font-size:14px; color:#64748b; margin-bottom:28px; }
+.onboard-notification { background:linear-gradient(135deg,#1E293B,#1a2744); border-radius:14px; padding:18px 24px; border:1px solid rgba(14,165,233,0.3); display:flex; align-items:center; gap:16px; margin-bottom:28px; opacity:0; transform:translateY(-20px); transition:all 0.5s; }
+.onboard-notification.show { opacity:1; transform:translateY(0); }
+.onboard-notification .notif-icon { width:44px; height:44px; border-radius:10px; background:rgba(14,165,233,0.15); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.onboard-notification .notif-text { flex:1; }
+.onboard-notification .notif-title { font-size:14px; font-weight:600; }
+.onboard-notification .notif-desc { font-size:12px; color:#64748b; margin-top:2px; }
+.onboard-notification .notif-time { font-size:11px; color:#475569; }
+.flow-container { display:flex; align-items:flex-start; gap:0; }
+.flow-step { display:flex; flex-direction:column; align-items:center; width:200px; opacity:0; transform:translateY(15px); transition:all 0.5s; }
+.flow-step.show { opacity:1; transform:translateY(0); }
+.flow-icon-box { width:64px; height:64px; border-radius:16px; background:#1E293B; border:2px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:28px; transition:all 0.4s; position:relative; }
+.flow-step.done .flow-icon-box { border-color:#22c55e; background:rgba(34,197,94,0.1); }
+.flow-check { position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; background:#22c55e; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; font-weight:700; opacity:0; transform:scale(0); }
+.flow-step.done .flow-check { opacity:1; transform:scale(1); animation:checkPop 0.4s; }
+.flow-label { font-size:12px; color:#94a3b8; margin-top:10px; font-weight:500; text-align:center; }
+.flow-detail { font-size:10px; color:#475569; margin-top:4px; text-align:center; max-width:160px; }
+.flow-connector { width:60px; height:2px; background:#1E293B; margin-top:32px; position:relative; flex-shrink:0; }
+.flow-connector .connector-fill { height:100%; width:0; background:#22c55e; transition:width 0.6s; border-radius:2px; }
+.flow-connector.done .connector-fill { width:100%; }
+.docusign-docs { display:flex; gap:8px; margin-top:8px; }
+.doc-mini { background:#1E293B; border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:6px 8px; font-size:9px; color:#64748b; text-align:center; width:100px; transition:all 0.3s; }
+.doc-mini.filled { border-color:rgba(34,197,94,0.4); background:rgba(34,197,94,0.06); color:#94a3b8; }
+.timer-box { background:#1E293B; border-radius:14px; padding:20px 28px; border:1px solid rgba(255,255,255,0.06); margin-top:28px; display:flex; align-items:center; gap:24px; opacity:0; transition:opacity 0.5s; }
+.timer-box.show { opacity:1; }
+.timer-value { font-size:42px; font-weight:800; color:#22c55e; }
+.timer-label { font-size:13px; color:#64748b; }
+.timer-vs { font-size:14px; color:#475569; }
+.timer-vs span { color:#ef4444; text-decoration:line-through; }
+
+/* ============ SCENE 4: PIPELINE ============ */
+.pipeline-header { font-size:24px; font-weight:700; margin-bottom:6px; }
+.pipeline-sub { font-size:14px; color:#64748b; margin-bottom:24px; }
+.kanban { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; height:700px; }
+.kanban-col { background:#0F1D32; border-radius:14px; padding:16px; border:1px solid rgba(255,255,255,0.04); display:flex; flex-direction:column; }
+.kanban-col-header { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; }
+.kanban-count { background:rgba(255,255,255,0.08); padding:2px 8px; border-radius:8px; font-size:10px; }
+.kanban-card { background:#1E293B; border-radius:10px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateY(10px); transition:all 0.4s; }
+.kanban-card.show { opacity:1; transform:translateY(0); }
+.kanban-card .merchant-name { font-size:13px; font-weight:600; margin-bottom:6px; }
+.kanban-card .merchant-type { font-size:10px; color:#64748b; margin-bottom:8px; }
+.risk-tag { display:inline-block; padding:2px 10px; border-radius:6px; font-size:10px; font-weight:600; }
+.risk-low { background:rgba(34,197,94,0.15); color:#22c55e; }
+.risk-med { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.risk-high { background:rgba(239,68,68,0.15); color:#ef4444; }
+.kanban-card .merchant-date { font-size:10px; color:#475569; margin-top:6px; }
+
+/* ============ SCENE 5: VOLUME RECONCILIATION ============ */
+.volume-header { font-size:24px; font-weight:700; margin-bottom:6px; }
+.volume-sub { font-size:14px; color:#64748b; margin-bottom:24px; }
+.volume-layout { display:grid; grid-template-columns:1fr 380px; gap:24px; }
+.volume-table { background:#1E293B; border-radius:14px; border:1px solid rgba(255,255,255,0.06); overflow:hidden; }
+.vol-thead { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1.2fr; padding:14px 20px; background:#0F1D32; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; }
+.vol-row { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1.2fr; padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; align-items:center; opacity:0; transition:all 0.4s; }
+.vol-row.show { opacity:1; }
+.vol-row.anomaly { background:rgba(245,158,11,0.08); border-left:3px solid #f59e0b; }
+.vol-row .merchant { font-weight:600; }
+.vol-row .amount { color:#94a3b8; }
+.vol-row .amount.high { color:#f59e0b; font-weight:600; }
+.vol-status { display:inline-flex; align-items:center; gap:4px; font-size:11px; padding:3px 10px; border-radius:6px; }
+.vol-ok { background:rgba(34,197,94,0.12); color:#22c55e; }
+.vol-warn { background:rgba(245,158,11,0.12); color:#f59e0b; }
+.qb-sync { background:#1E293B; border-radius:14px; padding:20px; border:1px solid rgba(255,255,255,0.06); margin-top:16px; opacity:0; transition:opacity 0.5s; }
+.qb-sync.show { opacity:1; }
+.qb-sync h4 { font-size:13px; font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.qb-sync .sync-status { color:#22c55e; font-size:12px; display:flex; align-items:center; gap:6px; }
+.volume-chart { background:#1E293B; border-radius:14px; padding:20px; border:1px solid rgba(255,255,255,0.06); }
+.volume-chart h4 { font-size:13px; font-weight:600; margin-bottom:16px; }
+.chart-bars { display:flex; align-items:flex-end; gap:8px; height:200px; padding-top:10px; }
+.chart-bar { flex:1; border-radius:4px 4px 0 0; background:rgba(14,165,233,0.3); transition:height 1s cubic-bezier(0.34,1.56,0.64,1); position:relative; }
+.chart-bar .bar-label { position:absolute; bottom:-20px; left:50%; transform:translateX(-50%); font-size:9px; color:#475569; white-space:nowrap; }
+.chart-bar .bar-value { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:10px; color:#64748b; }
+
+/* ============ SCENE 6: RISK MONITORING ============ */
+.risk-header { font-size:24px; font-weight:700; margin-bottom:6px; }
+.risk-sub { font-size:14px; color:#64748b; margin-bottom:24px; }
+.risk-layout { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.alert-card { background:#1E293B; border-radius:14px; padding:24px; border:2px solid rgba(239,68,68,0.3); opacity:0; transform:scale(0.95); transition:all 0.5s; }
+.alert-card.show { opacity:1; transform:scale(1); animation:alertPulse 2s infinite; }
+.alert-card h3 { font-size:16px; font-weight:700; color:#ef4444; display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+.alert-metric { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.alert-metric .metric-label { font-size:13px; color:#64748b; width:120px; }
+.alert-metric .metric-value { font-size:15px; font-weight:600; }
+.alert-metric .arrow-up { color:#ef4444; font-size:18px; }
+.alert-rec { background:rgba(239,68,68,0.08); border-radius:10px; padding:14px; margin-top:16px; font-size:12px; color:#f87171; line-height:1.5; }
+.alert-rec strong { color:#ef4444; }
+.monitor-panel { background:#1E293B; border-radius:14px; padding:24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:opacity 0.5s; }
+.monitor-panel.show { opacity:1; }
+.monitor-panel h3 { font-size:15px; font-weight:600; margin-bottom:16px; }
+.monitor-item { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; }
+.monitor-item:last-child { border:none; }
+.monitor-item .monitor-label { color:#94a3b8; display:flex; align-items:center; gap:8px; }
+.monitor-item .monitor-value { font-weight:500; }
+.monitor-item .monitor-value.urgent { color:#ef4444; }
+.monitor-item .monitor-value.warning { color:#f59e0b; }
+.monitor-item .monitor-value.ok { color:#22c55e; }
+
+/* ============ SCENE 7: MORNING BRIEFING ============ */
+.briefing-wrapper { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+.morning-card { background:#1E293B; border-radius:20px; padding:40px 48px; border:1px solid rgba(255,255,255,0.06); width:700px; opacity:0; transform:translateY(30px); transition:all 0.6s; }
+.morning-card.show { opacity:1; transform:translateY(0); }
+.morning-greeting { font-size:28px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:12px; }
+.morning-date { font-size:13px; color:#64748b; margin-bottom:28px; }
+.morning-item { padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:flex-start; gap:12px; font-size:14px; color:#94a3b8; opacity:0; transform:translateX(-20px); transition:all 0.4s; }
+.morning-item.show { opacity:1; transform:translateX(0); }
+.morning-item:last-child { border:none; }
+.morning-item .item-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+.morning-item strong { color:#fff; font-weight:600; }
+
+/* ============ SCENE 8: CLOSE ============ */
+.close-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
+.close-context { font-size:20px; color:#64748b; font-weight:400; max-width:700px; line-height:1.6; opacity:0; transition:opacity 0.8s; }
+.close-context.show { opacity:1; }
+.close-context em { color:#94a3b8; font-style:normal; font-weight:500; }
+.close-logo { font-size:72px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-top:32px; opacity:0; transition:opacity 0.8s; }
+.close-logo.show { opacity:1; }
+.close-tagline { font-size:24px; color:#94a3b8; margin-top:16px; font-weight:300; letter-spacing:0.5px; opacity:0; transition:opacity 0.8s; }
+.close-tagline.show { opacity:1; }
+.close-url { font-size:18px; color:#0ea5e9; margin-top:28px; opacity:0; transition:opacity 0.8s; font-weight:500; }
+.close-url.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"></div>
+  <h2>Payment Processing — AI Operations Demo</h2>
+</div>
+
+<div id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">⚡</div>
+      Pay<span>Ops</span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Main</div>
+    <div class="sidebar-item active" id="nav-overview"><span class="icon">📊</span> Overview</div>
+    <div class="sidebar-item" id="nav-onboarding"><span class="icon">📋</span> Onboarding <span class="sidebar-badge">8</span></div>
+    <div class="sidebar-item" id="nav-pipeline"><span class="icon">🔄</span> Pipeline</div>
+    <div class="sidebar-item" id="nav-volumes"><span class="icon">💰</span> Volumes</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Monitoring</div>
+    <div class="sidebar-item" id="nav-compliance"><span class="icon">🛡️</span> Compliance</div>
+    <div class="sidebar-item" id="nav-risk"><span class="icon">⚠️</span> Risk <span class="sidebar-badge">2</span></div>
+    <div class="sidebar-item" id="nav-ai"><span class="icon">🤖</span> AI Activity</div>
+  </div>
+
+  <div class="main">
+
+    <!-- =============== SCENE 1: PAIN (0-12s) =============== -->
+    <div class="scene" id="scene1">
+      <div class="pain-wrapper">
+        <div class="pain-title">Your Current Merchant Onboarding Workflow</div>
+        <div class="workflow-chain">
+          <div class="workflow-step" id="ws1">
+            <div class="step-box"><div class="step-icon">📝</div><div class="step-label">Fillout</div></div>
+          </div>
+          <div class="workflow-arrow" id="wa1">→</div>
+          <div class="workflow-step" id="ws2">
+            <div class="step-box"><div class="step-icon">📊</div><div class="step-label">Monday</div></div>
+          </div>
+          <div class="workflow-arrow" id="wa2">→</div>
+          <div class="workflow-step" id="ws3">
+            <div class="step-box"><div class="step-icon">🔍</div><div class="step-label">Persona KYC</div></div>
+          </div>
+          <div class="workflow-arrow" id="wa3">→</div>
+          <div class="workflow-step" id="ws4">
+            <div class="step-box"><div class="step-icon">📄</div><div class="step-label">DocuSign ×3</div></div>
+          </div>
+          <div class="workflow-arrow" id="wa4">→</div>
+          <div class="workflow-step" id="ws5">
+            <div class="step-box"><div class="step-icon">🏦</div><div class="step-label">Bank</div></div>
+          </div>
+        </div>
+        <div class="pain-tagline" id="painTag"><span>Every. Single. Time.</span></div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 2: DASHBOARD (12-20s) =============== -->
+    <div class="scene" id="scene2">
+      <div class="dash-header">
+        <h1>Command Center</h1>
+        <div class="dash-date">Thursday, March 7, 2026 — 8:14 AM</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" id="sc1">
+          <div class="stat-label">Active Merchants</div>
+          <div class="stat-value blue" id="statMerchants">127</div>
+          <div class="stat-change">↑ 12 this month</div>
+        </div>
+        <div class="stat-card" id="sc2">
+          <div class="stat-label">Pending Onboarding</div>
+          <div class="stat-value amber" id="statPending">8</div>
+          <div class="stat-change" style="color:#f59e0b;">3 awaiting KYC</div>
+        </div>
+        <div class="stat-card" id="sc3">
+          <div class="stat-label">Daily Volume</div>
+          <div class="stat-value green">$483K</div>
+          <div class="stat-change">↑ 8.2% vs avg</div>
+        </div>
+        <div class="stat-card" id="sc4">
+          <div class="stat-label">Compliance Score</div>
+          <div class="stat-value" style="color:#22c55e;">96%</div>
+          <div class="stat-change">All clear</div>
+        </div>
+      </div>
+      <div class="dash-bottom">
+        <div class="briefing-card" id="briefCard">
+          <h3>☀️ Morning Briefing</h3>
+          <div class="briefing-item"><div class="briefing-dot dot-blue"></div> 3 new applications received overnight</div>
+          <div class="briefing-item"><div class="briefing-dot dot-amber"></div> 2 merchants awaiting bank approval</div>
+          <div class="briefing-item"><div class="briefing-dot dot-red"></div> Volume anomaly detected: NutraMax Direct</div>
+          <div class="briefing-item"><div class="briefing-dot dot-green"></div> Compliance renewal: Vitality Peptides (7 days)</div>
+        </div>
+        <div class="activity-card" id="actCard">
+          <h3>🤖 AI Activity</h3>
+          <div class="activity-item"><span class="activity-text">Auto-created Monday entry: Peak Performance Labs</span><span class="activity-time">2m ago</span></div>
+          <div class="activity-item"><span class="activity-text">KYC verification sent to Persona</span><span class="activity-time">4m ago</span></div>
+          <div class="activity-item"><span class="activity-text">3 DocuSign agreements populated</span><span class="activity-time">5m ago</span></div>
+          <div class="activity-item"><span class="activity-text">Chargeback alert: Peak Performance Labs</span><span class="activity-time">12m ago</span></div>
+          <div class="activity-item"><span class="activity-text">QuickBooks reconciliation complete</span><span class="activity-time">1h ago</span></div>
+          <div class="activity-item"><span class="activity-text">Daily volume report generated</span><span class="activity-time">6h ago</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 3: AUTOMATED ONBOARDING (20-36s) =============== -->
+    <div class="scene" id="scene3">
+      <div class="onboard-header">Automated Onboarding</div>
+      <div class="onboard-sub">New application → fully processed — without touching a thing</div>
+
+      <div class="onboard-notification" id="onboardNotif">
+        <div class="notif-icon">📬</div>
+        <div class="notif-text">
+          <div class="notif-title">New Merchant Application — Peak Performance Labs</div>
+          <div class="notif-desc">Fillout form submission received. AI processing initiated.</div>
+        </div>
+        <div class="notif-time">Just now</div>
+      </div>
+
+      <div class="flow-container" style="justify-content:center; margin-top:12px;">
+        <div class="flow-step" id="fs1">
+          <div class="flow-icon-box">📝<div class="flow-check">✓</div></div>
+          <div class="flow-label">Fillout Form</div>
+          <div class="flow-detail">Application received</div>
+        </div>
+        <div class="flow-connector" id="fc1"><div class="connector-fill"></div></div>
+        <div class="flow-step" id="fs2">
+          <div class="flow-icon-box">📊<div class="flow-check">✓</div></div>
+          <div class="flow-label">Monday Board</div>
+          <div class="flow-detail">Entry auto-created</div>
+        </div>
+        <div class="flow-connector" id="fc2"><div class="connector-fill"></div></div>
+        <div class="flow-step" id="fs3">
+          <div class="flow-icon-box">🔍<div class="flow-check">✓</div></div>
+          <div class="flow-label">Persona KYC</div>
+          <div class="flow-detail">Verification link sent</div>
+        </div>
+        <div class="flow-connector" id="fc3"><div class="connector-fill"></div></div>
+        <div class="flow-step" id="fs4">
+          <div class="flow-icon-box">📄<div class="flow-check">✓</div></div>
+          <div class="flow-label">DocuSign</div>
+          <div class="flow-detail">3 agreements populated</div>
+          <div class="docusign-docs">
+            <div class="doc-mini" id="doc1">Processing<br>Agreement</div>
+            <div class="doc-mini" id="doc2">Terms of<br>Service</div>
+            <div class="doc-mini" id="doc3">Bank<br>Authorization</div>
+          </div>
+        </div>
+        <div class="flow-connector" id="fc4"><div class="connector-fill"></div></div>
+        <div class="flow-step" id="fs5">
+          <div class="flow-icon-box">🏦<div class="flow-check">✓</div></div>
+          <div class="flow-label">Bank Submit</div>
+          <div class="flow-detail">Application filed</div>
+        </div>
+      </div>
+
+      <div class="timer-box" id="timerBox">
+        <div>
+          <div class="timer-value" id="timerVal">0:00</div>
+          <div class="timer-label">Total processing time</div>
+        </div>
+        <div class="timer-vs">vs <span>3–4 hours manually</span></div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 4: PIPELINE (36-46s) =============== -->
+    <div class="scene" id="scene4">
+      <div class="pipeline-header">Compliance Pipeline</div>
+      <div class="pipeline-sub">Every merchant moves through your pipeline automatically</div>
+      <div class="kanban">
+        <div class="kanban-col">
+          <div class="kanban-col-header">Application <span class="kanban-count">3</span></div>
+          <div class="kanban-card" id="kc1">
+            <div class="merchant-name">Peak Performance Labs</div>
+            <div class="merchant-type">Supplements & Peptides</div>
+            <div class="risk-tag risk-high">High Risk</div>
+            <div class="merchant-date">Applied 2m ago</div>
+          </div>
+          <div class="kanban-card" id="kc2">
+            <div class="merchant-name">CoastalRx</div>
+            <div class="merchant-type">Online Pharmacy</div>
+            <div class="risk-tag risk-high">High Risk</div>
+            <div class="merchant-date">Applied 1h ago</div>
+          </div>
+          <div class="kanban-card" id="kc3">
+            <div class="merchant-name">GreenLeaf Wellness</div>
+            <div class="merchant-type">CBD Products</div>
+            <div class="risk-tag risk-med">Medium Risk</div>
+            <div class="merchant-date">Applied 3h ago</div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header">KYC Pending <span class="kanban-count">2</span></div>
+          <div class="kanban-card" id="kc4">
+            <div class="merchant-name">Vitality Peptides</div>
+            <div class="merchant-type">Peptide E-Commerce</div>
+            <div class="risk-tag risk-med">Medium Risk</div>
+            <div class="merchant-date">KYC sent 4h ago</div>
+          </div>
+          <div class="kanban-card" id="kc5">
+            <div class="merchant-name">AlphaFit Nutrition</div>
+            <div class="merchant-type">Sports Supplements</div>
+            <div class="risk-tag risk-low">Low Risk</div>
+            <div class="merchant-date">KYC sent 6h ago</div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header">Docs Signed <span class="kanban-count">2</span></div>
+          <div class="kanban-card" id="kc6">
+            <div class="merchant-name">NutraMax Direct</div>
+            <div class="merchant-type">Nutraceuticals</div>
+            <div class="risk-tag risk-med">Medium Risk</div>
+            <div class="merchant-date">Signed 12h ago</div>
+          </div>
+          <div class="kanban-card" id="kc7">
+            <div class="merchant-name">PureForm Labs</div>
+            <div class="merchant-type">Compounding Pharmacy</div>
+            <div class="risk-tag risk-low">Low Risk</div>
+            <div class="merchant-date">Signed 1d ago</div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header">Bank Submitted <span class="kanban-count">2</span></div>
+          <div class="kanban-card" id="kc8">
+            <div class="merchant-name">TeleHealth Plus</div>
+            <div class="merchant-type">Telehealth Services</div>
+            <div class="risk-tag risk-low">Low Risk</div>
+            <div class="merchant-date">Submitted 2d ago</div>
+          </div>
+          <div class="kanban-card" id="kc9">
+            <div class="merchant-name">BioCure Therapeutics</div>
+            <div class="merchant-type">Biotech Supplements</div>
+            <div class="risk-tag risk-med">Medium Risk</div>
+            <div class="merchant-date">Submitted 3d ago</div>
+          </div>
+        </div>
+        <div class="kanban-col">
+          <div class="kanban-col-header">Approved <span class="kanban-count">3</span></div>
+          <div class="kanban-card" id="kc10">
+            <div class="merchant-name">MedLine Direct</div>
+            <div class="merchant-type">Medical Devices</div>
+            <div class="risk-tag risk-low">Low Risk</div>
+            <div class="merchant-date">Approved today</div>
+          </div>
+          <div class="kanban-card" id="kc11">
+            <div class="merchant-name">VitaCore Health</div>
+            <div class="merchant-type">Vitamins & Supplements</div>
+            <div class="risk-tag risk-low">Low Risk</div>
+            <div class="merchant-date">Approved 2d ago</div>
+          </div>
+          <div class="kanban-card" id="kc12">
+            <div class="merchant-name">PeptideRx</div>
+            <div class="merchant-type">Research Peptides</div>
+            <div class="risk-tag risk-high">High Risk</div>
+            <div class="merchant-date">Approved 4d ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 5: VOLUME RECONCILIATION (46-59s) =============== -->
+    <div class="scene" id="scene5">
+      <div class="volume-header">Volume Reconciliation</div>
+      <div class="volume-sub">End-of-day volumes — reconciled, flagged, synced</div>
+      <div class="volume-layout">
+        <div>
+          <div class="volume-table">
+            <div class="vol-thead">
+              <span>Merchant</span><span>Today</span><span>Avg</span><span>Δ</span><span>Status</span>
+            </div>
+            <div class="vol-row" id="vr1">
+              <span class="merchant">Vitality Peptides</span>
+              <span class="amount">$18,420</span>
+              <span class="amount">$16,800</span>
+              <span class="amount" style="color:#22c55e;">+9.6%</span>
+              <span class="vol-status vol-ok">✓ Normal</span>
+            </div>
+            <div class="vol-row" id="vr2">
+              <span class="merchant">MedLine Direct</span>
+              <span class="amount">$31,200</span>
+              <span class="amount">$28,500</span>
+              <span class="amount" style="color:#22c55e;">+9.5%</span>
+              <span class="vol-status vol-ok">✓ Normal</span>
+            </div>
+            <div class="vol-row anomaly" id="vr3">
+              <span class="merchant">NutraMax Direct</span>
+              <span class="amount high">$47,300</span>
+              <span class="amount">$12,100</span>
+              <span class="amount high">+291%</span>
+              <span class="vol-status vol-warn">⚠ Anomaly</span>
+            </div>
+            <div class="vol-row" id="vr4">
+              <span class="merchant">PeptideRx</span>
+              <span class="amount">$22,800</span>
+              <span class="amount">$21,400</span>
+              <span class="amount" style="color:#22c55e;">+6.5%</span>
+              <span class="vol-status vol-ok">✓ Normal</span>
+            </div>
+            <div class="vol-row" id="vr5">
+              <span class="merchant">VitaCore Health</span>
+              <span class="amount">$14,600</span>
+              <span class="amount">$15,200</span>
+              <span class="amount" style="color:#64748b;">-3.9%</span>
+              <span class="vol-status vol-ok">✓ Normal</span>
+            </div>
+            <div class="vol-row" id="vr6">
+              <span class="merchant">Peak Performance Labs</span>
+              <span class="amount">$8,900</span>
+              <span class="amount">$9,100</span>
+              <span class="amount" style="color:#64748b;">-2.2%</span>
+              <span class="vol-status vol-ok">✓ Normal</span>
+            </div>
+          </div>
+          <div class="qb-sync" id="qbSync">
+            <h4>📗 QuickBooks Sync</h4>
+            <div class="sync-status">✓ All transactions reconciled and synced — Updated 2 min ago</div>
+          </div>
+        </div>
+        <div class="volume-chart" id="volChart">
+          <h4>Weekly Volume Trend</h4>
+          <div class="chart-bars">
+            <div class="chart-bar" id="cb1" style="height:0;"><span class="bar-value">$412K</span><span class="bar-label">Mon</span></div>
+            <div class="chart-bar" id="cb2" style="height:0;"><span class="bar-value">$438K</span><span class="bar-label">Tue</span></div>
+            <div class="chart-bar" id="cb3" style="height:0;"><span class="bar-value">$461K</span><span class="bar-label">Wed</span></div>
+            <div class="chart-bar" id="cb4" style="height:0;"><span class="bar-value">$429K</span><span class="bar-label">Thu</span></div>
+            <div class="chart-bar" id="cb5" style="height:0;"><span class="bar-value">$483K</span><span class="bar-label">Fri</span></div>
+            <div class="chart-bar" id="cb6" style="height:0;"><span class="bar-value">$391K</span><span class="bar-label">Sat</span></div>
+            <div class="chart-bar" id="cb7" style="height:0;"><span class="bar-value">$347K</span><span class="bar-label">Sun</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 6: RISK MONITORING (59-72s) =============== -->
+    <div class="scene" id="scene6">
+      <div class="risk-header">Risk Monitoring</div>
+      <div class="risk-sub">Your AI flags it before the processor does</div>
+      <div class="risk-layout">
+        <div>
+          <div class="alert-card" id="alertCard">
+            <h3>⚠️ Chargeback Alert — Peak Performance Labs</h3>
+            <div class="alert-metric">
+              <span class="metric-label">Chargeback Rate</span>
+              <span class="metric-value" style="color:#94a3b8;">1.2%</span>
+              <span class="arrow-up">→</span>
+              <span class="metric-value" style="color:#ef4444;">2.8%</span>
+            </div>
+            <div class="alert-metric">
+              <span class="metric-label">Threshold</span>
+              <span class="metric-value" style="color:#f59e0b;">1.5%</span>
+            </div>
+            <div class="alert-metric">
+              <span class="metric-label">Chargebacks (30d)</span>
+              <span class="metric-value">47</span>
+            </div>
+            <div class="alert-metric">
+              <span class="metric-label">Volume (30d)</span>
+              <span class="metric-value">$284,000</span>
+            </div>
+            <div class="alert-rec">
+              <strong>AI Recommendation:</strong> Recommend hold on new transactions pending review. Chargeback rate exceeds processor threshold. Pattern suggests fulfillment issues — 68% of disputes cite "product not received."
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="monitor-panel" id="monPanel">
+            <h3>🔍 Active Monitoring</h3>
+            <div class="monitor-item">
+              <span class="monitor-label">⏰ Compliance Deadlines</span>
+              <span class="monitor-value warning">2 upcoming</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">📄 Expiring Documents</span>
+              <span class="monitor-value urgent">3 within 30 days</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">📊 Volume Patterns</span>
+              <span class="monitor-value warning">1 anomaly</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">🛡️ KYC Status</span>
+              <span class="monitor-value ok">All current</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">🏦 Bank Relationships</span>
+              <span class="monitor-value ok">3 active</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">💳 Processor Limits</span>
+              <span class="monitor-value ok">Within bounds</span>
+            </div>
+          </div>
+          <div class="monitor-panel" id="monPanel2" style="margin-top:16px;">
+            <h3>🕐 24/7 Coverage</h3>
+            <div class="monitor-item">
+              <span class="monitor-label">Last scan</span>
+              <span class="monitor-value ok">4 min ago</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">Alerts today</span>
+              <span class="monitor-value warning">3</span>
+            </div>
+            <div class="monitor-item">
+              <span class="monitor-label">Auto-resolved</span>
+              <span class="monitor-value ok">1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 7: MORNING BRIEFING (72-82s) =============== -->
+    <div class="scene" id="scene7">
+      <div class="briefing-wrapper">
+        <div class="morning-card" id="morningCard">
+          <div class="morning-greeting">☀️ Good Morning</div>
+          <div class="morning-date">Thursday, March 7, 2026 — Your daily summary</div>
+          <div class="morning-item" id="mi1">
+            <span class="item-icon">📬</span>
+            <span><strong>3 new applications</strong> received overnight — all auto-processed, awaiting KYC</span>
+          </div>
+          <div class="morning-item" id="mi2">
+            <span class="item-icon">🏦</span>
+            <span><strong>2 merchants awaiting bank approval</strong> — TeleHealth Plus (2d), BioCure (3d)</span>
+          </div>
+          <div class="morning-item" id="mi3">
+            <span class="item-icon">⚠️</span>
+            <span><strong>Volume anomaly: NutraMax Direct</strong> — $47K vs $12K average. Review recommended.</span>
+          </div>
+          <div class="morning-item" id="mi4">
+            <span class="item-icon">🛡️</span>
+            <span><strong>Compliance renewal: Vitality Peptides</strong> — expires in 7 days. Renewal docs staged.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== SCENE 8: CLOSE (82-98s) =============== -->
+    <div class="scene" id="scene8">
+      <div class="close-screen">
+        <div class="close-context" id="closeCtx">Running a payment company, a call center,<br>and launching e-commerce — <em>solo</em>.</div>
+        <div class="close-logo" id="closeLogo">SolveWorks</div>
+        <div class="close-tagline" id="closeTag">Your AI. Only yours.</div>
+        <div class="close-url" id="closeUrl">See it live at solveworks.io</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FAKE CURSOR -->
+<div id="fakeCursor" style="position:absolute; top:540px; left:960px; z-index:9000; pointer-events:none; display:none; transition: top 0.8s cubic-bezier(0.25,0.1,0.25,1), left 0.8s cubic-bezier(0.25,0.1,0.25,1);">
+  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" style="width:28px;height:28px;filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.5));">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
+  </svg>
+</div>
+
+<script>
+var voiceover = new Audio('voiceover.mp3');
+var cursor = document.getElementById('fakeCursor');
+
+window.__demoPaused = false;
+
+function moveCursor(x, y) { cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
+
+function clickEffect(x, y) {
+  var r = document.createElement('div');
+  r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid rgba(14,165,233,0.7);pointer-events:none;z-index:8999;animation:rippleOut 0.6s ease forwards;top:'+y+'px;left:'+x+'px;transform:translate(-50%,-50%);';
+  document.body.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 600);
+}
+
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function setNavActive(id) {
+  document.querySelectorAll('.sidebar-item').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function animateTimer(el, targetSec, duration) {
+  var start = null;
+  function step(ts) {
+    if (!start) start = ts;
+    var p = Math.min((ts - start) / duration, 1);
+    var sec = Math.floor(targetSec * p);
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  document.getElementById('app').style.opacity = '1';
+  cursor.style.display = 'block';
+  voiceover.play().catch(function(){});
+
+  showScene('scene1');
+  setNavActive('nav-overview');
+
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
+
+    // === SCENE 1: PAIN (0-12s) ===
+    // [0.0s] "New merchant application comes in."
+    if (t >= 0.3) cue('s1-ws1', function() {
+      document.getElementById('ws1').classList.add('show','active');
+      moveCursor(560, 440);
+    });
+    // [1.6s] "You copy it from Fillout to Monday,"
+    if (t >= 1.6) cue('s1-wa1', function() {
+      document.getElementById('wa1').classList.add('show');
+      document.getElementById('ws1').classList.remove('active');
+    });
+    if (t >= 2.0) cue('s1-ws2', function() {
+      document.getElementById('ws2').classList.add('show','active');
+      moveCursor(740, 440);
+    });
+    // [3.6s] "send a Persona KYC link,"
+    if (t >= 3.6) cue('s1-wa2', function() {
+      document.getElementById('wa2').classList.add('show');
+      document.getElementById('ws2').classList.remove('active');
+    });
+    if (t >= 4.0) cue('s1-ws3', function() {
+      document.getElementById('ws3').classList.add('show','active');
+      moveCursor(920, 440);
+    });
+    // [5.2s] "populate three DocuSign agreements,"
+    if (t >= 5.2) cue('s1-wa3', function() {
+      document.getElementById('wa3').classList.add('show');
+      document.getElementById('ws3').classList.remove('active');
+    });
+    if (t >= 5.6) cue('s1-ws4', function() {
+      document.getElementById('ws4').classList.add('show','active');
+      moveCursor(1100, 440);
+    });
+    // [9.6s] "then submit to the bank."
+    if (t >= 9.6) cue('s1-wa4', function() {
+      document.getElementById('wa4').classList.add('show');
+      document.getElementById('ws4').classList.remove('active');
+    });
+    if (t >= 10.0) cue('s1-ws5', function() {
+      document.getElementById('ws5').classList.add('show','active');
+      moveCursor(1280, 440);
+    });
+    // [11.3s] "Every single time."
+    if (t >= 11.3) cue('s1-tag', function() {
+      document.getElementById('ws5').classList.remove('active');
+      document.getElementById('painTag').classList.add('show');
+    });
+
+    // === SCENE 2: DASHBOARD (12-20s) ===
+    // [12.4s] "This is your command center."
+    if (t >= 12.4) cue('s2-start', function() {
+      showScene('scene2');
+      setNavActive('nav-overview');
+      moveCursor(400, 150);
+    });
+    // [14.7s] "Active merchants pending onboarding,"
+    if (t >= 13.5) cue('s2-sc1', function() {
+      document.getElementById('sc1').classList.add('show');
+    });
+    if (t >= 14.2) cue('s2-sc2', function() {
+      document.getElementById('sc2').classList.add('show');
+      moveCursor(700, 230);
+    });
+    // [16.5s] "daily volumes, and compliance status,"
+    if (t >= 15.5) cue('s2-sc3', function() {
+      document.getElementById('sc3').classList.add('show');
+      moveCursor(1050, 230);
+    });
+    if (t >= 16.5) cue('s2-sc4', function() {
+      document.getElementById('sc4').classList.add('show');
+      moveCursor(1400, 230);
+    });
+    // [18.7s] "all in one view."
+    if (t >= 18) cue('s2-brief', function() {
+      document.getElementById('briefCard').classList.add('show');
+      document.getElementById('actCard').classList.add('show');
+      moveCursor(800, 600);
+    });
+
+    // === SCENE 3: AUTOMATED ONBOARDING (20-36s) ===
+    // [20.7s] "Application hits your Fillout form."
+    if (t >= 20.5) cue('s3-start', function() {
+      showScene('scene3');
+      setNavActive('nav-onboarding');
+      moveCursor(380, 180);
+      clickEffect(380, 180);
+    });
+    if (t >= 21.0) cue('s3-notif', function() {
+      document.getElementById('onboardNotif').classList.add('show');
+    });
+    // [22.5s] "Your AI takes it from there."
+    if (t >= 22.5) cue('s3-fs1', function() {
+      document.getElementById('fs1').classList.add('show','done');
+      moveCursor(550, 420);
+    });
+    // [24.0s] "It creates the Monday board entry,"
+    if (t >= 24.0) cue('s3-fc1', function() {
+      document.getElementById('fc1').classList.add('done');
+    });
+    if (t >= 24.5) cue('s3-fs2', function() {
+      document.getElementById('fs2').classList.add('show','done');
+      moveCursor(750, 420);
+      clickEffect(750, 420);
+    });
+    // [26.0s] "triggers the KYC verification through Persona,"
+    if (t >= 26.0) cue('s3-fc2', function() {
+      document.getElementById('fc2').classList.add('done');
+    });
+    if (t >= 26.5) cue('s3-fs3', function() {
+      document.getElementById('fs3').classList.add('show','done');
+      moveCursor(950, 420);
+      clickEffect(950, 420);
+    });
+    // [28.2s] "and auto-populates all three DocuSign agreements."
+    if (t >= 28.2) cue('s3-fc3', function() {
+      document.getElementById('fc3').classList.add('done');
+    });
+    if (t >= 28.8) cue('s3-fs4', function() {
+      document.getElementById('fs4').classList.add('show','done');
+      moveCursor(1150, 420);
+      clickEffect(1150, 420);
+    });
+    if (t >= 29.5) cue('s3-doc1', function() {
+      document.getElementById('doc1').classList.add('filled');
+    });
+    if (t >= 30.2) cue('s3-doc2', function() {
+      document.getElementById('doc2').classList.add('filled');
+    });
+    if (t >= 30.9) cue('s3-doc3', function() {
+      document.getElementById('doc3').classList.add('filled');
+    });
+    // [32.5s] "What used to take hours per merchant now takes seconds."
+    if (t >= 31.5) cue('s3-fc4', function() {
+      document.getElementById('fc4').classList.add('done');
+    });
+    if (t >= 32.0) cue('s3-fs5', function() {
+      document.getElementById('fs5').classList.add('show','done');
+      moveCursor(1350, 420);
+      clickEffect(1350, 420);
+    });
+    if (t >= 32.5) cue('s3-timer', function() {
+      document.getElementById('timerBox').classList.add('show');
+      animateTimer(document.getElementById('timerVal'), 154, 2000);
+      moveCursor(700, 700);
+    });
+
+    // === SCENE 4: PIPELINE (36-46s) ===
+    // [36.6s] "Every merchant moves through your pipeline automatically."
+    if (t >= 36.5) cue('s4-start', function() {
+      showScene('scene4');
+      setNavActive('nav-pipeline');
+      moveCursor(500, 200);
+    });
+    if (t >= 37.5) cue('s4-kc1', function() {
+      ['kc1','kc2','kc3'].forEach(function(id,i) {
+        setTimeout(function(){ document.getElementById(id).classList.add('show'); }, i*200);
+      });
+    });
+    // [40.4s] "Application received, KYC pending,"
+    if (t >= 40.0) cue('s4-kc4', function() {
+      ['kc4','kc5'].forEach(function(id,i) {
+        setTimeout(function(){ document.getElementById(id).classList.add('show'); }, i*200);
+      });
+      moveCursor(700, 400);
+    });
+    // [42.6s] "documents signed, bank submitted, approved."
+    if (t >= 42.0) cue('s4-kc6', function() {
+      ['kc6','kc7'].forEach(function(id,i) {
+        setTimeout(function(){ document.getElementById(id).classList.add('show'); }, i*200);
+      });
+      moveCursor(1000, 400);
+    });
+    if (t >= 43.0) cue('s4-kc8', function() {
+      ['kc8','kc9'].forEach(function(id,i) {
+        setTimeout(function(){ document.getElementById(id).classList.add('show'); }, i*200);
+      });
+      moveCursor(1200, 400);
+    });
+    if (t >= 44.0) cue('s4-kc10', function() {
+      ['kc10','kc11','kc12'].forEach(function(id,i) {
+        setTimeout(function(){ document.getElementById(id).classList.add('show'); }, i*200);
+      });
+      moveCursor(1450, 350);
+    });
+    // [45.3s] "Nothing falls through the cracks."
+    if (t >= 45.3) cue('s4-settle', function() {
+      moveCursor(900, 500);
+    });
+
+    // === SCENE 5: VOLUME RECONCILIATION (46-59s) ===
+    // [46.7s] "End of day."
+    if (t >= 46.7) cue('s5-start', function() {
+      showScene('scene5');
+      setNavActive('nav-volumes');
+      moveCursor(500, 150);
+    });
+    // [47.8s] "Your AI pulls transaction volumes across every merchant,"
+    if (t >= 48.0) cue('s5-vr1', function() {
+      document.getElementById('vr1').classList.add('show');
+      moveCursor(700, 320);
+    });
+    if (t >= 49.0) cue('s5-vr2', function() {
+      document.getElementById('vr2').classList.add('show');
+    });
+    if (t >= 50.0) cue('s5-vr3', function() {
+      document.getElementById('vr3').classList.add('show');
+      moveCursor(700, 430);
+    });
+    if (t >= 51.0) cue('s5-vr4', function() {
+      document.getElementById('vr4').classList.add('show');
+    });
+    // [52.1s] "reconciles them, flags anything that looks off."
+    if (t >= 52.0) cue('s5-vr5', function() {
+      document.getElementById('vr5').classList.add('show');
+      document.getElementById('vr6').classList.add('show');
+      moveCursor(900, 430);
+      clickEffect(900, 430);
+    });
+    // [54.7s] "No more Sunday spreadsheet sessions."
+    if (t >= 54.5) cue('s5-chart', function() {
+      // Animate chart bars
+      var heights = [72, 78, 84, 76, 88, 68, 60];
+      heights.forEach(function(h, i) {
+        setTimeout(function() {
+          document.getElementById('cb'+(i+1)).style.height = h+'%';
+        }, i * 120);
+      });
+      moveCursor(1400, 400);
+    });
+    // [57.0s] "QuickBooks gets updated automatically."
+    if (t >= 57.0) cue('s5-qb', function() {
+      document.getElementById('qbSync').classList.add('show');
+      moveCursor(600, 700);
+      clickEffect(600, 700);
+    });
+
+    // === SCENE 6: RISK MONITORING (59-72s) ===
+    // [59.8s] "Chargeback spike on a merchant."
+    if (t >= 59.8) cue('s6-start', function() {
+      showScene('scene6');
+      setNavActive('nav-risk');
+      moveCursor(600, 300);
+    });
+    // [62.5s] "Your AI flags it before the processor does."
+    if (t >= 61.0) cue('s6-alert', function() {
+      document.getElementById('alertCard').classList.add('show');
+      moveCursor(700, 400);
+    });
+    // [66.5s] "Suspicious volume patterns, compliance deadlines,"
+    if (t >= 66.0) cue('s6-monitor', function() {
+      document.getElementById('monPanel').classList.add('show');
+      moveCursor(1300, 400);
+      clickEffect(1300, 400);
+    });
+    // [69.5s] "expiring documents, all monitored around the clock."
+    if (t >= 69.5) cue('s6-mon2', function() {
+      document.getElementById('monPanel2').classList.add('show');
+      moveCursor(1300, 650);
+    });
+
+    // === SCENE 7: MORNING BRIEFING (72-82s) ===
+    // [72.5s] "Every morning, your summary."
+    if (t >= 72.5) cue('s7-start', function() {
+      showScene('scene7');
+      setNavActive('nav-ai');
+      cursor.style.display = 'none';
+    });
+    if (t >= 73.0) cue('s7-card', function() {
+      document.getElementById('morningCard').classList.add('show');
+    });
+    // [74.0s] "New applications overnight,"
+    if (t >= 74.0) cue('s7-mi1', function() {
+      document.getElementById('mi1').classList.add('show');
+    });
+    // [77.1s] "volume anomalies, upcoming compliance deadlines."
+    if (t >= 76.0) cue('s7-mi2', function() {
+      document.getElementById('mi2').classList.add('show');
+    });
+    if (t >= 77.5) cue('s7-mi3', function() {
+      document.getElementById('mi3').classList.add('show');
+    });
+    if (t >= 79.0) cue('s7-mi4', function() {
+      document.getElementById('mi4').classList.add('show');
+    });
+
+    // === SCENE 8: CLOSE (82-98s) ===
+    // [82.4s] "You're running a payment company, a call center,"
+    if (t >= 82.4) cue('s8-start', function() {
+      showScene('scene8');
+      // Remove sidebar for full impact
+      document.querySelector('.sidebar').style.opacity = '0';
+      document.querySelector('.sidebar').style.transition = 'opacity 0.8s';
+      document.querySelector('.main').style.left = '0';
+      document.querySelector('.main').style.width = '1920px';
+      document.querySelectorAll('.scene').forEach(function(s) { s.style.width = '1920px'; });
+    });
+    if (t >= 83.0) cue('s8-ctx', function() {
+      document.getElementById('closeCtx').classList.add('show');
+    });
+    // [89.2s] "Your AI handles the operational load"
+    if (t >= 89.0) cue('s8-logo', function() {
+      document.getElementById('closeLogo').classList.add('show');
+    });
+    // [93.9s] "Your AI, only yours."
+    if (t >= 93.5) cue('s8-tag', function() {
+      document.getElementById('closeTag').classList.add('show');
+    });
+    // [96.6s] "See it live at solveworks.io."
+    if (t >= 96.0) cue('s8-url', function() {
+      document.getElementById('closeUrl').classList.add('show');
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+</script>
+
+<!-- PROGRESS BAR + TAP TO PAUSE -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.08); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:linear-gradient(90deg,#0ea5e9,#38bdf8); border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.7); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none; backdrop-filter:blur(4px);">
+  <div style="text-align:center;">
+    <div style="font-size:100px; color:white;">⏸</div>
+    <div style="font-size:36px; color:#94a3b8; margin-top:20px; font-family:Inter,sans-serif; font-weight:300;">Tap anywhere to resume</div>
+  </div>
+</div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.style.opacity=paused?"1":"0";
+    flash.style.pointerEvents=paused?"auto":"none";
+    try{
+      if(voiceover){if(paused)voiceover.pause();else voiceover.play().catch(function(){});}
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused)document.body.classList.add("animations-paused");
+    else{document.body.classList.remove("animations-paused");}
+  }
+  document.addEventListener("touchstart",function(e){
+    if(!started)return;
+    e.preventDefault();
+    try{if(voiceover&&voiceover.ended){location.reload();return;}}catch(ex){}
+    toggle();
+  });
+  document.addEventListener("click",function(e){
+    if(!started||e.target.closest("#playBtn"))return;
+    try{if(voiceover&&voiceover.ended){location.reload();return;}}catch(ex){}
+    toggle();
+  });
+  function upd(){
+    try{
+      if(voiceover&&voiceover.duration&&!isNaN(voiceover.duration))
+        fill.style.width=(voiceover.currentTime/voiceover.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
+})();
+</script>
+</body>
+</html>
