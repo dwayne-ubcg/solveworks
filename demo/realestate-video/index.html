@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>SolveWorks Real Estate AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; }
+
+/* Scene container */
+.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* Play button */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; gap: 24px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn .play-label { font-size: 14px; color: #64748b; letter-spacing: 0.1em; text-transform: uppercase; }
+#playBtn.hidden { display: none; }
+
+/* Progress bar */
+#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; transition: width 0.5s linear; }
+
+/* Glass card */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+/* Colors */
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+.bg-accent { background: #0ea5e9; }
+
+/* Tag colors */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
+.tag-zillow { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-realtor { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-instagram { background: rgba(236,72,153,0.2); color: #f472b6; }
+.tag-website { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-openhouse { background: rgba(239,68,68,0.2); color: #f87171; }
+.tag-referral { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tag-hot { background: rgba(239,68,68,0.15); color: #f87171; }
+.tag-qualified { background: rgba(234,179,8,0.15); color: #facc15; }
+.tag-new { background: rgba(14,165,233,0.15); color: #38bdf8; }
+
+/* Status badges */
+.badge-confirmed { background: rgba(34,197,94,0.2); color: #4ade80; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+.badge-pending { background: rgba(234,179,8,0.2); color: #facc15; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+.badge-live { background: rgba(34,197,94,0.15); color: #4ade80; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+
+/* Animations */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes expandIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+
+.animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+
+/* Sidebar */
+.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 0 24px 8px; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+.sidebar-team { padding: 0 24px 24px; font-size: 18px; font-weight: 700; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 16px; padding-bottom: 24px; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-badge { background: rgba(14,165,233,0.2); color: #38bdf8; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; margin-left: auto; }
+
+/* Typewriter cursor */
+.cursor { display: inline-block; width: 2px; height: 18px; background: #0ea5e9; animation: blink 0.6s infinite; vertical-align: text-bottom; }
+
+/* Channel status row */
+.channel-row { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; opacity: 0; }
+.channel-row.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Lead card */
+.lead-card { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; opacity: 0; }
+.lead-card.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Chat bubble */
+.chat-bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; max-width: 85%; margin-bottom: 10px; opacity: 0; }
+.chat-bubble.visible { animation: fadeInUp 0.4s ease forwards; }
+.chat-ai { background: rgba(14,165,233,0.12); border: 1px solid rgba(14,165,233,0.2); color: #e2e8f0; margin-right: auto; border-bottom-left-radius: 4px; }
+.chat-human { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #e2e8f0; margin-left: auto; border-bottom-right-radius: 4px; }
+
+/* Showing item */
+.showing-item { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; opacity: 0; }
+.showing-item.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Log entry */
+.log-entry { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 13px; color: #94a3b8; opacity: 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.log-entry.visible { animation: fadeInUp 0.3s ease forwards; }
+
+/* Report section */
+.report-section { padding: 16px 20px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; }
+.report-section.visible { animation: expandIn 0.5s ease forwards; }
+
+/* Stat card */
+.stat-card { padding: 20px; border-radius: 12px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.stat-number { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Bar chart */
+.bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 13px; }
+.bar-label { width: 100px; text-align: right; color: #94a3b8; flex-shrink: 0; }
+.bar-track { flex: 1; height: 28px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 600; color: #fff; transition: width 1.5s ease; width: 0; }
+.bar-pct { width: 50px; color: #64748b; font-size: 12px; flex-shrink: 0; }
+
+/* Leaderboard */
+.leader-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 10px; margin-bottom: 6px; opacity: 0; }
+.leader-row.visible { animation: slideInRight 0.4s ease forwards; }
+
+/* Cost cards */
+.cost-card { padding: 32px; border-radius: 16px; text-align: center; flex: 1; }
+.cost-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); animation: pulseGlow 2s infinite; }
+.cost-detail { font-size: 13px; color: #94a3b8; line-height: 1.8; text-align: left; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="play-circle">
+    <div class="play-triangle"></div>
+  </div>
+  <div class="play-label">Click to play</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progressBar" style="width: 0%"></div>
+
+<!-- ==================== SCENE 0: OPENING HOOK ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-hook" style="font-size: 38px; font-weight: 300; line-height: 1.7; opacity: 0; max-width: 800px; margin: 0 auto;">
+      Your best listing just went live.<br>
+      Your ISA is on lunch.<br>
+      <span style="color: #0ea5e9; font-weight: 600;">47 leads just came in.</span><br>
+      Now what?
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: NEW LISTING LAUNCH ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar1">
+      <div class="sidebar-logo">Powered by SolveWorks</div>
+      <div class="sidebar-team">🏠 Pinnacle Realty</div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Listings
+        <span class="sidebar-badge">23</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Leads
+        <span class="sidebar-badge">847</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Showings
+        <span class="sidebar-badge">34</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Marketing
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+      <div style="flex: 1;"></div>
+      <div class="sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68V3a2 2 0 0 1 4 0v.09c.37.04.72.2 1 .51.32.35.72.53 1.14.53.42 0 .82-.18 1.14-.53l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06c-.35.32-.53.72-.53 1.14 0 .42.18.82.51 1H21a2 2 0 0 1 0 4h-.09c-.04.37-.2.72-.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+    <!-- Main content -->
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden; display: flex; gap: 28px;">
+      <!-- Left: Listing + Channels -->
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="font-size: 26px; font-weight: 700;">New Listing — Launch Sequence</h1>
+            <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated multi-channel marketing deployment</p>
+          </div>
+          <div class="glass" style="padding: 10px 18px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 28px; font-weight: 800; color: #0ea5e9;">23</span>
+            <span class="text-slate-400" style="font-size: 12px; line-height: 1.3;">active<br>listings</span>
+          </div>
+        </div>
+        <!-- Featured listing card -->
+        <div class="glass" style="padding: 24px; border-radius: 14px; margin-bottom: 20px; border: 1px solid rgba(14,165,233,0.2);" id="s1-listing">
+          <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+            <div style="width: 80px; height: 80px; border-radius: 12px; background: linear-gradient(135deg, #1e3a5f, #0ea5e9); display: flex; align-items: center; justify-content: center; font-size: 32px;">🏠</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h2 style="font-size: 22px; font-weight: 700;">247 Rosedale Heights Drive</h2>
+                <span class="badge-live">● Just Listed</span>
+              </div>
+              <div style="font-size: 14px; color: #94a3b8; margin-top: 4px;">Rosedale, Toronto, ON M4W 1X8</div>
+              <div style="display: flex; gap: 20px; margin-top: 8px; font-size: 13px; color: #cbd5e1;">
+                <span>💰 <strong style="color: #0ea5e9; font-size: 18px;">$4,250,000</strong></span>
+                <span>🛏️ 5 Bed</span>
+                <span>🛁 4 Bath</span>
+                <span>📐 3,800 sqft</span>
+                <span>🏗️ Built 1928, renovated 2023</span>
+              </div>
+            </div>
+          </div>
+          <div style="font-size: 12px; color: #64748b;">Listed by: Sarah Martinez | MLS® #W12847563</div>
+        </div>
+        <!-- Marketing channels -->
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #94a3b8;">Marketing Channels</h3>
+        <div id="s1-channels"></div>
+      </div>
+      <!-- Right: AI-generated description -->
+      <div style="width: 520px;">
+        <div class="glass" style="padding: 24px; border-radius: 14px; height: 100%;" id="s1-desc-card">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <span style="font-size: 16px;">✨</span>
+            <h3 style="font-size: 16px; font-weight: 600;">AI-Generated Listing Description</h3>
+          </div>
+          <div style="font-size: 14px; line-height: 1.7; color: #cbd5e1;" id="s1-description"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: LEAD CAPTURE & NURTURE ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo">Powered by SolveWorks</div>
+      <div class="sidebar-team">🏠 Pinnacle Realty</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Listings</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads<span class="sidebar-badge">847</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Showings</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Marketing</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden; display: flex; gap: 28px;">
+      <!-- Left: Incoming leads -->
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="font-size: 26px; font-weight: 700;">Incoming Leads</h1>
+            <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Real-time lead capture across all channels</p>
+          </div>
+          <div class="glass" style="padding: 10px 18px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 28px; font-weight: 800; color: #0ea5e9;" id="s2-counter">0</span>
+            <span class="text-slate-400" style="font-size: 12px; line-height: 1.3;">new leads<br>today</span>
+          </div>
+        </div>
+        <div id="s2-leads"></div>
+      </div>
+      <!-- Right: AI conversation -->
+      <div style="width: 520px;">
+        <div class="glass" style="padding: 24px; border-radius: 14px; height: 100%; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(168,85,247,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #c084fc;">JW</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">Jennifer Walsh</div>
+              <div style="font-size: 12px; color: #64748b;">via Zillow · 247 Rosedale Heights Dr</div>
+            </div>
+            <div style="margin-left: auto;"><span class="tag tag-hot" style="font-size: 11px;">🔥 Hot Lead</span></div>
+          </div>
+          <div style="flex: 1; overflow: hidden;" id="s2-chat"></div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 12px;">
+            <div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 6px;">
+              <span style="color: #4ade80;">●</span> AI responding · Average response time: 47 seconds
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: SHOWING SCHEDULER ==================== -->
+<div class="scene" id="scene3">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo">Powered by SolveWorks</div>
+      <div class="sidebar-team">🏠 Pinnacle Realty</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Listings</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Showings<span class="sidebar-badge">34</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Marketing</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden; display: flex; gap: 28px;">
+      <!-- Left: Upcoming showings -->
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <h1 style="font-size: 26px; font-weight: 700;">Showing Scheduler</h1>
+            <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">AI-coordinated scheduling across agents, buyers, and sellers</p>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div class="glass" style="padding: 10px 16px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 800; color: #0ea5e9;">34</div>
+              <div style="font-size: 11px; color: #64748b;">This Week</div>
+            </div>
+            <div class="glass" style="padding: 10px 16px; text-align: center;">
+              <div style="font-size: 24px; font-weight: 800; color: #4ade80;">97%</div>
+              <div style="font-size: 11px; color: #64748b;">Confirmed</div>
+            </div>
+          </div>
+        </div>
+        <div id="s3-showings"></div>
+      </div>
+      <!-- Right: Coordination log -->
+      <div style="width: 480px;">
+        <div class="glass" style="padding: 24px; border-radius: 14px; height: 100%;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <span style="font-size: 16px;">🤖</span>
+            <h3 style="font-size: 16px; font-weight: 600;">Coordination Log</h3>
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">AI activity for today's scheduling</div>
+          <div id="s3-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: SELLER UPDATES ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo">Powered by SolveWorks</div>
+      <div class="sidebar-team">🏠 Pinnacle Realty</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Listings</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Showings</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Marketing</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1 style="font-size: 26px; font-weight: 700;">Seller Communication</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated weekly market reports to listing clients</p>
+        </div>
+        <div class="glass" style="padding: 10px 18px; font-size: 13px; color: #94a3b8;">
+          Next report: <span style="color: #0ea5e9; font-weight: 600;">March 14, 2026</span> · Reports sent: <span style="color: #0ea5e9; font-weight: 600;">2</span>
+        </div>
+      </div>
+      <!-- Report -->
+      <div class="glass" style="padding: 28px; border-radius: 16px; max-width: 1400px;">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+          <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(14,165,233,0.1)); display: flex; align-items: center; justify-content: center; font-size: 22px;">📊</div>
+          <div>
+            <h2 style="font-size: 20px; font-weight: 700;">Weekly Market Report — 247 Rosedale Heights Drive</h2>
+            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Prepared for Robert & Catherine Thornton · Week of March 3–7, 2026</div>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;" id="s4-report"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: PIPELINE ANALYTICS ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo">Powered by SolveWorks</div>
+      <div class="sidebar-team">🏠 Pinnacle Realty</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Listings</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Leads</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Showings</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Marketing</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 20px;">Pipeline Analytics</h1>
+      <!-- Top stats row -->
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px;" id="s5-stats"></div>
+      <div style="display: flex; gap: 24px;">
+        <!-- Left: Leads by source -->
+        <div class="glass" style="flex: 1; padding: 24px; border-radius: 14px;">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Leads by Source</h3>
+          <div id="s5-sources"></div>
+        </div>
+        <!-- Right: Agent performance + Response time -->
+        <div style="width: 540px; display: flex; flex-direction: column; gap: 16px;">
+          <div class="glass" style="padding: 24px; border-radius: 14px; flex: 1;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Agent Performance</h3>
+            <div id="s5-agents"></div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px;" id="s5-response">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Average Response Time</div>
+                <div style="font-size: 36px; font-weight: 800; color: #4ade80;" id="s5-resp-time">—</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">Industry Average</div>
+                <div style="font-size: 36px; font-weight: 800; color: #f87171;">4.2 hrs</div>
+              </div>
+            </div>
+            <div id="s5-resp-note" style="margin-top: 12px; font-size: 13px; color: #0ea5e9; text-align: center; opacity: 0;">
+              ⚡ Your leads are contacted <strong>322x faster</strong> than the industry average
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: COST COMPARISON & CTA ==================== -->
+<div class="scene" id="scene6">
+  <div style="width: 1920px; height: 1080px; padding: 60px 120px; display: flex; flex-direction: column; justify-content: center;">
+    <div style="text-align: center; margin-bottom: 40px;">
+      <span style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; font-weight: 600;" id="s6-label" style="opacity: 0;">The Bottom Line</span>
+    </div>
+    <!-- Cost comparison cards -->
+    <div id="s6-costs" style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 40px; opacity: 0;">
+      <div class="cost-card cost-red" style="max-width: 480px;">
+        <div style="font-size: 14px; color: #f87171; margin-bottom: 8px; font-weight: 600;">Traditional ISA</div>
+        <div style="font-size: 48px; font-weight: 800; color: #fca5a5;">$3,000–$5,000</div>
+        <div class="text-slate-400" style="font-size: 16px;">/month</div>
+        <div class="cost-detail">
+          ● Handles 20–30 leads/day max<br>
+          ● Works 8 hours/day, 5 days/week<br>
+          ● Takes vacations & sick days<br>
+          ● Training time: 2–3 months<br>
+          ● Annual cost: ~$48,000
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; font-size: 32px; color: #475569;">vs</div>
+      <div class="cost-card cost-green" style="max-width: 480px;">
+        <div style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px; font-weight: 600;">Your AI Agent</div>
+        <div style="font-size: 48px; font-weight: 800; color: #38bdf8;">$500</div>
+        <div class="text-slate-400" style="font-size: 16px;">/month</div>
+        <div class="cost-detail">
+          ● Handles unlimited leads simultaneously<br>
+          ● Works 24/7/365<br>
+          ● Never calls in sick<br>
+          ● Fully trained from day one<br>
+          ● Annual cost: $6,000
+        </div>
+      </div>
+    </div>
+    <!-- Savings -->
+    <div id="s6-savings" style="text-align: center; opacity: 0; margin-bottom: 20px;">
+      <div class="glass" style="display: inline-block; padding: 16px 48px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.3);">
+        <span class="text-slate-400" style="font-size: 16px;">Annual savings per ISA replaced: </span>
+        <span style="font-size: 32px; font-weight: 800; color: #4ade80;">$42,000+</span>
+      </div>
+    </div>
+    <!-- Revenue -->
+    <div id="s6-revenue" style="text-align: center; opacity: 0; margin-bottom: 32px;">
+      <div class="glass" style="display: inline-block; padding: 20px 48px; border-radius: 14px; border: 1px solid rgba(34,197,94,0.2);">
+        <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px;">If AI books just 3 extra deals/year at $25K avg commission</div>
+        <div style="font-size: 40px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$75,000 additional revenue</div>
+      </div>
+    </div>
+    <!-- CTA -->
+    <div id="s6-cta" style="text-align: center; opacity: 0;">
+      <div style="font-size: 56px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 18px; color: #94a3b8; font-weight: 300; margin-bottom: 8px;">Your AI. Only yours.</div>
+      <div style="font-size: 20px; color: #0ea5e9; font-weight: 500;">solveworks.io</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== AUDIO ==================== -->
+<audio id="voiceover" preload="auto">
+  <source src="voiceover.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+// ============================================================
+// CONFIGURATION — Scene durations in seconds
+// ============================================================
+const SCENE_DURATIONS = [15, 70, 65, 55, 50, 50, 45];
+const TOTAL_DURATION = SCENE_DURATIONS.reduce((a, b) => a + b, 0);
+let currentScene = -1;
+let presentationStartTime = 0;
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function animateCounter(el, target, duration = 2000) {
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased).toLocaleString();
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function fadeIn(el, delay = 0, duration = 500) {
+  setTimeout(() => {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = '1';
+  }, delay);
+}
+
+function typeText(el, text, speed = 30, startDelay = 0) {
+  let i = 0;
+  el.innerHTML = '<span class="cursor"></span>';
+  setTimeout(() => {
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        el.innerHTML = text.substring(0, i + 1).replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => { el.innerHTML = text.replace(/\n/g, '<br>'); }, 2000);
+      }
+    }, speed);
+  }, startDelay);
+}
+
+// ============================================================
+// SCENE MANAGEMENT
+// ============================================================
+function showScene(index) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const scene = document.getElementById('scene' + index);
+  if (scene) {
+    scene.classList.add('active');
+    currentScene = index;
+    window['initScene' + index]?.();
+  }
+}
+
+function advanceScene() {
+  const next = currentScene + 1;
+  if (next >= SCENE_DURATIONS.length) {
+    // Fade to black
+    setTimeout(() => {
+      document.querySelectorAll('.scene').forEach(s => {
+        s.style.transition = 'opacity 1.5s ease';
+        s.style.opacity = '0';
+      });
+    }, 2000);
+    return;
+  }
+  showScene(next);
+  setTimeout(advanceScene, SCENE_DURATIONS[next] * 1000);
+}
+
+function updateProgress() {
+  if (currentScene < 0) return;
+  const elapsed = (performance.now() - presentationStartTime) / 1000;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  if (pct < 100) requestAnimationFrame(updateProgress);
+}
+
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  presentationStartTime = performance.now();
+  document.getElementById('voiceover').play().catch(() => {});
+  showScene(0);
+  setTimeout(advanceScene, SCENE_DURATIONS[0] * 1000);
+  requestAnimationFrame(updateProgress);
+}
+
+// ============================================================
+// SCENE 0: Opening Hook
+// ============================================================
+function initScene0() {
+  const hook = document.getElementById('s0-hook');
+  const logo = document.getElementById('s0-logo');
+  fadeIn(hook, 1000, 1000);
+  setTimeout(() => { hook.style.transition = 'opacity 0.8s ease'; hook.style.opacity = '0'; }, 9000);
+  fadeIn(logo, 10000, 1000);
+}
+
+// ============================================================
+// SCENE 1: New Listing Launch
+// ============================================================
+const S1_CHANNELS = [
+  { icon: '📋', name: 'MLS® Listing', detail: 'Listed & syndicated to TRREB — MLS #W12847563', status: 'done', color: '#4ade80' },
+  { icon: '📸', name: 'Instagram', detail: 'Carousel post generated — 10 slides + captions + hashtags', status: 'done', color: '#f472b6' },
+  { icon: '📘', name: 'Facebook', detail: 'Ad creative + targeting ready — GTA luxury buyers 35–65', status: 'done', color: '#60a5fa' },
+  { icon: '📧', name: 'Email Blast', detail: '2,847 qualified buyers notified — open rate: 34.2%', status: 'done', color: '#4ade80' },
+  { icon: '🌐', name: 'Realtor.ca', detail: 'Syndication processing...', status: 'processing', color: '#facc15' },
+  { icon: '🏠', name: 'Website', detail: 'Featured listing card updated — pinnaclerealtygroup.ca', status: 'done', color: '#4ade80' },
+];
+
+const S1_DESCRIPTION = `Nestled on one of Rosedale's most coveted streets, this impeccably renovated 5-bedroom residence seamlessly blends 1928 architectural charm with modern luxury.
+
+The chef's kitchen features Miele appliances, Calacatta marble countertops, and a 12-foot island perfect for entertaining. Floor-to-ceiling windows flood the open-concept main floor with natural light.
+
+The primary suite offers a spa-inspired ensuite with heated floors, a freestanding soaker tub, and a rainfall shower with body jets. A private south-facing terrace overlooks the professionally landscaped garden.
+
+Steps to Rosedale subway, top-ranked schools, and the finest dining Toronto has to offer.`;
+
+function initScene1() {
+  // Channels
+  const container = document.getElementById('s1-channels');
+  container.innerHTML = '';
+  S1_CHANNELS.forEach((ch, i) => {
+    const row = document.createElement('div');
+    row.className = 'channel-row';
+    const statusIcon = ch.status === 'done' ? '✅' : '⏳';
+    const statusColor = ch.status === 'done' ? '#4ade80' : '#facc15';
+    row.innerHTML = `
+      <span style="font-size: 22px;">${ch.icon}</span>
+      <div style="flex: 1;">
+        <div style="font-size: 14px; font-weight: 600;">${ch.name}</div>
+        <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${ch.detail}</div>
+      </div>
+      <span style="font-size: 16px; color: ${statusColor};">${statusIcon}</span>
+    `;
+    container.appendChild(row);
+    setTimeout(() => row.classList.add('visible'), 3000 + i * 5000);
+  });
+
+  // Typewriter description
+  typeText(document.getElementById('s1-description'), S1_DESCRIPTION, 25, 2000);
+}
+
+// ============================================================
+// SCENE 2: Lead Capture & Nurture
+// ============================================================
+const S2_LEADS = [
+  { initials: 'JW', name: 'Jennifer Walsh', source: 'Zillow', sourceClass: 'tag-zillow', message: '"Is 247 Rosedale still available?"', time: '2 min ago', heat: '🔥 Hot', heatClass: 'tag-hot', color: 'rgba(168,85,247,0.2)', textColor: '#c084fc' },
+  { initials: 'MK', name: 'Michael & Sarah Kim', source: 'Realtor.ca', sourceClass: 'tag-realtor', message: '"We\'d love to see this property"', time: '5 min ago', heat: '⭐ Qualified', heatClass: 'tag-qualified', color: 'rgba(59,130,246,0.2)', textColor: '#60a5fa' },
+  { initials: 'DO', name: 'David Okonkwo', source: 'Instagram', sourceClass: 'tag-instagram', message: 'Saved listing, clicked link in bio', time: '8 min ago', heat: '🆕 New', heatClass: 'tag-new', color: 'rgba(236,72,153,0.2)', textColor: '#f472b6' },
+  { initials: 'PM', name: 'Priya Mehta', source: 'Website', sourceClass: 'tag-website', message: 'Submitted inquiry form', time: '12 min ago', heat: '⭐ Qualified', heatClass: 'tag-qualified', color: 'rgba(34,197,94,0.2)', textColor: '#4ade80' },
+  { initials: 'JC', name: 'James & Lisa Chen', source: 'Open House', sourceClass: 'tag-openhouse', message: 'Signed in at 42 Forest Hill Rd', time: '1 hour ago', heat: '🔥 Hot', heatClass: 'tag-hot', color: 'rgba(239,68,68,0.2)', textColor: '#f87171' },
+];
+
+const S2_CHAT = [
+  { sender: 'human', text: 'Hi, is 247 Rosedale Heights still available? We saw it on Zillow.', delay: 3000 },
+  { sender: 'ai', text: 'Hi Jennifer! Yes, 247 Rosedale Heights Drive is available and generating tremendous interest. It\'s a stunning 5-bedroom in one of Rosedale\'s best locations. Are you currently working with a real estate agent?', delay: 8000 },
+  { sender: 'human', text: 'No agent yet. We\'re just starting to look seriously.', delay: 18000 },
+  { sender: 'ai', text: 'Perfect timing! A few quick questions to make sure we find exactly what you\'re looking for — are you pre-approved for financing, and what\'s your ideal budget range?', delay: 23000 },
+  { sender: 'human', text: 'Yes, pre-approved up to $4.5M through TD.', delay: 33000 },
+  { sender: 'ai', text: 'Excellent — you\'re in a great position for this property. I\'d love to arrange a private showing with Sarah Martinez, our listing agent. She has availability this Thursday at 2:00 PM or Friday at 11:00 AM. Which works better for you?', delay: 38000 },
+  { sender: 'human', text: 'Thursday at 2 would be perfect!', delay: 48000 },
+  { sender: 'ai', text: 'Done! ✅ You\'re confirmed for Thursday, March 6 at 2:00 PM at 247 Rosedale Heights Drive. Sarah will meet you there. I\'ll send you a confirmation text with the address and parking details. Looking forward to it, Jennifer!', delay: 53000 },
+];
+
+function initScene2() {
+  // Counter
+  animateCounter(document.getElementById('s2-counter'), 47, 3000);
+
+  // Lead cards
+  const leadsContainer = document.getElementById('s2-leads');
+  leadsContainer.innerHTML = '';
+  S2_LEADS.forEach((lead, i) => {
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.innerHTML = `
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: ${lead.color}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: ${lead.textColor}; flex-shrink: 0;">${lead.initials}</div>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <span style="font-size: 14px; font-weight: 600;">${lead.name}</span>
+          <span class="tag ${lead.sourceClass}" style="font-size: 11px;">${lead.source}</span>
+          <span class="tag ${lead.heatClass}" style="font-size: 11px;">${lead.heat}</span>
+        </div>
+        <div style="font-size: 13px; color: #94a3b8;">${lead.message}</div>
+      </div>
+      <div style="font-size: 12px; color: #64748b; white-space: nowrap;">${lead.time}</div>
+    `;
+    leadsContainer.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 2000 + i * 4000);
+  });
+
+  // Chat messages
+  const chatContainer = document.getElementById('s2-chat');
+  chatContainer.innerHTML = '';
+  S2_CHAT.forEach((msg) => {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble chat-${msg.sender}`;
+    bubble.textContent = msg.text;
+    chatContainer.appendChild(bubble);
+    setTimeout(() => bubble.classList.add('visible'), msg.delay);
+  });
+}
+
+// ============================================================
+// SCENE 3: Showing Scheduler
+// ============================================================
+const S3_SHOWINGS = [
+  { address: '247 Rosedale Heights Dr', buyer: 'Jennifer Walsh', time: 'Thu 2:00 PM', agent: 'Sarah Martinez', status: 'confirmed' },
+  { address: '247 Rosedale Heights Dr', buyer: 'Michael & Sarah Kim', time: 'Thu 3:30 PM', agent: 'Sarah Martinez', status: 'confirmed' },
+  { address: '42 Forest Hill Rd', buyer: 'James & Lisa Chen', time: 'Fri 11:00 AM', agent: 'David Park', status: 'pending' },
+  { address: '18 Bridle Path', buyer: 'Priya Mehta', time: 'Fri 2:30 PM', agent: 'Sarah Martinez', status: 'confirmed' },
+  { address: '92 Highland Ave', buyer: 'David Okonkwo', time: 'Sat 10:00 AM', agent: 'Mark Thompson', status: 'confirmed' },
+  { address: '15 Old George Pl', buyer: 'Andrea Rossi', time: 'Sat 1:00 PM', agent: 'David Park', status: 'confirmed' },
+];
+
+const S3_LOG = [
+  { icon: '📅', text: 'Checked Sarah Martinez calendar — Thu 2:00-5:00 PM open ✓', time: '9:14 AM' },
+  { icon: '🏠', text: 'Confirmed seller (247 Rosedale) available for Thu showings ✓', time: '9:15 AM' },
+  { icon: '📱', text: 'Sent confirmation text to Jennifer Walsh ✓', time: '9:16 AM' },
+  { icon: '📱', text: 'Sent confirmation text to Michael & Sarah Kim ✓', time: '9:16 AM' },
+  { icon: '📋', text: 'Sent showing prep checklist to seller ✓', time: '9:17 AM' },
+  { icon: '☀️', text: 'Weather check: Clear skies Thursday — 12°C', time: '9:17 AM' },
+  { icon: '📅', text: 'Checked David Park calendar — Fri 11:00 AM available ✓', time: '9:22 AM' },
+  { icon: '⏳', text: 'Awaiting buyer confirmation — James & Lisa Chen (42 Forest Hill)', time: '9:23 AM' },
+  { icon: '🔄', text: 'Follow-up text sent to James Chen — awaiting response', time: '10:45 AM' },
+  { icon: '📅', text: 'Booked Mark Thompson for Sat 10:00 AM — 92 Highland Ave ✓', time: '11:02 AM' },
+];
+
+function initScene3() {
+  // Showings
+  const container = document.getElementById('s3-showings');
+  container.innerHTML = '';
+  S3_SHOWINGS.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'showing-item';
+    const badgeClass = s.status === 'confirmed' ? 'badge-confirmed' : 'badge-pending';
+    const badgeText = s.status === 'confirmed' ? '✅ Confirmed' : '⏳ Pending';
+    item.innerHTML = `
+      <div style="font-size: 20px;">📍</div>
+      <div style="flex: 1;">
+        <div style="font-size: 14px; font-weight: 600;">${s.address}</div>
+        <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${s.buyer} · Agent: ${s.agent}</div>
+      </div>
+      <div style="font-size: 14px; color: #cbd5e1; font-weight: 500; min-width: 120px; text-align: right;">${s.time}</div>
+      <span class="${badgeClass}">${badgeText}</span>
+    `;
+    container.appendChild(item);
+    setTimeout(() => item.classList.add('visible'), 2000 + i * 4000);
+  });
+
+  // Coordination log
+  const logContainer = document.getElementById('s3-log');
+  logContainer.innerHTML = '';
+  S3_LOG.forEach((entry, i) => {
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+    el.innerHTML = `
+      <span style="font-size: 14px; flex-shrink: 0;">${entry.icon}</span>
+      <span style="flex: 1;">${entry.text}</span>
+      <span style="font-size: 11px; color: #475569; white-space: nowrap;">${entry.time}</span>
+    `;
+    logContainer.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), 5000 + i * 3000);
+  });
+}
+
+// ============================================================
+// SCENE 4: Seller Updates
+// ============================================================
+const S4_SECTIONS = [
+  {
+    title: '📊 Showing Activity',
+    content: `<div style="display: flex; gap: 24px; margin-top: 8px;">
+      <div><span style="font-size: 28px; font-weight: 800; color: #0ea5e9;">8</span><span style="font-size: 13px; color: #64748b;"> showings this week</span></div>
+      <div><span style="font-size: 28px; font-weight: 800; color: #0ea5e9;">23</span><span style="font-size: 13px; color: #64748b;"> total showings</span></div>
+    </div>`
+  },
+  {
+    title: '💬 Buyer Feedback',
+    content: `<div style="margin-top: 8px; font-size: 13px; line-height: 2; color: #cbd5e1;">
+      <div>👍 "Loved the kitchen renovation" <span style="color: #64748b;">— 5 of 8 buyers</span></div>
+      <div>🤔 "Questioned the price point" <span style="color: #64748b;">— 2 of 8 buyers</span></div>
+      <div>🔥 "Making an offer" <span style="color: #4ade80; font-weight: 600;">— 1 buyer</span></div>
+    </div>`
+  },
+  {
+    title: '🏘️ Comparable Sales',
+    content: `<div style="margin-top: 8px; font-size: 13px; color: #cbd5e1;">
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);"><span>183 Crescent Rd, Rosedale</span><span style="color: #4ade80; font-weight: 600;">$3,900,000</span><span style="color: #64748b;">12 days on market</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06);"><span>61 Elm Ave, Rosedale</span><span style="color: #4ade80; font-weight: 600;">$4,100,000</span><span style="color: #64748b;">19 days on market</span></div>
+      <div style="display: flex; justify-content: space-between; padding: 8px 0;"><span>28 Cluny Dr, Rosedale</span><span style="color: #4ade80; font-weight: 600;">$4,600,000</span><span style="color: #64748b;">8 days on market</span></div>
+    </div>`
+  },
+  {
+    title: '📈 Market Position',
+    content: `<div style="margin-top: 8px;">
+      <div style="font-size: 14px; color: #cbd5e1; line-height: 1.7;">Your listing is competitively priced at the <span style="color: #0ea5e9; font-weight: 600;">65th percentile</span> for Rosedale 5+ bedroom homes.</div>
+      <div style="display: flex; gap: 20px; margin-top: 12px;">
+        <div><span style="font-size: 13px; color: #64748b;">Days on Market: </span><span style="color: #4ade80; font-weight: 700;">14</span><span style="font-size: 12px; color: #64748b;"> (vs. 28 avg)</span></div>
+      </div>
+    </div>`
+  },
+  {
+    title: '✅ Recommendation',
+    content: `<div style="margin-top: 8px; font-size: 14px; color: #cbd5e1; line-height: 1.7; padding: 12px; background: rgba(14,165,233,0.08); border-radius: 8px; border-left: 3px solid #0ea5e9;">
+      Strong showing activity and positive feedback suggest <strong>holding at current price</strong>. One buyer has indicated offer intent. Recommend waiting for offer before considering any price adjustment.
+    </div>`
+  },
+];
+
+function initScene4() {
+  const container = document.getElementById('s4-report');
+  container.innerHTML = '';
+  S4_SECTIONS.forEach((section, i) => {
+    const el = document.createElement('div');
+    el.className = 'report-section';
+    if (i === S4_SECTIONS.length - 1) el.style.gridColumn = '1 / -1';
+    el.innerHTML = `
+      <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">${section.title}</h4>
+      ${section.content}
+    `;
+    container.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), 3000 + i * 6000);
+  });
+}
+
+// ============================================================
+// SCENE 5: Pipeline Analytics
+// ============================================================
+const S5_TOP_STATS = [
+  { label: 'Active Listings', value: 23, color: '#0ea5e9' },
+  { label: 'Leads This Month', value: 847, color: '#0ea5e9' },
+  { label: 'Showings Booked', value: 156, color: '#0ea5e9' },
+  { label: 'Conversion Rate', value: '4.2%', color: '#4ade80', noAnimate: true },
+  { label: 'Avg Days to Close', value: 31, color: '#0ea5e9' },
+];
+
+const S5_SOURCES = [
+  { name: 'Zillow', count: 312, pct: 37, color: '#c084fc', width: 100 },
+  { name: 'Realtor.ca', count: 198, pct: 23, color: '#60a5fa', width: 63 },
+  { name: 'Instagram', count: 156, pct: 18, color: '#f472b6', width: 50 },
+  { name: 'Website', count: 98, pct: 12, color: '#4ade80', width: 31 },
+  { name: 'Open Houses', count: 52, pct: 6, color: '#f87171', width: 17 },
+  { name: 'Referrals', count: 31, pct: 4, color: '#fb923c', width: 10 },
+];
+
+const S5_AGENTS = [
+  { rank: '🥇', name: 'Sarah Martinez', deals: 42, volume: '$38.2M', conversion: '4.8%' },
+  { rank: '🥈', name: 'David Park', deals: 36, volume: '$29.1M', conversion: '4.1%' },
+  { rank: '🥉', name: 'Mark Thompson', deals: 31, volume: '$24.7M', conversion: '3.9%' },
+  { rank: '4', name: 'Emily Nguyen', deals: 28, volume: '$21.3M', conversion: '3.6%' },
+  { rank: '5', name: 'Carlos Rivera', deals: 24, volume: '$18.9M', conversion: '3.4%' },
+];
+
+function initScene5() {
+  // Top stats
+  const statsContainer = document.getElementById('s5-stats');
+  statsContainer.innerHTML = '';
+  S5_TOP_STATS.forEach((stat, i) => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.style.opacity = '0';
+    const valueId = 's5-stat-' + i;
+    card.innerHTML = `
+      <div class="stat-number" id="${valueId}">${stat.noAnimate ? stat.value : '0'}</div>
+      <div style="font-size: 12px; color: #64748b; margin-top: 6px;">${stat.label}</div>
+    `;
+    statsContainer.appendChild(card);
+    setTimeout(() => {
+      card.style.transition = 'opacity 0.5s ease';
+      card.style.opacity = '1';
+      if (!stat.noAnimate) animateCounter(document.getElementById(valueId), stat.value, 2000);
+    }, 1000 + i * 1500);
+  });
+
+  // Sources bar chart
+  const sourcesContainer = document.getElementById('s5-sources');
+  sourcesContainer.innerHTML = '';
+  S5_SOURCES.forEach((src, i) => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">${src.name}</div>
+      <div class="bar-track">
+        <div class="bar-fill" id="s5-bar-${i}" style="background: ${src.color};">${src.count}</div>
+      </div>
+      <div class="bar-pct">${src.pct}%</div>
+    `;
+    sourcesContainer.appendChild(row);
+    setTimeout(() => {
+      document.getElementById('s5-bar-' + i).style.width = src.width + '%';
+    }, 8000 + i * 1200);
+  });
+
+  // Agent leaderboard
+  const agentsContainer = document.getElementById('s5-agents');
+  agentsContainer.innerHTML = '';
+  S5_AGENTS.forEach((agent, i) => {
+    const row = document.createElement('div');
+    row.className = 'leader-row';
+    row.style.background = i === 0 ? 'rgba(14,165,233,0.08)' : 'rgba(255,255,255,0.02)';
+    row.innerHTML = `
+      <span style="font-size: 18px; width: 28px; text-align: center;">${agent.rank}</span>
+      <span style="font-size: 14px; font-weight: 600; flex: 1;">${agent.name}</span>
+      <span style="font-size: 13px; color: #0ea5e9; font-weight: 600; width: 60px;">${agent.deals} deals</span>
+      <span style="font-size: 13px; color: #94a3b8; width: 80px;">${agent.volume}</span>
+      <span style="font-size: 13px; color: #4ade80; width: 50px;">${agent.conversion}</span>
+    `;
+    agentsContainer.appendChild(row);
+    setTimeout(() => row.classList.add('visible'), 10000 + i * 2000);
+  });
+
+  // Response time
+  setTimeout(() => {
+    document.getElementById('s5-resp-time').textContent = '47 sec';
+  }, 25000);
+  fadeIn(document.getElementById('s5-resp-note'), 30000, 800);
+}
+
+// ============================================================
+// SCENE 6: Cost Comparison & CTA
+// ============================================================
+function initScene6() {
+  fadeIn(document.getElementById('s6-costs'), 2000, 800);
+  fadeIn(document.getElementById('s6-savings'), 12000, 800);
+  fadeIn(document.getElementById('s6-revenue'), 18000, 800);
+  fadeIn(document.getElementById('s6-cta'), 28000, 1000);
+}
+</script>
+</body>
+</html>
