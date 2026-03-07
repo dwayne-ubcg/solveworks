@@ -11,11 +11,12 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
 .animations-paused * { animation-play-state:paused!important; transition:none!important; }
 
 /* Cursor */
-#cursor { position:absolute; width:24px; height:24px; z-index:9998; pointer-events:none; transition:left 0.6s cubic-bezier(.4,0,.2,1), top 0.6s cubic-bezier(.4,0,.2,1); display:none; }
-#cursor::after { content:''; position:absolute; top:0; left:0; width:0; height:0; border-left:12px solid #0ea5e9; border-right:12px solid transparent; border-bottom:20px solid transparent; filter:drop-shadow(0 2px 8px rgba(14,165,233,0.5)); }
-#cursorRing { position:absolute; width:40px; height:40px; border:2px solid rgba(14,165,233,0.6); border-radius:50%; transform:translate(-8px,-8px) scale(0); pointer-events:none; }
-.cursor-click #cursorRing { animation:clickRing 0.4s ease-out; }
-@keyframes clickRing { 0%{transform:translate(-8px,-8px) scale(0);opacity:1} 100%{transform:translate(-8px,-8px) scale(1.5);opacity:0} }
+#fakeCursor { position: absolute; top: 540px; left: 960px; z-index: 9000; pointer-events: none; transition: top 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); display: none; }
+#fakeCursor svg { width: 28px; height: 28px; filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.5)); }
+
+.click-ripple { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(14,165,233,0.7); pointer-events: none; z-index: 8999; animation: rippleOut 0.6s ease forwards; }
+.cursor-click .click-ripple { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(14,165,233,0.7); pointer-events: none; z-index: 8999; animation: rippleOut 0.6s ease forwards; }
+@keyframes rippleOut { 0% { transform: translate(-50%,-50%) scale(0.3); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } } 100%{transform:translate(-8px,-8px) scale(1.5);opacity:0} }
 
 /* Play button */
 #playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
@@ -138,7 +139,11 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
 </head>
 <body>
 
-<div id="cursor"><div id="cursorRing"></div></div>
+<div id="fakeCursor" style="top: 540px; left: 960px; display: none;">
+  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
+  </svg>
+</div></div>
 
 <div id="playBtn" onclick="startDemo()">
   <div class="play-circle"></div>
@@ -327,7 +332,7 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
 
 <script>
 var voiceover = new Audio('voiceover.mp3');
-var cursor = document.getElementById('cursor');
+var cursor = document.getElementById('fakeCursor');
 var cursorRing = document.getElementById('cursorRing');
 
 window.__demoPaused = false;
