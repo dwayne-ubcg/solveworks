@@ -18,7 +18,7 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
 #playBtn .play-label { font-size: 16px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; }
 
 /* ===================== PROGRESS BAR ===================== */
-#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 9998; transition: width 0.3s linear; width: 0%; }
+/* old progressBar removed */
 
 /* ===================== FAKE CURSOR ===================== */
 #fakeCursor { position: fixed; top: 0; left: 0; z-index: 9000; pointer-events: none; transition: top 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); will-change: transform; }
@@ -147,6 +147,33 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
 .text-slate-300 { color: #cbd5e1; }
 .text-slate-400 { color: #94a3b8; }
 .text-slate-500 { color: #64748b; }
+
+/* ===================== PLAYBACK CONTROL BAR ===================== */
+#controlBar {
+  position: fixed; bottom: 0; left: 0; width: 1920px; height: 48px;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  z-index: 99999; display: flex; align-items: center; padding: 0 16px; gap: 12px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  font-family: 'Inter', sans-serif; user-select: none;
+}
+#controlBar.hidden { opacity: 0; transform: translateY(100%); pointer-events: none; }
+#controlBar button { background: none; border: none; color: #fff; cursor: pointer; padding: 6px; font-size: 18px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: background 0.2s; }
+#controlBar button:hover { background: rgba(255,255,255,0.15); }
+#controlBar .cb-time { font-size: 13px; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 90px; }
+#controlBar .cb-scrubber { flex: 1; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; cursor: pointer; position: relative; overflow: visible; }
+#controlBar .cb-scrubber:hover { height: 6px; }
+#controlBar .cb-scrubber-fill { height: 100%; background: #0ea5e9; border-radius: 2px; pointer-events: none; width: 0%; transition: width 0.1s linear; }
+#controlBar .cb-scrubber-thumb { position: absolute; top: 50%; right: 0; width: 12px; height: 12px; background: #0ea5e9; border-radius: 50%; transform: translate(50%, -50%); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+#controlBar .cb-scrubber:hover .cb-scrubber-thumb { opacity: 1; }
+#controlBar .cb-vol-wrap { display: flex; align-items: center; gap: 6px; }
+#controlBar .cb-vol-slider { width: 70px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; cursor: pointer; position: relative; -webkit-appearance: none; appearance: none; outline: none; }
+#controlBar .cb-vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: #fff; border-radius: 50%; cursor: pointer; }
+#controlBar .cb-vol-slider::-webkit-slider-runnable-track { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+.animations-paused, .animations-paused * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
 </style>
 </head>
 <body>
@@ -158,7 +185,7 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
 </div>
 
 <!-- PROGRESS BAR -->
-<div id="progressBar"></div>
+<!-- old progress bar removed -->
 
 <!-- FAKE CURSOR -->
 <div id="fakeCursor" style="top: 540px; left: 960px; display: none;">
@@ -208,8 +235,8 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
     <div style="display: flex; align-items: center; font-size: 32px; color: #475569; font-weight: 300; opacity: 0;" id="ctaVs">vs</div>
     <div class="cost-card cost-green" id="costAI">
       <div style="font-size: 16px; color: #0ea5e9; margin-bottom: 12px; font-weight: 600;">🤖 Your AI Setter</div>
-      <div style="font-size: 48px; font-weight: 800; color: #38bdf8;">$500</div>
-      <div class="text-slate-400" style="font-size: 16px; margin-bottom: 24px;">/month</div>
+      <div style="font-size: 36px; font-weight: 800; color: #38bdf8;">A fraction of the cost</div>
+      <div class="text-slate-400" style="font-size: 16px; margin-bottom: 24px;"></div>
       <div style="text-align: left; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #94a3b8;">
         <div>⚡ Works 24/7/365</div>
         <div>🚀 23-second avg response</div>
@@ -222,17 +249,7 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
   </div>
   <div style="display: flex; gap: 24px; margin-bottom: 40px; opacity: 0;" id="ctaSavings">
     <div class="glass" style="padding: 20px 36px; border-radius: 14px; text-align: center; border: 1px solid rgba(14,165,233,0.2);">
-      <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Monthly Savings</div>
-      <div style="font-size: 36px; font-weight: 800; color: #4ade80;">$4,000</div>
-    </div>
-    <div class="glass" style="padding: 20px 36px; border-radius: 14px; text-align: center; border: 1px solid rgba(14,165,233,0.2);">
-      <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Annual Savings</div>
-      <div style="font-size: 36px; font-weight: 800; color: #4ade80;">$48,000</div>
-    </div>
-    <div class="glass" style="padding: 20px 36px; border-radius: 14px; text-align: center; border: 1px solid rgba(34,197,94,0.3);">
-      <div style="font-size: 14px; color: #94a3b8; margin-bottom: 6px;">Running 3 Setters</div>
-      <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$162,000</div>
-      <div style="font-size: 12px; color: #64748b;">/year saved</div>
+      <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Same results. Fraction of the cost.</div>
     </div>
   </div>
   <div style="text-align: center; opacity: 0;" id="ctaLogo">
@@ -1164,6 +1181,179 @@ buildLeadCards();
 buildCalendar();
 buildUpcoming();
 buildFollowups();
+
+// ===================== PLAYBACK CONTROL BAR LOGIC =====================
+(function() {
+  let _cbPaused = false;
+  let _cbPauseTime = 0;
+  let _cbPauseOffset = 0; // accumulated pause time
+  let _cbHideTimer = null;
+  let _cbLastVolume = 1;
+  const _cbBar = document.getElementById('controlBar');
+  const _cbPlayPause = document.getElementById('cbPlayPause');
+  const _cbTimeDisplay = document.getElementById('cbTimeDisplay');
+  const _cbScrubberFill = document.getElementById('cbScrubberFill');
+  const _cbScrubberThumb = document.getElementById('cbScrubberThumb');
+  const _cbScrubber = document.getElementById('cbScrubber');
+  const _cbVolSlider = document.getElementById('cbVolSlider');
+  const _cbVolIcon = document.getElementById('cbVolIcon');
+  const _cbRestart = document.getElementById('cbRestart');
+
+  function _cbGetAudio() { return voiceover; }
+  function _cbGetTotal() { return TOTAL_DURATION; }
+
+  function _cbFormatTime(s) {
+    s = Math.max(0, Math.floor(s));
+    return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  }
+
+  function _cbShowBar() {
+    _cbBar.classList.remove('hidden');
+    clearTimeout(_cbHideTimer);
+    _cbHideTimer = setTimeout(() => {
+      if (!_cbPaused) _cbBar.classList.add('hidden');
+    }, 3000);
+  }
+
+  // Mouse movement shows bar
+  document.addEventListener('mousemove', _cbShowBar);
+  document.addEventListener('click', _cbShowBar);
+
+  // Play/Pause
+  _cbPlayPause.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (_cbPaused) {
+      _cbResume();
+    } else {
+      _cbPause();
+    }
+  });
+
+  function _cbPause() {
+    _cbPaused = true;
+    _cbPauseTime = performance.now();
+    _cbPlayPause.textContent = '▶';
+    const a = _cbGetAudio();
+    if (a && !a.paused) a.pause();
+    document.body.classList.add('animations-paused');
+    _cbShowBar();
+  }
+
+  function _cbResume() {
+    _cbPaused = false;
+    if (_cbPauseTime > 0) {
+      _cbPauseOffset += performance.now() - _cbPauseTime;
+    }
+    _cbPauseTime = 0;
+    _cbPlayPause.textContent = '⏸';
+    const a = _cbGetAudio();
+    if (a && a.paused && a.readyState > 0) a.play().catch(() => {});
+    document.body.classList.remove('animations-paused');
+  }
+
+  // Scrubber click
+  _cbScrubber.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const rect = _cbScrubber.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const total = _cbGetTotal();
+    const targetTime = pct * total;
+    const a = _cbGetAudio();
+    if (a) {
+      a.currentTime = targetTime;
+      if (_cbPaused && a.paused) { /* stay paused */ }
+    }
+    // Adjust startTime so progress tracks from this point
+    const now = performance.now();
+    const pauseElapsed = _cbPaused ? (now - _cbPauseTime) : 0;
+    startTime = now - (targetTime * 1000) - _cbPauseOffset - pauseElapsed;
+  });
+
+  // Volume
+  _cbVolSlider.addEventListener('input', (e) => {
+    e.stopPropagation();
+    const v = parseFloat(e.target.value);
+    const a = _cbGetAudio();
+    if (a) a.volume = v;
+    _cbVolIcon.textContent = v === 0 ? '🔇' : v < 0.5 ? '🔉' : '🔊';
+    if (v > 0) _cbLastVolume = v;
+  });
+
+  _cbVolIcon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const a = _cbGetAudio();
+    if (!a) return;
+    if (a.volume > 0) {
+      _cbLastVolume = a.volume;
+      a.volume = 0;
+      _cbVolSlider.value = 0;
+      _cbVolIcon.textContent = '🔇';
+    } else {
+      a.volume = _cbLastVolume;
+      _cbVolSlider.value = _cbLastVolume;
+      _cbVolIcon.textContent = _cbLastVolume < 0.5 ? '🔉' : '🔊';
+    }
+  });
+
+  // Restart
+  _cbRestart.addEventListener('click', (e) => {
+    e.stopPropagation();
+    location.reload();
+  });
+
+  // Update loop
+  function _cbUpdateLoop() {
+    if (startTime > 0) {
+      const now = performance.now();
+      let pauseAccum = _cbPauseOffset;
+      if (_cbPaused && _cbPauseTime > 0) pauseAccum += (now - _cbPauseTime);
+      const elapsed = (now - startTime - pauseAccum) / 1000;
+      const total = _cbGetTotal();
+      const pct = Math.max(0, Math.min(100, (elapsed / total) * 100));
+      _cbScrubberFill.style.width = pct + '%';
+      _cbTimeDisplay.textContent = _cbFormatTime(elapsed) + ' / ' + _cbFormatTime(total);
+    }
+    requestAnimationFrame(_cbUpdateLoop);
+  }
+  requestAnimationFrame(_cbUpdateLoop);
+
+  // Override the original progress bar update - just hide old bar
+  // The control bar scrubber replaces it
+
+  // Expose pause state for animation freezing
+  window._cbIsPaused = () => _cbPaused;
+  window._cbPauseOffset = () => {
+    let po = _cbPauseOffset;
+    if (_cbPaused && _cbPauseTime > 0) po += (performance.now() - _cbPauseTime);
+    return po;
+  };
+
+  // Show control bar when demo starts (delayed to after play button)
+  const _cbObs = new MutationObserver(() => {
+    const playBtn = document.getElementById('playBtn') || document.getElementById('play-btn');
+    if (playBtn && (playBtn.classList.contains('hidden') || playBtn.style.display === 'none')) {
+      _cbBar.classList.remove('hidden');
+      _cbShowBar();
+      _cbObs.disconnect();
+    }
+  });
+  _cbObs.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+})();
 </script>
+
+<!-- Playback Control Bar -->
+<div id="controlBar" class="hidden">
+  <button id="cbRestart" title="Restart">⏮</button>
+  <button id="cbPlayPause" title="Play/Pause">⏸</button>
+  <div class="cb-time" id="cbTimeDisplay">0:00 / 0:00</div>
+  <div class="cb-scrubber" id="cbScrubber">
+    <div class="cb-scrubber-fill" id="cbScrubberFill"></div>
+    <div class="cb-scrubber-thumb" id="cbScrubberThumb"></div>
+  </div>
+  <div class="cb-vol-wrap">
+    <button id="cbVolIcon" title="Mute">🔊</button>
+    <input type="range" class="cb-vol-slider" id="cbVolSlider" min="0" max="1" step="0.05" value="1">
+  </div>
+</div>
 </body>
 </html>
