@@ -268,15 +268,11 @@ function delay(ms) {
 
 function moveCursor(x, y) { cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
 
-function clickAt(x, y) {
-  moveCursor(x, y);
-  return delay(300).then(function() {
-    var r = document.createElement('div');
-    r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid rgba(14,165,233,0.7);pointer-events:none;z-index:8999;animation:rippleOut 0.6s ease forwards;top:'+y+'px;left:'+x+'px;transform:translate(-50%,-50%);';
-    document.body.appendChild(r);
-    setTimeout(function(){ r.remove(); }, 600);
-    return delay(400);
-  });
+function clickEffect(x, y) {
+  var r = document.createElement('div');
+  r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid rgba(14,165,233,0.7);pointer-events:none;z-index:8999;animation:rippleOut 0.6s ease forwards;top:'+y+'px;left:'+x+'px;transform:translate(-50%,-50%);';
+  document.body.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 600);
 }
 
 function showScene(id) {
@@ -289,163 +285,194 @@ function setNavActive(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function animateValue(el, start, end, prefix, suffix, duration) {
+function animateValue(el, start, end, duration) {
   var startTime = null;
-  prefix = prefix || ''; suffix = suffix || '';
   function step(ts) {
     if (!startTime) startTime = ts;
     var progress = Math.min((ts - startTime) / duration, 1);
-    el.textContent = prefix + Math.floor(start + (end - start) * progress).toLocaleString() + suffix;
+    el.textContent = Math.floor(start + (end - start) * progress).toLocaleString();
     if (progress < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
 
-async function startDemo() {
+// Audio-driven scene transitions — no drift possible
+// Each cue fires based on voiceover.currentTime, not accumulated delays
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
   document.getElementById('playBtn').classList.add('hidden');
   document.getElementById('app').style.opacity = '1';
   cursor.style.display = 'block';
   voiceover.play().catch(function(){});
 
-  // Total target: 88.6s to match voiceover exactly
-  // clickAt = 700ms (300 move + 400 ripple)
-
-  // Scene 1: Pain (0-12s) = 12000ms
+  // Start scene 1
   showScene('scene1');
   setNavActive('nav-dash');
-  await delay(1500);
-  document.getElementById('pain1').classList.add('show');
-  moveCursor(600, 400);
-  await delay(2000);
-  document.getElementById('pain2').classList.add('show');
-  moveCursor(960, 400);
-  await delay(2000);
-  document.getElementById('pain3').classList.add('show');
-  moveCursor(1300, 400);
-  await delay(3000);
-  moveCursor(800, 500);
-  await delay(3500);
-  // subtotal: 12000ms ✓
 
-  // Scene 2: Drawing Intake (12-24s) = 12000ms
-  showScene('scene2');
-  setNavActive('nav-est');
-  await clickAt(380, 120);  // 700ms
-  await delay(1000);
-  document.getElementById('ct1').classList.add('show');
-  moveCursor(600, 350);
-  await delay(1500);
-  document.getElementById('ct2').classList.add('show');
-  moveCursor(850, 400);
-  await delay(1500);
-  document.getElementById('ct3').classList.add('show');
-  document.getElementById('sq1').classList.add('show');
-  await delay(1500);
-  document.getElementById('ct4').classList.add('show');
-  document.getElementById('sq2').classList.add('show');
-  moveCursor(1100, 350);
-  await delay(1500);
-  document.getElementById('sq3').classList.add('show');
-  moveCursor(700, 500);
-  await delay(4300);
-  // subtotal: ~12000ms ✓
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // Scene 3: Slab Calculation (24-38s) = 14000ms
-  showScene('scene3');
-  moveCursor(500, 300);
-  await delay(2000);
-  moveCursor(700, 400);
-  await delay(2000);
-  await clickAt(900, 450);  // 700ms
-  await delay(1300);
-  moveCursor(1400, 350);
-  await delay(2000);
-  document.getElementById('remnantViz').style.background = 'rgba(34,197,94,0.25)';
-  document.getElementById('remnantViz').style.borderColor = '#22c55e';
-  moveCursor(1500, 500);
-  await delay(2000);
-  document.getElementById('usableTag').style.transform = 'scale(1.05)';
-  moveCursor(1300, 550);
-  await delay(3300);
-  // subtotal: 2000+2000+700+1300+2000+2000+3300 = 13300ms ≈ 14000ms ✓
+    // === Scene 1: Pain (0-12s) ===
+    cue('pain1', function() { /* immediate */ });
+    if (t >= 1.5) cue('s1-pain1', function() {
+      document.getElementById('pain1').classList.add('show');
+      moveCursor(600, 400);
+    });
+    if (t >= 4) cue('s1-pain2', function() {
+      document.getElementById('pain2').classList.add('show');
+      moveCursor(960, 400);
+    });
+    if (t >= 6.5) cue('s1-pain3', function() {
+      document.getElementById('pain3').classList.add('show');
+      moveCursor(1300, 400);
+    });
+    if (t >= 9) cue('s1-move', function() { moveCursor(800, 500); });
 
-  // Scene 4: Quote Generation (38-50s) = 12000ms
-  showScene('scene4');
-  moveCursor(500, 300);
-  await delay(1200);
-  moveCursor(500, 350);
-  await delay(1000);
-  moveCursor(500, 400);
-  await delay(1000);
-  moveCursor(500, 450);
-  await delay(1000);
-  moveCursor(500, 500);
-  await delay(1000);
-  moveCursor(500, 550);
-  await delay(1200);
-  document.getElementById('pdfBtn').classList.add('show');
-  await clickAt(550, 620);  // 700ms
-  await delay(2000);
-  moveCursor(1300, 500);
-  await delay(2900);
-  // subtotal: ~12000ms ✓
+    // === Scene 2: Drawing Intake (12-24s) ===
+    if (t >= 12) cue('s2-start', function() {
+      showScene('scene2');
+      setNavActive('nav-est');
+      moveCursor(380, 120);
+      clickEffect(380, 120);
+    });
+    if (t >= 13.5) cue('s2-ct1', function() {
+      document.getElementById('ct1').classList.add('show');
+      moveCursor(600, 350);
+    });
+    if (t >= 15.5) cue('s2-ct2', function() {
+      document.getElementById('ct2').classList.add('show');
+      moveCursor(850, 400);
+    });
+    if (t >= 17.5) cue('s2-ct3', function() {
+      document.getElementById('ct3').classList.add('show');
+      document.getElementById('sq1').classList.add('show');
+    });
+    if (t >= 19.5) cue('s2-ct4', function() {
+      document.getElementById('ct4').classList.add('show');
+      document.getElementById('sq2').classList.add('show');
+      moveCursor(1100, 350);
+    });
+    if (t >= 21) cue('s2-sq3', function() {
+      document.getElementById('sq3').classList.add('show');
+      moveCursor(700, 500);
+    });
 
-  // Scene 5: Flooring Quotes (50-58s) = 8000ms
-  showScene('scene5');
-  setNavActive('nav-floor');
-  await clickAt(380, 310);  // 700ms
-  await delay(1000);
-  document.getElementById('fl1').classList.add('selected');
-  await clickAt(700, 400);  // 700ms
-  await delay(800);
-  document.getElementById('fl1').classList.remove('selected');
-  document.getElementById('fl2').classList.add('selected');
-  await clickAt(960, 400);  // 700ms
-  await delay(800);
-  document.getElementById('fl2').classList.remove('selected');
-  document.getElementById('fl1').classList.add('selected');
-  moveCursor(600, 500);
-  await delay(3300);
-  // subtotal: ~8000ms ✓
+    // === Scene 3: Slab Calculation (24-38s) ===
+    if (t >= 24) cue('s3-start', function() {
+      showScene('scene3');
+      moveCursor(500, 300);
+    });
+    if (t >= 26) cue('s3-move1', function() { moveCursor(700, 400); });
+    if (t >= 28) cue('s3-click', function() {
+      moveCursor(900, 450);
+      clickEffect(900, 450);
+    });
+    if (t >= 30) cue('s3-move2', function() { moveCursor(1400, 350); });
+    if (t >= 32) cue('s3-remnant', function() {
+      document.getElementById('remnantViz').style.background = 'rgba(34,197,94,0.25)';
+      document.getElementById('remnantViz').style.borderColor = '#22c55e';
+      moveCursor(1500, 500);
+    });
+    if (t >= 35) cue('s3-usable', function() {
+      document.getElementById('usableTag').style.transform = 'scale(1.05)';
+      moveCursor(1300, 550);
+    });
 
-  // Scene 6: Client Mining (58-72s) = 14000ms
-  showScene('scene6');
-  setNavActive('nav-clients');
-  await clickAt(380, 370);  // 700ms
-  animateValue(document.getElementById('statTotal'), 0, 7500, '', '', 1200);
-  animateValue(document.getElementById('statDev'), 0, 312, '', '', 1200);
-  animateValue(document.getElementById('statHome'), 0, 6840, '', '', 1200);
-  animateValue(document.getElementById('statSent'), 0, 1247, '', '', 1200);
-  await delay(1800);
-  moveCursor(800, 350);
-  await delay(1500);
-  document.getElementById('or1').classList.add('show');
-  await delay(1500);
-  document.getElementById('or2').classList.add('show');
-  moveCursor(900, 450);
-  await delay(1500);
-  document.getElementById('or3').classList.add('show');
-  await delay(1500);
-  document.getElementById('or4').classList.add('show');
-  moveCursor(1000, 550);
-  await delay(2000);
-  moveCursor(800, 400);
-  await delay(3500);
-  // subtotal: ~14000ms ✓
+    // === Scene 4: Quote Generation (38-50s) ===
+    if (t >= 38) cue('s4-start', function() {
+      showScene('scene4');
+      moveCursor(500, 300);
+    });
+    if (t >= 39.5) cue('s4-r1', function() { moveCursor(500, 350); });
+    if (t >= 40.5) cue('s4-r2', function() { moveCursor(500, 400); });
+    if (t >= 41.5) cue('s4-r3', function() { moveCursor(500, 450); });
+    if (t >= 42.5) cue('s4-r4', function() { moveCursor(500, 500); });
+    if (t >= 43.5) cue('s4-r5', function() { moveCursor(500, 550); });
+    if (t >= 45) cue('s4-pdf', function() {
+      document.getElementById('pdfBtn').classList.add('show');
+      moveCursor(550, 620);
+      clickEffect(550, 620);
+    });
+    if (t >= 47) cue('s4-margin', function() { moveCursor(1300, 500); });
 
-  // Scene 7: Close (72-89s) = 16600ms
-  showScene('scene7');
-  cursor.style.display = 'none';
-  await delay(2000);
-  document.getElementById('closePrice').classList.add('show');
-  await delay(2500);
-  document.getElementById('closeLogo').classList.add('show');
-  await delay(2500);
-  document.getElementById('closeTag').classList.add('show');
-  await delay(2500);
-  document.getElementById('closeUrl').classList.add('show');
-  await delay(7100);
-  // subtotal: 2000+2500+2500+2500+7100 = 16600ms ✓
+    // === Scene 5: Flooring Quotes (50-58s) ===
+    if (t >= 50) cue('s5-start', function() {
+      showScene('scene5');
+      setNavActive('nav-floor');
+      moveCursor(380, 310);
+      clickEffect(380, 310);
+    });
+    if (t >= 52) cue('s5-fl1', function() {
+      document.getElementById('fl1').classList.add('selected');
+      moveCursor(700, 400);
+      clickEffect(700, 400);
+    });
+    if (t >= 54) cue('s5-fl2', function() {
+      document.getElementById('fl1').classList.remove('selected');
+      document.getElementById('fl2').classList.add('selected');
+      moveCursor(960, 400);
+      clickEffect(960, 400);
+    });
+    if (t >= 56) cue('s5-fl1b', function() {
+      document.getElementById('fl2').classList.remove('selected');
+      document.getElementById('fl1').classList.add('selected');
+      moveCursor(600, 500);
+    });
+
+    // === Scene 6: Client Mining (58-72s) ===
+    if (t >= 58) cue('s6-start', function() {
+      showScene('scene6');
+      setNavActive('nav-clients');
+      moveCursor(380, 370);
+      clickEffect(380, 370);
+      animateValue(document.getElementById('statTotal'), 0, 7500, 1200);
+      animateValue(document.getElementById('statDev'), 0, 312, 1200);
+      animateValue(document.getElementById('statHome'), 0, 6840, 1200);
+      animateValue(document.getElementById('statSent'), 0, 1247, 1200);
+    });
+    if (t >= 61) cue('s6-or1', function() {
+      document.getElementById('or1').classList.add('show');
+      moveCursor(800, 350);
+    });
+    if (t >= 63) cue('s6-or2', function() {
+      document.getElementById('or2').classList.add('show');
+      moveCursor(900, 450);
+    });
+    if (t >= 65) cue('s6-or3', function() {
+      document.getElementById('or3').classList.add('show');
+    });
+    if (t >= 67) cue('s6-or4', function() {
+      document.getElementById('or4').classList.add('show');
+      moveCursor(1000, 550);
+    });
+    if (t >= 69) cue('s6-settle', function() { moveCursor(800, 400); });
+
+    // === Scene 7: Close (72-89s) ===
+    if (t >= 72) cue('s7-start', function() {
+      showScene('scene7');
+      cursor.style.display = 'none';
+    });
+    if (t >= 74) cue('s7-price', function() {
+      document.getElementById('closePrice').classList.add('show');
+    });
+    if (t >= 77) cue('s7-logo', function() {
+      document.getElementById('closeLogo').classList.add('show');
+    });
+    if (t >= 80) cue('s7-tag', function() {
+      document.getElementById('closeTag').classList.add('show');
+    });
+    if (t >= 83) cue('s7-url', function() {
+      document.getElementById('closeUrl').classList.add('show');
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 </script>
 
