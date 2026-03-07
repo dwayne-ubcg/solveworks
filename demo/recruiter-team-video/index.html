@@ -434,191 +434,231 @@ function fadeIn(el, dur) {
   el.style.transform = 'translateY(0) translateX(0)';
 }
 
-async function startDemo() {
+// Audio-driven cue system
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
   document.getElementById('playBtn').classList.add('hidden');
   voiceover.play().catch(function(){});
   cursor.style.opacity = '1';
 
-  // Scene 1: Sidebar + Main fade in (0-15s)
-  var sidebar = document.getElementById('sidebar');
-  sidebar.style.transition = 'opacity 0.8s ease';
-  sidebar.style.opacity = '1';
-  await delay(400);
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  var main = document.getElementById('main');
-  main.style.transition = 'opacity 0.8s ease';
-  main.style.opacity = '1';
-  await delay(600);
+    // === Scene 1: Sidebar + Main fade in (0-12s) ===
+    // "It's 8 AM in Manila" 0.0s
+    if (t >= 0.2) cue('s1-sidebar', function() {
+      var sidebar = document.getElementById('sidebar');
+      sidebar.style.transition = 'opacity 0.8s ease';
+      sidebar.style.opacity = '1';
+    });
+    if (t >= 0.6) cue('s1-main', function() {
+      var main = document.getElementById('main');
+      main.style.transition = 'opacity 0.8s ease';
+      main.style.opacity = '1';
+    });
+    // "Maria logs into her dashboard" 1.92s
+    if (t >= 1.5) cue('s1-taskqueue', function() {
+      var tq = document.getElementById('taskQueue');
+      tq.style.transition = 'opacity 0.5s ease';
+      tq.style.opacity = '1';
+    });
+    // "Everything she needs" 3.86s - task cards animate
+    if (t >= 3.5) cue('s1-cards', function() {
+      var cards = document.querySelectorAll('.task-card');
+      for (var i = 0; i < cards.length; i++) {
+        (function(el, delay) {
+          setTimeout(function() { fadeIn(el, 400); }, delay);
+        })(cards[i], i * 250);
+      }
+    });
+    // "12 candidates to review" 5.58s
+    if (t >= 5.5) cue('s1-click1', function() {
+      moveCursor(500, 320, 800);
+      clickEffect();
+    });
+    // "three interviews to confirm" 6.9s
+    if (t >= 7) cue('s1-click2', function() {
+      moveCursor(850, 320, 600);
+      clickEffect();
+    });
+    // "two follow-ups overdue" 8.16s
+    if (t >= 8.5) cue('s1-click3', function() {
+      moveCursor(1200, 320, 600);
+      clickEffect();
+    });
 
-  // Task queue cards animate in
-  var tq = document.getElementById('taskQueue');
-  tq.style.transition = 'opacity 0.5s ease';
-  tq.style.opacity = '1';
-  await delay(300);
+    // === Scene 2-3: Candidate cards (12-45s) ===
+    // "While her team slept" 12.62s
+    if (t >= 12.5) cue('s2-section', function() {
+      var cs = document.getElementById('candidateSection');
+      cs.style.transition = 'opacity 0.6s ease';
+      cs.style.opacity = '1';
+    });
+    // "pulled every new job order" 14.1s
+    if (t >= 14) cue('s2-cards', function() {
+      var ccards = document.querySelectorAll('.candidate-card');
+      for (var j = 0; j < ccards.length; j++) {
+        (function(el, delay) {
+          setTimeout(function() { fadeIn(el, 500); }, delay);
+        })(ccards[j], j * 400);
+      }
+    });
+    // "Matching skills" 19.98s
+    if (t >= 20) cue('s2-explore1', function() {
+      moveCursor(480, 560, 800);
+      clickEffect();
+    });
+    // "By morning, each rec" 23.56s
+    if (t >= 23.5) cue('s2-score', function() {
+      moveCursor(600, 500, 500);
+    });
+    // "Maria opens a candidate card" 26.3s
+    if (t >= 26) cue('s2-outreach', function() {
+      moveCursor(480, 720, 600);
+    });
+    // "92% match" 28.64s
+    if (t >= 29) cue('s2-hover2', function() {
+      moveCursor(600, 600, 500);
+    });
+    // "Below it, an AI-drafted outreach" 34.88s
+    if (t >= 35) cue('s2-msg', function() {
+      moveCursor(480, 750, 600);
+    });
+    // "She doesn't write emails anymore" 38.48s
+    if (t >= 38) cue('s2-pre-actions', function() {
+      moveCursor(390, 810, 600);
+    });
 
-  var cards = document.querySelectorAll('.task-card');
-  for (var i = 0; i < cards.length; i++) {
-    fadeIn(cards[i], 400);
-    await delay(250);
-  }
+    // === Scene 4: Click actions (41-55s) ===
+    // "Approve outreach" 41.26s
+    if (t >= 41) cue('s4-approve', function() {
+      moveCursor(390, 810, 700);
+      clickEffect();
+      var approveBtn = document.querySelector('#cc1 .cc-btn.approve');
+      if (approveBtn) {
+        approveBtn.style.background = '#22C55E';
+        approveBtn.textContent = '\u2713 Sent!';
+      }
+    });
+    // "Schedule interview" 42.62s
+    if (t >= 42.6) cue('s4-schedule', function() {
+      moveCursor(750, 810, 600);
+      clickEffect();
+      var schedBtn = document.querySelector('#cc2 .cc-btn.schedule');
+      if (schedBtn) {
+        schedBtn.style.background = '#22C55E';
+        schedBtn.textContent = '\u2713 Scheduled';
+      }
+    });
+    // "Reject with notes" 43.58s
+    if (t >= 44) cue('s4-reject', function() {
+      moveCursor(1250, 810, 600);
+      clickEffect();
+      var rejBtn = document.querySelector('#cc3 .cc-btn.reject');
+      if (rejBtn) {
+        rejBtn.style.background = '#EF4444';
+        rejBtn.style.color = '#fff';
+        rejBtn.textContent = '\u2717 Passed';
+      }
+    });
+    // "Maria makes the decisions" 46.38s
+    if (t >= 46) cue('s4-settle', function() {
+      moveCursor(800, 600, 600);
+    });
 
-  // Cursor moves to task cards
-  await moveCursor(500, 320, 800);
-  clickEffect();
-  await delay(1500);
-  await moveCursor(850, 320, 600);
-  clickEffect();
-  await delay(1500);
-  await moveCursor(1200, 320, 600);
-  clickEffect();
-  await delay(2000);
+    // === Scene 5: Pipeline board (53-65s) ===
+    // "CPAL updates, all automatic" 53.0s
+    if (t >= 53) cue('s5-nav', function() {
+      moveCursor(130, 470, 800);
+      clickEffect();
+    });
+    // "The pipeline board" 56.12s
+    if (t >= 55) cue('s5-switch', function() {
+      document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+      document.querySelectorAll('.nav-item')[2].classList.add('active');
+      document.getElementById('main').style.opacity = '0';
+    });
+    if (t >= 55.5) cue('s5-show', function() {
+      var pipeline = document.getElementById('pipelineSection');
+      pipeline.style.transition = 'opacity 0.6s ease';
+      pipeline.style.opacity = '1';
+      var kcards = pipeline.querySelectorAll('.kanban-card');
+      for (var k = 0; k < kcards.length; k++) {
+        (function(el, delay) {
+          setTimeout(function() { fadeIn(el, 400); }, delay);
+        })(kcards[k], k * 200);
+      }
+    });
+    // "Sourcing, outreach, interview" 60.04s
+    if (t >= 58) cue('s5-scan1', function() { moveCursor(450, 450, 800); });
+    if (t >= 59) cue('s5-scan2', function() { moveCursor(750, 450, 600); });
+    if (t >= 60) cue('s5-scan3', function() { moveCursor(1050, 450, 600); });
+    if (t >= 61) cue('s5-scan4', function() { moveCursor(1350, 450, 600); });
+    if (t >= 62) cue('s5-scan5', function() { moveCursor(1600, 450, 600); });
 
-  // Scene 2-3: Candidate cards (15-45s)
-  var cs = document.getElementById('candidateSection');
-  cs.style.transition = 'opacity 0.6s ease';
-  cs.style.opacity = '1';
-  await delay(400);
-
-  // Animate each candidate card
-  var ccards = document.querySelectorAll('.candidate-card');
-  for (var j = 0; j < ccards.length; j++) {
-    fadeIn(ccards[j], 500);
-    await delay(400);
-  }
-
-  // Cursor explores first candidate
-  await moveCursor(480, 560, 800);
-  clickEffect();
-  await delay(2000);
-
-  // Hover over match score
-  await moveCursor(600, 500, 500);
-  await delay(1500);
-
-  // Hover over outreach
-  await moveCursor(480, 720, 600);
-  await delay(2000);
-
-  // Scene 4: Click actions (45-55s)
-  // Click approve on first card
-  await moveCursor(390, 810, 700);
-  clickEffect();
-  await delay(300);
-  // Flash the button
-  var approveBtn = document.querySelector('#cc1 .cc-btn.approve');
-  if (approveBtn) {
-    approveBtn.style.background = '#22C55E';
-    approveBtn.textContent = '✓ Sent!';
-  }
-  await delay(1500);
-
-  // Click schedule on second
-  await moveCursor(750, 810, 600);
-  clickEffect();
-  await delay(300);
-  var schedBtn = document.querySelector('#cc2 .cc-btn.schedule');
-  if (schedBtn) {
-    schedBtn.style.background = '#22C55E';
-    schedBtn.textContent = '✓ Scheduled';
-  }
-  await delay(1500);
-
-  // Click reject on third
-  await moveCursor(1250, 810, 600);
-  clickEffect();
-  await delay(300);
-  var rejBtn = document.querySelector('#cc3 .cc-btn.reject');
-  if (rejBtn) {
-    rejBtn.style.background = '#EF4444';
-    rejBtn.style.color = '#fff';
-    rejBtn.textContent = '✗ Passed';
-  }
-  await delay(2000);
-
-  // Scene 5: Pipeline board (55-70s)
-  // Click Pipeline nav
-  await moveCursor(130, 470, 800);
-  clickEffect();
-  await delay(400);
-
-  // Switch nav active state
-  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
-  document.querySelectorAll('.nav-item')[2].classList.add('active');
-
-  main.style.opacity = '0';
-  await delay(300);
-
-  var pipeline = document.getElementById('pipelineSection');
-  pipeline.style.transition = 'opacity 0.6s ease';
-  pipeline.style.opacity = '1';
-  await delay(500);
-
-  // Animate kanban cards
-  var kcards = pipeline.querySelectorAll('.kanban-card');
-  for (var k = 0; k < kcards.length; k++) {
-    fadeIn(kcards[k], 400);
-    await delay(200);
-  }
-
-  // Cursor scans across columns
-  await moveCursor(450, 450, 800);
-  await delay(1000);
-  await moveCursor(750, 450, 600);
-  await delay(1000);
-  await moveCursor(1050, 450, 600);
-  await delay(1000);
-  await moveCursor(1350, 450, 600);
-  await delay(1000);
-  await moveCursor(1600, 450, 600);
-  await delay(1500);
-
-  // Scene 6: Leaderboard (70-80s)
-  await moveCursor(130, 510, 700);
-  clickEffect();
-  await delay(400);
-
-  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
-  document.querySelectorAll('.nav-item')[3].classList.add('active');
-
-  pipeline.style.opacity = '0';
-  await delay(300);
-
-  var lb = document.getElementById('leaderboardSection');
-  lb.style.transition = 'opacity 0.6s ease';
-  lb.style.opacity = '1';
-  await delay(400);
-
-  // Animate leaderboard rows
-  var lbRows = lb.querySelectorAll('.lb-row:not(.header)');
-  for (var l = 0; l < lbRows.length; l++) {
-    fadeIn(lbRows[l], 400);
-    await delay(300);
-    // Animate progress bar
-    var fill = lbRows[l].querySelector('.lb-bar-fill');
-    if (fill) {
+    // === Scene 6: Leaderboard (65-78s) ===
+    // "And here's what keeps the team sharp" 65.42s
+    if (t >= 65) cue('s6-nav', function() {
+      moveCursor(130, 510, 700);
+      clickEffect();
+    });
+    if (t >= 65.5) cue('s6-switch', function() {
+      document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+      document.querySelectorAll('.nav-item')[3].classList.add('active');
+      document.getElementById('pipelineSection').style.opacity = '0';
+    });
+    // "A live leaderboard" 67.4s
+    if (t >= 66) cue('s6-show', function() {
+      var lb = document.getElementById('leaderboardSection');
+      lb.style.transition = 'opacity 0.6s ease';
+      lb.style.opacity = '1';
+      var lbRows = lb.querySelectorAll('.lb-row:not(.header)');
       var widths = [70, 60, 50, 30, 20];
-      fill.style.width = widths[l] + '%';
-    }
+      for (var l = 0; l < lbRows.length; l++) {
+        (function(el, w, delay) {
+          setTimeout(function() {
+            fadeIn(el, 400);
+            var fill = el.querySelector('.lb-bar-fill');
+            if (fill) fill.style.width = w + '%';
+          }, delay);
+        })(lbRows[l], widths[l], l * 300);
+      }
+    });
+    // "Placements, response rates" 69.28s
+    if (t >= 70) cue('s6-scan', function() {
+      moveCursor(800, 500, 600);
+    });
+
+    // === Scene 7: CTA (78-86s) ===
+    // "Three placements per month becomes 10" 78.38s
+    if (t >= 78) cue('s7-hide', function() {
+      cursor.style.opacity = '0';
+      document.getElementById('leaderboardSection').style.transition = 'opacity 0.8s ease';
+      document.getElementById('leaderboardSection').style.opacity = '0';
+      document.getElementById('sidebar').style.transition = 'opacity 0.8s ease';
+      document.getElementById('sidebar').style.opacity = '0';
+    });
+    // "Same team, same hours" 81.0s
+    if (t >= 79) cue('s7-cta', function() {
+      var cta = document.getElementById('ctaSection');
+      cta.style.transition = 'opacity 1s ease';
+      cta.style.opacity = '1';
+    });
+    // "Smarter tools" 83.3s
+    if (t >= 80) cue('s7-mult', function() {
+      var mult = document.getElementById('ctaMultiplier');
+      mult.style.transition = 'opacity 0.8s ease';
+      mult.style.opacity = '1';
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
   }
-  await delay(3000);
-
-  // Scene 7: CTA (80-90s)
-  cursor.style.opacity = '0';
-  lb.style.transition = 'opacity 0.8s ease';
-  lb.style.opacity = '0';
-  sidebar.style.transition = 'opacity 0.8s ease';
-  sidebar.style.opacity = '0';
-  await delay(800);
-
-  var cta = document.getElementById('ctaSection');
-  cta.style.transition = 'opacity 1s ease';
-  cta.style.opacity = '1';
-  await delay(500);
-
-  var mult = document.getElementById('ctaMultiplier');
-  mult.style.transition = 'opacity 0.8s ease';
-  mult.style.opacity = '1';
-  await delay(3000);
+  requestAnimationFrame(tick);
 }
 </script>
 

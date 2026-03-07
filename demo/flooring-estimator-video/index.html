@@ -318,7 +318,7 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
 
 <!-- Scene 7: Close -->
 <div class="scene" id="scene7">
-  <div class="close-price">$500/month</div>
+  <div class="close-price" style="display:none">$500/month</div>
   <div class="close-logo">SolveWorks</div>
   <div class="close-url">solveworks.io</div>
   <div class="close-tagline">Your AI. Only yours.</div>
@@ -389,153 +389,184 @@ function animateValue(el, start, end, prefix, suffix, duration) {
   requestAnimationFrame(step);
 }
 
-async function startDemo() {
+// Audio-driven cue system
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
   document.getElementById('playBtn').classList.add('hidden');
   cursor.style.display = 'block';
   moveCursor(960, 540);
-  
   voiceover.play().catch(function(){});
 
-  // Scene 1: Pain (0-12s)
-  showScene('scene1');
-  await delay(500);
-  var painIcon = document.querySelector('#scene1 .pain-icon');
-  painIcon.style.transition = 'opacity 0.8s';
-  painIcon.style.opacity = '1';
-  await delay(600);
-  var painText = document.querySelector('#scene1 .pain-text');
-  painText.style.transition = 'opacity 1s';
-  painText.style.opacity = '1';
-  moveCursor(700, 400);
-  await delay(3000);
-  moveCursor(1100, 500);
-  await delay(3000);
-  moveCursor(900, 600);
-  await delay(4500);
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // Scene 2: Job Intake (12-22s)
-  showScene('scene2');
-  await delay(800);
-  moveCursor(1600, 120);
-  document.getElementById('notif1').classList.add('show');
-  await delay(1500);
-  await clickAt(1500, 140);
-  await delay(1000);
-  document.getElementById('jobCard1').classList.add('show');
-  moveCursor(600, 400);
-  await delay(2000);
-  moveCursor(1000, 450);
-  await delay(2000);
-  moveCursor(400, 500);
-  await delay(2500);
+    // === Scene 1: Pain (0-8.4s) ===
+    // "You spend two hours on every estimate" 0.0s
+    if (t >= 0.3) cue('s1-show', function() {
+      showScene('scene1');
+    });
+    if (t >= 0.8) cue('s1-icon', function() {
+      var painIcon = document.querySelector('#scene1 .pain-icon');
+      if (painIcon) { painIcon.style.transition = 'opacity 0.8s'; painIcon.style.opacity = '1'; }
+    });
+    // "Measuring pricing materials" 3.08s
+    if (t >= 1.5) cue('s1-text', function() {
+      var painText = document.querySelector('#scene1 .pain-text');
+      if (painText) { painText.style.transition = 'opacity 1s'; painText.style.opacity = '1'; }
+      moveCursor(700, 400);
+    });
+    // "calculating waste" 4.46s
+    if (t >= 4.5) cue('s1-scan1', function() {
+      moveCursor(1100, 500);
+    });
+    // "typing up quotes" 5.74s
+    if (t >= 6.5) cue('s1-scan2', function() {
+      moveCursor(900, 600);
+    });
 
-  // Scene 3: Auto-Measurement (22-38s)
-  showScene('scene3');
-  await delay(800);
-  moveCursor(400, 350);
-  await delay(2000);
-  await clickAt(350, 520);
-  await delay(1500);
-  moveCursor(600, 580);
-  await delay(2000);
-  moveCursor(1200, 350);
-  await delay(2000);
-  await clickAt(1300, 520);
-  await delay(1500);
-  moveCursor(1400, 600);
-  await delay(2000);
-  moveCursor(960, 540);
-  await delay(3000);
+    // === Scene 2: Job Intake (8.4-22s) ===
+    // "A new request comes in" 8.44s
+    if (t >= 8.3) cue('s2-show', function() {
+      showScene('scene2');
+    });
+    // "Kitchen flooring" 10.18s
+    if (t >= 9.5) cue('s2-notif', function() {
+      moveCursor(1600, 120);
+      document.getElementById('notif1').classList.add('show');
+    });
+    if (t >= 10.5) cue('s2-click', function() {
+      clickAt(1500, 140);
+    });
+    // "Your AI pulls up the job details" 12.24s
+    if (t >= 11.5) cue('s2-jobcard', function() {
+      document.getElementById('jobCard1').classList.add('show');
+      moveCursor(600, 400);
+    });
+    // "Room dimensions go in" 15.82s
+    if (t >= 14) cue('s2-scan1', function() { moveCursor(1000, 450); });
+    if (t >= 16) cue('s2-scan2', function() { moveCursor(400, 500); });
 
-  // Scene 4: Material Pricing (38-52s)
-  showScene('scene4');
-  await delay(800);
-  moveCursor(300, 350);
-  await delay(1500);
-  await clickAt(300, 320);
-  document.getElementById('mat1').classList.add('selected');
-  await delay(1500);
-  moveCursor(700, 350);
-  await delay(1000);
-  await clickAt(960, 320);
-  document.getElementById('mat1').classList.remove('selected');
-  document.getElementById('mat2').classList.add('selected');
-  await delay(1200);
-  await clickAt(300, 320);
-  document.getElementById('mat2').classList.remove('selected');
-  document.getElementById('mat1').classList.add('selected');
-  await delay(1200);
-  moveCursor(500, 700);
-  await delay(1000);
-  await clickAt(500, 680);
-  document.getElementById('mat4').classList.add('selected');
-  await delay(1500);
-  moveCursor(1200, 700);
-  await delay(1500);
-  moveCursor(960, 540);
-  await delay(2000);
+    // === Scene 3: Auto-Measurement (22-38s) ===
+    // "Your AI calculates 185 square feet" 17.32s
+    // But script says scene at 22s - use "24 linear feet" at 22.1s
+    if (t >= 18) cue('s3-show', function() {
+      showScene('scene3');
+    });
+    if (t >= 19) cue('s3-scan1', function() { moveCursor(400, 350); });
+    // "with waste factored in" 20.44s
+    if (t >= 21) cue('s3-click1', function() { clickAt(350, 520); });
+    if (t >= 22.5) cue('s3-scan2', function() { moveCursor(600, 580); });
+    // "No tape measure math" 24.32s
+    if (t >= 24) cue('s3-scan3', function() { moveCursor(1200, 350); });
+    if (t >= 26) cue('s3-click2', function() { clickAt(1300, 520); });
+    // "Current pricing pulls" 26.92s
+    if (t >= 27.5) cue('s3-scan4', function() { moveCursor(1400, 600); });
+    if (t >= 29) cue('s3-center', function() { moveCursor(960, 540); });
 
-  // Scene 5: Quote Generation (52-68s)
-  showScene('scene5');
-  await delay(800);
-  moveCursor(400, 300);
-  await delay(1500);
-  moveCursor(400, 400);
-  await delay(1500);
-  moveCursor(400, 500);
-  await delay(1500);
-  moveCursor(400, 600);
-  await delay(1500);
-  moveCursor(400, 680);
-  await delay(1500);
-  await clickAt(1350, 550);
-  await delay(2000);
-  moveCursor(1350, 650);
-  await delay(2000);
-  moveCursor(960, 540);
-  await delay(3500);
+    // === Scene 4: Material Pricing (30-43s) ===
+    // "Hardwood at 850" 28.22s -> use ~30s
+    if (t >= 30) cue('s4-show', function() {
+      showScene('scene4');
+    });
+    // "Quartz at 85" 30.72s
+    if (t >= 31) cue('s4-scan1', function() { moveCursor(300, 350); });
+    if (t >= 32) cue('s4-click1', function() {
+      clickAt(300, 320);
+      var m1 = document.getElementById('mat1');
+      if (m1) m1.classList.add('selected');
+    });
+    // "Your customer sees options" 32.76s
+    if (t >= 33.5) cue('s4-scan2', function() { moveCursor(700, 350); });
+    if (t >= 34.5) cue('s4-click2', function() {
+      clickAt(960, 320);
+      var m1 = document.getElementById('mat1');
+      if (m1) m1.classList.remove('selected');
+      var m2 = document.getElementById('mat2');
+      if (m2) m2.classList.add('selected');
+    });
+    if (t >= 35.5) cue('s4-click3', function() {
+      clickAt(300, 320);
+      var m2 = document.getElementById('mat2');
+      if (m2) m2.classList.remove('selected');
+      var m1b = document.getElementById('mat1');
+      if (m1b) m1b.classList.add('selected');
+    });
+    // "Full quote assembled" 36.42s
+    if (t >= 36.5) cue('s4-scan3', function() { moveCursor(500, 700); });
+    if (t >= 37.5) cue('s4-click4', function() {
+      clickAt(500, 680);
+      var m4 = document.getElementById('mat4');
+      if (m4) m4.classList.add('selected');
+    });
+    // "Materials, labor, total" 38.36s
+    if (t >= 39) cue('s4-scan4', function() { moveCursor(1200, 700); });
+    if (t >= 40) cue('s4-center', function() { moveCursor(960, 540); });
 
-  // Scene 6: Job Tracking (68-82s)
-  showScene('scene6');
-  await delay(600);
-  animateValue(document.getElementById('statActive'), 0, 12, '', '', 1000);
-  animateValue(document.getElementById('statWin'), 0, 68, '', '%', 1000);
-  animateValue(document.getElementById('statAvg'), 0, 4200, '$', '', 1000);
-  animateValue(document.getElementById('statMonth'), 0, 28500, '$', '', 1000);
-  moveCursor(300, 250);
-  await delay(1500);
-  moveCursor(700, 250);
-  await delay(1500);
-  moveCursor(1100, 250);
-  await delay(1500);
-  moveCursor(1500, 250);
-  await delay(1500);
-  moveCursor(600, 500);
-  await delay(2000);
-  moveCursor(900, 600);
-  await delay(2000);
-  moveCursor(960, 540);
-  await delay(2000);
+    // === Scene 5: Quote Generation (40-52s) ===
+    // "A professional PDF" 40.3s
+    if (t >= 40.5) cue('s5-show', function() {
+      showScene('scene5');
+    });
+    // "with your branding" 42.3s
+    if (t >= 41.5) cue('s5-scan1', function() { moveCursor(400, 300); });
+    // "In 10 minutes" 43.56s
+    if (t >= 43) cue('s5-scan2', function() { moveCursor(400, 400); });
+    if (t >= 44.5) cue('s5-scan3', function() { moveCursor(400, 500); });
+    if (t >= 46) cue('s5-scan4', function() { moveCursor(400, 600); });
+    if (t >= 47.5) cue('s5-scan5', function() { moveCursor(400, 680); });
+    // "Win rate, average job value" 47.9s
+    if (t >= 49) cue('s5-click', function() { clickAt(1350, 550); });
+    // "upcoming installs" 49.76s
+    if (t >= 50.5) cue('s5-scan6', function() { moveCursor(1350, 650); });
+    if (t >= 52) cue('s5-center', function() { moveCursor(960, 540); });
 
-  // Scene 7: Close (82-90s)
-  showScene('scene7');
-  await delay(500);
-  cursor.style.display = 'none';
-  var cp = document.querySelector('.close-price');
-  cp.style.transition = 'opacity 0.8s';
-  cp.style.opacity = '1';
-  await delay(600);
-  var cl = document.querySelector('.close-logo');
-  cl.style.transition = 'opacity 1s';
-  cl.style.opacity = '1';
-  await delay(600);
-  var cu = document.querySelector('.close-url');
-  cu.style.transition = 'opacity 0.8s';
-  cu.style.opacity = '1';
-  await delay(600);
-  var ct = document.querySelector('.close-tagline');
-  ct.style.transition = 'opacity 0.8s';
-  ct.style.opacity = '1';
+    // === Scene 6: Job Tracking (52-60s) ===
+    // "You\'re spending 15 hours" 52.94s
+    if (t >= 52.5) cue('s6-show', function() {
+      showScene('scene6');
+      animateValue(document.getElementById('statActive'), 0, 12, '', '', 1000);
+      animateValue(document.getElementById('statWin'), 0, 68, '', '%', 1000);
+      animateValue(document.getElementById('statAvg'), 0, 4200, '$', '', 1000);
+      animateValue(document.getElementById('statMonth'), 0, 28500, '$', '', 1000);
+    });
+    // "Your AI does it in minutes" 55.48s
+    if (t >= 53.5) cue('s6-scan1', function() { moveCursor(300, 250); });
+    if (t >= 54.5) cue('s6-scan2', function() { moveCursor(700, 250); });
+    if (t >= 55.5) cue('s6-scan3', function() { moveCursor(1100, 250); });
+    if (t >= 56.5) cue('s6-scan4', function() { moveCursor(1500, 250); });
+    // "More quotes out the door" 56.86s
+    if (t >= 57.5) cue('s6-scan5', function() { moveCursor(600, 500); });
+    if (t >= 58.5) cue('s6-scan6', function() { moveCursor(900, 600); });
+    if (t >= 59.5) cue('s6-center', function() { moveCursor(960, 540); });
+
+    // === Scene 7: Close (60-66s) ===
+    // "Your AI, only yours" 59.92s
+    if (t >= 60) cue('s7-show', function() {
+      showScene('scene7');
+      cursor.style.display = 'none';
+    });
+    if (t >= 60.5) cue('s7-logo', function() {
+      var cl = document.querySelector('.close-logo');
+      if (cl) { cl.style.transition = 'opacity 1s'; cl.style.opacity = '1'; }
+    });
+    // "See it live" 61.88s
+    if (t >= 61.5) cue('s7-url', function() {
+      var cu = document.querySelector('.close-url');
+      if (cu) { cu.style.transition = 'opacity 0.8s'; cu.style.opacity = '1'; }
+    });
+    if (t >= 62.5) cue('s7-tag', function() {
+      var ct = document.querySelector('.close-tagline');
+      if (ct) { ct.style.transition = 'opacity 0.8s'; ct.style.opacity = '1'; }
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 </script>
 

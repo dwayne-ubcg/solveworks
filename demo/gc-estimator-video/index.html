@@ -352,133 +352,157 @@ function animateTradeCards() {
   });
 }
 
-async function startDemo() {
+// Audio-driven cue system
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
   document.getElementById('playBtn').classList.add('hidden');
   cursor.style.display = 'block';
   moveCursor(960, 540);
-  
   voiceover.play().catch(function(){});
 
-  // Scene 1: Pain (0-12s)
-  showScene('scene1');
-  await delay(500);
-  var painIcon = document.querySelector('#scene1 .pain-icon');
-  painIcon.style.transition = 'opacity 0.8s';
-  painIcon.style.opacity = '1';
-  await delay(600);
-  var painText = document.querySelector('#scene1 .pain-text');
-  painText.style.transition = 'opacity 1s';
-  painText.style.opacity = '1';
-  moveCursor(700, 400);
-  await delay(3000);
-  moveCursor(1100, 500);
-  await delay(3000);
-  moveCursor(900, 600);
-  await delay(4500);
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // Scene 2: Plan Intake (12-22s)
-  showScene('scene2');
-  await delay(600);
-  document.getElementById('projCard').classList.add('show');
-  moveCursor(500, 300);
-  await delay(2000);
-  moveCursor(900, 400);
-  await delay(2000);
-  await clickAt(960, 600);
-  await delay(2000);
-  moveCursor(600, 700);
-  await delay(3500);
+    // === Scene 1: Pain (0-11s) ===
+    // "A full build estimate takes days" 0.0s
+    if (t >= 0.3) cue('s1-show', function() {
+      showScene('scene1');
+    });
+    if (t >= 0.8) cue('s1-icon', function() {
+      var painIcon = document.querySelector('#scene1 .pain-icon');
+      if (painIcon) { painIcon.style.transition = 'opacity 0.8s'; painIcon.style.opacity = '1'; }
+    });
+    // "Electrical, plumbing" 2.82s
+    if (t >= 1.5) cue('s1-text', function() {
+      var painText = document.querySelector('#scene1 .pain-text');
+      if (painText) { painText.style.transition = 'opacity 1s'; painText.style.opacity = '1'; }
+      moveCursor(700, 400);
+    });
+    // "You\'re coordinating eight trades" 5.6s
+    if (t >= 4.5) cue('s1-scan1', function() {
+      moveCursor(1100, 500);
+    });
+    // "One missed line item" 8.34s
+    if (t >= 7.5) cue('s1-scan2', function() {
+      moveCursor(900, 600);
+    });
 
-  // Scene 3: Multi-Trade Takeoff (22-42s)
-  showScene('scene3');
-  await delay(600);
-  animateTradeCards();
-  moveCursor(400, 300);
-  await delay(2000);
-  moveCursor(1200, 300);
-  await delay(2000);
-  moveCursor(400, 500);
-  await delay(2000);
-  moveCursor(1200, 500);
-  await delay(2000);
-  moveCursor(400, 700);
-  await delay(2000);
-  moveCursor(1200, 700);
-  await delay(2000);
-  moveCursor(800, 800);
-  await delay(2000);
-  moveCursor(960, 540);
-  await delay(3500);
+    // === Scene 2: Plan Intake (11-22s) ===
+    // "New project uploaded" 11.22s
+    if (t >= 11) cue('s2-show', function() {
+      showScene('scene2');
+    });
+    // "3,500 square foot residential build" 12.38s
+    if (t >= 12) cue('s2-card', function() {
+      document.getElementById('projCard').classList.add('show');
+      moveCursor(500, 300);
+    });
+    // "Your AI reads the plans" 14.48s
+    if (t >= 14.5) cue('s2-scan1', function() {
+      moveCursor(900, 400);
+    });
+    // "and starts the takeoff" 16.2s
+    if (t >= 16.5) cue('s2-click', function() {
+      clickAt(960, 600);
+    });
+    // "Every trade broken down" 17.44s
+    if (t >= 18) cue('s2-scan2', function() {
+      moveCursor(600, 700);
+    });
 
-  // Scene 4: Sub Bid Tracking (42-55s)
-  showScene('scene4');
-  await delay(800);
-  moveCursor(400, 350);
-  await delay(2000);
-  moveCursor(800, 400);
-  await delay(1500);
-  moveCursor(1200, 450);
-  await delay(1500);
-  // Hover over flagged row
-  await clickAt(1100, 430);
-  await delay(2000);
-  moveCursor(600, 550);
-  await delay(2000);
-  moveCursor(960, 600);
-  await delay(3000);
+    // === Scene 3: Multi-Trade Takeoff (22-42s) ===
+    // "Concrete, framing, electrical, plumbing" 19.7s - but scene says 22s
+    // Let's use ~21s based on "Material quantities" at 24s
+    if (t >= 21.5) cue('s3-show', function() {
+      showScene('scene3');
+      animateTradeCards();
+    });
+    // "Material quantities and labor estimates" 24.0s
+    if (t >= 23) cue('s3-scan1', function() { moveCursor(400, 300); });
+    if (t >= 25) cue('s3-scan2', function() { moveCursor(1200, 300); });
+    // "What used to take" 26.34s
+    if (t >= 27) cue('s3-scan3', function() { moveCursor(400, 500); });
+    if (t >= 29) cue('s3-scan4', function() { moveCursor(1200, 500); });
+    // "Subcontractor bids tracked" 30.5s
+    if (t >= 31) cue('s3-scan5', function() { moveCursor(400, 700); });
+    if (t >= 33) cue('s3-scan6', function() { moveCursor(1200, 700); });
+    if (t >= 35) cue('s3-scan7', function() { moveCursor(800, 800); });
+    if (t >= 37) cue('s3-scan8', function() { moveCursor(960, 540); });
 
-  // Scene 5: Cost Assembly (55-70s)
-  showScene('scene5');
-  await delay(800);
-  moveCursor(400, 300);
-  await delay(1500);
-  moveCursor(400, 380);
-  await delay(1200);
-  moveCursor(400, 450);
-  await delay(1200);
-  moveCursor(400, 520);
-  await delay(1200);
-  moveCursor(400, 590);
-  await delay(1200);
-  moveCursor(400, 700);
-  await delay(1500);
-  // Look at margin
-  moveCursor(1400, 400);
-  await delay(2000);
-  moveCursor(1400, 550);
-  await delay(2000);
-  moveCursor(960, 540);
-  await delay(3000);
+    // === Scene 4: Sub Bid Tracking (38.5-55s) ===
+    // "No more overpaying" 38.56s
+    if (t >= 38.5) cue('s4-show', function() {
+      showScene('scene4');
+    });
+    if (t >= 39.5) cue('s4-scan1', function() { moveCursor(400, 350); });
+    // "Full estimate assembled" 41.04s
+    if (t >= 41) cue('s4-scan2', function() { moveCursor(800, 400); });
+    // "Materials, labor, subs" 42.92s
+    if (t >= 43) cue('s4-scan3', function() { moveCursor(1200, 450); });
+    // "Line items per trade" 45.6s
+    if (t >= 45) cue('s4-click', function() { clickAt(1100, 430); });
+    if (t >= 47) cue('s4-scan4', function() { moveCursor(600, 550); });
+    if (t >= 49) cue('s4-scan5', function() { moveCursor(960, 600); });
 
-  // Scene 6: Import/Logistics (70-80s)
-  showScene('scene6');
-  await delay(800);
-  moveCursor(300, 400);
-  await delay(2000);
-  moveCursor(960, 400);
-  await delay(2000);
-  moveCursor(1500, 400);
-  await delay(2000);
-  moveCursor(1500, 600);
-  await delay(2000);
-  moveCursor(960, 540);
-  await delay(2500);
+    // === Scene 5: Cost Assembly (52-62s) ===
+    // "Import costs, duty calculations" 52.16s
+    if (t >= 52) cue('s5-show', function() {
+      showScene('scene5');
+    });
+    if (t >= 53) cue('s5-scan1', function() { moveCursor(400, 300); });
+    // "and shipping timelines" 54.22s
+    if (t >= 54.5) cue('s5-scan2', function() { moveCursor(400, 380); });
+    // "No spreadsheet" 57.04s
+    if (t >= 56) cue('s5-scan3', function() { moveCursor(400, 450); });
+    if (t >= 57.5) cue('s5-scan4', function() { moveCursor(400, 520); });
+    // "A detailed estimate" 59.22s
+    if (t >= 59) cue('s5-scan5', function() { moveCursor(400, 590); });
+    if (t >= 60) cue('s5-scan6', function() { moveCursor(400, 700); });
+    // "Your AI does the first pass" 62.76s
+    if (t >= 61) cue('s5-margin1', function() { moveCursor(1400, 400); });
+    if (t >= 63) cue('s5-margin2', function() { moveCursor(1400, 550); });
+    if (t >= 64.5) cue('s5-center', function() { moveCursor(960, 540); });
 
-  // Scene 7: Close (80-90s)
-  showScene('scene7');
-  await delay(500);
-  cursor.style.display = 'none';
-  var cl = document.querySelector('.close-logo');
-  cl.style.transition = 'opacity 1s';
-  cl.style.opacity = '1';
-  await delay(700);
-  var cu = document.querySelector('.close-url');
-  cu.style.transition = 'opacity 0.8s';
-  cu.style.opacity = '1';
-  await delay(700);
-  var ct = document.querySelector('.close-tagline');
-  ct.style.transition = 'opacity 0.8s';
-  ct.style.opacity = '1';
+    // === Scene 6: Import/Logistics (65-72s) ===
+    // "You review, adjust, and send" 65.48s
+    if (t >= 65) cue('s6-show', function() {
+      showScene('scene6');
+    });
+    if (t >= 65.5) cue('s6-scan1', function() { moveCursor(300, 400); });
+    // "More bids, better accuracy" 67.92s
+    if (t >= 67.5) cue('s6-scan2', function() { moveCursor(960, 400); });
+    if (t >= 69) cue('s6-scan3', function() { moveCursor(1500, 400); });
+    if (t >= 70) cue('s6-scan4', function() { moveCursor(1500, 600); });
+    // "Your AI, only yours" 71.22s
+    if (t >= 71) cue('s6-scan5', function() { moveCursor(960, 540); });
+
+    // === Scene 7: Close (72.8-75.5s) ===
+    // "See it live" 73.36s
+    if (t >= 72.5) cue('s7-show', function() {
+      showScene('scene7');
+      cursor.style.display = 'none';
+    });
+    if (t >= 73) cue('s7-logo', function() {
+      var cl = document.querySelector('.close-logo');
+      if (cl) { cl.style.transition = 'opacity 1s'; cl.style.opacity = '1'; }
+    });
+    if (t >= 73.7) cue('s7-url', function() {
+      var cu = document.querySelector('.close-url');
+      if (cu) { cu.style.transition = 'opacity 0.8s'; cu.style.opacity = '1'; }
+    });
+    if (t >= 74.4) cue('s7-tag', function() {
+      var ct = document.querySelector('.close-tagline');
+      if (ct) { ct.style.transition = 'opacity 0.8s'; ct.style.opacity = '1'; }
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 </script>
 

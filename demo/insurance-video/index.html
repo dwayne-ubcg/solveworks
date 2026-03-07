@@ -790,15 +790,17 @@ function buildGaps() {
   });
 }
 
-// ================================================================
-// CHOREOGRAPHY — THE FULL 90-SECOND PERFORMANCE
-// ================================================================
+
+// Audio-driven scene transitions — no drift possible
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
 function startPresentation() {
   document.getElementById('playBtn').classList.add('hidden');
-  // controls handled by simple tap-to-pause
   startTime = performance.now();
-  voiceover.play().catch(() => {});
-  requestAnimationFrame(updateProgress);
+  voiceover.play().catch(function(){});
 
   // Pre-build all scenes
   buildLeads();
@@ -808,308 +810,268 @@ function startPresentation() {
   buildRenewals(R30, 's3-col30');
   buildGaps();
 
-  // ========================
-  // SCENE 0: HOOK (0-8s)
-  // ========================
-  showScene(0);
-  at(0.5, () => {
-    const h = document.getElementById('s0-hook');
-    h.style.transition = 'opacity 1s ease';
-    h.style.opacity = '1';
-  });
-  at(5.5, () => {
-    document.getElementById('s0-hook').style.opacity = '0';
-  });
-  at(6.5, () => {
-    const l = document.getElementById('s0-logo');
-    l.style.transition = 'opacity 1s ease';
-    l.style.opacity = '1';
-  });
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // ========================
-  // SCENE 1: LEADS (8-22s)
-  // ========================
-  at(8, () => {
-    showScene(1);
-    showCursor();
-    moveCursor(960, 100, 0.01); // start off-center
-  });
-
-  // Cursor moves to Leads sidebar (already active but let's show the click)
-  at(8.5, () => moveCursor(125, 135, 0.5));
-  at(9.2, () => clickAt(125, 135));
-
-  // Counter and source bars animate
-  at(9, () => {
-    animateCounter(document.getElementById('s1-counter'), 34, 2000);
-    setTimeout(() => {
-      document.getElementById('s1-src1').style.width = '42%';
-      document.getElementById('s1-src2').style.width = '28%';
-      document.getElementById('s1-src3').style.width = '18%';
-      document.getElementById('s1-src4').style.width = '12%';
-    }, 500);
-  });
-
-  // Leads appear one by one
-  at(9.5, () => document.getElementById('lead-0').classList.add('visible'));
-  at(10.5, () => document.getElementById('lead-1').classList.add('visible'));
-  at(11.5, () => document.getElementById('lead-2').classList.add('visible'));
-  at(12.5, () => document.getElementById('lead-3').classList.add('visible'));
-  at(13.5, () => document.getElementById('lead-4').classList.add('visible'));
-  at(14.5, () => document.getElementById('lead-5').classList.add('visible'));
-
-  // Routing log entries
-  LEADS.forEach((l, i) => {
-    at(10 + i * 1, () => {
-      const r = document.getElementById('s1-routing');
-      const e = document.createElement('div');
-      e.style.cssText = 'padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:0;transition:opacity 0.4s;';
-      e.innerHTML = `<div style="color:#4ade80;font-size:11px;">✓ ${l.time}</div><div style="color:#cbd5e1;font-size:12px;margin-top:2px;">${l.name} → ${l.route}</div>`;
-      r.appendChild(e);
-      setTimeout(() => e.style.opacity = '1', 50);
+    // === HOOK (0-9s) ===
+    // "847 policies renew next month" 0.0s
+    if (t >= 0.5) cue('hook-show', function() {
+      showScene(0);
+      var h = document.getElementById('s0-hook');
+      h.style.transition = 'opacity 1s ease';
+      h.style.opacity = '1';
     });
-  });
-
-  // Cursor hovers over first lead card
-  at(15, () => moveCursor(600, 340, 0.6));
-  at(15.7, () => hoverEl(document.getElementById('lead-0')));
-  
-  // Click to expand lead detail
-  at(16.5, () => {
-    clickAt(600, 340);
-    clickEl(document.getElementById('lead-0'));
-    document.getElementById('lead-detail-0').classList.add('open');
-  });
-
-  // Cursor moves down to another card
-  at(18, () => {
-    unhoverEl(document.getElementById('lead-0'));
-    moveCursor(600, 500, 0.5);
-  });
-  at(18.6, () => hoverEl(document.getElementById('lead-2')));
-
-  // Cursor moves to Quotes sidebar to transition
-  at(20, () => {
-    unhoverEl(document.getElementById('lead-2'));
-    moveCursor(125, 220, 0.6);
-  });
-  at(20.8, () => {
-    const items = document.querySelectorAll('#sidebar1 .sidebar-item');
-    items.forEach(el => el.classList.remove('active'));
-    items[3].classList.add('hovered');
-  });
-  at(21.2, () => {
-    clickAt(125, 220);
-  });
-
-  // ========================
-  // SCENE 2: QUOTES (22-38s)
-  // ========================
-  at(22, () => {
-    showScene(2);
-    moveCursor(700, 200, 0.01);
-  });
-
-  // Header fades in
-  at(22.5, () => {
-    const h = document.getElementById('s2-header');
-    h.style.transition = 'opacity 0.6s ease';
-    h.style.opacity = '1';
-  });
-
-  // Show quoting indicator
-  at(23, () => {
-    const q = document.getElementById('s2-quoting');
-    q.style.transition = 'opacity 0.4s';
-    q.style.opacity = '1';
-  });
-
-  // Quote rows appear one by one with cursor tracking
-  at(24.5, () => {
-    document.getElementById('s2-quoting').style.opacity = '0';
-    document.getElementById('s2-speed').textContent = 'Quoted in 4.2 seconds';
-  });
-  at(25, () => { document.getElementById('qrow-0').classList.add('visible'); moveCursor(700, 370, 0.4); });
-  at(26, () => { document.getElementById('qrow-1').classList.add('visible'); moveCursor(700, 415, 0.4); });
-  at(27, () => { document.getElementById('qrow-2').classList.add('visible'); moveCursor(700, 460, 0.4); });
-  at(28, () => { document.getElementById('qrow-3').classList.add('visible'); moveCursor(700, 505, 0.4); });
-  at(29, () => { document.getElementById('qrow-4').classList.add('visible'); });
-
-  // Cursor hovers recommended row
-  at(30, () => moveCursor(700, 415, 0.6));
-  at(30.7, () => document.getElementById('qrow-1').classList.add('hovered'));
-  at(31.5, () => {
-    clickAt(700, 415);
-    document.getElementById('qrow-1').classList.remove('hovered');
-  });
-
-  // AI Recommendation slides in
-  at(32, () => {
-    const r = document.getElementById('s2-rec');
-    r.style.transition = 'opacity 0.8s ease';
-    r.style.opacity = '1';
-  });
-
-  // Cursor moves to Generate Proposal button
-  at(34, () => moveCursor(1540, 752, 0.7));
-  at(34.8, () => document.getElementById('s2-btn').classList.add('hovered'));
-  at(35.5, () => {
-    clickAt(1540, 752);
-    document.getElementById('s2-btn').classList.remove('hovered');
-    document.getElementById('s2-btn').innerHTML = '✓ Proposal Sent';
-    document.getElementById('s2-btn').style.background = '#22c55e';
-  });
-
-  // Cursor moves to Renewals sidebar
-  at(36.5, () => moveCursor(125, 178, 0.6));
-  at(37.2, () => clickAt(125, 178));
-
-  // ========================
-  // SCENE 3: RENEWALS (38-55s)
-  // ========================
-  at(38, () => {
-    showScene(3);
-    moveCursor(960, 200, 0.01);
-  });
-
-  // Counters
-  at(38.5, () => animateCounter(document.getElementById('s3-total'), 847, 2000));
-  at(39.5, () => animateCounter(document.getElementById('s3-requote'), 23, 1500));
-
-  // Pipeline cards appear staggered across columns
-  at(39, () => document.getElementById('s3-col90-card-0')?.classList.add('visible'));
-  at(39.5, () => document.getElementById('s3-col60-card-0')?.classList.add('visible'));
-  at(40, () => document.getElementById('s3-col30-card-0')?.classList.add('visible'));
-  at(40.5, () => document.getElementById('s3-col90-card-1')?.classList.add('visible'));
-  at(41, () => document.getElementById('s3-col60-card-1')?.classList.add('visible'));
-  at(41.5, () => document.getElementById('s3-col30-card-1')?.classList.add('visible'));
-  at(42, () => document.getElementById('s3-col90-card-2')?.classList.add('visible'));
-  at(42.5, () => document.getElementById('s3-col60-card-2')?.classList.add('visible'));
-  at(43, () => document.getElementById('s3-col30-card-2')?.classList.add('visible'));
-  at(43.5, () => document.getElementById('s3-col90-card-3')?.classList.add('visible'));
-  at(44, () => document.getElementById('s3-col60-card-3')?.classList.add('visible'));
-  at(44.5, () => document.getElementById('s3-col30-card-3')?.classList.add('visible'));
-  at(45, () => document.getElementById('s3-col30-card-4')?.classList.add('visible'));
-
-  // Cursor scans the 90-day column
-  at(40, () => moveCursor(440, 330, 0.7));
-  at(41, () => moveCursor(440, 430, 0.6));
-
-  // Cursor moves to 60-day column
-  at(42.5, () => moveCursor(820, 350, 0.7));
-  at(43.5, () => hoverEl(document.getElementById('s3-col60-card-1')));
-
-  // Cursor moves to 30-day column - the at-risk area
-  at(45, () => {
-    unhoverEl(document.getElementById('s3-col60-card-1'));
-    moveCursor(1200, 330, 0.7);
-  });
-
-  // Hover and click the re-quote card
-  at(46, () => hoverEl(document.getElementById('s3-col30-card-0')));
-  at(47, () => {
-    clickAt(1200, 330);
-    clickEl(document.getElementById('s3-col30-card-0'));
-    document.getElementById('s3-col30-rq-0')?.classList.add('open');
-  });
-
-  // Cursor scrolls down to see more 30-day renewals
-  at(49, () => {
-    unhoverEl(document.getElementById('s3-col30-card-0'));
-    moveCursor(1200, 550, 0.7);
-  });
-  at(50, () => hoverEl(document.getElementById('s3-col30-card-2')));
-
-  // Move to cross-sell sidebar
-  at(52.5, () => {
-    unhoverEl(document.getElementById('s3-col30-card-2'));
-    moveCursor(125, 260, 0.7);
-  });
-  at(53.5, () => {
-    const items = document.querySelectorAll('#sidebar3 .sidebar-item');
-    items[4].classList.add('hovered');
-  });
-  at(54, () => clickAt(125, 260));
-
-  // ========================
-  // SCENE 4: CROSS-SELL (55-72s)
-  // ========================
-  at(55, () => {
-    showScene(4);
-    moveCursor(700, 200, 0.01);
-  });
-
-  // Gap cards appear
-  at(55.5, () => document.getElementById('gap-0').classList.add('visible'));
-  at(57, () => document.getElementById('gap-1').classList.add('visible'));
-  at(58.5, () => document.getElementById('gap-2').classList.add('visible'));
-  at(60, () => document.getElementById('gap-3').classList.add('visible'));
-
-  // Cursor hovers first gap card
-  at(57, () => moveCursor(550, 310, 0.6));
-  at(57.7, () => hoverEl(document.getElementById('gap-0')));
-
-  // Click first gap - slides in the email panel
-  at(59, () => {
-    clickAt(550, 310);
-    clickEl(document.getElementById('gap-0'));
-    document.getElementById('s4-email-panel').classList.add('open');
-  });
-  at(60, () => unhoverEl(document.getElementById('gap-0')));
-
-  // Cursor moves to email panel to "read" it
-  at(61.5, () => moveCursor(1350, 400, 0.7));
-  at(63, () => moveCursor(1350, 500, 0.5));
-  at(64.5, () => moveCursor(1350, 580, 0.5));
-
-  // Cursor moves down to hover another gap card
-  at(66, () => moveCursor(550, 550, 0.7));
-  at(66.8, () => hoverEl(document.getElementById('gap-2')));
-  at(68, () => {
-    unhoverEl(document.getElementById('gap-2'));
-    moveCursor(550, 650, 0.5);
-  });
-  at(68.6, () => hoverEl(document.getElementById('gap-3')));
-  at(70, () => unhoverEl(document.getElementById('gap-3')));
-
-  // Hide cursor before CTA
-  at(71, () => hideCursor());
-
-  // ========================
-  // SCENE 5: COST + CTA (72-90s)
-  // ========================
-  at(72, () => showScene(5));
-
-  at(73, () => {
-    const c = document.getElementById('s5-cost');
-    c.style.transition = 'opacity 1s ease';
-    c.style.opacity = '1';
-  });
-
-  // Pulse animation on the green card
-  at(76, () => {
-    document.getElementById('s5-green').style.animation = 'pulseGlow 2.5s infinite';
-  });
-
-  at(80, () => {
-    const s = document.getElementById('s5-savings');
-    s.style.transition = 'opacity 0.8s ease';
-    s.style.opacity = '1';
-  });
-
-  at(84, () => {
-    const c = document.getElementById('s5-cta');
-    c.style.transition = 'opacity 1s ease';
-    c.style.opacity = '1';
-  });
-
-  // Fade to black
-  at(89, () => {
-    document.querySelectorAll('.scene').forEach(s => {
-      s.style.transition = 'opacity 1.5s ease';
-      s.style.opacity = '0';
+    // "How many are going to shop around" 6.1s
+    if (t >= 5.5) cue('hook-hide', function() {
+      document.getElementById('s0-hook').style.opacity = '0';
     });
-  });
+    if (t >= 6.5) cue('hook-logo', function() {
+      var l = document.getElementById('s0-logo');
+      l.style.transition = 'opacity 1s ease';
+      l.style.opacity = '1';
+    });
+
+    // === SCENE 1: LEADS (9-27s) ===
+    // "New leads from your website, referrals" 9.1s
+    if (t >= 8.5) cue('s1-start', function() {
+      showScene(1);
+      showCursor();
+      moveCursor(960, 100, 'instant');
+    });
+    if (t >= 9) cue('s1-sidebar', function() {
+      moveCursor(125, 135, 'fast');
+      clickAt(125, 135);
+    });
+    if (t >= 9.5) cue('s1-counter', function() {
+      animateCounter(document.getElementById('s1-counter'), 34, 2000);
+      setTimeout(function() {
+        document.getElementById('s1-src1').style.width = '42%';
+        document.getElementById('s1-src2').style.width = '28%';
+        document.getElementById('s1-src3').style.width = '18%';
+        document.getElementById('s1-src4').style.width = '12%';
+      }, 500);
+    });
+    // Lead cards appear
+    if (t >= 10) cue('s1-lead0', function() { document.getElementById('lead-0').classList.add('visible'); });
+    if (t >= 11) cue('s1-lead1', function() { document.getElementById('lead-1').classList.add('visible'); });
+    if (t >= 12) cue('s1-lead2', function() { document.getElementById('lead-2').classList.add('visible'); });
+    // "The AI responds instantly" 12.7s
+    if (t >= 13) cue('s1-lead3', function() { document.getElementById('lead-3').classList.add('visible'); });
+    if (t >= 14) cue('s1-lead4', function() { document.getElementById('lead-4').classList.add('visible'); });
+    if (t >= 15) cue('s1-lead5', function() { document.getElementById('lead-5').classList.add('visible'); });
+    // "Not a form submission that sits in a queue" 14.7s
+    // Routing log
+    if (t >= 10.5) cue('s1-route0', function() {
+      var r = document.getElementById('s1-routing');
+      LEADS.forEach(function(l, i) {
+        setTimeout(function() {
+          var e = document.createElement('div');
+          e.style.cssText = 'padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);opacity:0;transition:opacity 0.4s;';
+          e.innerHTML = '<div style="color:#4ade80;font-size:11px;">\u2713 ' + l.time + '</div><div style="color:#cbd5e1;font-size:12px;margin-top:2px;">' + l.name + ' \u2192 ' + l.route + '</div>';
+          r.appendChild(e);
+          setTimeout(function() { e.style.opacity = '1'; }, 50);
+        }, i * 1000);
+      });
+    });
+    // "A real conversation" 17.3s
+    if (t >= 16) cue('s1-cursor1', function() { moveCursor(600, 340, 'slow'); });
+    if (t >= 17) cue('s1-hover0', function() { hoverEl(document.getElementById('lead-0')); });
+    // "What type of coverage?" 19.1s
+    if (t >= 18) cue('s1-click0', function() {
+      clickAt(600, 340);
+      clickEl(document.getElementById('lead-0'));
+      document.getElementById('lead-detail-0').classList.add('open');
+    });
+    // "Home, auto, commercial?" 20.5s
+    if (t >= 20) cue('s1-move-down', function() {
+      unhoverEl(document.getElementById('lead-0'));
+      moveCursor(600, 500, 'slow');
+    });
+    if (t >= 21) cue('s1-hover2', function() { hoverEl(document.getElementById('lead-2')); });
+    // "It qualifies and routes" 23.5s
+    if (t >= 23) cue('s1-to-quotes', function() {
+      unhoverEl(document.getElementById('lead-2'));
+      moveCursor(125, 220, 'slow');
+    });
+    if (t >= 24) cue('s1-quotes-hover', function() {
+      var items = document.querySelectorAll('#sidebar1 .sidebar-item');
+      items.forEach(function(el) { el.classList.remove('active'); });
+      if (items[3]) items[3].classList.add('hovered');
+    });
+    if (t >= 25) cue('s1-quotes-click', function() { clickAt(125, 220); });
+
+    // === SCENE 2: QUOTING (27-48s) ===
+    // "Your AI pulls rates from multiple carriers" 27.6s
+    if (t >= 27) cue('s2-start', function() {
+      showScene(2);
+      moveCursor(700, 200, 'instant');
+    });
+    if (t >= 27.5) cue('s2-header', function() {
+      var h = document.getElementById('s2-header');
+      if (h) { h.style.transition = 'opacity 0.6s ease'; h.style.opacity = '1'; }
+    });
+    if (t >= 28) cue('s2-quoting', function() {
+      var q = document.getElementById('s2-quoting');
+      if (q) { q.style.transition = 'opacity 0.4s'; q.style.opacity = '1'; }
+    });
+    // "builds a comparison matrix" 31.0s
+    if (t >= 29) cue('s2-speed', function() {
+      var q = document.getElementById('s2-quoting'); if (q) q.style.opacity = '0';
+      var s = document.getElementById('s2-speed'); if (s) s.textContent = 'Quoted in 4.2 seconds';
+    });
+    if (t >= 30) cue('s2-row0', function() { var e = document.getElementById('qrow-0'); if(e) e.classList.add('visible'); moveCursor(700, 370, 'fast'); });
+    if (t >= 31) cue('s2-row1', function() { var e = document.getElementById('qrow-1'); if(e) e.classList.add('visible'); moveCursor(700, 415, 'fast'); });
+    if (t >= 32) cue('s2-row2', function() { var e = document.getElementById('qrow-2'); if(e) e.classList.add('visible'); moveCursor(700, 460, 'fast'); });
+    // "and recommends the best fit" 32.3s
+    if (t >= 33) cue('s2-row3', function() { var e = document.getElementById('qrow-3'); if(e) e.classList.add('visible'); moveCursor(700, 505, 'fast'); });
+    if (t >= 34) cue('s2-row4', function() { var e = document.getElementById('qrow-4'); if(e) e.classList.add('visible'); });
+    // "What used to take your team an hour" 36.0s
+    if (t >= 35) cue('s2-hover-rec', function() { moveCursor(700, 415, 'slow'); var e = document.getElementById('qrow-1'); if(e) e.classList.add('hovered'); });
+    if (t >= 36) cue('s2-click-rec', function() {
+      clickAt(700, 415);
+      var e = document.getElementById('qrow-1'); if(e) e.classList.remove('hovered');
+    });
+    if (t >= 37) cue('s2-rec', function() {
+      var r = document.getElementById('s2-rec');
+      if (r) { r.style.transition = 'opacity 0.8s ease'; r.style.opacity = '1'; }
+    });
+    // "The client gets options fast" 42.6s
+    if (t >= 40) cue('s2-btn-hover', function() { moveCursor(1540, 752, 'slow'); var e = document.getElementById('s2-btn'); if(e) e.classList.add('hovered'); });
+    if (t >= 41) cue('s2-btn-click', function() {
+      clickAt(1540, 752);
+      var e = document.getElementById('s2-btn');
+      if (e) { e.classList.remove('hovered'); e.innerHTML = '\u2713 Proposal Sent'; e.style.background = '#22c55e'; }
+    });
+    // "You win the business before they call" 44.7s
+    if (t >= 43) cue('s2-to-renewals', function() { moveCursor(125, 178, 'slow'); });
+    if (t >= 44) cue('s2-renewals-click', function() { clickAt(125, 178); });
+
+    // === SCENE 3: RENEWALS (48-66s) ===
+    // "90 days out, your AI starts the renewal" 48.3s
+    if (t >= 48) cue('s3-start', function() {
+      showScene(3);
+      moveCursor(960, 200, 'instant');
+    });
+    if (t >= 49) cue('s3-counters', function() {
+      animateCounter(document.getElementById('s3-total'), 847, 2000);
+      animateCounter(document.getElementById('s3-requote'), 23, 1500);
+    });
+    if (t >= 49) cue('s3-c90-0', function() { var e = document.getElementById('s3-col90-card-0'); if(e) e.classList.add('visible'); });
+    if (t >= 49.5) cue('s3-c60-0', function() { var e = document.getElementById('s3-col60-card-0'); if(e) e.classList.add('visible'); });
+    if (t >= 50) cue('s3-c30-0', function() { var e = document.getElementById('s3-col30-card-0'); if(e) e.classList.add('visible'); });
+    // "re-quotes if better rates are available" 52.1s
+    if (t >= 50.5) cue('s3-c90-1', function() { var e = document.getElementById('s3-col90-card-1'); if(e) e.classList.add('visible'); });
+    if (t >= 51) cue('s3-c60-1', function() { var e = document.getElementById('s3-col60-card-1'); if(e) e.classList.add('visible'); });
+    if (t >= 51.5) cue('s3-c30-1', function() { var e = document.getElementById('s3-col30-card-1'); if(e) e.classList.add('visible'); });
+    if (t >= 52) cue('s3-c90-2', function() { var e = document.getElementById('s3-col90-card-2'); if(e) e.classList.add('visible'); });
+    if (t >= 52.5) cue('s3-c60-2', function() { var e = document.getElementById('s3-col60-card-2'); if(e) e.classList.add('visible'); });
+    // "sends personalized outreach" 53.6s
+    if (t >= 53) cue('s3-c30-2', function() { var e = document.getElementById('s3-col30-card-2'); if(e) e.classList.add('visible'); });
+    if (t >= 53.5) cue('s3-c90-3', function() { var e = document.getElementById('s3-col90-card-3'); if(e) e.classList.add('visible'); });
+    if (t >= 54) cue('s3-c60-3', function() { var e = document.getElementById('s3-col60-card-3'); if(e) e.classList.add('visible'); });
+    if (t >= 54.5) cue('s3-c30-3', function() { var e = document.getElementById('s3-col30-card-3'); if(e) e.classList.add('visible'); });
+    if (t >= 55) cue('s3-c30-4', function() { var e = document.getElementById('s3-col30-card-4'); if(e) e.classList.add('visible'); });
+    // Cursor scanning
+    if (t >= 50) cue('s3-cursor1', function() { moveCursor(440, 330, 'slow'); });
+    if (t >= 52) cue('s3-cursor2', function() { moveCursor(820, 350, 'slow'); });
+    if (t >= 53.5) cue('s3-hover60', function() { hoverEl(document.getElementById('s3-col60-card-1')); });
+    // "flags accounts at risk of leaving" 57.2s
+    if (t >= 55.5) cue('s3-to30', function() {
+      unhoverEl(document.getElementById('s3-col60-card-1'));
+      moveCursor(1200, 330, 'slow');
+    });
+    if (t >= 56.5) cue('s3-hover30', function() { hoverEl(document.getElementById('s3-col30-card-0')); });
+    if (t >= 57.5) cue('s3-click30', function() {
+      clickAt(1200, 330);
+      clickEl(document.getElementById('s3-col30-card-0'));
+      var e = document.getElementById('s3-col30-rq-0'); if(e) e.classList.add('open');
+    });
+    // "By the time renewal hits" 59.1s
+    if (t >= 59) cue('s3-down', function() {
+      unhoverEl(document.getElementById('s3-col30-card-0'));
+      moveCursor(1200, 550, 'slow');
+    });
+    if (t >= 60) cue('s3-hover30b', function() { hoverEl(document.getElementById('s3-col30-card-2')); });
+    // "the conversation is already handled" 60.5s
+    if (t >= 62) cue('s3-to-crosssell', function() {
+      unhoverEl(document.getElementById('s3-col30-card-2'));
+      moveCursor(125, 260, 'slow');
+    });
+    if (t >= 63) cue('s3-cross-hover', function() {
+      var items = document.querySelectorAll('#sidebar3 .sidebar-item');
+      if (items[4]) items[4].classList.add('hovered');
+    });
+    if (t >= 63.5) cue('s3-cross-click', function() { clickAt(125, 260); });
+
+    // === SCENE 4: CROSS-SELL (66-80s) ===
+    // "Homeowner with no umbrella policy" 66.4s
+    if (t >= 66) cue('s4-start', function() {
+      showScene(4);
+      moveCursor(700, 200, 'instant');
+    });
+    if (t >= 67) cue('s4-gap0', function() { var e = document.getElementById('gap-0'); if(e) e.classList.add('visible'); });
+    if (t >= 68.5) cue('s4-gap1', function() { var e = document.getElementById('gap-1'); if(e) e.classList.add('visible'); });
+    // "auto client with no life insurance" 68.4s
+    if (t >= 70) cue('s4-gap2', function() { var e = document.getElementById('gap-2'); if(e) e.classList.add('visible'); });
+    // "Your AI spots the gaps" 70.6s
+    if (t >= 71.5) cue('s4-gap3', function() { var e = document.getElementById('gap-3'); if(e) e.classList.add('visible'); });
+    if (t >= 68) cue('s4-hover0', function() { moveCursor(550, 310, 'slow'); hoverEl(document.getElementById('gap-0')); });
+    if (t >= 70) cue('s4-click0', function() {
+      clickAt(550, 310);
+      clickEl(document.getElementById('gap-0'));
+      var e = document.getElementById('s4-email-panel'); if(e) e.classList.add('open');
+    });
+    if (t >= 71) cue('s4-unhover0', function() { unhoverEl(document.getElementById('gap-0')); });
+    // "Not generic blasts" 74.6s
+    if (t >= 73) cue('s4-email1', function() { moveCursor(1350, 400, 'slow'); });
+    if (t >= 74.5) cue('s4-email2', function() { moveCursor(1350, 500, 'slow'); });
+    if (t >= 76) cue('s4-email3', function() { moveCursor(1350, 580, 'slow'); });
+    // "Specific recommendations" 76.4s
+    if (t >= 77.5) cue('s4-hover2', function() { moveCursor(550, 550, 'slow'); hoverEl(document.getElementById('gap-2')); });
+    if (t >= 79) cue('s4-hover3', function() {
+      unhoverEl(document.getElementById('gap-2'));
+      moveCursor(550, 650, 'slow');
+      hoverEl(document.getElementById('gap-3'));
+    });
+    if (t >= 80) cue('s4-unhover3', function() { unhoverEl(document.getElementById('gap-3')); });
+
+    // === SCENE 5: COST + CTA (80-99s) ===
+    // "A CSR costs four to 6,000" 80.7s
+    if (t >= 80.5) cue('s5-hide-cursor', function() { hideCursor(); });
+    if (t >= 81) cue('s5-show', function() { showScene(5); });
+    if (t >= 82) cue('s5-cost', function() {
+      var c = document.getElementById('s5-cost');
+      c.style.transition = 'opacity 1s ease';
+      c.style.opacity = '1';
+    });
+    // "Your AI handles lead capture, quoting" 85.4s
+    if (t >= 86) cue('s5-green', function() {
+      document.getElementById('s5-green').style.animation = 'pulseGlow 2.5s infinite';
+    });
+    // "and cross-selling around the clock" 89.0s
+    if (t >= 89) cue('s5-savings', function() {
+      var s = document.getElementById('s5-savings');
+      s.style.transition = 'opacity 0.8s ease';
+      s.style.opacity = '1';
+    });
+    // "It just saved three accounts" 91.4s
+    if (t >= 92) cue('s5-cta', function() {
+      var c = document.getElementById('s5-cta');
+      c.style.transition = 'opacity 1s ease';
+      c.style.opacity = '1';
+    });
+    // "Your AI, only yours" 94.9s
+    if (t >= 96) cue('s5-fade', function() {
+      document.querySelectorAll('.scene').forEach(function(s) {
+        s.style.transition = 'opacity 1.5s ease';
+        s.style.opacity = '0';
+      });
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 

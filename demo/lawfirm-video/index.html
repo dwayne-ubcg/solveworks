@@ -613,531 +613,248 @@ const SMART_ALERTS = [
   { icon: '🔔', title: 'Re-engagement', text: 'Anthony Brooks — initially declined. New Google review mentions ongoing pain. Outreach triggered.', color: '#fb923c' },
 ];
 
-// ============================================================
-// TIMELINE ENGINE
-// ============================================================
-// Each event: { t: seconds, fn: function }
-const timeline = [];
 
-function at(t, fn) { timeline.push({ t: t * 1000, fn }); }
-
-// ============================================================
-// BUILD TIMELINE
-// ============================================================
-
-// --- HOOK (0-8s) ---
-at(0, () => {
-  document.getElementById('hookOverlay').classList.add('active');
-});
-at(0.5, () => {
-  document.getElementById('hookText').classList.add('visible');
-});
-at(6.5, () => {
-  document.getElementById('hookText').classList.remove('visible');
-});
-at(7.5, () => {
-  document.getElementById('hookOverlay').classList.remove('active');
-  document.getElementById('dashboard').classList.add('active');
-  showCursor();
-  moveCursor(960, 540);
-});
-
-// --- INTAKE (8-25s) ---
-// Animate counter
-at(8, () => {
-  animateCounter(document.getElementById('leadCounter'), 23, 2500);
-  setTimeout(() => animateCounter(document.getElementById('responseTime'), 8, 1500), 1500);
-});
-
-// Lead cards appear one by one
-at(8.5, () => {
-  const container = document.getElementById('leadCards');
-  container.innerHTML = '';
-  LEADS.forEach((lead, i) => {
-    const card = document.createElement('div');
-    card.className = `lead-card ${lead.high ? 'high-value' : ''}`;
-    card.id = `lead-${i}`;
-    card.innerHTML = `
-      <div style="font-size: 28px;">${lead.icon}</div>
-      <div style="flex: 1;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="font-size: 16px; font-weight: 600;">${lead.name}</div>
-          <span class="tag ${lead.tagClass}">${lead.source}</span>
-        </div>
-        <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 12px; color: #94a3b8;">
-          <span>🕐 ${lead.time}</span>
-          <span>⚡ Response: <span style="color: #4ade80; font-weight: 600;">${lead.response}</span></span>
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-});
-
-at(9, () => document.getElementById('lead-0')?.classList.add('visible'));
-at(10.5, () => document.getElementById('lead-1')?.classList.add('visible'));
-at(12, () => document.getElementById('lead-2')?.classList.add('visible'));
-
-// Cursor moves to first lead card (Maria Santos) and hovers
-at(13, () => moveCursor(700, 265));
-at(13.8, () => document.getElementById('lead-0')?.classList.add('hovered'));
-
-// Click Maria → show chat preview
-at(14.5, () => {
-  clickAt(700, 265);
-  document.getElementById('lead-0')?.classList.add('clicked');
-  document.getElementById('chatPreview').style.opacity = '1';
-});
-
-// Chat messages appear
-at(15, () => {
-  const container = document.getElementById('chatMessages');
-  container.innerHTML = '';
-  CHAT_MSGS.forEach((msg, i) => {
-    const el = document.createElement('div');
-    el.className = `chat-msg ${msg.role}`;
-    el.innerHTML = msg.role === 'ai' ? `<span style="color: #0ea5e9; font-size: 11px; font-weight: 600;">AI Agent</span><br>${msg.text}` : msg.text;
-    container.appendChild(el);
-    setTimeout(() => el.classList.add('visible'), i * 1400);
-  });
-});
-
-// Cursor moves down to see more leads, new lead appears
-at(17, () => moveCursor(700, 450, 'slow'));
-at(18, () => document.getElementById('lead-3')?.classList.add('visible'));
-
-// Show notification toast for new lead
-at(19, () => document.getElementById('notifToast')?.classList.add('visible'));
-at(21.5, () => document.getElementById('notifToast')?.classList.remove('visible'));
-
-at(20, () => document.getElementById('lead-4')?.classList.add('visible'));
-
-// Cursor moves to chat area to show reading
-at(21, () => {
-  document.getElementById('lead-0')?.classList.remove('hovered');
-  moveCursor(1500, 400);
-});
-
-// Scroll leads slightly
-at(22, () => {
-  document.getElementById('intakeScroll').style.transform = 'translateY(-40px)';
-  document.getElementById('lead-5')?.classList.add('visible');
-});
-
-// --- CASE QUALIFICATION (25-42s) ---
-// Cursor clicks "View" on Maria card → slide panel opens
-at(24, () => moveCursor(700, 230, 'fast'));
-at(24.8, () => {
-  clickAt(700, 230);
-  document.getElementById('qualPanel').classList.add('open');
-});
-
-// Score items populate
-at(25.5, () => {
-  const container = document.getElementById('scoreItems');
-  container.innerHTML = '';
-  SCORE_ITEMS.forEach((s, i) => {
-    const row = document.createElement('div');
-    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; opacity: 0; transition: opacity 0.5s ease;';
-    row.innerHTML = `<span style="color: #94a3b8;">${s.label}</span><span style="font-weight: 500;">${s.status} ${s.value}</span>`;
-    row.id = `score-${i}`;
-    container.appendChild(row);
-  });
-});
-
-at(26.5, () => document.getElementById('score-0').style.opacity = '1');
-at(28.5, () => document.getElementById('score-1').style.opacity = '1');
-at(30.5, () => document.getElementById('score-2').style.opacity = '1');
-at(33, () => document.getElementById('score-3').style.opacity = '1');
-at(35, () => document.getElementById('score-4').style.opacity = '1');
-
-// Cursor hovers over score items
-at(29, () => moveCursor(1600, 370));
-at(32, () => moveCursor(1600, 430, 'slow'));
-
-// Score gauge appears
-at(37, () => {
-  document.getElementById('scoreGauge').style.opacity = '1';
-  animateCounter(document.getElementById('scoreNum'), 87, 1500);
-  document.getElementById('scoreBar').style.width = '87%';
-});
-
-// Other cases
-at(39, () => {
-  document.getElementById('otherCases').style.opacity = '1';
-  const list = document.getElementById('otherCasesList');
-  list.innerHTML = '';
-  const others = [
-    { name: 'James Mitchell', type: 'Slip & Fall', score: 62, level: 'Medium', tagClass: 'tag-medium', color: '#facc15' },
-    { name: 'Denise Walker', type: 'Med Mal', score: 91, level: '🔥 HIGH', tagClass: 'tag-high', color: '#f87171' },
-  ];
-  others.forEach(c => {
-    const el = document.createElement('div');
-    el.style.cssText = 'padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; margin-bottom: 8px;';
-    el.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size: 12px; font-weight: 600;">${c.name}</span>
-        <span class="tag ${c.tagClass}" style="font-size: 10px;">${c.level}</span>
-      </div>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-        <span style="font-size: 11px; color: #94a3b8;">${c.type}</span>
-        <span style="font-size: 16px; font-weight: 800; color: ${c.color};">${c.score}</span>
-      </div>
-    `;
-    list.appendChild(el);
-  });
-});
-
-// Close panel and switch to conflicts
-at(41, () => {
-  document.getElementById('qualPanel').classList.remove('open');
-});
-
-// --- CONFLICT CHECK (42-52s) ---
-// Cursor moves to Conflicts in sidebar
-at(41.5, () => moveCursor(140, 268));
-at(42, () => hoverSidebar('conflicts'));
-at(42.5, () => {
-  clickAt(140, 268);
-  unhoverSidebar('conflicts');
-  switchView('conflicts');
-  // Start scan
-  setTimeout(() => document.getElementById('scanBar').style.width = '100%', 200);
-});
-
-// Conflict results appear
-at(43.5, () => {
-  const container = document.getElementById('conflictResults');
-  container.innerHTML = '';
-  CONFLICT_CHECKS.forEach((c, i) => {
-    const row = document.createElement('div');
-    row.className = `conflict-row ${c.status === 'conflict' ? 'flagged' : ''}`;
-    row.id = `conflict-${i}`;
-    const icon = c.status === 'clear' ? '✅' : '⚠️';
-    const tagClass = c.status === 'clear' ? 'tag-clear' : 'tag-conflict';
-    const tagText = c.status === 'clear' ? 'Clear' : 'Conflict';
-    let html = `
-      <div style="font-size: 24px;">${icon}</div>
-      <div style="flex: 1;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span style="font-size: 15px; font-weight: 600;">${c.name}</span>
-          <span class="tag ${tagClass}">${tagText}</span>
-        </div>
-        <div style="font-size: 13px; color: ${c.status === 'conflict' ? '#f87171' : '#4ade80'}; font-weight: 500;">${c.result}</div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">${c.detail}</div>
-    `;
-    if (c.extra) {
-      html += `<div class="conflict-detail" id="conflict-detail-${i}" style="margin-top: 8px; background: rgba(239,68,68,0.08); border-radius: 8px; font-size: 12px; color: #fca5a5; line-height: 1.6;">${c.extra}</div>`;
-    }
-    html += `</div>`;
-    row.innerHTML = html;
-    container.appendChild(row);
-  });
-});
-
-at(44, () => document.getElementById('conflict-0')?.classList.add('visible'));
-at(45.5, () => document.getElementById('conflict-1')?.classList.add('visible'));
-at(47, () => document.getElementById('conflict-2')?.classList.add('visible'));
-
-// Cursor moves to flagged conflict
-at(48, () => moveCursor(700, 440));
-at(48.5, () => document.getElementById('conflict-2')?.classList.add('hovered'));
-at(49, () => {
-  clickAt(700, 440);
-  document.getElementById('conflict-detail-2')?.classList.add('expanded');
-});
-
-at(50.5, () => {
-  document.getElementById('conflict-3')?.classList.add('visible');
-  document.getElementById('conflict-2')?.classList.remove('hovered');
-});
-
-// --- SCHEDULING (52-58s) ---
-at(51.5, () => moveCursor(140, 220));
-at(52, () => hoverSidebar('calendar'));
-at(52.5, () => {
-  clickAt(140, 220);
-  unhoverSidebar('calendar');
-  switchView('calendar');
-  initCalendarView();
-});
-
-function initCalendarView() {
-  // Attorney cards
-  const grid = document.getElementById('attorneyCards');
-  grid.innerHTML = '';
-  ATTORNEYS.forEach(atty => {
-    const card = document.createElement('div');
-    card.className = 'glass';
-    card.style.cssText = `padding: 16px; border-radius: 12px; ${atty.match ? 'border: 1px solid rgba(14,165,233,0.2);' : 'opacity: 0.5;'}`;
-    card.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-        <div style="width: 36px; height: 36px; border-radius: 50%; background: ${atty.color}20; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: ${atty.color};">${atty.initials}</div>
-        <div><div style="font-size: 13px; font-weight: 600;">${atty.name}</div><div style="font-size: 11px; color: #64748b;">${atty.title}</div></div>
-      </div>
-      <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px;">${atty.types}</div>
-      ${atty.match ? '<div style="font-size: 11px; color: #0ea5e9;">✓ Matches case type</div>' : '<div style="font-size: 11px; color: #475569;">— No match</div>'}
-    `;
-    grid.appendChild(card);
-  });
-
-  // Booking logic
-  const logicEl = document.getElementById('bookingLogic');
-  logicEl.innerHTML = '';
-  BOOKING_STEPS.forEach((step, i) => {
-    const el = document.createElement('div');
-    el.className = 'action-item';
-    el.textContent = step;
-    logicEl.appendChild(el);
-    setTimeout(() => el.classList.add('visible'), 1000 + i * 1200);
-  });
-
-  // Actions
-  const actionsEl = document.getElementById('autoActions');
-  actionsEl.innerHTML = '';
-  AUTO_ACTIONS.forEach((a, i) => {
-    const el = document.createElement('div');
-    el.className = 'action-item';
-    el.innerHTML = `<span>${a.icon}</span> ${a.text}`;
-    actionsEl.appendChild(el);
-    setTimeout(() => el.classList.add('visible'), 5500 + i * 800);
-  });
-
-  // Schedule list
-  const list = document.getElementById('scheduleList');
-  list.innerHTML = '';
-  SCHEDULE.forEach((s, i) => {
-    const el = document.createElement('div');
-    el.className = 'cal-slot booked';
-    el.id = `slot-${i}`;
-    el.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <span style="font-size: 13px; font-weight: 600; color: #0ea5e9;">${s.time}</span>
-          <span style="font-size: 13px; margin-left: 8px;">${s.name}</span>
-          <span style="font-size: 11px; color: #64748b; margin-left: 6px;">w/ ${s.atty}</span>
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-size: 11px; color: #94a3b8;">${s.type}</span>
-          ${s.high ? '<span class="tag tag-high" style="font-size: 10px;">🔥 87</span>' : `<span style="font-size: 12px; font-weight: 700; color: #facc15;">${s.score}</span>`}
-        </div>
-      </div>
-    `;
-    list.appendChild(el);
-    setTimeout(() => el.classList.add('visible'), 8000 + i * 1000);
-  });
+// Audio-driven scene transitions — no drift possible
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
 }
 
-// Cursor hovers over attorney card
-at(54, () => moveCursor(500, 280, 'slow'));
-// Cursor moves to booking area
-at(55.5, () => moveCursor(1500, 350));
-// Cursor clicks a schedule slot
-at(56.5, () => {
-  moveCursor(600, 620, 'fast');
-});
-at(57, () => {
-  clickAt(600, 620);
-  document.getElementById('slot-0')?.classList.add('hovered');
-});
-
-// --- FOLLOW-UP (58-72s) ---
-at(57.5, () => moveCursor(140, 318));
-at(58, () => hoverSidebar('analytics'));
-at(58.5, () => {
-  clickAt(140, 318);
-  unhoverSidebar('analytics');
-  switchView('analytics');
-  initAnalyticsView();
-});
-
-function initAnalyticsView() {
-  // Status breakdown
-  const statusEl = document.getElementById('statusBreakdown');
-  statusEl.innerHTML = '';
-  STATUS_ITEMS.forEach((s, i) => {
-    const el = document.createElement('div');
-    el.style.cssText = `display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); opacity: 0; transition: opacity 0.4s ease;`;
-    el.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><span>${s.icon}</span><span style="color: #cbd5e1;">${s.label}</span></div><span style="font-size: 16px; font-weight: 700; color: ${s.color};">${s.count}</span>`;
-    statusEl.appendChild(el);
-    setTimeout(() => el.style.opacity = '1', 500 + i * 600);
-  });
-
-  // Nurture steps
-  const nurtureEl = document.getElementById('nurtureSteps');
-  nurtureEl.innerHTML = '';
-  NURTURE.forEach((n, i) => {
-    const el = document.createElement('div');
-    el.className = 'nurture-step';
-    el.innerHTML = `
-      <div style="width: 36px; flex-shrink: 0; text-align: center;">
-        <div style="font-size: 16px;">${n.icon}</div>
-        ${i < NURTURE.length - 1 ? '<div style="width: 2px; height: 40px; background: rgba(255,255,255,0.08); margin: 4px auto 0;"></div>' : ''}
-      </div>
-      <div>
-        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
-          <span style="font-size: 12px; font-weight: 600; color: #0ea5e9;">${n.day}</span>
-          <span style="font-size: 11px; color: ${n.color};">${n.status}</span>
-        </div>
-        <div style="font-size: 12px; color: #94a3b8; line-height: 1.5; font-style: italic;">${n.text}</div>
-      </div>
-    `;
-    nurtureEl.appendChild(el);
-    setTimeout(() => el.classList.add('visible'), 2000 + i * 1800);
-  });
-
-  // Smart alerts
-  const alertsEl = document.getElementById('smartAlerts');
-  alertsEl.innerHTML = '';
-  SMART_ALERTS.forEach((a, i) => {
-    const el = document.createElement('div');
-    el.className = 'glass';
-    el.style.cssText = `padding: 14px; border-radius: 10px; margin-bottom: 10px; border: 1px solid ${a.color}30; opacity: 0; transition: opacity 0.6s ease;`;
-    el.innerHTML = `
-      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
-        <span style="font-size: 16px;">${a.icon}</span>
-        <span style="font-size: 13px; font-weight: 600; color: ${a.color};">${a.title}</span>
-      <div style="font-size: 12px; color: #94a3b8; line-height: 1.5;">${a.text}</div>
-    `;
-    alertsEl.appendChild(el);
-    setTimeout(() => el.style.opacity = '1', 7000 + i * 3000);
-  });
-
-  // Conversion stat
-  setTimeout(() => document.getElementById('convStat').style.opacity = '1', 11000);
-}
-
-// Cursor moves through analytics
-at(60, () => moveCursor(450, 400, 'slow'));
-at(62, () => moveCursor(850, 500));
-at(64, () => moveCursor(850, 600, 'slow'));
-// Cursor hovers on alert
-at(66, () => moveCursor(1600, 380));
-at(68, () => moveCursor(1600, 500, 'slow'));
-// Cursor moves to conversion stat
-at(70, () => moveCursor(1600, 700));
-
-// --- COST COMPARISON (72-85s) ---
-at(71, () => {
-  hideCursor();
-  document.getElementById('dashboard').classList.remove('active');
-});
-at(72, () => {
-  document.getElementById('costOverlay').classList.add('active');
-  document.getElementById('funnelRow').style.opacity = '1';
-  // Animate funnel
-  const funnelData = [
-    { id: 'f1', target: 312 },
-    { id: 'f2', target: 287 },
-    { id: 'f3', target: 198 },
-    { id: 'f4', target: 198 },
-    { id: 'f5', target: 156 },
-    { id: 'f6', target: 47 },
-  ];
-  funnelData.forEach((f, i) => {
-    setTimeout(() => animateCounter(document.getElementById(f.id), f.target, 1500), i * 600);
-  });
-});
-
-at(77, () => {
-  document.getElementById('costCards').style.opacity = '1';
-});
-
-at(82, () => {
-  document.getElementById('ctaBox').style.opacity = '1';
-});
-
-// --- CLOSING (85-90s) ---
-at(85, () => {
-  document.getElementById('costOverlay').classList.remove('active');
-  document.getElementById('closingOverlay').classList.add('active');
-});
-at(86, () => document.getElementById('closeLogo').style.opacity = '1');
-at(87.5, () => document.getElementById('closeTag').style.opacity = '1');
-at(88.5, () => document.getElementById('closeUrl').style.opacity = '1');
-at(89.5, () => document.getElementById('closeCta').style.opacity = '1');
-
-// ============================================================
-// PROGRESS BAR
-// ============================================================
-function updateProgress() {
-  const elapsed = (performance.now() - startTime) / 1000;
-  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
-  document.getElementById('progressBar').style.width = pct + '%';
-  if (elapsed < TOTAL_DURATION + 2) requestAnimationFrame(updateProgress);
-}
-
-// ============================================================
-// START
-// ============================================================
 function startPresentation() {
   document.getElementById('playBtn').classList.add('hidden');
-  // controls handled by simple tap-to-pause
   startTime = performance.now();
+  voiceover.play().catch(function(){});
 
-  voiceover.play().catch(() => {});
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // Sort timeline events
-  timeline.sort((a, b) => a.t - b.t);
+    // === HOOK (0-13s) ===
+    // "Last night, 23 leads came in from your TV ad" 0.0s
+    if (t >= 0.5) cue('hook-show', function() {
+      document.getElementById('hookOverlay').classList.add('active');
+      document.getElementById('hookText').classList.add('visible');
+    });
+    // "19 of them have already called another firm" 5.8s
+    if (t >= 6.5) cue('hook-hide', function() {
+      document.getElementById('hookText').classList.remove('visible');
+    });
+    // "Speed to lead isn't a buzzword in PI law" 9.3s
+    if (t >= 8) cue('s1-start', function() {
+      document.getElementById('hookOverlay').classList.remove('active');
+      document.getElementById('dashboard').classList.add('active');
+      showCursor();
+      moveCursor(960, 540);
+    });
 
-  // Schedule all events
-  timeline.forEach(evt => {
-    setTimeout(evt.fn, evt.t);
-  });
+    // === INTAKE (13-25s) ===
+    // "Your AI responds to every lead the second they come in" 13.7s
+    if (t >= 13) cue('s1-counters', function() {
+      animateCounter(document.getElementById('leadCounter'), 23, 2500);
+      setTimeout(function() { animateCounter(document.getElementById('responseTime'), 8, 1500); }, 1500);
+    });
+    if (t >= 13.5) cue('s1-cards', function() {
+      var container = document.getElementById('leadCards');
+      container.innerHTML = '';
+      LEADS.forEach(function(lead, i) {
+        var card = document.createElement('div');
+        card.className = 'lead-card ' + (lead.high ? 'high-value' : '');
+        card.id = 'lead-' + i;
+        card.innerHTML = '<div style="font-size:28px;">' + lead.icon + '</div><div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:16px;font-weight:600;">' + lead.name + '</div><span class="tag ' + lead.tagClass + '">' + lead.source + '</span></div><div style="display:flex;gap:16px;margin-top:6px;font-size:12px;color:#94a3b8;"><span>\uD83D\uDD50 ' + lead.time + '</span><span>\u26A1 Response: <span style="color:#4ade80;font-weight:600;">' + lead.response + '</span></span></div></div>';
+        container.appendChild(card);
+      });
+    });
+    if (t >= 14) cue('s1-lead0', function() { document.getElementById('lead-0')?.classList.add('visible'); });
+    if (t >= 15) cue('s1-lead1', function() { document.getElementById('lead-1')?.classList.add('visible'); });
+    if (t >= 16) cue('s1-lead2', function() { document.getElementById('lead-2')?.classList.add('visible'); });
+    // "Web form, phone, chat, referral" 17.3s
+    if (t >= 17) cue('s1-cursor-maria', function() { moveCursor(700, 265); });
+    if (t >= 18) cue('s1-hover-maria', function() { document.getElementById('lead-0')?.classList.add('hovered'); });
+    if (t >= 18.5) cue('s1-click-maria', function() {
+      clickAt(700, 265);
+      document.getElementById('lead-0')?.classList.add('clicked');
+      document.getElementById('chatPreview').style.opacity = '1';
+    });
+    // "The conversation starts immediately" 23.3s
+    if (t >= 19) cue('s1-chat', function() {
+      var container = document.getElementById('chatMessages');
+      container.innerHTML = '';
+      CHAT_MSGS.forEach(function(msg, i) {
+        setTimeout(function() {
+          var el = document.createElement('div');
+          el.className = 'chat-msg ' + msg.role;
+          el.innerHTML = msg.role === 'ai' ? '<span style="color:#0ea5e9;font-size:11px;font-weight:600;">AI Agent</span><br>' + msg.text : msg.text;
+          container.appendChild(el);
+          setTimeout(function() { el.classList.add('visible'); }, 50);
+        }, i * 1400);
+      });
+    });
+    if (t >= 20) cue('s1-more-leads', function() {
+      moveCursor(700, 450, 'slow');
+      document.getElementById('lead-3')?.classList.add('visible');
+    });
+    if (t >= 21) cue('s1-toast', function() { document.getElementById('notifToast')?.classList.add('visible'); });
+    if (t >= 23) cue('s1-toast-hide', function() { document.getElementById('notifToast')?.classList.remove('visible'); });
+    if (t >= 22) cue('s1-lead4', function() { document.getElementById('lead-4')?.classList.add('visible'); });
+    if (t >= 23) cue('s1-read-chat', function() {
+      document.getElementById('lead-0')?.classList.remove('hovered');
+      moveCursor(1500, 400);
+    });
+    if (t >= 24) cue('s1-scroll', function() {
+      document.getElementById('intakeScroll').style.transform = 'translateY(-40px)';
+      document.getElementById('lead-5')?.classList.add('visible');
+    });
 
-  requestAnimationFrame(updateProgress);
+    // === CASE QUALIFICATION (25-42s) ===
+    if (t >= 25) cue('s2-open-qual', function() {
+      moveCursor(700, 230, 'fast');
+    });
+    if (t >= 25.5) cue('s2-click-qual', function() {
+      clickAt(700, 230);
+      document.getElementById('qualPanel').classList.add('open');
+      var container = document.getElementById('scoreItems');
+      container.innerHTML = '';
+      SCORE_ITEMS.forEach(function(s, i) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; opacity: 0; transition: opacity 0.5s ease;';
+        row.innerHTML = '<span style="color: #94a3b8;">' + s.label + '</span><span style="font-weight: 500;">' + s.status + ' ' + s.value + '</span>';
+        row.id = 'score-' + i;
+        container.appendChild(row);
+      });
+    });
+    // "What happened? When? Have you seen a doctor?" - Questions from chat
+    if (t >= 27) cue('s2-score0', function() { document.getElementById('score-0').style.opacity = '1'; });
+    if (t >= 29) cue('s2-score1', function() { document.getElementById('score-1').style.opacity = '1'; });
+    if (t >= 31) cue('s2-score2', function() { document.getElementById('score-2').style.opacity = '1'; });
+    // "Motor vehicle accident with clear liability" 35.3s
+    if (t >= 34) cue('s2-score3', function() { document.getElementById('score-3').style.opacity = '1'; });
+    if (t >= 36) cue('s2-score4', function() { document.getElementById('score-4').style.opacity = '1'; });
+    if (t >= 30) cue('s2-cursor1', function() { moveCursor(1600, 370); });
+    if (t >= 33) cue('s2-cursor2', function() { moveCursor(1600, 430, 'slow'); });
+    if (t >= 38) cue('s2-gauge', function() {
+      document.getElementById('scoreGauge').style.opacity = '1';
+      animateCounter(document.getElementById('scoreNum'), 87, 1500);
+      document.getElementById('scoreBar').style.width = '87%';
+    });
+    if (t >= 40) cue('s2-other', function() {
+      document.getElementById('otherCases').style.opacity = '1';
+      var list = document.getElementById('otherCasesList');
+      list.innerHTML = '';
+      var others = [ { name: 'James Mitchell', type: 'Slip & Fall', score: 62, level: 'Medium', tagClass: 'tag-medium', color: '#facc15' }, { name: 'Denise Walker', type: 'Med Mal', score: 91, level: '\uD83D\uDD25 HIGH', tagClass: 'tag-high', color: '#f87171' } ];
+      others.forEach(function(c) {
+        var el = document.createElement('div');
+        el.style.cssText = 'padding:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;margin-bottom:8px;';
+        el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;font-weight:600;">' + c.name + '</span><span class="tag ' + c.tagClass + '" style="font-size:10px;">' + c.level + '</span></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;"><span style="font-size:11px;color:#94a3b8;">' + c.type + '</span><span style="font-size:16px;font-weight:800;color:' + c.color + ';">' + c.score + '</span></div>';
+        list.appendChild(el);
+      });
+    });
+
+    // === CONFLICT CHECK (42-52s) ===
+    if (t >= 41.5) cue('s3-close-qual', function() {
+      document.getElementById('qualPanel').classList.remove('open');
+    });
+    if (t >= 42) cue('s3-nav', function() { moveCursor(140, 268); hoverSidebar('conflicts'); });
+    if (t >= 42.5) cue('s3-click', function() {
+      clickAt(140, 268);
+      unhoverSidebar('conflicts');
+      switchView('conflicts');
+      setTimeout(function() { document.getElementById('scanBar').style.width = '100%'; }, 200);
+    });
+    if (t >= 43.5) cue('s3-results', function() {
+      var container = document.getElementById('conflictResults');
+      container.innerHTML = '';
+      CONFLICT_CHECKS.forEach(function(c, i) {
+        var row = document.createElement('div');
+        row.className = 'conflict-row ' + (c.status === 'conflict' ? 'flagged' : '');
+        row.id = 'conflict-' + i;
+        var icon = c.status === 'clear' ? '\u2705' : '\u26A0\uFE0F';
+        var tagClass = c.status === 'clear' ? 'tag-clear' : 'tag-conflict';
+        var tagText = c.status === 'clear' ? 'Clear' : 'Conflict';
+        var html = '<div style="font-size:24px;">' + icon + '</div><div style="flex:1;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-size:15px;font-weight:600;">' + c.name + '</span><span class="tag ' + tagClass + '">' + tagText + '</span></div><div style="font-size:13px;color:' + (c.status === 'conflict' ? '#f87171' : '#4ade80') + ';font-weight:500;">' + c.result + '</div><div style="font-size:12px;color:#64748b;margin-top:4px;">' + c.detail + '</div>';
+        if (c.extra) { html += '<div class="conflict-detail" id="conflict-detail-' + i + '" style="margin-top:8px;background:rgba(239,68,68,0.08);border-radius:8px;font-size:12px;color:#fca5a5;line-height:1.6;">' + c.extra + '</div>'; }
+        html += '</div>';
+        row.innerHTML = html;
+        container.appendChild(row);
+      });
+    });
+    if (t >= 44) cue('s3-row0', function() { document.getElementById('conflict-0')?.classList.add('visible'); });
+    if (t >= 45.5) cue('s3-row1', function() { document.getElementById('conflict-1')?.classList.add('visible'); });
+    if (t >= 47) cue('s3-row2', function() { document.getElementById('conflict-2')?.classList.add('visible'); });
+    if (t >= 48) cue('s3-cursor-flag', function() { moveCursor(700, 440); });
+    if (t >= 48.5) cue('s3-hover-flag', function() { document.getElementById('conflict-2')?.classList.add('hovered'); });
+    if (t >= 49) cue('s3-click-flag', function() {
+      clickAt(700, 440);
+      document.getElementById('conflict-detail-2')?.classList.add('expanded');
+    });
+    if (t >= 50.5) cue('s3-row3', function() {
+      document.getElementById('conflict-3')?.classList.add('visible');
+      document.getElementById('conflict-2')?.classList.remove('hovered');
+    });
+
+    // === SCHEDULING (52-58s) ===
+    if (t >= 51.5) cue('s4-nav', function() { moveCursor(140, 220); });
+    if (t >= 52) cue('s4-hover', function() { hoverSidebar('calendar'); });
+    if (t >= 52.5) cue('s4-click', function() {
+      clickAt(140, 220);
+      unhoverSidebar('calendar');
+      switchView('calendar');
+      initCalendarView();
+    });
+    if (t >= 54) cue('s4-cursor1', function() { moveCursor(500, 280, 'slow'); });
+    if (t >= 55.5) cue('s4-cursor2', function() { moveCursor(1500, 350); });
+    if (t >= 56.5) cue('s4-cursor3', function() { moveCursor(600, 620, 'fast'); });
+    if (t >= 57) cue('s4-click-slot', function() {
+      clickAt(600, 620);
+      document.getElementById('slot-0')?.classList.add('hovered');
+    });
+
+    // === FOLLOW-UP (58-72s) ===
+    if (t >= 57.5) cue('s5-nav', function() { moveCursor(140, 318); });
+    if (t >= 58) cue('s5-hover', function() { hoverSidebar('analytics'); });
+    if (t >= 58.5) cue('s5-click', function() {
+      clickAt(140, 318);
+      unhoverSidebar('analytics');
+      switchView('analytics');
+      initAnalyticsView();
+    });
+    if (t >= 60) cue('s5-cursor1', function() { moveCursor(450, 400, 'slow'); });
+    if (t >= 62) cue('s5-cursor2', function() { moveCursor(850, 500); });
+    if (t >= 64) cue('s5-cursor3', function() { moveCursor(850, 600, 'slow'); });
+    if (t >= 66) cue('s5-cursor4', function() { moveCursor(1600, 380); });
+    if (t >= 68) cue('s5-cursor5', function() { moveCursor(1600, 500, 'slow'); });
+    if (t >= 70) cue('s5-cursor6', function() { moveCursor(1600, 700); });
+
+    // === COST + CTA (72-90s) ===
+    if (t >= 71) cue('s6-hide', function() {
+      hideCursor();
+      document.getElementById('dashboard').classList.remove('active');
+    });
+    if (t >= 72) cue('s6-show-cost', function() {
+      document.getElementById('costOverlay').classList.add('active');
+      document.getElementById('funnelRow').style.opacity = '1';
+      var funnelData = [ { id: 'f1', target: 312 }, { id: 'f2', target: 287 }, { id: 'f3', target: 198 }, { id: 'f4', target: 198 }, { id: 'f5', target: 156 }, { id: 'f6', target: 47 } ];
+      funnelData.forEach(function(f, i) {
+        setTimeout(function() { animateCounter(document.getElementById(f.id), f.target, 1500); }, i * 600);
+      });
+    });
+    if (t >= 77) cue('s6-cost-cards', function() {
+      document.getElementById('costCards').style.opacity = '1';
+    });
+    if (t >= 82) cue('s6-cta-box', function() {
+      document.getElementById('ctaBox').style.opacity = '1';
+    });
+    if (t >= 85) cue('s6-final', function() {
+      document.getElementById('costOverlay').classList.remove('active');
+      document.getElementById('closingOverlay').classList.add('active');
+    });
+    if (t >= 86) cue('s6-logo', function() { document.getElementById('closeLogo').style.opacity = '1'; });
+    if (t >= 87.5) cue('s6-tag', function() { document.getElementById('closeTag').style.opacity = '1'; });
+    if (t >= 88.5) cue('s6-url', function() { document.getElementById('closeUrl').style.opacity = '1'; });
+    if (t >= 89.5) cue('s6-cta-text', function() { document.getElementById('closeCta').style.opacity = '1'; });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
-
-</script>
-
-
-
-
-<!-- Progress bar + tap to pause -->
-<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
-  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
-</div>
-<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
-<script>
-(function(){
-  var paused=false, started=false;
-  var flash=document.getElementById("pauseFlash");
-  var prog=document.getElementById("simpleProgress");
-  var fill=document.getElementById("simpleProgressFill");
-  var iv=setInterval(function(){
-    var pb=document.getElementById("playBtn");
-    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
-      started=true; prog.style.display="block"; clearInterval(iv);
-    }
-  },200);
-  function toggle(){
-    if(!started)return;
-    paused=!paused;
-    flash.textContent=paused?"▶":"⏸";
-    flash.style.opacity="1";
-    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
-    try{
-      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
-      if(a){if(paused)a.pause();else a.play().catch(function(){});}
-    }catch(e){}
-    window.__demoPaused=paused; if(paused)document.body.classList.add("animations-paused");
-    else{window.__demoPaused=false; document.body.classList.remove("animations-paused");}
-  }
-  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
-  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
-  function upd(){
-    try{
-      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
-      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
-    }catch(e){}
-    requestAnimationFrame(upd);
-  }
-  requestAnimationFrame(upd);
-  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
-  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
-})();
-</script>
-
-</body>
-</html>
+document.getElementById('playBtn').addEventListener('click', startPresentation);

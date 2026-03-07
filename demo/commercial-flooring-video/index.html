@@ -216,64 +216,118 @@ function animateEl(id, props, dur) {
   if (props) Object.assign(el.style, props);
 }
 
-async function startDemo() {
+// Audio-driven cue system
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
   document.getElementById('playBtn').style.display = 'none';
-  voiceover.play().catch(()=>{});
+  voiceover.play().catch(function(){});
   cursor.style.display = 'block';
 
-  // Scene 1: Pain (0:00 - 12s)
-  showScene('scene1');
-  await delay(1000);
-  document.querySelectorAll('#scene1 .stat-card').forEach((c,i) => {
-    setTimeout(()=>{ c.style.animation = 'fadeInUp 0.6s ease forwards'; }, i*400);
-  });
-  await delay(11000);
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // Scene 2: Blueprint Intake (12s - 24s)
-  showScene('scene2');
-  var sl = document.getElementById('scanLine2');
-  sl.style.display = 'block';
-  sl.style.animation = 'scanLine 3s linear forwards';
-  await delay(500);
-  for(let i=1; i<=4; i++){ animateEl('zone'+i); await delay(700); }
-  await delay(500);
-  for(let i=1; i<=3; i++){ animateEl('sc'+i); await delay(400); }
-  await delay(6000);
+    // === Scene 1: Pain (0-12s) ===
+    // "A hospital bid lands in your inbox" 0.0s
+    if (t >= 0.3) cue('s1-show', function() {
+      showScene('scene1');
+    });
+    if (t >= 1.0) cue('s1-cards', function() {
+      document.querySelectorAll('#scene1 .stat-card').forEach(function(c, i) {
+        setTimeout(function(){ c.style.animation = 'fadeInUp 0.6s ease forwards'; }, i*400);
+      });
+    });
 
-  // Scene 3: Spec Matching (24s - 36s)
-  showScene('scene3');
-  await delay(500);
-  for(let i=1; i<=6; i++){ animateEl('spec'+i); await delay(500); }
-  await delay(8000);
+    // === Scene 2: Blueprint Intake (12-24.8s) ===
+    // "Upload the floor plan" 11.94s
+    if (t >= 11.9) cue('s2-show', function() {
+      showScene('scene2');
+      var sl = document.getElementById('scanLine2');
+      sl.style.display = 'block';
+      sl.style.animation = 'scanLine 3s linear forwards';
+    });
+    // "and your AI identifies every zone" 12.82s
+    if (t >= 13) cue('s2-zones', function() {
+      for (var i = 1; i <= 4; i++) {
+        (function(idx) { setTimeout(function() { animateEl('zone' + idx); }, (idx-1)*700); })(i);
+      }
+    });
+    // "It maps flooring specs per area" 16.44s
+    if (t >= 16) cue('s2-sc', function() {
+      for (var i = 1; i <= 3; i++) {
+        (function(idx) { setTimeout(function() { animateEl('sc' + idx); }, (idx-1)*400); })(i);
+      }
+    });
 
-  // Scene 4: Multi-Zone Takeoff (36s - 52s)
-  showScene('scene4');
-  await delay(500);
-  for(let i=1; i<=5; i++){ animateEl('tk'+i); await delay(800); }
-  await delay(10000);
-  
-  // Scene 5: Bid Assembly (52s - 66s)
-  showScene('scene5');
-  await delay(500);
-  for(let i=1; i<=6; i++){ 
-      var el = document.getElementById('ba'+i);
-      el.style.opacity = 0; el.style.transform = 'translateX(20px)';
-      el.style.animation = 'fadeInUp 0.5s ease forwards';
-      await delay(600); 
+    // === Scene 3: Spec Matching (24.8-38s) ===
+    // "The AI cross-references architect specs" 24.86s
+    if (t >= 24.5) cue('s3-show', function() {
+      showScene('scene3');
+    });
+    if (t >= 25) cue('s3-specs', function() {
+      for (var i = 1; i <= 6; i++) {
+        (function(idx) { setTimeout(function() { animateEl('spec' + idx); }, (idx-1)*500); })(i);
+      }
+    });
+
+    // === Scene 4: Multi-Zone Takeoff (38-55s) ===
+    // "Watch the takeoff populate zone by zone" 38.3s
+    if (t >= 38) cue('s4-show', function() {
+      showScene('scene4');
+    });
+    if (t >= 38.5) cue('s4-items', function() {
+      for (var i = 1; i <= 5; i++) {
+        (function(idx) { setTimeout(function() { animateEl('tk' + idx); }, (idx-1)*800); })(i);
+      }
+    });
+
+    // === Scene 5: Bid Assembly (55.7-66s) ===
+    // "Your complete bid assembles automatically" 55.74s
+    if (t >= 55.5) cue('s5-show', function() {
+      showScene('scene5');
+    });
+    if (t >= 56) cue('s5-items', function() {
+      for (var i = 1; i <= 6; i++) {
+        (function(idx) {
+          setTimeout(function() {
+            var el = document.getElementById('ba' + idx);
+            if (el) { el.style.opacity = 0; el.style.transform = 'translateX(20px)'; el.style.animation = 'fadeInUp 0.5s ease forwards'; }
+          }, (idx-1)*600);
+        })(i);
+      }
+    });
+
+    // === Scene 6: Bid Tracking (66-78s) ===
+    // "Track every active bid in one dashboard" 65.94s
+    if (t >= 65.5) cue('s6-show', function() {
+      showScene('scene6');
+    });
+    if (t >= 66) cue('s6-bids', function() {
+      for (var i = 1; i <= 4; i++) {
+        (function(idx) { setTimeout(function() { animateEl('bt' + idx); }, (idx-1)*600); })(i);
+      }
+    });
+    // "Win rate, average bid size" 70.44s
+    if (t >= 69) cue('s6-stats', function() {
+      for (var i = 1; i <= 3; i++) {
+        (function(idx) { setTimeout(function() { animateEl('bs' + idx); }, (idx-1)*600); })(i);
+      }
+    });
+
+    // === Scene 7: Close (77-87s) ===
+    // "Three days of takeoff work done in two hours" 77.16s
+    if (t >= 77) cue('s7-show', function() {
+      showScene('scene7');
+      document.querySelector('.close-scene').style.animation = 'fadeInUp 1s ease forwards';
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
   }
-  await delay(8000);
-
-  // Scene 6: Bid Tracking (66s - 78s)
-  showScene('scene6');
-  await delay(500);
-  for(let i=1; i<=4; i++){ animateEl('bt'+i); await delay(600); }
-  await delay(1000);
-  for(let i=1; i<=3; i++){ animateEl('bs'+i); await delay(600); }
-  await delay(5000);
-
-  // Scene 7: Close (78s - end)
-  showScene('scene7');
-  document.querySelector('.close-scene').style.animation = 'fadeInUp 1s ease forwards';
+  requestAnimationFrame(tick);
 }
 </script>
 

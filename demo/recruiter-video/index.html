@@ -703,13 +703,6 @@ const NAV = {
   analytics: { x: 120, y: 275 }
 };
 
-// ── Progress bar ──
-function updateProgress() {
-  const elapsed = (performance.now() - T0) / 1000;
-  const pct = Math.min(elapsed / TOTAL * 100, 100);
-  document.getElementById('progress').style.width = pct + '%';
-  if (pct < 100) requestAnimationFrame(updateProgress);
-}
 
 // ══════════════════════════════════════════════════════
 // SCENE BUILDERS
@@ -890,259 +883,300 @@ function buildFunnel() {
 }
 
 // ══════════════════════════════════════════════════════
-// TIMELINE - 90 SECONDS
+// AUDIO-DRIVEN CUE SYSTEM
 // ══════════════════════════════════════════════════════
 
-const EMAIL_L = `Raj — I came across your work on the container orchestration migration at Helios Tech. Impressive scale.\n\nI'm working with a health tech company in Austin that's building out their cloud infrastructure team. Senior DevOps, heavy Kubernetes and AWS — right in your wheelhouse. Hybrid role, strong comp in the $130-150K range.\n\nNot sure if you're even looking, but thought it was worth a quick conversation. 10 minutes over coffee?`;
-const EMAIL_R = `Diana — saw you're exploring new DevOps opportunities. I have a Senior DevOps role with a growing health tech company in Austin — hybrid model, $130-150K range.\n\nThey need Kubernetes and AWS depth, which your background at CloudScale checks both boxes. They're moving fast — looking to have someone start within 30 days.\n\nWant me to get you in front of the hiring manager this week?`;
-
-function scheduleTimeline() {
-  const t = (sec, fn) => setTimeout(fn, sec * 1000);
-
-  // ── 0-7.5s: Hook ──
-  t(0.3, () => { document.getElementById('hook').classList.add('vis'); });
-  t(6.5, () => { document.getElementById('hook').classList.remove('vis'); });
-
-  // ── 7.5s: Dashboard appears ──
-  t(7.5, () => { document.getElementById('dashboard').classList.add('vis'); });
-
-  // ── 8s: Cursor appears, moves to Job Orders ──
-  t(8, () => { showCursor(); });
-  t(8.3, () => { moveTo(NAV.jobs.x, NAV.jobs.y, 700); });
-  t(8.8, () => { navHover('nav-jobs'); });
-  t(9.2, () => { click(); navClick('nav-jobs'); });
-
-  // ── 9.5s: Job Orders panel active, notification slides in ──
-  t(10, () => { document.getElementById('notif-banner').classList.add('show'); });
-  t(11, () => { document.getElementById('notif-status').textContent = 'PARSED ✓'; document.getElementById('notif-status').style.color = '#4ade80'; });
-
-  // ── 11.5s: Cursor moves to notification ──
-  t(11.5, () => { moveTo(700, 108, 500); });
-  t(12, () => { click(); });
-
-  // ── 13s: Requirements appear ──
-  t(13, () => { document.getElementById('job-reqs').style.opacity = '1'; });
-
-  // ── 14s: Cursor moves to right side ──
-  t(14, () => { moveTo(1200, 300, 700); });
-
-  // ── 15s: Ideal candidate profile slides in ──
-  t(15, () => { document.getElementById('job-profile').style.opacity = '1'; });
-
-  // ── 16.5s: Skill bars animate ──
-  t(16.5, () => {
-    const skills = [95, 90, 85, 80, 60, 40];
-    skills.forEach((p, i) => {
-      setTimeout(() => {
-        const bar = document.getElementById('sb-' + i);
-        if (bar) bar.style.width = p + '%';
-      }, i * 200);
-    });
-  });
-
-  // ── 18s: Cursor moves to Candidates sidebar ──
-  t(18, () => { moveTo(NAV.cand.x, NAV.cand.y, 600); });
-  t(18.5, () => { navHover('nav-cand'); });
-  t(19, () => { click(); navClick('nav-cand'); });
-
-  // ── 19.5s: Candidates panel - source badges appear ──
-  t(19.5, () => {
-    document.querySelectorAll('.src-badge').forEach((b, i) => {
-      setTimeout(() => b.classList.add('show'), i * 300);
-    });
-  });
-
-  // ── 20.5s: Counter starts ──
-  t(20.5, () => { animCount(document.getElementById('cand-count'), 142, 3000); });
-  t(22, () => { animCount(document.getElementById('cand-qual'), 23, 1500); });
-
-  // ── 21s: Candidate cards appear one by one ──
-  t(21, () => { document.getElementById('cc-0').classList.add('show'); });
-  t(22.5, () => { document.getElementById('cc-1').classList.add('show'); });
-  t(24, () => { document.getElementById('cc-2').classList.add('show'); });
-  t(25.5, () => { document.getElementById('cc-3').classList.add('show'); });
-  t(27, () => { document.getElementById('cc-4').classList.add('show'); });
-
-  // ── 23s: Cursor scrolls down candidate list ──
-  t(23, () => { moveTo(800, 500, 800); });
-
-  // ── 28s: Cursor hovers Raj Patel card ──
-  t(28, () => { moveTo(900, 290, 600); });
-  t(28.5, () => { document.getElementById('cc-0').classList.add('hov'); });
-
-  // ── 29s: Click Raj Patel → detail panel opens ──
-  t(29, () => { click(); document.getElementById('cand-detail').classList.add('open'); });
-  t(29.5, () => { document.getElementById('cc-0').classList.remove('hov'); });
-
-  // ── 31s: Cursor moves into detail panel ──
-  t(31, () => { moveTo(1500, 400, 600); });
-
-  // ── 33s: Close detail, cursor to Outreach ──
-  t(33, () => { document.getElementById('cand-detail').classList.remove('open'); });
-  t(33.5, () => { moveTo(NAV.out.x, NAV.out.y, 600); });
-  t(34, () => { navHover('nav-out'); });
-  t(34.5, () => { click(); navClick('nav-out'); });
-
-  // ── 35s: Outreach panel - emails start typing ──
-  t(35, () => { typeText(document.getElementById('email-left'), EMAIL_L, 25, 0); });
-  t(36, () => { typeText(document.getElementById('email-right'), EMAIL_R, 22, 0); });
-
-  // ── 37s: Cursor moves between emails ──
-  t(37, () => { moveTo(600, 400, 500); });
-  t(38.5, () => { moveTo(1300, 400, 600); });
-
-  // ── 40s: Cursor clicks "Outreach Sequences" tab ──
-  t(40, () => { moveTo(680, 155, 500); });
-  t(40.5, () => {
-    click();
-    document.getElementById('out-tab-emails').classList.remove('on');
-    document.getElementById('out-tab-seq').classList.add('on');
-    document.getElementById('out-emails').style.display = 'none';
-    document.getElementById('out-seqs').style.display = 'block';
-  });
-
-  // ── 41s: Sequence steps appear ──
-  t(41, () => {
-    for (let i = 0; i < 4; i++) {
-      setTimeout(() => {
-        const el = document.getElementById('seq-passive-' + i);
-        if (el) el.style.opacity = '1';
-      }, i * 400);
-      setTimeout(() => {
-        const el = document.getElementById('seq-active-' + i);
-        if (el) el.style.opacity = '1';
-      }, i * 400 + 200);
-    }
-  });
-
-  // ── 43s: Stats appear ──
-  t(43, () => {
-    document.querySelectorAll('#seq-stats .gl').forEach((el, i) => {
-      setTimeout(() => el.style.opacity = '1', i * 300);
-    });
-  });
-
-  // ── 44s: Cursor to Interviews ──
-  t(44, () => { moveTo(NAV.int.x, NAV.int.y, 600); });
-  t(44.5, () => { navHover('nav-int'); });
-  t(45, () => { click(); navClick('nav-int'); });
-
-  // ── 45.5s: Calendar rows appear ──
-  t(45.5, () => { document.getElementById('cal-r0').style.opacity = '1'; });
-  t(47, () => { document.getElementById('cal-r1').style.opacity = '1'; });
-  t(48.5, () => { document.getElementById('cal-r2').style.opacity = '1'; });
-
-  // ── 49s: Cursor moves across calendar ──
-  t(49, () => { moveTo(900, 350, 800); });
-  t(50, () => { moveTo(750, 320, 500); });
-
-  // ── 51s: Match found ──
-  t(51, () => { document.getElementById('cal-match').classList.add('show'); });
-
-  // ── 52s: Status items appear ──
-  t(52, () => { document.getElementById('is-0').classList.add('show'); });
-  t(52.8, () => { document.getElementById('is-1').classList.add('show'); });
-  t(53.6, () => { document.getElementById('is-2').classList.add('show'); });
-  t(54.4, () => { document.getElementById('is-3').classList.add('show'); });
-
-  // ── 54s: Invite card appears ──
-  t(54, () => { document.getElementById('int-invite').classList.add('show'); });
-
-  // ── 55s: Cursor moves to Analytics sidebar ──
-  t(55, () => { moveTo(NAV.analytics.x, NAV.analytics.y, 600); });
-  t(55.5, () => { navHover('nav-analytics'); });
-  t(56, () => { click(); navClick('nav-analytics'); });
-
-  // ── 56.5s: KPIs appear ──
-  t(56.5, () => { document.getElementById('kpi-0').classList.add('show'); });
-  t(57.5, () => { document.getElementById('kpi-1').classList.add('show'); });
-  t(58.5, () => { document.getElementById('kpi-2').classList.add('show'); });
-  t(59.5, () => { document.getElementById('kpi-3').classList.add('show'); });
-
-  // ── KPI counters ──
-  t(57, () => { animCount(document.getElementById('kpi-place'), 12, 1500); });
-  t(58, () => { animCount(document.getElementById('kpi-ttf'), 18, 1500); });
-  t(59, () => { animCount(document.getElementById('kpi-orders'), 31, 1500); });
-  t(60, () => {
-    const el = document.getElementById('kpi-pipe');
-    const s = performance.now();
-    (function u(now) {
-      const p = Math.min((now - s) / 1500, 1);
-      el.textContent = '$' + Math.round(487000 * (1 - Math.pow(1 - p, 3))).toLocaleString();
-      if (p < 1) requestAnimationFrame(u);
-    })(performance.now());
-  });
-
-  // ── 62s: Source bars ──
-  t(62, () => { document.getElementById('a-sources').style.opacity = '1'; });
-  t(62.5, () => {
-    [41, 28, 18, 13].forEach((p, i) => {
-      setTimeout(() => {
-        const b = document.getElementById('ab-' + i);
-        if (b) b.style.width = p + '%';
-      }, i * 300);
-    });
-  });
-
-  // ── 63s: Cursor hovers over bars ──
-  t(63, () => { moveTo(700, 700, 600); });
-  t(64, () => { moveTo(800, 750, 500); });
-
-  // ── 65s: Funnel ──
-  t(65, () => { document.getElementById('a-funnel').style.opacity = '1'; });
-  t(65.5, () => {
-    const fns = [847, 312, 156, 89, 47, 12];
-    fns.forEach((n, i) => {
-      setTimeout(() => {
-        const step = document.getElementById('fs-' + i);
-        if (step) step.classList.add('show');
-        const arrow = document.getElementById('fa-' + i);
-        if (arrow) arrow.classList.add('show');
-        animCount(document.getElementById('fv-' + i), n, 1200);
-      }, i * 600);
-    });
-  });
-
-  // ── 68s: Cursor moves to funnel ──
-  t(68, () => { moveTo(1300, 700, 600); });
-
-  // ── 72s: Transition to cost overlay ──
-  t(71, () => { hideCursor(); });
-  t(72, () => {
-    document.getElementById('dashboard').classList.remove('vis');
-    document.getElementById('cost-ov').classList.add('vis');
-  });
-  t(73, () => { document.getElementById('cost-cards').style.opacity = '1'; });
-  t(80, () => { document.getElementById('cost-savings').style.opacity = '1'; });
-  t(83, () => { document.getElementById('cost-cta').style.opacity = '1'; });
-
-  // ── 88s: Gentle fade ──
-  t(89, () => {
-    document.getElementById('cost-ov').style.transition = 'opacity 2s';
-    document.getElementById('cost-ov').style.opacity = '0.85';
-  });
-}
-
-// ══════════════════════════════════════════════════════
-// INIT
-// ══════════════════════════════════════════════════════
-
-function init() {
-  buildSkillBars();
-  buildCandCards();
-  buildCalendar();
-  buildIntStatus();
-  buildSequences();
-  buildAnalyticsBars();
-  buildFunnel();
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
 }
 
 function start() {
   document.getElementById('play-btn').classList.add('hidden');
-  T0 = performance.now();
-  audio.play().catch(() => {});
-  requestAnimationFrame(updateProgress);
-  scheduleTimeline();
+  audio.play().catch(function(){});
+
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = audio.currentTime;
+
+    // === HOOK (0-10s) ===
+    // "Your best recruiter fills three roles a month" 0.0s
+    if (t >= 0.3) cue('hook-show', function() {
+      document.getElementById('hook').classList.add('vis');
+    });
+    // "What if the sourcing was done before they got to work?" 7.78s
+    if (t >= 7.5) cue('hook-hide', function() {
+      document.getElementById('hook').classList.remove('vis');
+    });
+
+    // === SCENE 1: Job Order (10-22s) ===
+    // "A new job order comes in" 10.94s
+    if (t >= 8.0) cue('dash-show', function() {
+      document.getElementById('dashboard').classList.add('vis');
+    });
+    if (t >= 8.5) cue('cursor-show', function() {
+      showCursor();
+    });
+    if (t >= 9.0) cue('nav-jobs-move', function() {
+      moveTo(NAV.jobs.x, NAV.jobs.y, 700);
+    });
+    if (t >= 9.5) cue('nav-jobs-hover', function() {
+      navHover('nav-jobs');
+    });
+    if (t >= 10) cue('nav-jobs-click', function() {
+      click(); navClick('nav-jobs');
+    });
+    // "Your AI reads the requirements" 13.28s
+    if (t >= 10.5) cue('notif-show', function() {
+      document.getElementById('notif-banner').classList.add('show');
+    });
+    if (t >= 12) cue('notif-parsed', function() {
+      document.getElementById('notif-status').textContent = 'PARSED \u2713';
+      document.getElementById('notif-status').style.color = '#4ade80';
+    });
+    if (t >= 12.5) cue('notif-cursor', function() {
+      moveTo(700, 108, 500);
+    });
+    if (t >= 13) cue('notif-click', function() {
+      click();
+    });
+    // "Senior DevOps, five years experience" 15.38s
+    if (t >= 14) cue('reqs-show', function() {
+      document.getElementById('job-reqs').style.opacity = '1';
+    });
+    if (t >= 14.5) cue('cursor-right', function() {
+      moveTo(1200, 300, 700);
+    });
+    // "AWS certified" 17.64s
+    if (t >= 15.5) cue('profile-show', function() {
+      document.getElementById('job-profile').style.opacity = '1';
+    });
+    // "willing to relocate" 19.0s
+    if (t >= 17) cue('skill-bars', function() {
+      var skills = [95, 90, 85, 80, 60, 40];
+      skills.forEach(function(p, i) {
+        setTimeout(function() {
+          var bar = document.getElementById('sb-' + i);
+          if (bar) bar.style.width = p + '%';
+        }, i * 200);
+      });
+    });
+
+    // === SCENE 2: Candidates (19-34s) ===
+    // "Within minutes, it\'s mining your ATS" 21.14s
+    if (t >= 19) cue('nav-cand-move', function() {
+      moveTo(NAV.cand.x, NAV.cand.y, 600);
+    });
+    if (t >= 19.5) cue('nav-cand-hover', function() {
+      navHover('nav-cand');
+    });
+    if (t >= 20) cue('nav-cand-click', function() {
+      click(); navClick('nav-cand');
+    });
+    // Source badges
+    if (t >= 20.5) cue('src-badges', function() {
+      document.querySelectorAll('.src-badge').forEach(function(b, i) {
+        setTimeout(function() { b.classList.add('show'); }, i * 300);
+      });
+    });
+    // "your ATS, LinkedIn" 22.58s - counter
+    if (t >= 21.5) cue('cand-count', function() {
+      animCount(document.getElementById('cand-count'), 142, 3000);
+    });
+    // "building a ranked list" 25.2s
+    if (t >= 22) cue('cc0', function() { document.getElementById('cc-0').classList.add('show'); });
+    if (t >= 23) cue('cand-qual', function() {
+      animCount(document.getElementById('cand-qual'), 23, 1500);
+    });
+    if (t >= 23.5) cue('cc1', function() { document.getElementById('cc-1').classList.add('show'); });
+    if (t >= 24) cue('cursor-scroll', function() { moveTo(800, 500, 800); });
+    if (t >= 25) cue('cc2', function() { document.getElementById('cc-2').classList.add('show'); });
+    if (t >= 26.5) cue('cc3', function() { document.getElementById('cc-3').classList.add('show'); });
+    // "Not keyword spam, real matching" 28.16s
+    if (t >= 28) cue('cc4', function() { document.getElementById('cc-4').classList.add('show'); });
+    if (t >= 29) cue('raj-hover', function() {
+      moveTo(900, 290, 600);
+      document.getElementById('cc-0').classList.add('hov');
+    });
+    // "Every candidate gets a personalized message" 32.32s
+    if (t >= 30) cue('raj-click', function() {
+      click();
+      document.getElementById('cand-detail').classList.add('open');
+      document.getElementById('cc-0').classList.remove('hov');
+    });
+    if (t >= 32) cue('detail-cursor', function() {
+      moveTo(1500, 400, 600);
+    });
+
+    // === SCENE 3: Outreach (34-50s) ===
+    // "Not dear candidate" 35.26s
+    if (t >= 34) cue('close-detail', function() {
+      document.getElementById('cand-detail').classList.remove('open');
+    });
+    if (t >= 34.5) cue('nav-out-move', function() {
+      moveTo(NAV.out.x, NAV.out.y, 600);
+    });
+    if (t >= 35) cue('nav-out-hover', function() {
+      navHover('nav-out');
+    });
+    if (t >= 35.5) cue('nav-out-click', function() {
+      click(); navClick('nav-out');
+    });
+    // "Real personalization" 38.94s - emails typing
+    if (t >= 36) cue('email-left', function() {
+      typeText(document.getElementById('email-left'), EMAIL_L, 25, 0);
+    });
+    if (t >= 37) cue('email-right', function() {
+      typeText(document.getElementById('email-right'), EMAIL_R, 22, 0);
+    });
+    if (t >= 38) cue('cursor-email-l', function() { moveTo(600, 400, 500); });
+    if (t >= 39.5) cue('cursor-email-r', function() { moveTo(1300, 400, 600); });
+    // "Passive candidates who ignore generic recruiters" 46.3s - sequences tab
+    if (t >= 41) cue('cursor-seqtab', function() { moveTo(680, 155, 500); });
+    if (t >= 41.5) cue('seq-tab-click', function() {
+      click();
+      document.getElementById('out-tab-emails').classList.remove('on');
+      document.getElementById('out-tab-seq').classList.add('on');
+      document.getElementById('out-emails').style.display = 'none';
+      document.getElementById('out-seqs').style.display = 'block';
+    });
+    // Sequence steps appear
+    if (t >= 42) cue('seq-steps', function() {
+      for (var i = 0; i < 4; i++) {
+        (function(idx) {
+          setTimeout(function() {
+            var el = document.getElementById('seq-passive-' + idx);
+            if (el) el.style.opacity = '1';
+          }, idx * 400);
+          setTimeout(function() {
+            var el = document.getElementById('seq-active-' + idx);
+            if (el) el.style.opacity = '1';
+          }, idx * 400 + 200);
+        })(i);
+      }
+    });
+    // Stats
+    if (t >= 44) cue('seq-stats', function() {
+      document.querySelectorAll('#seq-stats .gl').forEach(function(el, i) {
+        setTimeout(function() { el.style.opacity = '1'; }, i * 300);
+      });
+    });
+
+    // === SCENE 4: Interviews (45-56s) ===
+    // "Interested candidates don\'t fall" 50.48s
+    if (t >= 45) cue('nav-int-move', function() {
+      moveTo(NAV.int.x, NAV.int.y, 600);
+    });
+    if (t >= 45.5) cue('nav-int-hover', function() {
+      navHover('nav-int');
+    });
+    if (t >= 46) cue('nav-int-click', function() {
+      click(); navClick('nav-int');
+    });
+    // "The AI coordinates" 53.64s - calendar rows
+    if (t >= 47) cue('cal-r0', function() { document.getElementById('cal-r0').style.opacity = '1'; });
+    if (t >= 48.5) cue('cal-r1', function() { document.getElementById('cal-r1').style.opacity = '1'; });
+    if (t >= 50) cue('cal-r2', function() { document.getElementById('cal-r2').style.opacity = '1'; });
+    if (t >= 50.5) cue('cal-scan1', function() { moveTo(900, 350, 800); });
+    if (t >= 51.5) cue('cal-scan2', function() { moveTo(750, 320, 500); });
+    // "Finds mutual availability" 58.6s
+    if (t >= 52) cue('cal-match', function() {
+      document.getElementById('cal-match').classList.add('show');
+    });
+    // "Sends calendar invites" 60.34s - status items
+    if (t >= 53) cue('is0', function() { document.getElementById('is-0').classList.add('show'); });
+    if (t >= 53.8) cue('is1', function() { document.getElementById('is-1').classList.add('show'); });
+    if (t >= 54.6) cue('is2', function() { document.getElementById('is-2').classList.add('show'); });
+    if (t >= 55.4) cue('is3', function() { document.getElementById('is-3').classList.add('show'); });
+    // "Sends prep materials" 62.0s
+    if (t >= 55) cue('invite', function() {
+      document.getElementById('int-invite').classList.add('show');
+    });
+
+    // === SCENE 5: Analytics (56-72s) ===
+    // "Done" 63.56s
+    if (t >= 56) cue('nav-analytics-move', function() {
+      moveTo(NAV.analytics.x, NAV.analytics.y, 600);
+    });
+    if (t >= 56.5) cue('nav-analytics-hover', function() {
+      navHover('nav-analytics');
+    });
+    if (t >= 57) cue('nav-analytics-click', function() {
+      click(); navClick('nav-analytics');
+    });
+    // "Time to fill drops" 64.54s - KPIs
+    if (t >= 57.5) cue('kpi0', function() { document.getElementById('kpi-0').classList.add('show'); });
+    if (t >= 58.5) cue('kpi1', function() { document.getElementById('kpi-1').classList.add('show'); });
+    if (t >= 59.5) cue('kpi2', function() { document.getElementById('kpi-2').classList.add('show'); });
+    if (t >= 60.5) cue('kpi3', function() { document.getElementById('kpi-3').classList.add('show'); });
+    // KPI counters
+    if (t >= 58) cue('kpi-place', function() { animCount(document.getElementById('kpi-place'), 12, 1500); });
+    if (t >= 59) cue('kpi-ttf', function() { animCount(document.getElementById('kpi-ttf'), 18, 1500); });
+    if (t >= 60) cue('kpi-orders', function() { animCount(document.getElementById('kpi-orders'), 31, 1500); });
+    if (t >= 61) cue('kpi-pipe', function() {
+      var el = document.getElementById('kpi-pipe');
+      var s = performance.now();
+      (function u(now) {
+        var p = Math.min((now - s) / 1500, 1);
+        el.textContent = '$' + Math.round(487000 * (1 - Math.pow(1 - p, 3))).toLocaleString();
+        if (p < 1) requestAnimationFrame(u);
+      })(performance.now());
+    });
+    // "Your pipeline is always full" 67.1s - source bars
+    if (t >= 63) cue('a-sources', function() { document.getElementById('a-sources').style.opacity = '1'; });
+    if (t >= 63.5) cue('a-bars', function() {
+      [41, 28, 18, 13].forEach(function(p, i) {
+        setTimeout(function() {
+          var b = document.getElementById('ab-' + i);
+          if (b) b.style.width = p + '%';
+        }, i * 300);
+      });
+    });
+    if (t >= 64) cue('cursor-bars1', function() { moveTo(700, 700, 600); });
+    if (t >= 65) cue('cursor-bars2', function() { moveTo(800, 750, 500); });
+    // "which roles are stuck" 72.0s - funnel
+    if (t >= 66) cue('a-funnel', function() { document.getElementById('a-funnel').style.opacity = '1'; });
+    if (t >= 66.5) cue('funnel-items', function() {
+      var fns = [847, 312, 156, 89, 47, 12];
+      fns.forEach(function(n, i) {
+        setTimeout(function() {
+          var step = document.getElementById('fs-' + i);
+          if (step) step.classList.add('show');
+          var arrow = document.getElementById('fa-' + i);
+          if (arrow) arrow.classList.add('show');
+          animCount(document.getElementById('fv-' + i), n, 1200);
+        }, i * 600);
+      });
+    });
+    if (t >= 69) cue('cursor-funnel', function() { moveTo(1300, 700, 600); });
+
+    // === SCENE 6: Cost Overlay (72-94s) ===
+    // "A junior recruiter costs" 76.76s
+    if (t >= 72) cue('hide-cursor', function() { hideCursor(); });
+    if (t >= 73) cue('cost-transition', function() {
+      document.getElementById('dashboard').classList.remove('vis');
+      document.getElementById('cost-ov').classList.add('vis');
+    });
+    if (t >= 74) cue('cost-cards', function() {
+      document.getElementById('cost-cards').style.opacity = '1';
+    });
+    // "Your AI works every rekey simultaneously" 81.88s
+    if (t >= 81) cue('cost-savings', function() {
+      document.getElementById('cost-savings').style.opacity = '1';
+    });
+    // "Sourcing, outreaching, scheduling" 86.14s
+    if (t >= 84) cue('cost-cta', function() {
+      document.getElementById('cost-cta').style.opacity = '1';
+    });
+    // Gentle fade at end
+    if (t >= 90) cue('cost-fade', function() {
+      document.getElementById('cost-ov').style.transition = 'opacity 2s';
+      document.getElementById('cost-ov').style.opacity = '0.85';
+    });
+
+    if (!audio.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 init();

@@ -835,180 +835,234 @@ function buildUI() {
 // ============================================================
 // TIMELINE — array of { t: seconds, fn: () => {} }
 // ============================================================
-function buildTimeline() {
-  const TL = [];
-  const at = (t, fn) => TL.push({ t, fn });
 
-  // ---- HOOK (0-8s) ----
-  at(0.1, () => { document.getElementById('hookOverlay').classList.add('visible'); });
-  at(0.5, () => { document.getElementById('hookText').classList.add('visible'); });
-  at(6.0, () => { document.getElementById('hookText').classList.remove('visible'); });
-  at(6.5, () => { document.getElementById('hookLogo').classList.add('visible'); });
-  at(7.8, () => { document.getElementById('hookLogo').classList.remove('visible'); });
-  at(8.0, () => {
-    document.getElementById('hookOverlay').classList.remove('visible');
-    document.getElementById('dashboard').classList.add('visible');
-  });
-
-  // ---- LISTINGS (8-25s): Dashboard appears, cursor navigates ----
-  at(8.5, () => { showCursor(); moveCursor(960, 400, 'slow'); });
-  // Cursor moves toward the listing card
-  at(9.2, () => { moveCursor(700, 320); });
-  at(9.8, () => {
-    document.getElementById('listingCard').style.borderColor = 'rgba(14,165,233,0.5)';
-    document.getElementById('listingCard').style.boxShadow = '0 0 20px rgba(14,165,233,0.15)';
-  });
-  at(10.2, () => { clickAt(700, 320); });
-  // Channels start appearing
-  at(10.8, () => { document.getElementById('channel-0').classList.add('show'); });
-  at(11.0, () => { moveCursor(500, 520); });
-  at(11.8, () => { document.getElementById('channel-1').classList.add('show'); });
-  at(12.2, () => { moveCursor(500, 580); });
-  at(12.8, () => { document.getElementById('channel-2').classList.add('show'); });
-  at(13.5, () => { moveCursor(500, 640); });
-  at(13.8, () => { document.getElementById('channel-3').classList.add('show'); });
-  at(14.5, () => { document.getElementById('channel-4').classList.add('show'); });
-  at(15.0, () => { document.getElementById('channel-5').classList.add('show'); });
-  // Cursor drifts to AI description
-  at(15.2, () => { moveCursor(1350, 300, 'slow'); });
-  // Start typing the description
-  at(15.5, () => { typeText(document.getElementById('listingDescription'), LISTING_DESC, 18); });
-  at(17.0, () => { moveCursor(1400, 450, 'slow'); });
-  at(19.0, () => { moveCursor(1300, 550, 'slow'); });
-  at(21.0, () => { moveCursor(1350, 600, 'slow'); });
-  // Remove listing card highlight
-  at(23.0, () => {
-    document.getElementById('listingCard').style.borderColor = 'rgba(14,165,233,0.2)';
-    document.getElementById('listingCard').style.boxShadow = 'none';
-  });
-
-  // ---- LEADS (25-42s): Click sidebar → Leads ----
-  at(24.0, () => { moveCursor(120, 218); });
-  at(24.5, () => { hoverSidebar('leads'); });
-  at(25.0, () => {
-    unhoverSidebar('leads');
-    clickAt(120, 218);
-    activatePanel('leads');
-  });
-  // Animate lead counter
-  at(25.5, () => { animateCounter(document.getElementById('leadCounter'), 47); });
-  // Lead cards appear one by one
-  at(25.8, () => { document.getElementById('lead-0').classList.add('show'); moveCursor(700, 240); });
-  at(26.8, () => { document.getElementById('lead-1').classList.add('show'); });
-  at(27.5, () => { document.getElementById('lead-2').classList.add('show'); moveCursor(700, 340); });
-  at(28.2, () => { document.getElementById('lead-3').classList.add('show'); });
-  at(29.0, () => { document.getElementById('lead-4').classList.add('show'); });
-  // Cursor moves to first lead and hovers
-  at(29.5, () => { moveCursor(600, 208); });
-  at(29.8, () => { hoverEl('lead-0'); });
-  // Click on Jennifer Walsh → chat panel opens
-  at(30.5, () => {
-    unhoverEl('lead-0');
-    clickAt(600, 208);
-    document.getElementById('chatPanel').style.opacity = '1';
-  });
-  // Chat messages appear
-  at(31.0, () => { document.getElementById('chat-0').classList.add('show'); moveCursor(1450, 280); });
-  at(32.5, () => { document.getElementById('chat-1').classList.add('show'); });
-  at(34.0, () => { document.getElementById('chat-2').classList.add('show'); moveCursor(1400, 400, 'slow'); });
-  at(35.5, () => { document.getElementById('chat-3').classList.add('show'); });
-  at(37.0, () => { document.getElementById('chat-4').classList.add('show'); moveCursor(1420, 500, 'slow'); });
-  at(38.0, () => { document.getElementById('chat-5').classList.add('show'); });
-  at(39.5, () => { document.getElementById('chat-6').classList.add('show'); moveCursor(1380, 620, 'slow'); });
-  at(40.5, () => { document.getElementById('chat-7').classList.add('show'); });
-
-  // ---- SHOWINGS (42-55s): Click sidebar → Showings ----
-  at(41.5, () => { moveCursor(120, 260); });
-  at(42.0, () => { hoverSidebar('showings'); });
-  at(42.5, () => {
-    unhoverSidebar('showings');
-    clickAt(120, 260);
-    activatePanel('showings');
-  });
-  // Showings appear
-  at(43.0, () => { document.getElementById('show-0').classList.add('show'); moveCursor(600, 240); });
-  at(43.8, () => { document.getElementById('show-1').classList.add('show'); });
-  at(44.5, () => { document.getElementById('show-2').classList.add('show'); moveCursor(600, 340, 'slow'); });
-  at(45.2, () => { document.getElementById('show-3').classList.add('show'); });
-  at(45.8, () => { document.getElementById('show-4').classList.add('show'); });
-  at(46.3, () => { document.getElementById('show-5').classList.add('show'); });
-  // Cursor hovers over a showing
-  at(46.8, () => { moveCursor(600, 190); hoverEl('show-0'); });
-  at(47.5, () => { unhoverEl('show-0'); clickAt(600, 190); });
-  // Log entries appear
-  at(47.0, () => { document.getElementById('log-0').classList.add('show'); });
-  at(47.8, () => { document.getElementById('log-1').classList.add('show'); });
-  at(48.5, () => { document.getElementById('log-2').classList.add('show'); moveCursor(1500, 350, 'slow'); });
-  at(49.2, () => { document.getElementById('log-3').classList.add('show'); });
-  at(49.8, () => { document.getElementById('log-4').classList.add('show'); });
-  at(50.3, () => { document.getElementById('log-5').classList.add('show'); });
-  at(51.0, () => { document.getElementById('log-6').classList.add('show'); moveCursor(1480, 500, 'slow'); });
-  at(51.5, () => { document.getElementById('log-7').classList.add('show'); });
-  at(52.0, () => { document.getElementById('log-8').classList.add('show'); });
-  at(52.8, () => {
-    document.getElementById('log-9').classList.add('show');
-    // Scroll the log down
-    document.getElementById('logInner').style.transform = 'translateY(-80px)';
-  });
-  at(53.5, () => { moveCursor(1450, 550, 'slow'); });
-
-  // ---- SELLER / MARKETING (55-70s): Click sidebar → Marketing ----
-  at(54.5, () => { moveCursor(120, 302); });
-  at(55.0, () => { hoverSidebar('marketing'); });
-  at(55.5, () => {
-    unhoverSidebar('marketing');
-    clickAt(120, 302);
-    activatePanel('marketing');
-  });
-  // Report sections appear
-  at(56.0, () => { document.getElementById('report-0').classList.add('show'); moveCursor(600, 350); });
-  at(57.5, () => { document.getElementById('report-1').classList.add('show'); moveCursor(1100, 350, 'slow'); });
-  at(59.0, () => { document.getElementById('report-2').classList.add('show'); moveCursor(600, 550, 'slow'); });
-  at(60.5, () => { document.getElementById('report-3').classList.add('show'); moveCursor(1100, 550, 'slow'); });
-  at(62.5, () => { document.getElementById('report-4').classList.add('show'); moveCursor(800, 700, 'slow'); });
-  // Cursor moves over recommendation
-  at(64.0, () => { moveCursor(900, 720, 'slow'); });
-  at(65.5, () => { moveCursor(750, 740, 'slow'); });
-  at(67.0, () => { moveCursor(850, 720, 'slow'); });
-
-  // ---- COST + CTA (70-92s) ----
-  at(69.0, () => { hideCursor(); });
-  at(70.0, () => {
-    document.getElementById('ctaOverlay').classList.add('visible');
-  });
-  at(70.5, () => { document.getElementById('ctaLabel').style.opacity = '1'; });
-  at(71.5, () => { document.getElementById('ctaCosts').style.opacity = '1'; });
-  at(78.0, () => { document.getElementById('ctaSavings').style.opacity = '1'; });
-  at(82.0, () => { document.getElementById('ctaRevenue').style.opacity = '1'; });
-  at(86.0, () => { document.getElementById('ctaFinal').style.opacity = '1'; });
-
-  return TL.sort((a, b) => a.t - b.t);
-}
-
-// ============================================================
-// MAIN START
-// ============================================================
-let timeline = [];
-let tlIndex = 0;
-
-function tick() {
-  const elapsed = (performance.now() - startTime) / 1000;
-  while (tlIndex < timeline.length && timeline[tlIndex].t <= elapsed) {
-    timeline[tlIndex].fn();
-    tlIndex++;
-  }
-  if (elapsed < TOTAL_DURATION + 5) requestAnimationFrame(tick);
+// Audio-driven scene transitions — no drift possible
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
 }
 
 function startPresentation() {
   document.getElementById('playBtn').classList.add('hidden');
-  // controls handled by simple tap-to-pause
-  buildUI();
-  timeline = buildTimeline();
   startTime = performance.now();
-  document.getElementById('voiceover').play().catch(() => {});
+  buildUI();
+  var vo = document.getElementById('voiceover');
+  vo.play().catch(function(){});
+
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = vo.currentTime;
+
+    // === HOOK (0-10s) ===
+    // "Your best listing just went live" 0.0s
+    if (t >= 0.5) cue('hook-show', function() { fadeIn('hookText'); });
+    // "Your ISA is on lunch" 4.7s
+    if (t >= 4.5) cue('hook-hide', function() { fadeOut('hookText'); });
+    if (t >= 6) cue('hook-logo', function() { fadeIn('logoReveal'); });
+    if (t >= 8) cue('hook-logo-hide', function() { fadeOut('logoReveal'); });
+
+    // === SCENE 1: LISTING LAUNCH (10-25s) ===
+    // "Sound familiar? The moment a listing goes live" 10.0s
+    if (t >= 9.5) cue('s1-start', function() {
+      showScene('listing');
+      showCursor();
+      moveCursor(960, 100, 'instant');
+    });
+    if (t >= 10) cue('s1-sidebar', function() {
+      moveCursor(125, 135, 'fast');
+      clickAt(125, 135);
+    });
+    // "your AI generates the marketing copy" 10.0s
+    if (t >= 11) cue('s1-counter', function() {
+      animateCounter(document.getElementById('s1-counter'), 47, 2000);
+    });
+    // Lead cards appear
+    if (t >= 11.5) cue('s1-lead0', function() { var e = document.getElementById('lead-0'); if(e) e.classList.add('visible'); });
+    if (t >= 12.5) cue('s1-lead1', function() { var e = document.getElementById('lead-1'); if(e) e.classList.add('visible'); });
+    if (t >= 13.5) cue('s1-lead2', function() { var e = document.getElementById('lead-2'); if(e) e.classList.add('visible'); });
+    // "pushes it to MLS, blasts your email list" 14.8s
+    if (t >= 14.5) cue('s1-lead3', function() { var e = document.getElementById('lead-3'); if(e) e.classList.add('visible'); });
+    if (t >= 15.5) cue('s1-lead4', function() { var e = document.getElementById('lead-4'); if(e) e.classList.add('visible'); });
+    if (t >= 16.5) cue('s1-lead5', function() { var e = document.getElementById('lead-5'); if(e) e.classList.add('visible'); });
+    // "All within minutes, not a template" 19.4s
+    if (t >= 17) cue('s1-cursor1', function() { moveCursor(600, 340, 'slow'); });
+    if (t >= 18) cue('s1-hover0', function() { hoverEl(document.getElementById('lead-0')); });
+    // "Custom copy for every property" 22.0s
+    if (t >= 19) cue('s1-click0', function() {
+      clickAt(600, 340);
+      clickEl(document.getElementById('lead-0'));
+      var d = document.getElementById('lead-detail-0');
+      if (d) d.classList.add('open');
+    });
+    if (t >= 20.5) cue('s1-unhover0', function() {
+      unhoverEl(document.getElementById('lead-0'));
+      moveCursor(600, 500, 'slow');
+    });
+    if (t >= 21.5) cue('s1-hover2', function() { hoverEl(document.getElementById('lead-2')); });
+    // "every channel, every audience" 22.0s
+    if (t >= 23) cue('s1-to-quotes', function() {
+      unhoverEl(document.getElementById('lead-2'));
+      moveCursor(125, 220, 'slow');
+    });
+    if (t >= 24) cue('s1-quotes-hover', function() {
+      var items = document.querySelectorAll('#sidebar1 .sidebar-item');
+      items.forEach(function(el) { el.classList.remove('active'); });
+      if (items[3]) items[3].classList.add('hovered');
+    });
+    if (t >= 24.5) cue('s1-quotes-click', function() { clickAt(125, 220); });
+
+    // === SCENE 2: BUYER RESPONSE (25-40s) ===
+    // "Buyer inquiries from Zillow" 25.7s
+    if (t >= 25.5) cue('s2-start', function() {
+      showScene('quotes');
+      moveCursor(700, 200, 'instant');
+    });
+    if (t >= 26) cue('s2-header', function() {
+      var h = document.getElementById('s2-header');
+      if (h) { h.style.transition = 'opacity 0.6s ease'; h.style.opacity = '1'; }
+    });
+    if (t >= 27) cue('s2-quoting', function() {
+      var q = document.getElementById('s2-quoting');
+      if (q) { q.style.transition = 'opacity 0.4s'; q.style.opacity = '1'; }
+    });
+    // "Every single one gets an instant response" 29.6s
+    if (t >= 28) cue('s2-speed', function() {
+      var q = document.getElementById('s2-quoting');
+      if (q) q.style.opacity = '0';
+      var s = document.getElementById('s2-speed');
+      if (s) s.textContent = 'Quoted in 4.2 seconds';
+    });
+    if (t >= 29) cue('s2-row0', function() { var e = document.getElementById('qrow-0'); if(e) e.classList.add('visible'); moveCursor(700, 370, 'fast'); });
+    if (t >= 30) cue('s2-row1', function() { var e = document.getElementById('qrow-1'); if(e) e.classList.add('visible'); moveCursor(700, 415, 'fast'); });
+    // "The AI qualifies them" 33.1s
+    if (t >= 31) cue('s2-row2', function() { var e = document.getElementById('qrow-2'); if(e) e.classList.add('visible'); moveCursor(700, 460, 'fast'); });
+    if (t >= 32) cue('s2-row3', function() { var e = document.getElementById('qrow-3'); if(e) e.classList.add('visible'); moveCursor(700, 505, 'fast'); });
+    if (t >= 33) cue('s2-row4', function() { var e = document.getElementById('qrow-4'); if(e) e.classList.add('visible'); });
+    // "Are you pre-approved?" 33.1s
+    if (t >= 34) cue('s2-hover-rec', function() { moveCursor(700, 415, 'slow'); var e = document.getElementById('qrow-1'); if(e) e.classList.add('hovered'); });
+    if (t >= 35) cue('s2-click-rec', function() {
+      clickAt(700, 415);
+      var e = document.getElementById('qrow-1'); if(e) e.classList.remove('hovered');
+    });
+    // "What's your timeline?" 36.2s
+    if (t >= 36) cue('s2-rec', function() {
+      var r = document.getElementById('s2-rec');
+      if (r) { r.style.transition = 'opacity 0.8s ease'; r.style.opacity = '1'; }
+    });
+    // "Hot buyers get flagged immediately" 39.7s
+    if (t >= 38) cue('s2-btn-hover', function() { moveCursor(1540, 752, 'slow'); var e = document.getElementById('s2-btn'); if(e) e.classList.add('hovered'); });
+    if (t >= 39) cue('s2-btn-click', function() {
+      clickAt(1540, 752);
+      var e = document.getElementById('s2-btn');
+      if (e) { e.classList.remove('hovered'); e.innerHTML = '\u2713 Proposal Sent'; e.style.background = '#22c55e'; }
+    });
+    if (t >= 40) cue('s2-to-renewals', function() { moveCursor(125, 178, 'slow'); });
+    if (t >= 41) cue('s2-renewals-click', function() { clickAt(125, 178); });
+
+    // === SCENE 3: SHOWINGS/CALENDAR (42-55s) ===
+    // "It coordinates showings" 43.6s
+    if (t >= 42) cue('s3-start', function() {
+      showScene('renewals');
+      moveCursor(960, 200, 'instant');
+    });
+    if (t >= 43) cue('s3-counters', function() {
+      animateCounter(document.getElementById('s3-total'), 847, 2000);
+      animateCounter(document.getElementById('s3-requote'), 23, 1500);
+    });
+    // Cards appear across columns
+    if (t >= 43) cue('s3-c90-0', function() { var e = document.getElementById('s3-col90-card-0'); if(e) e.classList.add('visible'); });
+    if (t >= 43.5) cue('s3-c60-0', function() { var e = document.getElementById('s3-col60-card-0'); if(e) e.classList.add('visible'); });
+    if (t >= 44) cue('s3-c30-0', function() { var e = document.getElementById('s3-col30-card-0'); if(e) e.classList.add('visible'); });
+    if (t >= 44.5) cue('s3-c90-1', function() { var e = document.getElementById('s3-col90-card-1'); if(e) e.classList.add('visible'); });
+    if (t >= 45) cue('s3-c60-1', function() { var e = document.getElementById('s3-col60-card-1'); if(e) e.classList.add('visible'); });
+    if (t >= 45.5) cue('s3-c30-1', function() { var e = document.getElementById('s3-col30-card-1'); if(e) e.classList.add('visible'); });
+    if (t >= 46) cue('s3-c90-2', function() { var e = document.getElementById('s3-col90-card-2'); if(e) e.classList.add('visible'); });
+    if (t >= 46.5) cue('s3-c60-2', function() { var e = document.getElementById('s3-col60-card-2'); if(e) e.classList.add('visible'); });
+    if (t >= 47) cue('s3-c30-2', function() { var e = document.getElementById('s3-col30-card-2'); if(e) e.classList.add('visible'); });
+    if (t >= 47.5) cue('s3-c90-3', function() { var e = document.getElementById('s3-col90-card-3'); if(e) e.classList.add('visible'); });
+    if (t >= 48) cue('s3-c60-3', function() { var e = document.getElementById('s3-col60-card-3'); if(e) e.classList.add('visible'); });
+    // "Sends confirmations, sends reminders" 48.2s
+    if (t >= 48.5) cue('s3-c30-3', function() { var e = document.getElementById('s3-col30-card-3'); if(e) e.classList.add('visible'); });
+    if (t >= 49) cue('s3-c30-4', function() { var e = document.getElementById('s3-col30-card-4'); if(e) e.classList.add('visible'); });
+    // Cursor scans columns
+    if (t >= 44) cue('s3-cursor1', function() { moveCursor(440, 330, 'slow'); });
+    if (t >= 46) cue('s3-cursor2', function() { moveCursor(820, 350, 'slow'); });
+    if (t >= 47.5) cue('s3-hover60', function() { hoverEl(document.getElementById('s3-col60-card-1')); });
+    // "Your agents stop playing phone tag" 51.7s
+    if (t >= 49.5) cue('s3-to30', function() {
+      unhoverEl(document.getElementById('s3-col60-card-1'));
+      moveCursor(1200, 330, 'slow');
+    });
+    if (t >= 50.5) cue('s3-hover30', function() { hoverEl(document.getElementById('s3-col30-card-0')); });
+    if (t >= 51.5) cue('s3-click30', function() {
+      clickAt(1200, 330);
+      clickEl(document.getElementById('s3-col30-card-0'));
+      var e = document.getElementById('s3-col30-rq-0');
+      if (e) e.classList.add('open');
+    });
+    if (t >= 53) cue('s3-down', function() {
+      unhoverEl(document.getElementById('s3-col30-card-0'));
+      moveCursor(1200, 550, 'slow');
+    });
+    if (t >= 54) cue('s3-hover30b', function() { hoverEl(document.getElementById('s3-col30-card-2')); });
+
+    // === SCENE 4: SELLER REPORTS (55-70s) ===
+    // "Every seller gets a weekly report" 54.8s
+    if (t >= 55) cue('s4-to-sidebar', function() {
+      unhoverEl(document.getElementById('s3-col30-card-2'));
+      moveCursor(125, 260, 'slow');
+    });
+    if (t >= 56) cue('s4-sidebar-hover', function() {
+      var items = document.querySelectorAll('#sidebar3 .sidebar-item');
+      if (items[4]) items[4].classList.add('hovered');
+    });
+    if (t >= 56.5) cue('s4-sidebar-click', function() { clickAt(125, 260); });
+    if (t >= 57) cue('s4-start', function() {
+      showScene('crosssell');
+      moveCursor(700, 200, 'instant');
+    });
+    // "Showing activity, buyer feedback" 58.0s
+    if (t >= 58) cue('s4-gap0', function() { var e = document.getElementById('gap-0'); if(e) e.classList.add('visible'); });
+    if (t >= 59.5) cue('s4-gap1', function() { var e = document.getElementById('gap-1'); if(e) e.classList.add('visible'); });
+    if (t >= 61) cue('s4-gap2', function() { var e = document.getElementById('gap-2'); if(e) e.classList.add('visible'); });
+    // "comparable sales, market positioning" 58.0s
+    if (t >= 59) cue('s4-hover0', function() { moveCursor(550, 310, 'slow'); hoverEl(document.getElementById('gap-0')); });
+    if (t >= 61) cue('s4-click0', function() {
+      clickAt(550, 310);
+      clickEl(document.getElementById('gap-0'));
+      var e = document.getElementById('s4-email-panel');
+      if (e) e.classList.add('open');
+    });
+    if (t >= 62) cue('s4-gap3', function() { var e = document.getElementById('gap-3'); if(e) e.classList.add('visible'); unhoverEl(document.getElementById('gap-0')); });
+    // "They feel informed without calling" 62.5s
+    if (t >= 63) cue('s4-email1', function() { moveCursor(1350, 400, 'slow'); });
+    if (t >= 64) cue('s4-email2', function() { moveCursor(1350, 500, 'slow'); });
+    if (t >= 65.5) cue('s4-email3', function() { moveCursor(1350, 580, 'slow'); });
+    if (t >= 67) cue('s4-hover2', function() { moveCursor(550, 550, 'slow'); hoverEl(document.getElementById('gap-2')); });
+    if (t >= 68.5) cue('s4-hover3', function() {
+      unhoverEl(document.getElementById('gap-2'));
+      moveCursor(550, 650, 'slow');
+      hoverEl(document.getElementById('gap-3'));
+    });
+    if (t >= 70) cue('s4-unhover3', function() { unhoverEl(document.getElementById('gap-3')); });
+
+    // === SCENE 5: COST + CTA (70-80s) ===
+    // "An inside sales agent costs $3,000" 66.2s
+    if (t >= 69.5) cue('s5-hide-cursor', function() { hideCursor(); });
+    if (t >= 70) cue('s5-cta-show', function() {
+      document.getElementById('ctaOverlay').classList.add('visible');
+    });
+    if (t >= 70.5) cue('s5-label', function() { var e = document.getElementById('ctaLabel'); if(e) e.style.opacity = '1'; });
+    if (t >= 71.5) cue('s5-costs', function() { var e = document.getElementById('ctaCosts'); if(e) e.style.opacity = '1'; });
+    // "Your AI handles hundreds" 71.7s
+    if (t >= 75) cue('s5-savings', function() { var e = document.getElementById('ctaSavings'); if(e) e.style.opacity = '1'; });
+    // "Your AI. Only yours." 76.7s
+    if (t >= 77) cue('s5-revenue', function() { var e = document.getElementById('ctaRevenue'); if(e) e.style.opacity = '1'; });
+    if (t >= 79) cue('s5-final', function() { var e = document.getElementById('ctaFinal'); if(e) e.style.opacity = '1'; });
+
+    if (!vo.ended) requestAnimationFrame(tick);
+  }
   requestAnimationFrame(tick);
-  requestAnimationFrame(updateProgress);
 }
 
 document.getElementById('playBtn').addEventListener('click', startPresentation);

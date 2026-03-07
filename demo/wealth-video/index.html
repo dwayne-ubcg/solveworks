@@ -773,212 +773,212 @@ function updateProgress() {
   if (elapsed < TOTAL_DURATION + 2) requestAnimationFrame(updateProgress);
 }
 
-// ============================================================
-// MAIN TIMELINE — ~90 seconds synced to voiceover
-// ============================================================
-function runTimeline() {
-  // Populate all content first (hidden)
+
+// Audio-driven scene transitions — no drift possible
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  startTime = performance.now();
+  voiceover.play().catch(function(){});
+
+  // Populate all content first
   populatePortfolioTable();
   populateReportGrid();
   populateProspects();
   populateDripSequence();
   populateCompliance();
 
-  // ── HOOK (0–8s) ──
-  at(0.5, () => { document.getElementById('hookText').style.opacity = '1'; });
-  at(5.5, () => { document.getElementById('hookText').style.opacity = '0'; });
-  at(6.5, () => {
-    document.getElementById('hookLogo').style.opacity = '1';
-  });
-  at(7.5, () => {
-    document.getElementById('hookOverlay').classList.add('hidden');
-    document.getElementById('dashboard').classList.add('visible');
-    showCursor();
-    moveCursor(960, 400, 'instant');
-  });
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // ── SCENE 1: PORTFOLIO MONITORING (8–25s) ──
-  // Reveal stat cards with cursor hovering over them
-  at(8.5, () => { moveCursor(500, 180); });
-  at(9.2, () => { revealEl(document.getElementById('stat-aum')); });
-  at(9.8, () => { moveCursor(720, 180); hoverEl(document.getElementById('stat-aum')); });
-  at(10.3, () => { unhoverEl(document.getElementById('stat-aum')); revealEl(document.getElementById('stat-families')); });
-  at(10.8, () => { moveCursor(940, 180); revealEl(document.getElementById('stat-drift')); });
-  at(11.3, () => { hoverEl(document.getElementById('stat-drift')); });
-  at(11.8, () => { unhoverEl(document.getElementById('stat-drift')); revealEl(document.getElementById('stat-rebal')); moveCursor(1160, 180); });
-  
-  // Cursor moves to table area — rows already visible
-  at(12.5, () => { moveCursor(700, 350, 'slow'); });
-  
-  // Hover over Henderson row
-  at(14, () => { moveCursor(700, 330); hoverEl(document.getElementById('client-row-0')); });
-  at(15, () => { unhoverEl(document.getElementById('client-row-0')); moveCursor(700, 380); hoverEl(document.getElementById('client-row-1')); });
-  at(16, () => { unhoverEl(document.getElementById('client-row-1')); moveCursor(700, 430); hoverEl(document.getElementById('client-row-2')); });
-  
-  // Scroll down the table
-  at(17, () => { unhoverEl(document.getElementById('client-row-2')); moveCursor(800, 500, 'slow'); });
-  at(17.5, () => { document.getElementById('pf-scroll').style.transform = 'translateY(-80px)'; });
-  at(19, () => { document.getElementById('pf-scroll').style.transform = 'translateY(-160px)'; });
-  
-  // Click Henderson (scroll back up, click first row)
-  at(20, () => { document.getElementById('pf-scroll').style.transform = 'translateY(0)'; moveCursor(700, 330, 'fast'); });
-  at(21, () => {
-    clickAt(700, 330);
-    document.getElementById('client-row-0').classList.add('click-highlight');
-    // Show drift panel
-    document.getElementById('driftPanel').classList.add('visible');
-  });
-  // Cursor moves to drift panel
-  at(22, () => { moveCursor(1450, 400, 'slow'); });
-  at(23, () => { hoverEl(document.querySelector('.drift-panel .glass')); });
-  at(24.5, () => { unhoverEl(document.querySelector('.drift-panel .glass')); });
+    // === HOOK (0-12s) ===
+    // "You manage 200 client families" 0.0s
+    if (t >= 0.5) cue('hook-show', function() { document.getElementById('hookText').style.opacity = '1'; });
+    // "It's a capacity problem" 10.7s
+    if (t >= 8) cue('hook-hide', function() { document.getElementById('hookText').style.opacity = '0'; });
+    if (t >= 9) cue('hook-logo', function() { document.getElementById('hookLogo').style.opacity = '1'; });
+    if (t >= 11) cue('hook-logo-hide', function() {
+      document.getElementById('hookOverlay').classList.add('hidden');
+      document.getElementById('dashboard').classList.add('visible');
+      showCursor();
+      moveCursor(960, 400, 'instant');
+    });
 
-  // ── SCENE 2: REPORTS (25–42s) ──
-  // Cursor moves to Reports in sidebar
-  at(25, () => {
-    document.getElementById('driftPanel').classList.remove('visible');
-    document.getElementById('client-row-0').classList.remove('click-highlight');
-    moveCursor(140, 306);
-  });
-  at(25.8, () => { hoverEl(document.getElementById('nav-reports')); });
-  at(26.3, () => {
-    clickAt(140, 306);
-    unhoverEl(document.getElementById('nav-reports'));
-    switchPanel('reports');
-  });
-  
-  // Hover over report cards
-  at(28, () => { moveCursor(500, 280, 'slow'); });
-  at(29.5, () => { hoverEl(document.getElementById('rpt-card-0')); moveCursor(500, 320); });
-  at(31, () => { unhoverEl(document.getElementById('rpt-card-0')); hoverEl(document.getElementById('rpt-card-1')); moveCursor(830, 320); });
-  at(32.5, () => { unhoverEl(document.getElementById('rpt-card-1')); hoverEl(document.getElementById('rpt-card-2')); moveCursor(1160, 320); });
-  at(34, () => { unhoverEl(document.getElementById('rpt-card-2')); moveCursor(500, 500); });
-  at(35, () => { hoverEl(document.getElementById('rpt-card-3')); });
-  at(36, () => { unhoverEl(document.getElementById('rpt-card-3')); });
-  
-  // Click Henderson report to expand preview
-  at(36.5, () => { moveCursor(500, 300, 'fast'); });
-  at(37.3, () => {
-    clickAt(500, 300);
-    hoverEl(document.getElementById('rpt-card-0'));
-    document.getElementById('rptPreview').classList.add('visible');
-  });
-  at(38, () => { unhoverEl(document.getElementById('rpt-card-0')); });
-  // Cursor scans the preview
-  at(38.5, () => { moveCursor(600, 780, 'slow'); });
-  at(40, () => { moveCursor(1000, 780); });
-  at(41.5, () => { moveCursor(1400, 780); });
+    // === SCENE 1: PORTFOLIO MONITORING (12-28s) ===
+    // "Your AI watches every client portfolio" 13.0s
+    if (t >= 12.5) cue('s1-stats', function() {
+      revealEl(document.getElementById('stat-aum'));
+      revealEl(document.getElementById('stat-families'));
+      revealEl(document.getElementById('stat-drift'));
+      revealEl(document.getElementById('stat-rebal'));
+    });
+    if (t >= 13) cue('s1-cursor-aum', function() { moveCursor(500, 180); hoverEl(document.getElementById('stat-aum')); });
+    if (t >= 14) cue('s1-cursor-drift', function() { unhoverEl(document.getElementById('stat-aum')); moveCursor(940, 180); hoverEl(document.getElementById('stat-drift')); });
+    if (t >= 15) cue('s1-cursor-table', function() { unhoverEl(document.getElementById('stat-drift')); moveCursor(700, 350, 'slow'); });
+    // "Allocation drifts beyond threshold" 17.2s
+    if (t >= 16) cue('s1-hover-h', function() { moveCursor(700, 330); hoverEl(document.getElementById('client-row-0')); });
+    if (t >= 17) cue('s1-hover-s', function() { unhoverEl(document.getElementById('client-row-0')); moveCursor(700, 380); hoverEl(document.getElementById('client-row-1')); });
+    if (t >= 18) cue('s1-hover-c', function() { unhoverEl(document.getElementById('client-row-1')); moveCursor(700, 430); hoverEl(document.getElementById('client-row-2')); });
+    // "A-holding drops 15%" 21.2s
+    if (t >= 19) cue('s1-scroll', function() {
+      unhoverEl(document.getElementById('client-row-2'));
+      moveCursor(800, 500, 'slow');
+      document.getElementById('pf-scroll').style.transform = 'translateY(-80px)';
+    });
+    if (t >= 20.5) cue('s1-scroll2', function() {
+      document.getElementById('pf-scroll').style.transform = 'translateY(-160px)';
+    });
+    // "You know before the client calls" 22.8s
+    if (t >= 22) cue('s1-scroll-back', function() {
+      document.getElementById('pf-scroll').style.transform = 'translateY(0)';
+      moveCursor(700, 330, 'fast');
+    });
+    if (t >= 23) cue('s1-click-h', function() {
+      clickAt(700, 330);
+      document.getElementById('client-row-0').classList.add('click-highlight');
+      document.getElementById('driftPanel').classList.add('visible');
+    });
+    // "Rebalancing triggers are automatic" 25.4s
+    if (t >= 24) cue('s1-cursor-drift-panel', function() { moveCursor(1450, 400, 'slow'); });
+    if (t >= 25) cue('s1-hover-drift-panel', function() { hoverEl(document.querySelector('.drift-panel .glass')); });
+    if (t >= 26.5) cue('s1-unhover-drift-panel', function() { unhoverEl(document.querySelector('.drift-panel .glass')); });
 
-  // ── SCENE 3: PROSPECTS (42–55s) ──
-  at(42, () => {
-    document.getElementById('rptPreview').classList.remove('visible');
-    moveCursor(140, 268);
-  });
-  at(42.8, () => { hoverEl(document.getElementById('nav-clients')); });
-  at(43.3, () => {
-    clickAt(140, 268);
-    unhoverEl(document.getElementById('nav-clients'));
-    switchPanel('clients');
-  });
-  
-  // Hover prospect cards
-  at(44.5, () => { moveCursor(500, 200, 'slow'); });
-  at(46, () => { hoverEl(document.getElementById('prospect-0')); moveCursor(500, 230); });
-  at(47.5, () => { unhoverEl(document.getElementById('prospect-0')); hoverEl(document.getElementById('prospect-1')); moveCursor(500, 340); });
-  at(49, () => { unhoverEl(document.getElementById('prospect-1')); hoverEl(document.getElementById('prospect-2')); moveCursor(500, 440); });
-  at(50, () => { unhoverEl(document.getElementById('prospect-2')); });
-  
-  // Click first prospect to show drip panel
-  at(50.5, () => { moveCursor(500, 230, 'fast'); });
-  at(51, () => {
-    clickAt(500, 230);
-    document.getElementById('prospect-0').classList.add('hover-highlight');
-    document.getElementById('dripPanel').classList.add('visible');
-  });
-  at(52, () => { moveCursor(1100, 350, 'slow'); });
-  at(53, () => { moveCursor(1100, 500); });
-  at(54.5, () => { document.getElementById('prospect-0').classList.remove('hover-highlight'); });
+    // === SCENE 2: REPORTS (28-42s) ===
+    // "You stop being reactive" 28.3s
+    if (t >= 28) cue('s2-to-reports', function() {
+      document.getElementById('driftPanel').classList.remove('visible');
+      document.getElementById('client-row-0').classList.remove('click-highlight');
+      moveCursor(140, 306);
+    });
+    if (t >= 29) cue('s2-hover-reports', function() { hoverEl(document.getElementById('nav-reports')); });
+    if (t >= 29.5) cue('s2-click-reports', function() {
+      clickAt(140, 306);
+      unhoverEl(document.getElementById('nav-reports'));
+      switchPanel('reports');
+    });
+    // "200 personalized quarterly reports" 33.5s
+    if (t >= 31) cue('s2-cursor1', function() { moveCursor(500, 280, 'slow'); });
+    if (t >= 32.5) cue('s2-hover0', function() { hoverEl(document.getElementById('rpt-card-0')); moveCursor(500, 320); });
+    if (t >= 34) cue('s2-hover1', function() { unhoverEl(document.getElementById('rpt-card-0')); hoverEl(document.getElementById('rpt-card-1')); moveCursor(830, 320); });
+    if (t >= 35.5) cue('s2-hover2', function() { unhoverEl(document.getElementById('rpt-card-1')); hoverEl(document.getElementById('rpt-card-2')); moveCursor(1160, 320); });
+    // "Each one tailored to that client's portfolio" 37.7s
+    if (t >= 37) cue('s2-hover3', function() { unhoverEl(document.getElementById('rpt-card-2')); moveCursor(500, 500); hoverEl(document.getElementById('rpt-card-3')); });
+    // "Performance summary, market commentary" 42.8s
+    if (t >= 39) cue('s2-click0', function() {
+      unhoverEl(document.getElementById('rpt-card-3'));
+      moveCursor(500, 300, 'fast');
+      clickAt(500, 300);
+      hoverEl(document.getElementById('rpt-card-0'));
+      document.getElementById('rptPreview').classList.add('visible');
+    });
+    if (t >= 40) cue('s2-scan-preview', function() {
+      unhoverEl(document.getElementById('rpt-card-0'));
+      moveCursor(600, 780, 'slow');
+    });
+    if (t >= 41.5) cue('s2-scan-preview2', function() { moveCursor(1000, 780); });
 
-  // ── SCENE 4: COMPLIANCE (55–72s) ──
-  at(55, () => {
-    document.getElementById('dripPanel').classList.remove('visible');
-    moveCursor(140, 344);
-  });
-  at(55.8, () => { hoverEl(document.getElementById('nav-compliance')); });
-  at(56.3, () => {
-    clickAt(140, 344);
-    unhoverEl(document.getElementById('nav-compliance'));
-    switchPanel('compliance');
-  });
-  
-  // Hover over meeting notes
-  at(58, () => { moveCursor(600, 250, 'slow'); });
-  at(59, () => { hoverEl(document.getElementById('comp-meet-0')); });
-  at(60.5, () => { unhoverEl(document.getElementById('comp-meet-0')); hoverEl(document.getElementById('comp-meet-1')); moveCursor(600, 310); });
-  at(62, () => { unhoverEl(document.getElementById('comp-meet-1')); hoverEl(document.getElementById('comp-meet-2')); moveCursor(600, 370); });
-  at(63.5, () => { unhoverEl(document.getElementById('comp-meet-2')); });
-  
-  // Move to audit trail
-  at(64, () => { moveCursor(1200, 350, 'slow'); });
-  at(65.5, () => { hoverEl(document.getElementById('comp-audit-0')); });
-  at(67, () => { unhoverEl(document.getElementById('comp-audit-0')); hoverEl(document.getElementById('comp-audit-1')); moveCursor(1200, 420); });
-  at(68.5, () => { unhoverEl(document.getElementById('comp-audit-1')); hoverEl(document.getElementById('comp-audit-2')); moveCursor(1200, 490); });
-  at(70, () => { unhoverEl(document.getElementById('comp-audit-2')); hoverEl(document.getElementById('comp-audit-3')); moveCursor(1200, 560); });
-  at(71.5, () => { unhoverEl(document.getElementById('comp-audit-3')); });
+    // === SCENE 3: PROSPECTS (42-55s) ===
+    if (t >= 42) cue('s3-to-clients', function() {
+      document.getElementById('rptPreview').classList.remove('visible');
+      moveCursor(140, 268);
+    });
+    if (t >= 42.8) cue('s3-hover-clients', function() { hoverEl(document.getElementById('nav-clients')); });
+    if (t >= 43.3) cue('s3-click-clients', function() {
+      clickAt(140, 268);
+      unhoverEl(document.getElementById('nav-clients'));
+      switchPanel('clients');
+    });
+    if (t >= 44.5) cue('s3-cursor1', function() { moveCursor(500, 200, 'slow'); });
+    if (t >= 46) cue('s3-hover0', function() { hoverEl(document.getElementById('prospect-0')); moveCursor(500, 230); });
+    // "Your AI sends educational content" 54.0s
+    if (t >= 47.5) cue('s3-hover1', function() { unhoverEl(document.getElementById('prospect-0')); hoverEl(document.getElementById('prospect-1')); moveCursor(500, 340); });
+    if (t >= 49) cue('s3-hover2', function() { unhoverEl(document.getElementById('prospect-1')); hoverEl(document.getElementById('prospect-2')); moveCursor(500, 440); });
+    if (t >= 50) cue('s3-unhover2', function() { unhoverEl(document.getElementById('prospect-2')); });
+    if (t >= 50.5) cue('s3-click0', function() {
+      moveCursor(500, 230, 'fast');
+      clickAt(500, 230);
+      document.getElementById('prospect-0').classList.add('hover-highlight');
+      document.getElementById('dripPanel').classList.add('visible');
+    });
+    if (t >= 52) cue('s3-drip1', function() { moveCursor(1100, 350, 'slow'); });
+    if (t >= 53) cue('s3-drip2', function() { moveCursor(1100, 500); });
+    if (t >= 54.5) cue('s3-drip-unhover', function() { document.getElementById('prospect-0').classList.remove('hover-highlight'); });
 
-  // ── SCENE 5: COST + CTA (72–90s) ──
-  at(72, () => { hideCursor(); switchPanel('cost'); });
-  
-  // Reveal stat cards one by one
-  const costCards = () => document.querySelectorAll('#cost-stats .glass');
-  at(73, () => { const cards = costCards(); if(cards[0]) revealEl(cards[0]); });
-  at(74, () => { const cards = costCards(); if(cards[1]) revealEl(cards[1]); });
-  at(75, () => { const cards = costCards(); if(cards[2]) revealEl(cards[2]); });
-  at(76, () => { const cards = costCards(); if(cards[3]) revealEl(cards[3]); });
-  at(77, () => { const cards = costCards(); if(cards[4]) revealEl(cards[4]); });
-  
-  // Time saved
-  at(78.5, () => {
-    const el = document.getElementById('cost-time');
-    el.style.transition = 'opacity 0.6s ease';
-    el.style.opacity = '1';
-  });
-  
-  // Cost comparison
-  at(80.5, () => {
-    const el = document.getElementById('cost-compare');
-    el.style.transition = 'opacity 0.8s ease';
-    el.style.opacity = '1';
-  });
-  at(82, () => { document.getElementById('cost-ai-card').classList.add('glow'); });
-  
-  // Savings
-  at(84, () => {
-    const el = document.getElementById('cost-savings');
-    el.style.transition = 'opacity 0.8s ease';
-    el.style.opacity = '1';
-  });
-  
-  // Transition to CTA
-  at(86, () => {
-    document.getElementById('dashboard').style.transition = 'opacity 1s ease';
-    document.getElementById('dashboard').style.opacity = '0';
-    document.getElementById('ctaOverlay').classList.add('visible');
-  });
-  at(87, () => {
-    const el = document.getElementById('ctaLogo');
-    el.style.transition = 'opacity 1s ease'; el.style.opacity = '1';
-  });
-  at(88, () => {
-    const el = document.getElementById('ctaTagline');
-    el.style.transition = 'opacity 0.8s ease'; el.style.opacity = '1';
-  });
-  at(89, () => {
-    document.getElementById('ctaUrl').style.transition = 'opacity 0.8s ease';
-    document.getElementById('ctaUrl').style.opacity = '1';
-    document.getElementById('ctaCta').style.transition = 'opacity 0.8s ease';
-    document.getElementById('ctaCta').style.opacity = '1';
-  });
+    // === SCENE 4: COMPLIANCE (55-72s) ===
+    if (t >= 55) cue('s4-to-comp', function() {
+      document.getElementById('dripPanel').classList.remove('visible');
+      moveCursor(140, 344);
+    });
+    if (t >= 55.8) cue('s4-hover-comp', function() { hoverEl(document.getElementById('nav-compliance')); });
+    if (t >= 56.3) cue('s4-click-comp', function() {
+      clickAt(140, 344);
+      unhoverEl(document.getElementById('nav-compliance'));
+      switchPanel('compliance');
+    });
+    if (t >= 58) cue('s4-cursor1', function() { moveCursor(600, 250, 'slow'); });
+    if (t >= 59) cue('s4-hover-meet0', function() { hoverEl(document.getElementById('comp-meet-0')); });
+    if (t >= 60.5) cue('s4-hover-meet1', function() { unhoverEl(document.getElementById('comp-meet-0')); hoverEl(document.getElementById('comp-meet-1')); moveCursor(600, 310); });
+    if (t >= 62) cue('s4-hover-meet2', function() { unhoverEl(document.getElementById('comp-meet-1')); hoverEl(document.getElementById('comp-meet-2')); moveCursor(600, 370); });
+    if (t >= 63.5) cue('s4-unhover-meet2', function() { unhoverEl(document.getElementById('comp-meet-2')); });
+    if (t >= 64) cue('s4-cursor-audit', function() { moveCursor(1200, 350, 'slow'); });
+    if (t >= 65.5) cue('s4-hover-audit0', function() { hoverEl(document.getElementById('comp-audit-0')); });
+    if (t >= 67) cue('s4-hover-audit1', function() { unhoverEl(document.getElementById('comp-audit-0')); hoverEl(document.getElementById('comp-audit-1')); moveCursor(1200, 420); });
+    if (t >= 68.5) cue('s4-hover-audit2', function() { unhoverEl(document.getElementById('comp-audit-1')); hoverEl(document.getElementById('comp-audit-2')); moveCursor(1200, 490); });
+    if (t >= 70) cue('s4-hover-audit3', function() { unhoverEl(document.getElementById('comp-audit-2')); hoverEl(document.getElementById('comp-audit-3')); moveCursor(1200, 560); });
+    if (t >= 71.5) cue('s4-unhover-audit3', function() { unhoverEl(document.getElementById('comp-audit-3')); });
+
+    // === SCENE 5: COST + CTA (72-90s) ===
+    if (t >= 72) cue('s5-start', function() {
+      hideCursor();
+      switchPanel('cost');
+    });
+    if (t >= 73) cue('s5-stat0', function() { var cards = document.querySelectorAll('#cost-stats .glass'); if(cards[0]) revealEl(cards[0]); });
+    if (t >= 74) cue('s5-stat1', function() { var cards = document.querySelectorAll('#cost-stats .glass'); if(cards[1]) revealEl(cards[1]); });
+    if (t >= 75) cue('s5-stat2', function() { var cards = document.querySelectorAll('#cost-stats .glass'); if(cards[2]) revealEl(cards[2]); });
+    if (t >= 76) cue('s5-stat3', function() { var cards = document.querySelectorAll('#cost-stats .glass'); if(cards[3]) revealEl(cards[3]); });
+    if (t >= 77) cue('s5-stat4', function() { var cards = document.querySelectorAll('#cost-stats .glass'); if(cards[4]) revealEl(cards[4]); });
+    if (t >= 78.5) cue('s5-time', function() {
+      var el = document.getElementById('cost-time');
+      el.style.transition = 'opacity 0.6s ease';
+      el.style.opacity = '1';
+    });
+    if (t >= 80.5) cue('s5-compare', function() {
+      var el = document.getElementById('cost-compare');
+      el.style.transition = 'opacity 0.8s ease';
+      el.style.opacity = '1';
+    });
+    if (t >= 82) cue('s5-glow', function() { document.getElementById('cost-ai-card').classList.add('glow'); });
+    if (t >= 84) cue('s5-savings', function() {
+      var el = document.getElementById('cost-savings');
+      el.style.transition = 'opacity 0.8s ease';
+      el.style.opacity = '1';
+    });
+    if (t >= 86) cue('s5-to-cta', function() {
+      document.getElementById('dashboard').style.transition = 'opacity 1s ease';
+      document.getElementById('dashboard').style.opacity = '0';
+      document.getElementById('ctaOverlay').classList.add('visible');
+    });
+    if (t >= 87) cue('s5-logo', function() {
+      var el = document.getElementById('ctaLogo'); el.style.transition = 'opacity 1s ease'; el.style.opacity = '1';
+    });
+    if (t >= 87.5) cue('s5-tag', function() {
+      var el = document.getElementById('ctaTagline'); el.style.transition = 'opacity 0.8s ease'; el.style.opacity = '1';
+    });
+    if (t >= 88.5) cue('s5-url', function() {
+      document.getElementById('ctaUrl').style.transition = 'opacity 0.8s ease';
+      document.getElementById('ctaUrl').style.opacity = '1';
+      document.getElementById('ctaCta').style.transition = 'opacity 0.8s ease';
+      document.getElementById('ctaCta').style.opacity = '1';
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 // ============================================================
@@ -986,63 +986,8 @@ function runTimeline() {
 // ============================================================
 function startPresentation() {
   document.getElementById('playBtn').classList.add('hidden');
-  // controls handled by simple tap-to-pause
   startTime = performance.now();
   voiceover.play().catch(() => {});
   requestAnimationFrame(updateProgress);
   runTimeline();
 }
-
-
-</script>
-
-
-
-
-<!-- Progress bar + tap to pause -->
-<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
-  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
-</div>
-<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
-<script>
-(function(){
-  var paused=false, started=false;
-  var flash=document.getElementById("pauseFlash");
-  var prog=document.getElementById("simpleProgress");
-  var fill=document.getElementById("simpleProgressFill");
-  var iv=setInterval(function(){
-    var pb=document.getElementById("playBtn");
-    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
-      started=true; prog.style.display="block"; clearInterval(iv);
-    }
-  },200);
-  function toggle(){
-    if(!started)return;
-    paused=!paused;
-    flash.textContent=paused?"▶":"⏸";
-    flash.style.opacity="1";
-    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
-    try{
-      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
-      if(a){if(paused)a.pause();else a.play().catch(function(){});}
-    }catch(e){}
-    window.__demoPaused=paused; if(paused)document.body.classList.add("animations-paused");
-    else{window.__demoPaused=false; document.body.classList.remove("animations-paused");}
-  }
-  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
-  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
-  function upd(){
-    try{
-      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
-      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
-    }catch(e){}
-    requestAnimationFrame(upd);
-  }
-  requestAnimationFrame(upd);
-  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
-  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
-})();
-</script>
-
-</body>
-</html>

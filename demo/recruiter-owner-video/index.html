@@ -410,94 +410,169 @@ function showAiLogs() {
   });
 }
 
-async function startDemo() {
+// Audio-driven cue system - no drift possible
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
   document.getElementById('playBtn').classList.add('hidden');
   document.getElementById('app').style.opacity = '1';
+  voiceover.play().catch(function(){});
 
-  try { await voiceover.play(); } catch(e) {}
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
 
-  // Scene 1: Morning briefing notification (0-12s)
-  moveCursor(1200, 300);
-  await delay(500);
-  document.getElementById('notification').classList.add('visible');
-  await delay(11500);
+    // === Scene 1: Morning briefing notification (0-13.6s) ===
+    // "It's 7 AM" 0.0s
+    if (t >= 0.3) cue('s1-cursor', function() {
+      moveCursor(1200, 300);
+    });
+    // "Before you even open your laptop" 1.32s
+    if (t >= 1.3) cue('s1-notif', function() {
+      document.getElementById('notification').classList.add('visible');
+    });
 
-  // Scene 2: Revenue Dashboard (12-28s)
-  document.getElementById('notification').classList.remove('visible');
-  await delay(300);
-  moveCursor(120, 180);
-  await delay(400);
-  clickCursor();
-  setNav('dashboard');
-  showPanels(['kpi1','kpi2','kpi3','kpi4']);
-  animateCounts(document.getElementById('sec-dashboard'));
-  await delay(1500);
-  showPanels(['revenueChart']);
-  animateBars(document.getElementById('revenueChart'));
-  moveCursor(800, 500);
-  await delay(6000);
-  moveCursor(1100, 400);
-  await delay(6000);
+    // === Scene 2: Revenue Dashboard (13.6-27.6s) ===
+    // "Your revenue dashboard" 13.64s
+    if (t >= 13.0) cue('s2-hidenotif', function() {
+      document.getElementById('notification').classList.remove('visible');
+    });
+    if (t >= 13.5) cue('s2-nav', function() {
+      moveCursor(120, 180);
+    });
+    if (t >= 14.0) cue('s2-click', function() {
+      clickCursor();
+      setNav('dashboard');
+      showPanels(['kpi1','kpi2','kpi3','kpi4']);
+      animateCounts(document.getElementById('sec-dashboard'));
+    });
+    // "Monthly revenue" 16.78s
+    if (t >= 16.5) cue('s2-chart', function() {
+      showPanels(['revenueChart']);
+      animateBars(document.getElementById('revenueChart'));
+      moveCursor(800, 500);
+    });
+    // "all in one view" 22.24s
+    if (t >= 22) cue('s2-scan1', function() {
+      moveCursor(1100, 400);
+    });
+    // "You see exactly where the money is" 23.7s
+    if (t >= 24) cue('s2-scan2', function() {
+      moveCursor(800, 450);
+    });
 
-  // Scene 3: Team Performance (28-42s)
-  moveCursor(120, 260);
-  await delay(400);
-  clickCursor();
-  setNav('team');
-  showPanels(['teamPanel']);
-  moveCursor(800, 350);
-  await delay(5000);
-  moveCursor(600, 500);
-  await delay(4000);
-  moveCursor(900, 550);
-  await delay(4000);
+    // === Scene 3: Team Performance (27.6-38.5s) ===
+    // "Every recruiter ranked" 27.6s
+    if (t >= 27.3) cue('s3-nav', function() {
+      moveCursor(120, 260);
+    });
+    if (t >= 27.8) cue('s3-click', function() {
+      clickCursor();
+      setNav('team');
+      showPanels(['teamPanel']);
+      moveCursor(800, 350);
+    });
+    // "placements this month" 30.06s
+    if (t >= 30) cue('s3-scan1', function() {
+      moveCursor(600, 500);
+    });
+    // "average time to fill" 32.6s
+    if (t >= 33) cue('s3-scan2', function() {
+      moveCursor(900, 550);
+    });
+    // "You see who's crushing it" 34.44s
+    if (t >= 35) cue('s3-scan3', function() {
+      moveCursor(700, 400);
+    });
 
-  // Scene 4: Pipeline Health (42-55s)
-  moveCursor(120, 220);
-  await delay(400);
-  clickCursor();
-  setNav('pipeline');
-  showPanels(['pipeKpi1','pipeKpi2','pipeKpi3']);
-  animateCounts(document.getElementById('sec-pipeline'));
-  await delay(2000);
-  showPanels(['pipelineCards']);
-  moveCursor(700, 500);
-  await delay(4000);
-  moveCursor(1200, 450);
-  await delay(5000);
+    // === Scene 4: Pipeline Health (38.5-51s) ===
+    // "Your entire pipeline" 38.5s
+    if (t >= 38.2) cue('s4-nav', function() {
+      moveCursor(120, 220);
+    });
+    if (t >= 38.7) cue('s4-click', function() {
+      clickCursor();
+      setNav('pipeline');
+      showPanels(['pipeKpi1','pipeKpi2','pipeKpi3']);
+      animateCounts(document.getElementById('sec-pipeline'));
+    });
+    // "total value" 41.22s
+    if (t >= 41) cue('s4-cards', function() {
+      showPanels(['pipelineCards']);
+      moveCursor(700, 500);
+    });
+    // "predicted closings this month" 43.96s
+    if (t >= 44) cue('s4-scan1', function() {
+      moveCursor(1200, 450);
+    });
+    // "Nothing slips through the cracks" 46.34s
+    if (t >= 46) cue('s4-scan2', function() {
+      moveCursor(900, 400);
+    });
 
-  // Scene 5: Client Profitability (55-67s)
-  moveCursor(120, 300);
-  await delay(400);
-  clickCursor();
-  setNav('clients');
-  showPanels(['clientPanel']);
-  animateClientBars();
-  moveCursor(800, 350);
-  await delay(5000);
-  moveCursor(900, 500);
-  await delay(5000);
+    // === Scene 5: Client Profitability (51-62.9s) ===
+    // "Client profitability laid bare" 51.08s
+    if (t >= 50.8) cue('s5-nav', function() {
+      moveCursor(120, 300);
+    });
+    if (t >= 51.3) cue('s5-click', function() {
+      clickCursor();
+      setNav('clients');
+      showPanels(['clientPanel']);
+      animateClientBars();
+      moveCursor(800, 350);
+    });
+    // "Which accounts generate the highest margins" 53.02s
+    if (t >= 55) cue('s5-scan1', function() {
+      moveCursor(900, 500);
+    });
+    // "So you know exactly" 59.4s
+    if (t >= 59) cue('s5-scan2', function() {
+      moveCursor(700, 450);
+    });
 
-  // Scene 6: AI Activity (67-82s)
-  moveCursor(120, 380);
-  await delay(400);
-  clickCursor();
-  setNav('ai');
-  showPanels(['aiPanel']);
-  showAiLogs();
-  moveCursor(800, 300);
-  await delay(5000);
-  moveCursor(700, 500);
-  await delay(5000);
-  moveCursor(900, 400);
-  await delay(3000);
+    // === Scene 6: AI Activity (62.9-78s) ===
+    // "And here's what your AI did while you slept" 62.92s
+    if (t >= 62.5) cue('s6-nav', function() {
+      moveCursor(120, 380);
+    });
+    if (t >= 63) cue('s6-click', function() {
+      clickCursor();
+      setNav('ai');
+      showPanels(['aiPanel']);
+      showAiLogs();
+      moveCursor(800, 300);
+    });
+    // "Source 340 candidates" 65.78s
+    if (t >= 66) cue('s6-scan1', function() {
+      moveCursor(700, 500);
+    });
+    // "scheduled 12 interviews" 70.82s
+    if (t >= 71) cue('s6-scan2', function() {
+      moveCursor(900, 400);
+    });
+    // "All through CPAL" 74.62s
+    if (t >= 75) cue('s6-scan3', function() {
+      moveCursor(800, 350);
+    });
 
-  // Scene 7: Close (82-90s)
-  document.getElementById('app').style.transition = 'opacity 1s';
-  document.getElementById('app').style.opacity = '0';
-  cursor.style.display = 'none';
-  await delay(800);
-  document.getElementById('closeScreen').classList.add('visible');
+    // === Scene 7: Close (78-84s) ===
+    // "This is what running a staffing firm looks like" 77.92s
+    if (t >= 78) cue('s7-start', function() {
+      document.getElementById('app').style.transition = 'opacity 1s';
+      document.getElementById('app').style.opacity = '0';
+      cursor.style.display = 'none';
+    });
+    if (t >= 79) cue('s7-close', function() {
+      document.getElementById('closeScreen').classList.add('visible');
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 </script>
 
