@@ -4,445 +4,442 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, user-scalable=no">
 <title>Granite & Stone Design Co. — AI Estimating Demo</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; }
-body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#e2e8f0; overflow:hidden; position:relative; }
-.animations-paused * { animation-play-state: paused !important; transition: none !important; }
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
+.animations-paused * { animation-play-state:paused!important; }
+@keyframes rippleOut { 0% { transform:translate(-50%,-50%) scale(0.3); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
 
-#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-#playBtn .inner { text-align:center; }
-#playBtn .play-circle { width:120px; height:120px; border-radius:50%; background:rgba(14,165,233,0.15); border:3px solid #0ea5e9; display:flex; align-items:center; justify-content:center; margin:0 auto 30px; transition:transform 0.3s, background 0.3s; }
-#playBtn:hover .play-circle { transform:scale(1.1); background:rgba(14,165,233,0.3); }
-#playBtn .play-triangle { width:0; height:0; border-style:solid; border-width:25px 0 25px 45px; border-color:transparent transparent transparent #0ea5e9; margin-left:8px; }
-#playBtn h1 { font-size:42px; font-weight:700; color:white; margin-bottom:12px; }
-#playBtn p { font-size:20px; color:#94a3b8; }
+#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+.play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; box-shadow:0 0 60px rgba(14,165,233,0.4); transition:transform 0.3s; }
+.play-circle:hover { transform:scale(1.1); }
+.play-circle::after { content:''; width:0; height:0; border-top:24px solid transparent; border-bottom:24px solid transparent; border-left:40px solid white; margin-left:8px; }
+#playBtn h2 { margin-top:24px; font-size:28px; font-weight:600; color:#94a3b8; }
+#playBtn.hidden { display:none; }
 
-.scene { position:absolute; top:0; left:0; width:1920px; height:1080px; opacity:0; transition:opacity 0.8s ease; pointer-events:none; }
+#app { position:absolute; top:0; left:0; width:1920px; height:1032px; opacity:0; transition:opacity 0.5s; }
+
+/* Sidebar */
+.sidebar { position:absolute; left:0; top:0; width:260px; height:1032px; background:#0F1D32; border-right:1px solid rgba(255,255,255,0.06); padding:24px 0; }
+.sidebar-logo { padding:0 24px 24px; font-size:22px; font-weight:800; color:#fff; }
+.sidebar-logo span { color:#0ea5e9; }
+.sidebar-item { padding:12px 24px; font-size:14px; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s; }
+.sidebar-item:hover, .sidebar-item.active { color:#fff; background:rgba(14,165,233,0.1); border-right:3px solid #0ea5e9; }
+.sidebar-item .icon { font-size:18px; }
+.sidebar-badge { background:#ef4444; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:auto; }
+
+/* Main area */
+.main { position:absolute; left:260px; top:0; width:1660px; height:1032px; overflow:hidden; }
+.scene { position:absolute; top:0; left:0; width:1660px; height:1032px; opacity:0; transition:opacity 0.8s ease; padding:32px; }
 .scene.active { opacity:1; }
+.scene-header { font-size:28px; font-weight:700; margin-bottom:8px; }
+.scene-sub { font-size:16px; color:#64748b; margin-bottom:24px; }
 
-/* Header bar */
-.header { position:absolute; top:0; left:0; width:1920px; height:64px; background:rgba(15,23,42,0.95); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; padding:0 40px; z-index:100; }
-.logo { font-size:20px; font-weight:700; color:white; }
-.logo span { color:#0ea5e9; }
-.header-nav { margin-left:auto; display:flex; gap:28px; }
-.header-nav a { color:#94a3b8; font-size:14px; text-decoration:none; font-weight:500; }
+/* Pain cards */
+.pain-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-top:40px; }
+.pain-card { background:#1E293B; border-radius:16px; padding:32px; text-align:center; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateY(20px); transition:all 0.6s; }
+.pain-card.show { opacity:1; transform:translateY(0); }
+.pain-card .num { font-size:56px; font-weight:800; color:#ef4444; }
+.pain-card .label { font-size:14px; color:#94a3b8; margin-top:8px; }
 
-/* Scene title overlay */
-.scene-title { position:absolute; top:80px; left:60px; z-index:50; }
-.scene-title h2 { font-size:36px; font-weight:700; color:white; margin-bottom:8px; }
-.scene-title p { font-size:18px; color:#64748b; font-weight:400; }
+/* Drawing area */
+.drawing-panel { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); height:600px; position:relative; overflow:hidden; }
+.drawing-grid { position:absolute; inset:24px; background:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.03) 39px,rgba(255,255,255,0.03) 40px), repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.03) 39px,rgba(255,255,255,0.03) 40px); }
+.countertop-shape { position:absolute; border:2px solid #0ea5e9; background:rgba(14,165,233,0.1); border-radius:4px; opacity:0; transition:all 0.6s; }
+.countertop-shape.show { opacity:1; }
+.sqft-label { position:absolute; background:#0ea5e9; color:#fff; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600; opacity:0; transition:opacity 0.4s; }
+.sqft-label.show { opacity:1; }
 
-/* Pain scene */
-.pain-stats { position:absolute; top:200px; left:60px; display:flex; gap:30px; }
-.pain-card { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:16px; padding:32px; width:280px; text-align:center; }
-.pain-card .num { font-size:52px; font-weight:800; color:#ef4444; }
-.pain-card .label { font-size:14px; color:#94a3b8; margin-top:8px; line-height:1.4; }
-.pain-quote { position:absolute; top:520px; left:60px; right:60px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:40px; }
-.pain-quote p { font-size:22px; color:#cbd5e1; line-height:1.6; font-style:italic; }
+/* Slab panel */
+.slab-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:24px; }
+.slab-card { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); }
+.slab-card h3 { font-size:16px; font-weight:600; margin-bottom:12px; }
+.remnant-tag { display:inline-block; background:rgba(34,197,94,0.15); color:#22c55e; padding:4px 12px; border-radius:8px; font-size:13px; font-weight:600; margin-top:8px; }
+.waste-tag { display:inline-block; background:rgba(239,68,68,0.15); color:#ef4444; padding:4px 12px; border-radius:8px; font-size:13px; font-weight:600; margin-top:8px; }
 
-/* Drawing intake scene */
-.drawing-area { position:absolute; top:160px; left:60px; width:900px; height:600px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:16px; overflow:hidden; }
-.drawing-grid { position:absolute; top:0; left:0; width:100%; height:100%; background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px); background-size:40px 40px; }
-.countertop-shape { position:absolute; fill:none; stroke:#0ea5e9; stroke-width:2; opacity:0; }
-.ct-section { position:absolute; background:rgba(14,165,233,0.1); border:2px solid #0ea5e9; border-radius:4px; opacity:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#0ea5e9; }
-.drawing-panel { position:absolute; top:160px; right:60px; width:880px; }
-.drawing-stat { background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px 24px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; opacity:0; transform:translateX(20px); }
-.drawing-stat .label { font-size:14px; color:#94a3b8; }
-.drawing-stat .value { font-size:20px; font-weight:700; color:#0ea5e9; }
+/* Quote */
+.quote-panel { background:#1E293B; border-radius:16px; padding:32px; border:1px solid rgba(255,255,255,0.06); }
+.quote-row { display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:15px; }
+.quote-row:last-child { border:none; font-weight:700; font-size:18px; color:#22c55e; }
+.quote-pdf { display:inline-flex; align-items:center; gap:8px; background:#0ea5e9; color:#fff; padding:12px 24px; border-radius:10px; font-weight:600; margin-top:20px; font-size:14px; opacity:0; transition:opacity 0.5s; }
+.quote-pdf.show { opacity:1; }
 
-/* Slab calc scene */
-.slab-visual { position:absolute; top:160px; left:60px; width:880px; height:600px; }
-.slab-block { position:absolute; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; transform:scale(0.9); }
-.slab-block.full { background:linear-gradient(135deg, rgba(14,165,233,0.15), rgba(14,165,233,0.05)); border:2px solid rgba(14,165,233,0.4); }
-.slab-block.remnant { background:linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05)); border:2px solid rgba(34,197,94,0.4); }
-.slab-block.waste { background:linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.03)); border:2px dashed rgba(239,68,68,0.3); }
-.slab-block .slab-label { font-size:14px; font-weight:600; }
-.slab-block .slab-dim { font-size:12px; color:#94a3b8; margin-top:4px; }
-.slab-panel { position:absolute; top:160px; right:60px; width:880px; }
-.slab-stat { background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:18px 24px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; opacity:0; }
+/* Flooring */
+.flooring-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.flooring-card { background:#1E293B; border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.06); text-align:center; cursor:pointer; transition:all 0.3s; }
+.flooring-card.selected { border-color:#0ea5e9; background:rgba(14,165,233,0.1); }
+.flooring-price { font-size:24px; font-weight:700; color:#0ea5e9; margin-top:8px; }
 
-/* Quote scene */
-.quote-doc { position:absolute; top:140px; left:60px; width:860px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:40px; }
-.quote-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:30px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.08); }
-.quote-header h3 { font-size:24px; font-weight:700; color:white; }
-.quote-header .badge { background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.3); color:#22c55e; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:600; }
-.quote-row { display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.04); opacity:0; }
-.quote-row .qlabel { color:#94a3b8; font-size:15px; }
-.quote-row .qval { color:white; font-size:15px; font-weight:600; }
-.quote-row.total { border-top:2px solid rgba(14,165,233,0.3); border-bottom:none; padding-top:20px; margin-top:8px; }
-.quote-row.total .qlabel { color:white; font-size:18px; font-weight:700; }
-.quote-row.total .qval { color:#0ea5e9; font-size:24px; font-weight:800; }
-.quote-timer { position:absolute; top:160px; right:60px; width:400px; text-align:center; }
-.timer-big { font-size:96px; font-weight:800; color:#0ea5e9; }
-.timer-label { font-size:18px; color:#64748b; margin-top:8px; }
-.quote-pdf { position:absolute; bottom:100px; right:60px; width:400px; background:rgba(14,165,233,0.1); border:2px solid rgba(14,165,233,0.3); border-radius:16px; padding:30px; text-align:center; opacity:0; }
-.quote-pdf .icon { font-size:48px; margin-bottom:12px; }
-.quote-pdf p { color:#0ea5e9; font-weight:600; font-size:16px; }
+/* Client mining */
+.client-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:24px; }
+.client-stat { background:#1E293B; border-radius:12px; padding:20px; text-align:center; border:1px solid rgba(255,255,255,0.06); }
+.client-stat .num { font-size:36px; font-weight:800; color:#0ea5e9; }
+.client-stat .label { font-size:12px; color:#94a3b8; margin-top:4px; }
+.outreach-row { background:#1E293B; border-radius:10px; padding:16px 20px; margin-bottom:8px; display:flex; align-items:center; gap:16px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateX(-20px); transition:all 0.5s; }
+.outreach-row.show { opacity:1; transform:translateX(0); }
+.outreach-badge { padding:4px 12px; border-radius:8px; font-size:11px; font-weight:600; }
+.badge-developer { background:rgba(139,92,246,0.15); color:#a78bfa; }
+.badge-homeowner { background:rgba(14,165,233,0.15); color:#38bdf8; }
+.badge-sent { background:rgba(34,197,94,0.15); color:#22c55e; }
 
-/* Flooring scene */
-.floor-rooms { position:absolute; top:160px; left:60px; display:grid; grid-template-columns:1fr 1fr; gap:20px; width:880px; }
-.floor-room { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:24px; opacity:0; transform:translateY(10px); }
-.floor-room h4 { font-size:16px; font-weight:600; color:white; margin-bottom:12px; }
-.floor-room .dims { color:#64748b; font-size:13px; margin-bottom:8px; }
-.floor-room .material { color:#0ea5e9; font-size:14px; font-weight:500; }
-.floor-room .price { color:#22c55e; font-size:20px; font-weight:700; margin-top:8px; }
-.floor-total { position:absolute; top:160px; right:60px; width:400px; }
-
-/* Client mining scene */
-.client-db { position:absolute; top:160px; left:60px; width:1100px; }
-.client-header-row { display:grid; grid-template-columns:200px 140px 160px 160px 180px; gap:12px; padding:12px 20px; background:rgba(14,165,233,0.08); border-radius:8px 8px 0 0; }
-.client-header-row span { font-size:12px; font-weight:600; color:#0ea5e9; text-transform:uppercase; letter-spacing:0.5px; }
-.client-row { display:grid; grid-template-columns:200px 140px 160px 160px 180px; gap:12px; padding:14px 20px; border-bottom:1px solid rgba(255,255,255,0.04); opacity:0; }
-.client-row span { font-size:14px; color:#cbd5e1; }
-.client-row .tag { padding:3px 10px; border-radius:10px; font-size:11px; font-weight:600; }
-.tag-developer { background:rgba(168,85,247,0.15); color:#a855f7; }
-.tag-homeowner { background:rgba(14,165,233,0.15); color:#0ea5e9; }
-.tag-commercial { background:rgba(245,158,11,0.15); color:#f59e0b; }
-.client-insights { position:absolute; top:160px; right:60px; width:700px; }
-.insight-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:12px; opacity:0; }
-.insight-card h4 { font-size:15px; font-weight:600; color:white; margin-bottom:6px; }
-.insight-card p { font-size:13px; color:#94a3b8; line-height:1.5; }
-.insight-card .metric { font-size:28px; font-weight:800; color:#22c55e; margin-top:8px; }
-
-/* Close scene */
-.close-scene { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
-.close-logo { font-size:64px; font-weight:800; color:white; margin-bottom:16px; }
-.close-logo span { color:#0ea5e9; }
-.close-tagline { font-size:28px; color:#94a3b8; margin-bottom:40px; }
-.close-url { font-size:36px; font-weight:700; color:#0ea5e9; }
-.close-price { font-size:22px; color:#64748b; margin-top:20px; }
-
-/* Animations */
-@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-@keyframes fadeInRight { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
-@keyframes scanLine { from { top:0; } to { top:100%; } }
-.scan-line { position:absolute; left:0; width:100%; height:3px; background:linear-gradient(90deg, transparent, #0ea5e9, transparent); opacity:0.8; z-index:10; }
+/* Close */
+.close-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
+.close-price { font-size:36px; color:#22c55e; font-weight:700; opacity:0; transition:opacity 0.8s; }
+.close-price.show { opacity:1; }
+.close-logo { font-size:64px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-top:16px; opacity:0; transition:opacity 0.8s; }
+.close-logo.show { opacity:1; }
+.close-tagline { font-size:22px; color:#94a3b8; margin-top:16px; font-weight:300; opacity:0; transition:opacity 0.8s; }
+.close-tagline.show { opacity:1; }
+.close-url { font-size:18px; color:#0ea5e9; margin-top:24px; opacity:0; transition:opacity 0.8s; }
+.close-url.show { opacity:1; }
 </style>
 </head>
 <body>
 
 <div id="playBtn" onclick="startDemo()">
-  <div class="inner">
-    <div class="play-circle"><div class="play-triangle"></div></div>
-    <h1>Granite & Stone Design Co.</h1>
-    <p>AI-Powered Estimating Demo</p>
+  <div class="play-circle"></div>
+  <h2>Granite & Stone Design Co. — AI Estimating Demo</h2>
+</div>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">Granite & <span>Stone</span></div>
+    <div class="sidebar-item active" id="nav-dash"><span class="icon">📊</span> Dashboard</div>
+    <div class="sidebar-item" id="nav-est"><span class="icon">📐</span> Estimates <span class="sidebar-badge">3</span></div>
+    <div class="sidebar-item" id="nav-inv"><span class="icon">🪨</span> Inventory</div>
+    <div class="sidebar-item" id="nav-floor"><span class="icon">🏠</span> Flooring</div>
+    <div class="sidebar-item" id="nav-clients"><span class="icon">👥</span> Clients</div>
+    <div class="sidebar-item" id="nav-reports"><span class="icon">📈</span> Reports</div>
+  </div>
+  <div class="main">
+    <!-- Scene 1: Pain (0-12s) -->
+    <div class="scene" id="scene1">
+      <div class="scene-header">The Problem</div>
+      <div class="scene-sub">Manual estimating is costing you money</div>
+      <div class="pain-grid">
+        <div class="pain-card" id="pain1"><div class="num">45</div><div class="label">Minutes per<br>countertop quote</div></div>
+        <div class="pain-card" id="pain2"><div class="num">$100K+</div><div class="label">Revenue leaked<br>annually</div></div>
+        <div class="pain-card" id="pain3"><div class="num">7,500</div><div class="label">Past clients<br>untapped</div></div>
+      </div>
+    </div>
+
+    <!-- Scene 2: Drawing Intake (12-24s) -->
+    <div class="scene" id="scene2">
+      <div class="scene-header">Drawing Intake</div>
+      <div class="scene-sub">AI reads your 2D drawings instantly</div>
+      <div class="drawing-panel">
+        <div class="drawing-grid"></div>
+        <div class="countertop-shape" id="ct1" style="top:80px;left:60px;width:500px;height:60px;"></div>
+        <div class="countertop-shape" id="ct2" style="top:80px;left:560px;width:60px;height:300px;"></div>
+        <div class="countertop-shape" id="ct3" style="top:320px;left:200px;width:420px;height:60px;"></div>
+        <div class="countertop-shape" id="ct4" style="top:200px;left:800px;width:400px;height:60px;"></div>
+        <div class="sqft-label" id="sq1" style="top:60px;left:250px;">L-Shape: 42.5 sqft</div>
+        <div class="sqft-label" id="sq2" style="top:180px;left:900px;">Island: 28.0 sqft</div>
+        <div class="sqft-label" id="sq3" style="top:350px;left:300px;">Peninsula: 17.5 sqft</div>
+      </div>
+    </div>
+
+    <!-- Scene 3: Slab Calculation (24-38s) -->
+    <div class="scene" id="scene3">
+      <div class="scene-header">Slab Optimization</div>
+      <div class="scene-sub">Every inch accounted for — remnant is money, not waste</div>
+      <div class="slab-grid">
+        <div class="slab-card">
+          <h3>📐 Slab Layout</h3>
+          <p style="color:#94a3b8;font-size:14px;">Total area: <strong style="color:#fff;">88.0 sqft</strong></p>
+          <p style="color:#94a3b8;font-size:14px;margin-top:8px;">Slabs needed: <strong style="color:#fff;">3</strong></p>
+          <p style="color:#94a3b8;font-size:14px;margin-top:8px;">Seam placement: <strong style="color:#fff;">2 seams (optimal)</strong></p>
+          <div style="margin-top:16px;height:120px;background:#0F1D32;border-radius:8px;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:10px;left:10px;width:45%;height:100px;background:rgba(14,165,233,0.2);border:1px solid #0ea5e9;border-radius:4px;"></div>
+            <div style="position:absolute;top:10px;left:calc(45% + 14px);width:25%;height:100px;background:rgba(14,165,233,0.2);border:1px solid #0ea5e9;border-radius:4px;"></div>
+            <div style="position:absolute;top:10px;right:10px;width:22%;height:100px;background:rgba(34,197,94,0.15);border:1px dashed #22c55e;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#22c55e;" id="remnantViz">REMNANT<br>26" wide</div>
+          </div>
+        </div>
+        <div class="slab-card">
+          <h3>♻️ Remnant Analysis</h3>
+          <p style="color:#94a3b8;font-size:14px;">Total waste: <strong style="color:#fff;">14.2 sqft</strong></p>
+          <div class="remnant-tag" id="usableTag">✓ Usable remnant: 26" × 48" → back to inventory</div>
+          <div class="waste-tag" style="margin-left:8px;">✕ Scrap: 3.1 sqft (too narrow)</div>
+          <p style="color:#94a3b8;font-size:13px;margin-top:16px;">💰 Remnant credit: <strong style="color:#22c55e;">$340</strong></p>
+          <p style="color:#94a3b8;font-size:13px;margin-top:4px;">This piece fits future bar-top or vanity jobs</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 4: Quote Generation (38-50s) -->
+    <div class="scene" id="scene4">
+      <div class="scene-header">Quote Generated</div>
+      <div class="scene-sub">Professional PDF in 5 minutes, not 45</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div class="quote-panel">
+          <h3 style="margin-bottom:16px;font-size:18px;">Kitchen Countertop — Johnson Residence</h3>
+          <div class="quote-row"><span>Quartz slab (Calacatta Gold) × 88 sqft</span><span>$6,160</span></div>
+          <div class="quote-row"><span>Fabrication & seaming</span><span>$1,200</span></div>
+          <div class="quote-row"><span>Installation labor</span><span>$880</span></div>
+          <div class="quote-row"><span>Edge profile (waterfall)</span><span>$450</span></div>
+          <div class="quote-row"><span style="color:#22c55e;">Remnant credit (26" × 48")</span><span style="color:#22c55e;">−$340</span></div>
+          <div class="quote-row"><span>Total</span><span>$8,350</span></div>
+          <div class="quote-pdf" id="pdfBtn">📄 Generate PDF Quote</div>
+        </div>
+        <div class="slab-card">
+          <h3>📊 Job Margin</h3>
+          <p style="color:#94a3b8;font-size:14px;margin-top:12px;">Material cost: <strong style="color:#fff;">$4,620</strong></p>
+          <p style="color:#94a3b8;font-size:14px;margin-top:8px;">Labor cost: <strong style="color:#fff;">$1,400</strong></p>
+          <p style="color:#94a3b8;font-size:14px;margin-top:8px;">Remnant value: <strong style="color:#22c55e;">+$340</strong></p>
+          <p style="color:#94a3b8;font-size:14px;margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">Gross margin: <strong style="color:#22c55e;font-size:20px;">32.4%</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 5: Flooring (50-58s) -->
+    <div class="scene" id="scene5">
+      <div class="scene-header">Flooring Quotes</div>
+      <div class="scene-sub">Room dimensions → instant pricing from supplier catalogs</div>
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:24px;">
+        <div class="slab-card">
+          <h3>Room Details</h3>
+          <p style="color:#94a3b8;font-size:13px;margin-top:12px;">Living room: <strong style="color:#fff;">14' × 22'</strong></p>
+          <p style="color:#94a3b8;font-size:13px;margin-top:4px;">Area: <strong style="color:#fff;">308 sqft</strong></p>
+          <p style="color:#94a3b8;font-size:13px;margin-top:4px;">+ 10% waste: <strong style="color:#fff;">339 sqft</strong></p>
+        </div>
+        <div class="flooring-grid">
+          <div class="flooring-card" id="fl1"><div style="font-size:13px;color:#94a3b8;">Luxury Vinyl Plank</div><div style="font-weight:600;margin-top:4px;">Tega Oak Classic</div><div class="flooring-price">$4.29/sqft</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Total: $1,454</div></div>
+          <div class="flooring-card" id="fl2"><div style="font-size:13px;color:#94a3b8;">Luxury Vinyl Plank</div><div style="font-weight:600;margin-top:4px;">Goodfellow Maple</div><div class="flooring-price">$5.49/sqft</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Total: $1,861</div></div>
+          <div class="flooring-card" id="fl3"><div style="font-size:13px;color:#94a3b8;">Engineered Hardwood</div><div style="font-weight:600;margin-top:4px;">Tega Walnut Premium</div><div class="flooring-price">$7.99/sqft</div><div style="font-size:12px;color:#64748b;margin-top:4px;">Total: $2,709</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 6: Client Mining (58-72s) -->
+    <div class="scene" id="scene6">
+      <div class="scene-header">Client Database Mining</div>
+      <div class="scene-sub">7,500 past clients — a gold mine waiting to be worked</div>
+      <div class="client-stats">
+        <div class="client-stat"><div class="num" id="statTotal">0</div><div class="label">Total Clients</div></div>
+        <div class="client-stat"><div class="num" id="statDev">0</div><div class="label">Developers</div></div>
+        <div class="client-stat"><div class="num" id="statHome">0</div><div class="label">Homeowners</div></div>
+        <div class="client-stat"><div class="num" id="statSent">0</div><div class="label">Outreach Sent</div></div>
+      </div>
+      <div id="outreachList">
+        <div class="outreach-row" id="or1"><span class="outreach-badge badge-developer">Developer</span><span style="font-weight:600;">Pinnacle Homes Ltd</span><span style="color:#64748b;font-size:13px;">12 past projects</span><span class="outreach-badge badge-sent" style="margin-left:auto;">Email sent</span></div>
+        <div class="outreach-row" id="or2"><span class="outreach-badge badge-developer">Developer</span><span style="font-weight:600;">Lakeside Builders</span><span style="color:#64748b;font-size:13px;">8 past projects</span><span class="outreach-badge badge-sent" style="margin-left:auto;">Email sent</span></div>
+        <div class="outreach-row" id="or3"><span class="outreach-badge badge-homeowner">Homeowner</span><span style="font-weight:600;">Sarah Mitchell</span><span style="color:#64748b;font-size:13px;">Kitchen 2019 — flooring upsell</span><span class="outreach-badge badge-sent" style="margin-left:auto;">Sequence queued</span></div>
+        <div class="outreach-row" id="or4"><span class="outreach-badge badge-homeowner">Homeowner</span><span style="font-weight:600;">James & Laura Chen</span><span style="color:#64748b;font-size:13px;">Bathroom 2021 — kitchen due</span><span class="outreach-badge badge-sent" style="margin-left:auto;">Sequence queued</span></div>
+      </div>
+    </div>
+
+    <!-- Scene 7: Close (72-89s) -->
+    <div class="scene" id="scene7">
+      <div class="close-screen">
+        <div class="close-price" id="closePrice">$500/month</div>
+        <div class="close-logo" id="closeLogo">SolveWorks</div>
+        <div class="close-tagline" id="closeTag">Your AI. Only yours.</div>
+        <div class="close-url" id="closeUrl">See it live — solveworks.io</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<div id="fakeCursor" style="position:absolute; top:540px; left:960px; z-index:9000; pointer-events:none; display:none;">
+<div id="fakeCursor" style="position:absolute; top:540px; left:960px; z-index:9000; pointer-events:none; display:none; transition: top 0.8s cubic-bezier(0.25,0.1,0.25,1), left 0.8s cubic-bezier(0.25,0.1,0.25,1);">
   <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" style="width:28px;height:28px;filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.5));">
     <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
   </svg>
 </div>
 
-<!-- SCENE 1: Pain -->
-<div id="scene1" class="scene">
-  <div class="header"><div class="logo">Granite & <span>Stone</span> Design Co.</div><div class="header-nav"><a>Dashboard</a><a>Estimates</a><a>Clients</a><a>Inventory</a></div></div>
-  <div class="scene-title"><h2>The Problem</h2><p>Manual estimating is costing you money</p></div>
-  <div class="pain-stats">
-    <div class="pain-card"><div class="num">45</div><div class="label">Minutes per<br>countertop quote</div></div>
-    <div class="pain-card"><div class="num">$100K</div><div class="label">Revenue leaked<br>annually</div></div>
-    <div class="pain-card"><div class="num">7,500</div><div class="label">Past clients<br>sitting untapped</div></div>
-    <div class="pain-card"><div class="num">∞</div><div class="label">Uninvoiced jobs<br>slipping through</div></div>
-  </div>
-  <div class="pain-quote"><p>"Jobs get done in the field that never make it to an invoice. Drawings pile up. Quotes take forever. And thousands of past clients sit in a database collecting dust."</p></div>
-</div>
-
-<!-- SCENE 2: Drawing Intake -->
-<div id="scene2" class="scene">
-  <div class="header"><div class="logo">Granite & <span>Stone</span> Design Co.</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9">Estimates</a><a>Clients</a><a>Inventory</a></div></div>
-  <div class="scene-title"><h2>Drawing Intake</h2><p>AI reads your 2D drawings instantly</p></div>
-  <div class="drawing-area">
-    <div class="drawing-grid"></div>
-    <!-- L-shaped countertop outline -->
-    <svg width="900" height="600" style="position:absolute;top:0;left:0;">
-      <path id="ctOutline" d="M 120,80 L 780,80 L 780,200 L 480,200 L 480,480 L 120,480 Z" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-dasharray="1800" stroke-dashoffset="1800" opacity="0.8"/>
-      <text x="420" y="50" fill="#64748b" font-size="14" font-family="Inter" text-anchor="middle">KITCHEN — L-SHAPED ISLAND</text>
-    </svg>
-    <div class="ct-section" id="ctA" style="top:90px;left:130px;width:640px;height:100px;">Section A — 96" × 26"</div>
-    <div class="ct-section" id="ctB" style="top:210px;left:130px;width:340px;height:260px;">Section B — 48" × 36"</div>
-    <div class="scan-line" id="scanLine1" style="display:none;"></div>
-  </div>
-  <div class="drawing-panel">
-    <div class="drawing-stat" id="ds1"><span class="label">Countertop Sections Detected</span><span class="value">2 sections</span></div>
-    <div class="drawing-stat" id="ds2"><span class="label">Total Linear Feet</span><span class="value">22.5 ft</span></div>
-    <div class="drawing-stat" id="ds3"><span class="label">Total Square Footage</span><span class="value">29.3 sq ft</span></div>
-    <div class="drawing-stat" id="ds4"><span class="label">Material</span><span class="value">Quartz — Calacatta Gold</span></div>
-    <div class="drawing-stat" id="ds5"><span class="label">Edge Profile</span><span class="value">Eased / Standard</span></div>
-    <div class="drawing-stat" id="ds6"><span class="label">Cutouts Required</span><span class="value">1 sink + 1 cooktop</span></div>
-  </div>
-</div>
-
-<!-- SCENE 3: Slab Calculation -->
-<div id="scene3" class="scene">
-  <div class="header"><div class="logo">Granite & <span>Stone</span> Design Co.</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9">Estimates</a><a>Clients</a><a>Inventory</a></div></div>
-  <div class="scene-title"><h2>Slab Optimization</h2><p>Every inch accounted for — remnant is money, not waste</p></div>
-  <div class="slab-visual">
-    <div class="slab-block full" id="sb1" style="top:20px;left:0;width:400px;height:220px;">
-      <span class="slab-label" style="color:#0ea5e9;">Slab 1 — Primary</span>
-      <span class="slab-dim">120" × 63" — Section A + Sink cutout</span>
-    </div>
-    <div class="slab-block full" id="sb2" style="top:20px;left:420px;width:400px;height:220px;">
-      <span class="slab-label" style="color:#0ea5e9;">Slab 2 — Secondary</span>
-      <span class="slab-dim">120" × 63" — Section B + Cooktop</span>
-    </div>
-    <div class="slab-block remnant" id="sb3" style="top:260px;left:0;width:300px;height:140px;">
-      <span class="slab-label" style="color:#22c55e;">✓ Usable Remnant</span>
-      <span class="slab-dim">42" × 26" → Back to Inventory</span>
-    </div>
-    <div class="slab-block remnant" id="sb4" style="top:260px;left:320px;width:260px;height:140px;">
-      <span class="slab-label" style="color:#22c55e;">✓ Usable Remnant</span>
-      <span class="slab-dim">36" × 24" → Back to Inventory</span>
-    </div>
-    <div class="slab-block waste" id="sb5" style="top:260px;left:600px;width:200px;height:140px;">
-      <span class="slab-label" style="color:#ef4444;">Waste</span>
-      <span class="slab-dim">18" × 14" — Too small</span>
-    </div>
-    <div style="position:absolute;top:430px;left:0;width:800px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:20px;opacity:0;" id="remnantNote">
-      <span style="font-size:15px;color:#22c55e;font-weight:600;">💰 Remnant pieces ≥ 22" wide return to inventory as usable stock — that's $340 in recovered value on this job alone</span>
-    </div>
-  </div>
-  <div class="slab-panel">
-    <div class="slab-stat" id="ss1"><span class="label" style="color:#94a3b8">Slabs Required</span><span class="value" style="color:#0ea5e9;font-size:20px;font-weight:700;">2 slabs</span></div>
-    <div class="slab-stat" id="ss2"><span class="label" style="color:#94a3b8">Seam Placement</span><span class="value" style="color:#0ea5e9;font-size:20px;font-weight:700;">L-joint @ 48"</span></div>
-    <div class="slab-stat" id="ss3"><span class="label" style="color:#94a3b8">Total Slab Area</span><span class="value" style="color:#0ea5e9;font-size:20px;font-weight:700;">105 sq ft</span></div>
-    <div class="slab-stat" id="ss4"><span class="label" style="color:#94a3b8">Used Area</span><span class="value" style="color:#0ea5e9;font-size:20px;font-weight:700;">29.3 sq ft (28%)</span></div>
-    <div class="slab-stat" id="ss5"><span class="label" style="color:#94a3b8">Usable Remnant</span><span class="value" style="color:#22c55e;font-size:20px;font-weight:700;">2 pieces — $340 value</span></div>
-    <div class="slab-stat" id="ss6"><span class="label" style="color:#94a3b8">True Waste</span><span class="value" style="color:#ef4444;font-size:20px;font-weight:700;">1.75 sq ft (1.7%)</span></div>
-  </div>
-</div>
-
-<!-- SCENE 4: Quote Generation -->
-<div id="scene4" class="scene">
-  <div class="header"><div class="logo">Granite & <span>Stone</span> Design Co.</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9">Estimates</a><a>Clients</a><a>Inventory</a></div></div>
-  <div class="scene-title"><h2>Instant Quote</h2><p>Professional PDF in 5 minutes, not 45</p></div>
-  <div class="quote-doc">
-    <div class="quote-header">
-      <div><h3>Quote #GSD-2847</h3><span style="color:#64748b;font-size:14px;">Johnson Kitchen Renovation</span></div>
-      <div class="badge">✓ Ready to Send</div>
-    </div>
-    <div class="quote-row" id="qr1"><span class="qlabel">Quartz — Calacatta Gold (2 slabs @ $18.50/sqft)</span><span class="qval">$1,942.50</span></div>
-    <div class="quote-row" id="qr2"><span class="qlabel">Fabrication & Install Labor</span><span class="qval">$1,250.00</span></div>
-    <div class="quote-row" id="qr3"><span class="qlabel">Sink Cutout + Polish</span><span class="qval">$175.00</span></div>
-    <div class="quote-row" id="qr4"><span class="qlabel">Cooktop Cutout</span><span class="qval">$150.00</span></div>
-    <div class="quote-row" id="qr5"><span class="qlabel">Edge Profile — Eased (22.5 LF)</span><span class="qval">$337.50</span></div>
-    <div class="quote-row" id="qr6" style="color:#22c55e;"><span class="qlabel" style="color:#22c55e;">Remnant Credit (returned to inventory)</span><span class="qval" style="color:#22c55e;">−$340.00</span></div>
-    <div class="quote-row total" id="qr7"><span class="qlabel">Total Quote</span><span class="qval">$3,515.00</span></div>
-    <div class="quote-row" id="qr8"><span class="qlabel">Built-in Margin</span><span class="qval" style="color:#22c55e;">38.2%</span></div>
-  </div>
-  <div class="quote-timer">
-    <div class="timer-big" id="timerVal">0:00</div>
-    <div class="timer-label">Quote Generation Time</div>
-  </div>
-  <div class="quote-pdf" id="quotePdf">
-    <div class="icon">📄</div>
-    <p>Professional PDF Generated</p>
-    <p style="color:#64748b;font-size:13px;margin-top:8px;">Ready to email to client</p>
-  </div>
-</div>
-
-<!-- SCENE 5: Flooring Quotes -->
-<div id="scene5" class="scene">
-  <div class="header"><div class="logo">Granite & <span>Stone</span> Design Co.</div><div class="header-nav"><a>Dashboard</a><a style="color:#0ea5e9">Estimates</a><a>Clients</a><a>Inventory</a></div></div>
-  <div class="scene-title"><h2>Flooring Quotes</h2><p>Room dimensions → material → instant price</p></div>
-  <div class="floor-rooms">
-    <div class="floor-room" id="fr1"><h4>Living Room</h4><div class="dims">18' × 22' = 396 sq ft</div><div class="material">Luxury Vinyl Plank — Heritage Oak</div><div class="price">$2,574.00</div></div>
-    <div class="floor-room" id="fr2"><h4>Master Bedroom</h4><div class="dims">14' × 16' = 224 sq ft</div><div class="material">Luxury Vinyl Plank — Heritage Oak</div><div class="price">$1,456.00</div></div>
-    <div class="floor-room" id="fr3"><h4>Kitchen</h4><div class="dims">12' × 14' = 168 sq ft</div><div class="material">Luxury Vinyl Plank — Slate Grey</div><div class="price">$1,159.20</div></div>
-    <div class="floor-room" id="fr4"><h4>Hallway</h4><div class="dims">4' × 18' = 72 sq ft</div><div class="material">Luxury Vinyl Plank — Heritage Oak</div><div class="price">$468.00</div></div>
-  </div>
-  <div class="floor-total" style="position:absolute;top:160px;right:60px;width:400px;">
-    <div class="drawing-stat" id="ft1" style="opacity:0;transform:translateX(20px);"><span class="label">Total Area</span><span class="value">860 sq ft</span></div>
-    <div class="drawing-stat" id="ft2" style="opacity:0;transform:translateX(20px);"><span class="label">Material Cost</span><span class="value">$4,558.00</span></div>
-    <div class="drawing-stat" id="ft3" style="opacity:0;transform:translateX(20px);"><span class="label">Waste Factor (10%)</span><span class="value">$455.80</span></div>
-    <div class="drawing-stat" id="ft4" style="opacity:0;transform:translateX(20px);"><span class="label">Installation</span><span class="value">$2,580.00</span></div>
-    <div class="drawing-stat" id="ft5" style="opacity:0;transform:translateX(20px);"><span class="label">Underlayment</span><span class="value">$344.00</span></div>
-    <div class="drawing-stat" id="ft6" style="opacity:0;transform:translateX(20px);background:rgba(14,165,233,0.08);border-color:rgba(14,165,233,0.3);"><span class="label" style="color:white;font-weight:700;font-size:16px;">Flooring Total</span><span class="value" style="font-size:24px;">$7,937.80</span></div>
-  </div>
-</div>
-
-<!-- SCENE 6: Client Mining -->
-<div id="scene6" class="scene">
-  <div class="header"><div class="logo">Granite & <span>Stone</span> Design Co.</div><div class="header-nav"><a>Dashboard</a><a>Estimates</a><a style="color:#0ea5e9">Clients</a><a>Inventory</a></div></div>
-  <div class="scene-title"><h2>Client Intelligence</h2><p>7,500 past clients — segmented and ready</p></div>
-  <div class="client-db">
-    <div class="client-header-row"><span>Client Name</span><span>Type</span><span>Last Job</span><span>Lifetime Value</span><span>Upsell Opportunity</span></div>
-    <div class="client-row" id="cr1"><span>Harbour Dev Group</span><span><span class="tag tag-developer">Developer</span></span><span>Oct 2025</span><span>$147,200</span><span style="color:#22c55e;">3 new builds planned</span></div>
-    <div class="client-row" id="cr2"><span>Sarah Mitchell</span><span><span class="tag tag-homeowner">Homeowner</span></span><span>Mar 2024</span><span>$4,800</span><span style="color:#22c55e;">Flooring candidate</span></div>
-    <div class="client-row" id="cr3"><span>Eastside Builders</span><span><span class="tag tag-developer">Developer</span></span><span>Jan 2026</span><span>$89,400</span><span style="color:#22c55e;">5 units pending</span></div>
-    <div class="client-row" id="cr4"><span>Mike Thompson</span><span><span class="tag tag-homeowner">Homeowner</span></span><span>Nov 2023</span><span>$3,200</span><span style="color:#22c55e;">Bathroom reno</span></div>
-    <div class="client-row" id="cr5"><span>Coastal Properties</span><span><span class="tag tag-commercial">Commercial</span></span><span>Jul 2025</span><span>$62,000</span><span style="color:#22c55e;">Phase 2 starting</span></div>
-  </div>
-  <div class="client-insights" style="top:520px;left:60px;width:1800px;display:flex;gap:20px;">
-    <div class="insight-card" id="ci1" style="flex:1;"><h4>🏗️ Developer Pipeline</h4><p>42 developers identified with repeat potential</p><div class="metric">$2.1M pipeline</div></div>
-    <div class="insight-card" id="ci2" style="flex:1;"><h4>🏠 Flooring Upsells</h4><p>1,847 homeowners — countertops only, no flooring</p><div class="metric">$924K opportunity</div></div>
-    <div class="insight-card" id="ci3" style="flex:1;"><h4>📧 Auto Outreach</h4><p>Sequences launched — 3 campaigns active</p><div class="metric">23% open rate</div></div>
-    <div class="insight-card" id="ci4" style="flex:1;"><h4>💰 Revenue Recovery</h4><p>Uninvoiced jobs flagged and queued for billing</p><div class="metric">$47K recovered</div></div>
-  </div>
-</div>
-
-<!-- SCENE 7: Close -->
-<div id="scene7" class="scene">
-  <div class="close-scene">
-    <div class="close-logo">Solve<span>Works</span></div>
-    <div class="close-tagline">Stop leaving money on the table.</div>
-    <div class="close-url">solveworks.io</div>
-    <div class="close-price">Starting at $500/mo — Your AI. Only yours.</div>
-  </div>
-</div>
-
-<audio id="voiceover" preload="auto"><source src="voiceover.mp3" type="audio/mpeg"></audio>
-
 <script>
+var voiceover = new Audio('voiceover.mp3');
+var cursor = document.getElementById('fakeCursor');
+
 window.__demoPaused = false;
 function delay(ms) {
   return new Promise(resolve => {
-    let remaining = ms;
-    let start = Date.now();
+    let remaining = ms, start = Date.now();
     function tick() {
       if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
       let elapsed = Date.now() - start;
       remaining -= elapsed;
-      if (remaining <= 0) { resolve(); }
+      if (remaining <= 0) resolve();
       else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
     }
     setTimeout(tick, Math.min(ms, 50));
   });
 }
 
-var voiceover = document.getElementById('voiceover');
-var cursor = document.getElementById('fakeCursor');
+function moveCursor(x, y) { cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
 
-function moveCursor(x, y, dur) {
-  return new Promise(resolve => {
-    cursor.style.display = 'block';
-    cursor.style.transition = `top ${dur}ms ease, left ${dur}ms ease`;
-    cursor.style.top = y + 'px';
-    cursor.style.left = x + 'px';
-    delay(dur).then(resolve);
+function clickAt(x, y) {
+  moveCursor(x, y);
+  return delay(300).then(function() {
+    var r = document.createElement('div');
+    r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid rgba(14,165,233,0.7);pointer-events:none;z-index:8999;animation:rippleOut 0.6s ease forwards;top:'+y+'px;left:'+x+'px;transform:translate(-50%,-50%);';
+    document.body.appendChild(r);
+    setTimeout(function(){ r.remove(); }, 600);
+    return delay(400);
   });
 }
 
-function clickEffect(x, y) {
-  var r = document.createElement('div');
-  r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid #0ea5e9;top:'+(y-20)+'px;left:'+(x-20)+'px;z-index:9001;pointer-events:none;animation:rippleOut 0.6s ease-out forwards;';
-  document.body.appendChild(r);
-  setTimeout(function(){ r.remove(); }, 700);
-}
-
-var rippleStyle = document.createElement('style');
-rippleStyle.textContent = '@keyframes rippleOut { from { transform:scale(0.5); opacity:1; } to { transform:scale(2); opacity:0; } }';
-document.head.appendChild(rippleStyle);
-
 function showScene(id) {
-  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
   document.getElementById(id).classList.add('active');
 }
 
-function animateEl(id, props, dur) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  Object.assign(el.style, { transition: `all ${dur||500}ms ease`, opacity:'1', transform:'translateY(0) translateX(0) scale(1)' });
-  if (props) Object.assign(el.style, props);
+function setNavActive(id) {
+  document.querySelectorAll('.sidebar-item').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function animateValue(el, start, end, prefix, suffix, duration) {
+  var startTime = null;
+  prefix = prefix || ''; suffix = suffix || '';
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var progress = Math.min((ts - startTime) / duration, 1);
+    el.textContent = prefix + Math.floor(start + (end - start) * progress).toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 async function startDemo() {
-  document.getElementById('playBtn').style.display = 'none';
-  voiceover.play().catch(()=>{});
+  document.getElementById('playBtn').classList.add('hidden');
+  document.getElementById('app').style.opacity = '1';
   cursor.style.display = 'block';
+  voiceover.play().catch(function(){});
 
-  // Scene 1: Pain — 0:00 to ~12s
+  // Scene 1: Pain (0-12s) — 12000ms
   showScene('scene1');
-  await delay(1000);
-  // Pain cards animate in
-  document.querySelectorAll('.pain-card').forEach((c,i) => {
-    setTimeout(()=>{ c.style.animation = 'fadeInUp 0.6s ease forwards'; c.style.opacity = '1'; }, i*400);
-  });
-  await delay(3000);
-  document.querySelector('.pain-quote').style.animation = 'fadeInUp 0.8s ease forwards';
-  document.querySelector('.pain-quote').style.opacity = '1';
-  await delay(8000);
-
-  // Scene 2: Drawing Intake — ~12s to ~24s
-  showScene('scene2');
-  await delay(800);
-  // Animate countertop outline drawing
-  var outline = document.getElementById('ctOutline');
-  outline.style.transition = 'stroke-dashoffset 2.5s ease';
-  outline.style.strokeDashoffset = '0';
-  // Scan line
-  var sl = document.getElementById('scanLine1');
-  sl.style.display = 'block';
-  sl.style.animation = 'scanLine 2s linear';
-  await delay(2500);
-  // Show sections
-  animateEl('ctA'); await delay(500);
-  animateEl('ctB'); await delay(500);
-  // Stats panel
-  for(var i=1;i<=6;i++){ animateEl('ds'+i); await delay(350); }
-  await delay(4500);
-
-  await delay(3000);
-  // Scene 3: Slab Calculation — ~24s to ~38s
-  showScene('scene3');
-  await delay(800);
-  animateEl('sb1'); await delay(600);
-  animateEl('sb2'); await delay(600);
-  await moveCursor(300,350,500);
-  animateEl('sb3'); await delay(400);
-  animateEl('sb4'); await delay(400);
-  animateEl('sb5'); await delay(400);
-  animateEl('remnantNote'); await delay(500);
-  for(var i=1;i<=6;i++){ animateEl('ss'+i); await delay(400); }
-  await delay(5000);
-
-  await delay(5000);
-  // Scene 4: Quote Generation — ~38s to ~50s
-  showScene('scene4');
-  await delay(800);
-  // Timer counting up
-  var timerEl = document.getElementById('timerVal');
-  var t = 0;
-  var timerIv = setInterval(()=>{
-    if(window.__demoPaused) return;
-    t++;
-    var m = Math.floor(t/60), s = t%60;
-    timerEl.textContent = m+':'+(s<10?'0':'')+s;
-  }, 200);
-  // Quote rows
-  for(var i=1;i<=8;i++){ animateEl('qr'+i); await delay(350); }
+  setNavActive('nav-dash');
   await delay(1500);
-  clearInterval(timerIv);
-  timerEl.textContent = '4:52';
-  await delay(500);
-  animateEl('quotePdf');
-  await delay(4000);
-
-  // Scene 5: Flooring — ~50s to ~58s
-  showScene('scene5');
-  await delay(600);
-  for(var i=1;i<=4;i++){ animateEl('fr'+i); await delay(400); }
-  for(var i=1;i<=6;i++){ animateEl('ft'+i); await delay(300); }
-  await delay(4000);
-
+  document.getElementById('pain1').classList.add('show');
+  moveCursor(600, 400);
+  await delay(2000);
+  document.getElementById('pain2').classList.add('show');
+  moveCursor(960, 400);
+  await delay(2000);
+  document.getElementById('pain3').classList.add('show');
+  moveCursor(1300, 400);
   await delay(3000);
-  // Scene 6: Client Mining — ~58s to ~72s
-  showScene('scene6');
-  await delay(600);
-  for(var i=1;i<=5;i++){ animateEl('cr'+i); await delay(350); }
-  await delay(1000);
-  for(var i=1;i<=4;i++){ animateEl('ci'+i); await delay(400); }
-  await delay(7000);
+  moveCursor(800, 500);
+  await delay(3500);
 
-  await delay(5000);
-  // Scene 7: Close — ~72s to end
+  // Scene 2: Drawing Intake (12-24s) — 12000ms
+  showScene('scene2');
+  setNavActive('nav-est');
+  await clickAt(380, 120);
+  await delay(1500);
+  document.getElementById('ct1').classList.add('show');
+  moveCursor(600, 350);
+  await delay(1500);
+  document.getElementById('ct2').classList.add('show');
+  moveCursor(850, 400);
+  await delay(1500);
+  document.getElementById('ct3').classList.add('show');
+  document.getElementById('sq1').classList.add('show');
+  await delay(1500);
+  document.getElementById('ct4').classList.add('show');
+  document.getElementById('sq2').classList.add('show');
+  moveCursor(1100, 350);
+  await delay(1500);
+  document.getElementById('sq3').classList.add('show');
+  moveCursor(700, 500);
+  await delay(2800);
+
+  // Scene 3: Slab Calculation (24-38s) — 14000ms
+  showScene('scene3');
+  moveCursor(500, 300);
+  await delay(2000);
+  moveCursor(700, 400);
+  await delay(2000);
+  await clickAt(900, 450);
+  await delay(2000);
+  moveCursor(1400, 350);
+  await delay(2000);
+  document.getElementById('remnantViz').style.background = 'rgba(34,197,94,0.25)';
+  document.getElementById('remnantViz').style.borderColor = '#22c55e';
+  moveCursor(1500, 500);
+  await delay(2000);
+  document.getElementById('usableTag').style.transform = 'scale(1.05)';
+  moveCursor(1300, 550);
+  await delay(3300);
+
+  // Scene 4: Quote Generation (38-50s) — 12000ms
+  showScene('scene4');
+  moveCursor(500, 300);
+  await delay(1500);
+  moveCursor(500, 350);
+  await delay(1200);
+  moveCursor(500, 400);
+  await delay(1200);
+  moveCursor(500, 450);
+  await delay(1200);
+  moveCursor(500, 500);
+  await delay(1200);
+  moveCursor(500, 550);
+  await delay(1500);
+  document.getElementById('pdfBtn').classList.add('show');
+  await clickAt(550, 620);
+  await delay(2500);
+  moveCursor(1300, 500);
+  await delay(1700);
+
+  // Scene 5: Flooring Quotes (50-58s) — 8000ms
+  showScene('scene5');
+  setNavActive('nav-floor');
+  await clickAt(380, 310);
+  await delay(1500);
+  document.getElementById('fl1').classList.add('selected');
+  await clickAt(700, 400);
+  await delay(1500);
+  document.getElementById('fl1').classList.remove('selected');
+  document.getElementById('fl2').classList.add('selected');
+  await clickAt(960, 400);
+  await delay(1500);
+  document.getElementById('fl2').classList.remove('selected');
+  document.getElementById('fl1').classList.add('selected');
+  moveCursor(600, 500);
+  await delay(2800);
+
+  // Scene 6: Client Mining (58-72s) — 14000ms
+  showScene('scene6');
+  setNavActive('nav-clients');
+  await clickAt(380, 370);
+  animateValue(document.getElementById('statTotal'), 0, 7500, '', '', 1200);
+  animateValue(document.getElementById('statDev'), 0, 312, '', '', 1200);
+  animateValue(document.getElementById('statHome'), 0, 6840, '', '', 1200);
+  animateValue(document.getElementById('statSent'), 0, 1247, '', '', 1200);
+  await delay(2000);
+  moveCursor(800, 350);
+  await delay(1500);
+  document.getElementById('or1').classList.add('show');
+  await delay(1500);
+  document.getElementById('or2').classList.add('show');
+  moveCursor(900, 450);
+  await delay(1500);
+  document.getElementById('or3').classList.add('show');
+  await delay(1500);
+  document.getElementById('or4').classList.add('show');
+  moveCursor(1000, 550);
+  await delay(2000);
+  moveCursor(800, 400);
+  await delay(3300);
+
+  // Scene 7: Close (72-89s) — 17000ms
   showScene('scene7');
-  document.querySelector('.close-scene').style.animation = 'fadeInUp 1s ease forwards';
+  cursor.style.display = 'none';
+  await delay(2000);
+  document.getElementById('closePrice').classList.add('show');
+  await delay(2500);
+  document.getElementById('closeLogo').classList.add('show');
+  await delay(2500);
+  document.getElementById('closeTag').classList.add('show');
+  await delay(2500);
+  document.getElementById('closeUrl').classList.add('show');
+  await delay(7500);
 }
 </script>
 
+<!-- Progress bar + tap to pause -->
 <div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
   <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
 </div>
@@ -462,7 +459,6 @@ async function startDemo() {
   function toggle(){
     if(!started)return;
     paused=!paused;
-    flash.textContent=paused?"":"";
     flash.style.opacity=paused?"1":"0";
     try{
       var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
