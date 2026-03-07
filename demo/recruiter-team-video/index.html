@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>SolveWorks — Recruiter Team Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
+.animations-paused *, .animations-paused *::before, .animations-paused *::after { animation-play-state:paused!important; transition:none!important; }
+
+/* Fake cursor */
+#cursor { position:absolute; width:24px; height:24px; z-index:9998; pointer-events:none; opacity:0; transition:opacity 0.3s; }
+#cursor::after { content:''; position:absolute; top:0; left:0; width:0; height:0; border-left:10px solid #fff; border-right:10px solid transparent; border-bottom:16px solid transparent; border-top:8px solid #fff; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+#cursorRing { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:40px; height:40px; border:2px solid rgba(14,165,233,0.8); border-radius:50%; opacity:0; }
+
+/* Play button */
+#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+#playBtn .play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#6366f1); display:flex; align-items:center; justify-content:center; margin-bottom:30px; animation:pulse-play 2s infinite; }
+#playBtn .play-circle::after { content:''; width:0; height:0; border-left:40px solid #fff; border-top:24px solid transparent; border-bottom:24px solid transparent; margin-left:8px; }
+@keyframes pulse-play { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(14,165,233,0.4)} 50%{transform:scale(1.05);box-shadow:0 0 0 20px rgba(14,165,233,0)} }
+#playBtn h2 { font-size:28px; font-weight:600; color:#fff; margin-bottom:8px; }
+#playBtn p { font-size:16px; color:#94A3B8; }
+.hidden { display:none!important; }
+
+/* Sidebar */
+#sidebar { position:absolute; left:0; top:0; width:260px; height:1080px; background:#0F1D32; border-right:1px solid #1E293B; opacity:0; }
+.sidebar-header { padding:24px 20px; border-bottom:1px solid #1E293B; }
+.sidebar-logo { font-size:14px; font-weight:700; color:#0ea5e9; letter-spacing:2px; margin-bottom:16px; }
+.sidebar-ceipal { font-size:11px; color:#64748B; margin-top:4px; }
+.sidebar-ceipal span { color:#22C55E; }
+.recruiter-profile { display:flex; align-items:center; gap:12px; padding:16px 20px; background:#1E293B; border-radius:8px; margin:12px; }
+.recruiter-avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8B5CF6); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; }
+.recruiter-name { font-size:14px; font-weight:600; }
+.recruiter-role { font-size:11px; color:#64748B; }
+.nav-items { padding:12px; }
+.nav-item { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:8px; font-size:13px; color:#94A3B8; cursor:pointer; margin-bottom:4px; }
+.nav-item.active { background:#1E293B; color:#0ea5e9; }
+.nav-item .nav-icon { width:20px; text-align:center; }
+.nav-item .badge { margin-left:auto; background:#EF4444; color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; }
+
+/* Main content */
+#main { position:absolute; left:260px; top:0; width:1660px; height:1080px; padding:24px 32px; opacity:0; overflow:hidden; }
+.top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+.greeting { font-size:24px; font-weight:700; }
+.greeting span { color:#0ea5e9; }
+.top-stats { display:flex; gap:16px; }
+.top-stat { background:#1E293B; border:1px solid #334155; border-radius:8px; padding:8px 16px; text-align:center; }
+.top-stat .num { font-size:20px; font-weight:700; color:#0ea5e9; }
+.top-stat .label { font-size:10px; color:#64748B; text-transform:uppercase; }
+
+/* Task queue */
+#taskQueue { opacity:0; }
+.section-title { font-size:16px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.section-title .dot { width:8px; height:8px; border-radius:50%; }
+.task-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+.task-card { background:#1E293B; border:1px solid #334155; border-radius:10px; padding:16px; opacity:0; transform:translateY(10px); }
+.task-card.urgent { border-left:3px solid #EF4444; }
+.task-card.pending { border-left:3px solid #F59E0B; }
+.task-card.normal { border-left:3px solid #0ea5e9; }
+.task-card .tc-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.task-card .tc-count { font-size:28px; font-weight:800; }
+.task-card .tc-icon { font-size:20px; }
+.task-card .tc-label { font-size:13px; color:#94A3B8; }
+.task-card .tc-sub { font-size:11px; color:#64748B; margin-top:4px; }
+
+/* Candidate cards */
+#candidateSection { opacity:0; }
+.candidate-list { display:flex; gap:16px; }
+.candidate-card { background:#1E293B; border:1px solid #334155; border-radius:12px; padding:20px; width:360px; opacity:0; transform:translateY(15px); }
+.cc-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+.cc-avatar { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#6366f1); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; }
+.match-score { background:rgba(34,197,94,0.15); color:#22C55E; font-size:13px; font-weight:700; padding:4px 10px; border-radius:6px; }
+.match-score.high { background:rgba(34,197,94,0.15); color:#22C55E; }
+.cc-name { font-size:16px; font-weight:600; margin-bottom:2px; }
+.cc-role { font-size:12px; color:#94A3B8; margin-bottom:12px; }
+.cc-details { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.cc-detail { display:flex; align-items:center; gap:8px; font-size:12px; color:#94A3B8; }
+.cc-detail .cd-icon { color:#64748B; }
+.cc-zoominfo { font-size:10px; color:#64748B; display:flex; align-items:center; gap:4px; margin-bottom:14px; }
+.cc-zoominfo .zi-badge { background:#1a1a2e; color:#7C3AED; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; }
+.cc-outreach { background:#0F1D32; border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:14px; }
+.cc-outreach-label { font-size:10px; color:#64748B; text-transform:uppercase; margin-bottom:6px; }
+.cc-outreach-text { font-size:11px; color:#CBD5E1; line-height:1.5; }
+.cc-actions { display:flex; gap:8px; }
+.cc-btn { flex:1; padding:8px; border-radius:6px; border:none; font-size:11px; font-weight:600; cursor:pointer; text-align:center; }
+.cc-btn.approve { background:#0ea5e9; color:#fff; }
+.cc-btn.schedule { background:#6366f1; color:#fff; }
+.cc-btn.reject { background:#334155; color:#94A3B8; }
+
+/* Pipeline / Kanban */
+#pipelineSection { opacity:0; position:absolute; left:260px; top:0; width:1660px; height:1080px; padding:24px 32px; }
+.kanban { display:flex; gap:16px; margin-top:16px; }
+.kanban-col { flex:1; background:#0F1D32; border:1px solid #1E293B; border-radius:10px; padding:16px; }
+.kanban-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #1E293B; }
+.kanban-title { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+.kanban-count { font-size:12px; color:#64748B; background:#1E293B; padding:2px 8px; border-radius:10px; }
+.kanban-card { background:#1E293B; border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:8px; opacity:0; transform:translateX(-10px); }
+.kc-name { font-size:13px; font-weight:600; margin-bottom:4px; }
+.kc-req { font-size:11px; color:#64748B; }
+.kc-bar { height:3px; background:#334155; border-radius:2px; margin-top:8px; overflow:hidden; }
+.kc-bar-fill { height:100%; border-radius:2px; }
+.sourcing-col .kanban-title { color:#0ea5e9; }
+.outreach-col .kanban-title { color:#8B5CF6; }
+.interview-col .kanban-title { color:#F59E0B; }
+.offer-col .kanban-title { color:#22C55E; }
+.placed-col .kanban-title { color:#10B981; }
+
+/* Leaderboard */
+#leaderboardSection { opacity:0; position:absolute; left:260px; top:0; width:1660px; height:1080px; padding:24px 32px; }
+.lb-table { background:#0F1D32; border:1px solid #1E293B; border-radius:12px; overflow:hidden; margin-top:16px; }
+.lb-row { display:flex; align-items:center; padding:16px 24px; border-bottom:1px solid #1E293B; opacity:0; transform:translateX(-20px); }
+.lb-row.header { background:#1E293B; font-size:12px; font-weight:600; color:#64748B; text-transform:uppercase; letter-spacing:1px; }
+.lb-rank { width:60px; font-size:24px; font-weight:800; }
+.lb-rank.gold { color:#F59E0B; }
+.lb-rank.silver { color:#94A3B8; }
+.lb-rank.bronze { color:#CD7F32; }
+.lb-person { flex:1; display:flex; align-items:center; gap:12px; }
+.lb-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; }
+.lb-name { font-size:14px; font-weight:600; }
+.lb-stat { width:120px; text-align:center; font-size:14px; }
+.lb-stat.highlight { color:#0ea5e9; font-weight:700; }
+.lb-bar-wrap { width:200px; }
+.lb-bar-bg { height:8px; background:#1E293B; border-radius:4px; overflow:hidden; }
+.lb-bar-fill { height:100%; border-radius:4px; width:0%; transition:width 1s ease; }
+
+/* CTA */
+#ctaSection { opacity:0; position:absolute; left:0; top:0; width:1920px; height:1080px; background:#0A1628; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9990; }
+.cta-main { font-size:56px; font-weight:800; margin-bottom:16px; background:linear-gradient(135deg,#0ea5e9,#6366f1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.cta-sub { font-size:24px; color:#94A3B8; }
+.cta-multiplier { font-size:32px; font-weight:700; color:#22C55E; margin-bottom:40px; opacity:0; }
+</style>
+</head>
+<body>
+
+<!-- Play Button -->
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"></div>
+  <h2>Recruiter Team Board — Live Demo</h2>
+  <p>Tap to start • 90 seconds</p>
+</div>
+
+<!-- Fake Cursor -->
+<div id="cursor"><div id="cursorRing"></div></div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">SOLVEWORKS</div>
+    <div class="sidebar-ceipal">Connected to CEIPAL <span>● Live</span></div>
+  </div>
+  <div class="recruiter-profile">
+    <div class="recruiter-avatar">MS</div>
+    <div>
+      <div class="recruiter-name">Maria Santos</div>
+      <div class="recruiter-role">Senior Recruiter • Manila</div>
+    </div>
+  </div>
+  <div class="nav-items">
+    <div class="nav-item active"><span class="nav-icon">📋</span> My Queue <span class="badge">17</span></div>
+    <div class="nav-item"><span class="nav-icon">👥</span> Candidates</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Pipeline</div>
+    <div class="nav-item"><span class="nav-icon">🏆</span> Leaderboard</div>
+    <div class="nav-item"><span class="nav-icon">📁</span> Job Orders</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span> Settings</div>
+  </div>
+</div>
+
+<!-- Main: Task Queue + Candidates -->
+<div id="main">
+  <div class="top-bar">
+    <div class="greeting">Good morning, <span>Maria</span> 👋</div>
+    <div class="top-stats">
+      <div class="top-stat"><div class="num">17</div><div class="label">Tasks Today</div></div>
+      <div class="top-stat"><div class="num">8</div><div class="label">Active Reqs</div></div>
+      <div class="top-stat"><div class="num">4</div><div class="label">Placed MTD</div></div>
+    </div>
+  </div>
+
+  <!-- Task Queue -->
+  <div id="taskQueue">
+    <div class="section-title"><div class="dot" style="background:#0ea5e9"></div> Morning Queue</div>
+    <div class="task-grid">
+      <div class="task-card normal">
+        <div class="tc-header"><span class="tc-count">12</span><span class="tc-icon">👥</span></div>
+        <div class="tc-label">Candidates to Review</div>
+        <div class="tc-sub">AI-sourced overnight from ZoomInfo</div>
+      </div>
+      <div class="task-card pending">
+        <div class="tc-header"><span class="tc-count">3</span><span class="tc-icon">📅</span></div>
+        <div class="tc-label">Interviews to Confirm</div>
+        <div class="tc-sub">Awaiting candidate response</div>
+      </div>
+      <div class="task-card urgent">
+        <div class="tc-header"><span class="tc-count">2</span><span class="tc-icon">⚠️</span></div>
+        <div class="tc-label">Follow-ups Overdue</div>
+        <div class="tc-sub">Last contact 3+ days ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Candidate Cards -->
+  <div id="candidateSection">
+    <div class="section-title"><div class="dot" style="background:#22C55E"></div> Top Matches — Sr. Java Developer (REQ-2847)</div>
+    <div class="candidate-list">
+      <div class="candidate-card" id="cc1">
+        <div class="cc-top">
+          <div class="cc-avatar">JR</div>
+          <div class="match-score high">92% Match</div>
+        </div>
+        <div class="cc-name">James Rodriguez</div>
+        <div class="cc-role">Senior Java Developer • Austin, TX</div>
+        <div class="cc-details">
+          <div class="cc-detail"><span class="cd-icon">🏢</span> Currently at Datadog — 2.5 years</div>
+          <div class="cc-detail"><span class="cd-icon">💰</span> Est. $145K–$165K range</div>
+          <div class="cc-detail"><span class="cd-icon">📧</span> j.rodriguez@gmail.com</div>
+        </div>
+        <div class="cc-zoominfo"><span class="zi-badge">ZoomInfo</span> Profile verified • Updated 3 days ago</div>
+        <div class="cc-outreach">
+          <div class="cc-outreach-label">✨ AI-Drafted Outreach</div>
+          <div class="cc-outreach-text">Hi James — I came across your work at Datadog and was impressed by your distributed systems experience. We have a senior role with a fintech company that's scaling their platform...</div>
+        </div>
+        <div class="cc-actions">
+          <button class="cc-btn approve">✓ Send</button>
+          <button class="cc-btn schedule">📅 Interview</button>
+          <button class="cc-btn reject">✗ Pass</button>
+        </div>
+      </div>
+      <div class="candidate-card" id="cc2">
+        <div class="cc-top">
+          <div class="cc-avatar">SK</div>
+          <div class="match-score high">88% Match</div>
+        </div>
+        <div class="cc-name">Sarah Kim</div>
+        <div class="cc-role">Java Platform Engineer • Denver, CO</div>
+        <div class="cc-details">
+          <div class="cc-detail"><span class="cd-icon">🏢</span> Currently at Stripe — 3 years</div>
+          <div class="cc-detail"><span class="cd-icon">💰</span> Est. $155K–$175K range</div>
+          <div class="cc-detail"><span class="cd-icon">📧</span> sarah.k@outlook.com</div>
+        </div>
+        <div class="cc-zoominfo"><span class="zi-badge">ZoomInfo</span> Profile verified • Updated 1 week ago</div>
+        <div class="cc-outreach">
+          <div class="cc-outreach-label">✨ AI-Drafted Outreach</div>
+          <div class="cc-outreach-text">Hi Sarah — Your payments platform expertise at Stripe caught my eye. I'm working with a growing fintech team looking for exactly that kind of depth...</div>
+        </div>
+        <div class="cc-actions">
+          <button class="cc-btn approve">✓ Send</button>
+          <button class="cc-btn schedule">📅 Interview</button>
+          <button class="cc-btn reject">✗ Pass</button>
+        </div>
+      </div>
+      <div class="candidate-card" id="cc3">
+        <div class="cc-top">
+          <div class="cc-avatar">MP</div>
+          <div class="match-score" style="background:rgba(245,158,11,0.15);color:#F59E0B;">79% Match</div>
+        </div>
+        <div class="cc-name">Michael Park</div>
+        <div class="cc-role">Full-Stack Developer • Remote</div>
+        <div class="cc-details">
+          <div class="cc-detail"><span class="cd-icon">🏢</span> Currently at Shopify — 1.5 years</div>
+          <div class="cc-detail"><span class="cd-icon">💰</span> Est. $130K–$150K range</div>
+          <div class="cc-detail"><span class="cd-icon">📧</span> mpark.dev@gmail.com</div>
+        </div>
+        <div class="cc-zoominfo"><span class="zi-badge">ZoomInfo</span> Profile verified • Updated 2 weeks ago</div>
+        <div class="cc-outreach">
+          <div class="cc-outreach-label">✨ AI-Drafted Outreach</div>
+          <div class="cc-outreach-text">Hi Michael — Your full-stack background with Java microservices at Shopify is a strong fit for a senior role we're filling. The team is...</div>
+        </div>
+        <div class="cc-actions">
+          <button class="cc-btn approve">✓ Send</button>
+          <button class="cc-btn schedule">📅 Interview</button>
+          <button class="cc-btn reject">✗ Pass</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pipeline Board -->
+<div id="pipelineSection">
+  <div class="top-bar">
+    <div class="greeting">Pipeline — <span>Maria Santos</span></div>
+    <div class="top-stats">
+      <div class="top-stat"><div class="num">32</div><div class="label">Active Candidates</div></div>
+      <div class="top-stat"><div class="num">8</div><div class="label">Open Reqs</div></div>
+    </div>
+  </div>
+  <div class="kanban">
+    <div class="kanban-col sourcing-col">
+      <div class="kanban-header"><span class="kanban-title">Sourcing</span><span class="kanban-count">8</span></div>
+      <div class="kanban-card"><div class="kc-name">David Chen</div><div class="kc-req">REQ-2847 • Sr. Java Dev</div><div class="kc-bar"><div class="kc-bar-fill" style="width:30%;background:#0ea5e9"></div></div></div>
+      <div class="kanban-card"><div class="kc-name">Lisa Wang</div><div class="kc-req">REQ-2851 • DevOps Eng</div><div class="kc-bar"><div class="kc-bar-fill" style="width:20%;background:#0ea5e9"></div></div></div>
+      <div class="kanban-card"><div class="kc-name">Tom Harris</div><div class="kc-req">REQ-2853 • React Dev</div><div class="kc-bar"><div class="kc-bar-fill" style="width:15%;background:#0ea5e9"></div></div></div>
+    </div>
+    <div class="kanban-col outreach-col">
+      <div class="kanban-header"><span class="kanban-title">Outreach</span><span class="kanban-count">6</span></div>
+      <div class="kanban-card"><div class="kc-name">James Rodriguez</div><div class="kc-req">REQ-2847 • Sr. Java Dev</div><div class="kc-bar"><div class="kc-bar-fill" style="width:50%;background:#8B5CF6"></div></div></div>
+      <div class="kanban-card"><div class="kc-name">Emily Tran</div><div class="kc-req">REQ-2849 • PM</div><div class="kc-bar"><div class="kc-bar-fill" style="width:45%;background:#8B5CF6"></div></div></div>
+    </div>
+    <div class="kanban-col interview-col">
+      <div class="kanban-header"><span class="kanban-title">Interview</span><span class="kanban-count">5</span></div>
+      <div class="kanban-card"><div class="kc-name">Sarah Kim</div><div class="kc-req">REQ-2847 • Sr. Java Dev</div><div class="kc-bar"><div class="kc-bar-fill" style="width:70%;background:#F59E0B"></div></div></div>
+      <div class="kanban-card"><div class="kc-name">Alex Reyes</div><div class="kc-req">REQ-2848 • QA Lead</div><div class="kc-bar"><div class="kc-bar-fill" style="width:65%;background:#F59E0B"></div></div></div>
+    </div>
+    <div class="kanban-col offer-col">
+      <div class="kanban-header"><span class="kanban-title">Offer</span><span class="kanban-count">3</span></div>
+      <div class="kanban-card"><div class="kc-name">Ryan Mitchell</div><div class="kc-req">REQ-2844 • Backend Dev</div><div class="kc-bar"><div class="kc-bar-fill" style="width:90%;background:#22C55E"></div></div></div>
+    </div>
+    <div class="kanban-col placed-col">
+      <div class="kanban-header"><span class="kanban-title">Placed ✓</span><span class="kanban-count">4</span></div>
+      <div class="kanban-card" style="opacity:1;transform:none;border-left:3px solid #10B981"><div class="kc-name">Nina Patel</div><div class="kc-req">REQ-2840 • Data Eng</div><div class="kc-bar"><div class="kc-bar-fill" style="width:100%;background:#10B981"></div></div></div>
+      <div class="kanban-card" style="opacity:1;transform:none;border-left:3px solid #10B981"><div class="kc-name">Chris Blake</div><div class="kc-req">REQ-2838 • SRE</div><div class="kc-bar"><div class="kc-bar-fill" style="width:100%;background:#10B981"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaderboard -->
+<div id="leaderboardSection">
+  <div class="top-bar">
+    <div class="greeting">Team Leaderboard — <span>March 2026</span></div>
+    <div class="top-stats">
+      <div class="top-stat"><div class="num">23</div><div class="label">Team Placements</div></div>
+      <div class="top-stat"><div class="num">14.2d</div><div class="label">Avg Time to Fill</div></div>
+    </div>
+  </div>
+  <div class="lb-table">
+    <div class="lb-row header">
+      <div class="lb-rank">#</div>
+      <div class="lb-person">Recruiter</div>
+      <div class="lb-stat">Placements</div>
+      <div class="lb-stat">Response Rate</div>
+      <div class="lb-stat">Avg Days to Fill</div>
+      <div class="lb-bar-wrap">Progress to Goal</div>
+    </div>
+    <div class="lb-row" id="lb1">
+      <div class="lb-rank gold">1</div>
+      <div class="lb-person"><div class="lb-avatar" style="background:linear-gradient(135deg,#F59E0B,#EF4444)">MS</div><div class="lb-name">Maria Santos</div></div>
+      <div class="lb-stat highlight">7</div>
+      <div class="lb-stat">68%</div>
+      <div class="lb-stat">11.3d</div>
+      <div class="lb-bar-wrap"><div class="lb-bar-bg"><div class="lb-bar-fill" style="background:linear-gradient(90deg,#0ea5e9,#22C55E)"></div></div></div>
+    </div>
+    <div class="lb-row" id="lb2">
+      <div class="lb-rank silver">2</div>
+      <div class="lb-person"><div class="lb-avatar" style="background:linear-gradient(135deg,#6366f1,#8B5CF6)">JD</div><div class="lb-name">John Dela Cruz</div></div>
+      <div class="lb-stat highlight">6</div>
+      <div class="lb-stat">62%</div>
+      <div class="lb-stat">13.7d</div>
+      <div class="lb-bar-wrap"><div class="lb-bar-bg"><div class="lb-bar-fill" style="background:linear-gradient(90deg,#0ea5e9,#6366f1)"></div></div></div>
+    </div>
+    <div class="lb-row" id="lb3">
+      <div class="lb-rank bronze">3</div>
+      <div class="lb-person"><div class="lb-avatar" style="background:linear-gradient(135deg,#22C55E,#0ea5e9)">AR</div><div class="lb-name">Ana Reyes</div></div>
+      <div class="lb-stat highlight">5</div>
+      <div class="lb-stat">59%</div>
+      <div class="lb-stat">15.1d</div>
+      <div class="lb-bar-wrap"><div class="lb-bar-bg"><div class="lb-bar-fill" style="background:linear-gradient(90deg,#0ea5e9,#F59E0B)"></div></div></div>
+    </div>
+    <div class="lb-row" id="lb4">
+      <div class="lb-rank" style="color:#64748B">4</div>
+      <div class="lb-person"><div class="lb-avatar" style="background:linear-gradient(135deg,#EF4444,#F59E0B)">RM</div><div class="lb-name">Rico Martinez</div></div>
+      <div class="lb-stat highlight">3</div>
+      <div class="lb-stat">54%</div>
+      <div class="lb-stat">18.4d</div>
+      <div class="lb-bar-wrap"><div class="lb-bar-bg"><div class="lb-bar-fill" style="background:linear-gradient(90deg,#0ea5e9,#94A3B8)"></div></div></div>
+    </div>
+    <div class="lb-row" id="lb5">
+      <div class="lb-rank" style="color:#64748B">5</div>
+      <div class="lb-person"><div class="lb-avatar" style="background:linear-gradient(135deg,#8B5CF6,#EC4899)">CL</div><div class="lb-name">Carmen Lim</div></div>
+      <div class="lb-stat highlight">2</div>
+      <div class="lb-stat">47%</div>
+      <div class="lb-stat">21.0d</div>
+      <div class="lb-bar-wrap"><div class="lb-bar-bg"><div class="lb-bar-fill" style="background:linear-gradient(90deg,#0ea5e9,#94A3B8)"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div id="ctaSection">
+  <div class="cta-multiplier" id="ctaMultiplier">3 placements/month → 10 placements/month</div>
+  <div class="cta-main">Your AI. Only yours.</div>
+  <div class="cta-sub">See it live — solveworks.io</div>
+</div>
+
+<script>
+// Audio
+var voiceover = new Audio('voiceover.mp3');
+
+// Pause-aware delay
+window.__demoPaused = false;
+function delay(ms) {
+  return new Promise(resolve => {
+    let remaining = ms;
+    let start = Date.now();
+    function tick() {
+      if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
+      let elapsed = Date.now() - start;
+      remaining -= elapsed;
+      if (remaining <= 0) { resolve(); }
+      else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
+    }
+    setTimeout(tick, Math.min(ms, 50));
+  });
+}
+
+// Cursor animation
+var cursor = document.getElementById('cursor');
+var ring = document.getElementById('cursorRing');
+function moveCursor(x, y, dur) {
+  return new Promise(resolve => {
+    cursor.style.transition = 'left ' + dur + 'ms ease, top ' + dur + 'ms ease';
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+    setTimeout(resolve, dur);
+  });
+}
+function clickEffect() {
+  ring.style.opacity = '1';
+  ring.style.transform = 'translate(-50%,-50%) scale(0.5)';
+  ring.style.transition = 'none';
+  setTimeout(function() {
+    ring.style.transition = 'all 0.4s ease-out';
+    ring.style.transform = 'translate(-50%,-50%) scale(1.5)';
+    ring.style.opacity = '0';
+  }, 50);
+}
+
+// Animate element in
+function fadeIn(el, dur) {
+  dur = dur || 500;
+  el.style.transition = 'opacity ' + dur + 'ms ease, transform ' + dur + 'ms ease';
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0) translateX(0)';
+}
+
+async function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  voiceover.play().catch(function(){});
+  cursor.style.opacity = '1';
+
+  // Scene 1: Sidebar + Main fade in (0-15s)
+  var sidebar = document.getElementById('sidebar');
+  sidebar.style.transition = 'opacity 0.8s ease';
+  sidebar.style.opacity = '1';
+  await delay(400);
+
+  var main = document.getElementById('main');
+  main.style.transition = 'opacity 0.8s ease';
+  main.style.opacity = '1';
+  await delay(600);
+
+  // Task queue cards animate in
+  var tq = document.getElementById('taskQueue');
+  tq.style.transition = 'opacity 0.5s ease';
+  tq.style.opacity = '1';
+  await delay(300);
+
+  var cards = document.querySelectorAll('.task-card');
+  for (var i = 0; i < cards.length; i++) {
+    fadeIn(cards[i], 400);
+    await delay(250);
+  }
+
+  // Cursor moves to task cards
+  await moveCursor(500, 320, 800);
+  clickEffect();
+  await delay(1500);
+  await moveCursor(850, 320, 600);
+  clickEffect();
+  await delay(1500);
+  await moveCursor(1200, 320, 600);
+  clickEffect();
+  await delay(2000);
+
+  // Scene 2-3: Candidate cards (15-45s)
+  var cs = document.getElementById('candidateSection');
+  cs.style.transition = 'opacity 0.6s ease';
+  cs.style.opacity = '1';
+  await delay(400);
+
+  // Animate each candidate card
+  var ccards = document.querySelectorAll('.candidate-card');
+  for (var j = 0; j < ccards.length; j++) {
+    fadeIn(ccards[j], 500);
+    await delay(400);
+  }
+
+  // Cursor explores first candidate
+  await moveCursor(480, 560, 800);
+  clickEffect();
+  await delay(2000);
+
+  // Hover over match score
+  await moveCursor(600, 500, 500);
+  await delay(1500);
+
+  // Hover over outreach
+  await moveCursor(480, 720, 600);
+  await delay(2000);
+
+  // Scene 4: Click actions (45-55s)
+  // Click approve on first card
+  await moveCursor(390, 810, 700);
+  clickEffect();
+  await delay(300);
+  // Flash the button
+  var approveBtn = document.querySelector('#cc1 .cc-btn.approve');
+  if (approveBtn) {
+    approveBtn.style.background = '#22C55E';
+    approveBtn.textContent = '✓ Sent!';
+  }
+  await delay(1500);
+
+  // Click schedule on second
+  await moveCursor(750, 810, 600);
+  clickEffect();
+  await delay(300);
+  var schedBtn = document.querySelector('#cc2 .cc-btn.schedule');
+  if (schedBtn) {
+    schedBtn.style.background = '#22C55E';
+    schedBtn.textContent = '✓ Scheduled';
+  }
+  await delay(1500);
+
+  // Click reject on third
+  await moveCursor(1250, 810, 600);
+  clickEffect();
+  await delay(300);
+  var rejBtn = document.querySelector('#cc3 .cc-btn.reject');
+  if (rejBtn) {
+    rejBtn.style.background = '#EF4444';
+    rejBtn.style.color = '#fff';
+    rejBtn.textContent = '✗ Passed';
+  }
+  await delay(2000);
+
+  // Scene 5: Pipeline board (55-70s)
+  // Click Pipeline nav
+  await moveCursor(130, 470, 800);
+  clickEffect();
+  await delay(400);
+
+  // Switch nav active state
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.querySelectorAll('.nav-item')[2].classList.add('active');
+
+  main.style.opacity = '0';
+  await delay(300);
+
+  var pipeline = document.getElementById('pipelineSection');
+  pipeline.style.transition = 'opacity 0.6s ease';
+  pipeline.style.opacity = '1';
+  await delay(500);
+
+  // Animate kanban cards
+  var kcards = pipeline.querySelectorAll('.kanban-card');
+  for (var k = 0; k < kcards.length; k++) {
+    fadeIn(kcards[k], 400);
+    await delay(200);
+  }
+
+  // Cursor scans across columns
+  await moveCursor(450, 450, 800);
+  await delay(1000);
+  await moveCursor(750, 450, 600);
+  await delay(1000);
+  await moveCursor(1050, 450, 600);
+  await delay(1000);
+  await moveCursor(1350, 450, 600);
+  await delay(1000);
+  await moveCursor(1600, 450, 600);
+  await delay(1500);
+
+  // Scene 6: Leaderboard (70-80s)
+  await moveCursor(130, 510, 700);
+  clickEffect();
+  await delay(400);
+
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.querySelectorAll('.nav-item')[3].classList.add('active');
+
+  pipeline.style.opacity = '0';
+  await delay(300);
+
+  var lb = document.getElementById('leaderboardSection');
+  lb.style.transition = 'opacity 0.6s ease';
+  lb.style.opacity = '1';
+  await delay(400);
+
+  // Animate leaderboard rows
+  var lbRows = lb.querySelectorAll('.lb-row:not(.header)');
+  for (var l = 0; l < lbRows.length; l++) {
+    fadeIn(lbRows[l], 400);
+    await delay(300);
+    // Animate progress bar
+    var fill = lbRows[l].querySelector('.lb-bar-fill');
+    if (fill) {
+      var widths = [70, 60, 50, 30, 20];
+      fill.style.width = widths[l] + '%';
+    }
+  }
+  await delay(3000);
+
+  // Scene 7: CTA (80-90s)
+  cursor.style.opacity = '0';
+  lb.style.transition = 'opacity 0.8s ease';
+  lb.style.opacity = '0';
+  sidebar.style.transition = 'opacity 0.8s ease';
+  sidebar.style.opacity = '0';
+  await delay(800);
+
+  var cta = document.getElementById('ctaSection');
+  cta.style.transition = 'opacity 1s ease';
+  cta.style.opacity = '1';
+  await delay(500);
+
+  var mult = document.getElementById('ctaMultiplier');
+  mult.style.transition = 'opacity 0.8s ease';
+  mult.style.opacity = '1';
+  await delay(3000);
+}
+</script>
+
+<!-- Mobile Controls -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:200px; border-radius:50%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; font-size:80px; color:white; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">⏸</div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.textContent=paused?"▶":"⏸";
+    flash.style.opacity="1";
+    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a){if(paused)a.pause();else a.play().catch(function(){});}
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused)document.body.classList.add("animations-paused");
+    else{window.__demoPaused=false;document.body.classList.remove("animations-paused");}
+  }
+  document.addEventListener("touchstart",function(e){if(!started)return;e.preventDefault();try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  document.addEventListener("click",function(e){if(!started||e.target.closest("#playBtn"))return;try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  function upd(){
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
+})();
+</script>
+
+</body>
+</html>
