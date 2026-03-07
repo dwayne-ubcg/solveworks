@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>SolveWorks Setter AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { touch-action: manipulation; -webkit-touch-callout: none; }
+html, body { width: 1920px; height: 1080px; overflow: visible; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; }
+
+/* ===================== PLAY BUTTON ===================== */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; flex-direction: column; gap: 24px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+#playBtn .play-label { font-size: 16px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; }
+
+/* ===================== PROGRESS BAR ===================== */
+/* old progressBar removed */
+
+/* ===================== FAKE CURSOR ===================== */
+#fakeCursor { position: fixed; top: 0; left: 0; z-index: 9000; pointer-events: none; transition: top 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); will-change: transform; }
+#fakeCursor svg { width: 28px; height: 28px; filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.5)); }
+
+/* Click ripple */
+.click-ripple { position: fixed; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(14,165,233,0.7); pointer-events: none; z-index: 8999; animation: rippleOut 0.6s ease forwards; }
+@keyframes rippleOut {
+  0% { transform: translate(-50%,-50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(2); opacity: 0; }
+}
+
+/* ===================== OVERLAY SCENES (Hook + CTA) ===================== */
+#overlay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 5000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+#overlay.hidden { display: none; }
+#hookText { font-size: 42px; font-weight: 300; line-height: 1.6; text-align: center; max-width: 900px; opacity: 0; transition: opacity 1s ease; }
+#hookText .accent { color: #0ea5e9; font-weight: 600; }
+#logoReveal { position: absolute; opacity: 0; transition: opacity 1s ease; text-align: center; }
+
+/* CTA overlay */
+#ctaOverlay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 5000; background: #0A1628; display: none; align-items: center; justify-content: center; flex-direction: column; padding: 60px 80px; }
+
+/* ===================== APP LAYOUT ===================== */
+#app { position: absolute; top: 0; left: 0; width: 1920px; height: 1032px; display: flex; opacity: 0; transition: opacity 0.8s ease; }
+
+/* Sidebar */
+.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 0 24px 10px; }
+.sidebar-logo-text { font-size: 20px; font-weight: 700; }
+.sidebar-brand { padding: 0 24px 24px; font-size: 11px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; border-left: 3px solid transparent; transition: all 0.25s ease; position: relative; }
+.sidebar-item:hover, .sidebar-item.hovered { color: #cbd5e1; background: rgba(255,255,255,0.04); }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-count { margin-left: auto; font-size: 11px; background: rgba(14,165,233,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 10px; }
+
+/* Content area */
+#content { flex: 1; position: relative; overflow: hidden; }
+.content-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 32px 40px; opacity: 0; transform: translateX(30px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; overflow: hidden; }
+.content-panel.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+/* Glass card */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+/* ===================== LEAD CARDS ===================== */
+.lead-card { padding: 16px 20px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 16px; margin-bottom: 10px; transition: all 0.3s ease; opacity: 0; transform: translateX(20px); }
+.lead-card.visible { opacity: 1; transform: translateX(0); }
+.lead-card.hovered { border-color: rgba(14,165,233,0.3); background: rgba(14,165,233,0.04); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(14,165,233,0.1); }
+.lead-card.expanded { border-color: rgba(14,165,233,0.4); background: rgba(14,165,233,0.06); }
+.lead-card-details { max-height: 0; overflow: hidden; transition: max-height 0.5s ease, opacity 0.3s ease; opacity: 0; }
+.lead-card-details.open { max-height: 200px; opacity: 1; }
+
+/* Tags */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.tag-web { background: rgba(14,165,233,0.2); color: #38bdf8; }
+.tag-instagram { background: rgba(236,72,153,0.2); color: #f472b6; }
+.tag-facebook { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-email { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-whatsapp { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-referral { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+/* Tabs */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #64748b; background: rgba(255,255,255,0.03); border: 1px solid transparent; transition: all 0.25s ease; }
+.tab.active { color: #0ea5e9; background: rgba(14,165,233,0.1); border-color: rgba(14,165,233,0.3); }
+.tab.hovered { color: #cbd5e1; background: rgba(255,255,255,0.06); }
+
+/* ===================== CHAT BUBBLES ===================== */
+.chat-bubble { padding: 12px 16px; border-radius: 16px; max-width: 440px; font-size: 14px; line-height: 1.6; margin-bottom: 10px; opacity: 0; transform: translateY(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
+.chat-bubble.visible { opacity: 1; transform: translateY(0); }
+.chat-bubble.ai { background: rgba(14,165,233,0.12); border: 1px solid rgba(14,165,233,0.2); border-bottom-left-radius: 4px; color: #e2e8f0; }
+.chat-bubble.user { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); border-bottom-right-radius: 4px; align-self: flex-end; color: #cbd5e1; }
+
+/* Score criteria */
+.score-criterion { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.03); opacity: 0; transform: translateX(10px); transition: opacity 0.4s ease, transform 0.4s ease; }
+.score-criterion.visible { opacity: 1; transform: translateX(0); }
+
+/* ===================== CALENDAR ===================== */
+.cal-slot { padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 12px; transition: all 0.3s ease; }
+.cal-slot.hovered { transform: scale(1.03); box-shadow: 0 2px 12px rgba(14,165,233,0.2); }
+.cal-slot.booked { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.cal-slot.available { border: 1px dashed rgba(255,255,255,0.1); }
+.cal-slot.new-booking { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); }
+
+/* Booking modal */
+#bookingModal { position: absolute; top: 0; right: -500px; width: 460px; height: 100%; background: rgba(10,22,40,0.98); border-left: 1px solid rgba(14,165,233,0.2); z-index: 100; padding: 32px; transition: right 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); overflow-y: auto; box-shadow: -10px 0 40px rgba(0,0,0,0.3); }
+#bookingModal.open { right: 0; }
+
+/* ===================== FOLLOW-UP TIMELINE ===================== */
+.follow-step { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; opacity: 0; transform: translateY(15px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.follow-step.visible { opacity: 1; transform: translateY(0); }
+
+/* ===================== SCROLLABLE AREA ===================== */
+.scroll-area { overflow: hidden; position: relative; }
+.scroll-inner { transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
+/* ===================== NOTIFICATION TOAST ===================== */
+.toast { position: fixed; top: -80px; right: 40px; z-index: 7000; background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); backdrop-filter: blur(20px); border-radius: 12px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; transition: top 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); min-width: 360px; }
+.toast.show { top: 24px; }
+
+/* Live dot */
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); } 70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+.live-dot { animation: livePulse 2s infinite; }
+
+/* Typing indicator */
+.typing-dots { display: inline-flex; gap: 4px; padding: 8px 14px; }
+.typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #0ea5e9; animation: typingBounce 1.4s infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+/* Qual meter */
+.qual-meter { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.qual-meter-fill { height: 100%; border-radius: 4px; transition: width 1.5s ease; }
+
+/* Cost cards */
+.cost-card { padding: 32px; border-radius: 16px; text-align: center; flex: 1; opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.cost-card.visible { opacity: 1; transform: translateY(0); }
+.cost-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+.cost-green.visible { animation: pulseGlow 2s infinite; }
+
+/* Utility */
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+
+/* ===================== PLAYBACK CONTROL BAR ===================== */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.animations-paused, .animations-paused * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"><div class="play-triangle"></div></div>
+  <div class="play-label">Setter AI Demo — Click to Play</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<!-- old progress bar removed -->
+
+<!-- FAKE CURSOR -->
+<div id="fakeCursor" style="top: 540px; left: 960px; display: none;">
+  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
+  </svg>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div class="toast" id="toast">
+  <div class="live-dot"></div>
+  <div>
+    <div style="font-size: 13px; font-weight: 600;" id="toastTitle">New Lead!</div>
+    <div style="font-size: 12px; color: #94a3b8;" id="toastBody">Jennifer Hartwell via Web Form</div>
+  </div>
+</div>
+
+<!-- OVERLAY (Hook / Logo) -->
+<div id="overlay">
+  <div id="hookText">
+    What if every inbound lead got a response<br>in <span class="accent">60 seconds</span>… at <span class="accent">3am</span>?
+  </div>
+  <div id="logoReveal">
+    <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+      <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+    </div>
+    <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+  </div>
+</div>
+
+<!-- CTA OVERLAY (final scene) -->
+<div id="ctaOverlay">
+  <div style="display: flex; gap: 40px; align-items: stretch; margin-bottom: 48px; width: 100%; max-width: 1400px;">
+    <div class="cost-card cost-red" id="costHuman">
+      <div style="font-size: 16px; color: #f87171; margin-bottom: 12px; font-weight: 600;">👤 Human Setter</div>
+      <div style="font-size: 48px; font-weight: 800; color: #fca5a5;">$4,500</div>
+      <div class="text-slate-400" style="font-size: 16px; margin-bottom: 24px;">/month</div>
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #94a3b8;">
+        <div>⏰ Works 8hrs/day, 5 days/week</div>
+        <div>🐢 2–5 minute response times</div>
+        <div>📊 ~50 leads/day max</div>
+        <div>🌙 Misses nights, weekends, holidays</div>
+        <div>📋 Needs training & management</div>
+        <div>🏖️ PTO, sick days, turnover</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; font-size: 32px; color: #475569; font-weight: 300; opacity: 0;" id="ctaVs">vs</div>
+    <div class="cost-card cost-green" id="costAI">
+      <div style="font-size: 16px; color: #0ea5e9; margin-bottom: 12px; font-weight: 600;">🤖 Your AI Setter</div>
+      <div style="font-size: 36px; font-weight: 800; color: #38bdf8;">A fraction of the cost</div>
+      <div class="text-slate-400" style="font-size: 16px; margin-bottom: 24px;"></div>
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #94a3b8;">
+        <div>⚡ Works 24/7/365</div>
+        <div>🚀 23-second avg response</div>
+        <div>♾️ Unlimited leads simultaneously</div>
+        <div>🌙 Never sleeps, never misses</div>
+        <div>🧠 Improves automatically</div>
+        <div>✅ Zero turnover, zero drama</div>
+      </div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 24px; margin-bottom: 40px; opacity: 0;" id="ctaSavings">
+    <div class="glass" style="padding: 20px 36px; border-radius: 14px; text-align: center; border: 1px solid rgba(14,165,233,0.2);">
+      <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Same results. Fraction of the cost.</div>
+    </div>
+  </div>
+  <div style="text-align: center; opacity: 0;" id="ctaLogo">
+    <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+      <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+    </div>
+    <div style="font-size: 20px; color: #94a3b8; font-weight: 300; margin-bottom: 16px;">Your AI. Only yours.</div>
+    <div style="font-size: 20px; color: #0ea5e9; font-weight: 500; margin-bottom: 20px;">solveworks.io</div>
+    <div style="font-size: 18px; color: #cbd5e1; font-weight: 300;">Ready to stop losing leads at midnight? Let's talk.</div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="sidebar-logo-text"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div></div>
+    <div class="sidebar-brand">ELEVATE COACHING GROUP</div>
+    <div class="sidebar-item active" data-section="leads" id="nav-leads">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Leads
+      <span class="sidebar-count">47</span>
+    </div>
+    <div class="sidebar-item" data-section="qualification" id="nav-qualification">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Qualification
+    </div>
+    <div class="sidebar-item" data-section="calendar" id="nav-calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+      <span class="sidebar-count" style="display:none" id="calBadge">18</span>
+    </div>
+    <div class="sidebar-item" data-section="followups" id="nav-followups">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Follow-ups
+      <span class="sidebar-count" style="display:none" id="fuBadge">14</span>
+    </div>
+    <div class="sidebar-item" data-section="analytics" id="nav-analytics">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      Analytics
+    </div>
+    <div style="flex: 1;"></div>
+    <div class="sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+
+  <!-- CONTENT PANELS -->
+  <div id="content">
+
+    <!-- ==================== LEADS PANEL ==================== -->
+    <div class="content-panel active" id="panel-leads">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Incoming Leads <span class="live-dot" style="margin-left: 8px;"></span></h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Real-time lead capture across all channels</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 32px; font-weight: 800; color: #0ea5e9;" id="leadCounter">0</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">leads<br>today</span>
+          </div>
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 32px; font-weight: 800; color: #4ade80;">23s</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">avg<br>response</span>
+          </div>
+        </div>
+      </div>
+      <!-- Tab bar -->
+      <div class="tab-bar" id="leadTabs">
+        <div class="tab active" data-tab="all" id="tab-all">All Channels</div>
+        <div class="tab" data-tab="hot" id="tab-hot">🔥 Hot <span style="font-size: 11px; opacity: 0.7;">(18)</span></div>
+        <div class="tab" data-tab="warm" id="tab-warm">🟡 Warm <span style="font-size: 11px; opacity: 0.7;">(16)</span></div>
+        <div class="tab" data-tab="cold" id="tab-cold">🧊 Cold <span style="font-size: 11px; opacity: 0.7;">(13)</span></div>
+      </div>
+      <!-- Lead cards scroll area -->
+      <div class="scroll-area" style="height: 720px;">
+        <div class="scroll-inner" id="leadsList"></div>
+      </div>
+    </div>
+
+    <!-- ==================== QUALIFICATION PANEL ==================== -->
+    <div class="content-panel" id="panel-qualification">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <span style="color: #64748b; font-size: 13px;">← Leads</span>
+        <span style="color: #334155;">/</span>
+        <span style="font-size: 13px; color: #94a3b8;">Jennifer Hartwell</span>
+      </div>
+      <div style="display: flex; gap: 28px; height: calc(100% - 40px);">
+        <!-- Left: Chat -->
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(14,165,233,0.1)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #38bdf8; font-size: 16px;">JH</div>
+            <div>
+              <div style="font-size: 20px; font-weight: 700;">Jennifer Hartwell</div>
+              <div style="font-size: 13px; color: #94a3b8;">VP Operations, Meridian Partners · <span class="tag tag-web" style="padding: 2px 8px; font-size: 11px;">🌐 Web</span> · 12 seconds ago</div>
+            </div>
+            <div style="margin-left: auto;"><span class="live-dot"></span> <span style="color: #4ade80; font-size: 12px; font-weight: 500;">AI Active</span></div>
+          </div>
+          <div class="glass" style="flex: 1; padding: 24px; border-radius: 16px; overflow: hidden;">
+            <div style="font-size: 12px; color: #475569; text-align: center; margin-bottom: 20px;">Conversation started · Today, 2:47 AM</div>
+            <div id="chatArea" style="display: flex; flex-direction: column; gap: 4px;"></div>
+          </div>
+        </div>
+        <!-- Right: Scorecard -->
+        <div style="width: 420px; display: flex; flex-direction: column; gap: 16px;">
+          <div class="glass" style="padding: 24px; border-radius: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="font-size: 18px; font-weight: 700;">Lead Score</h3>
+              <div id="scoreBadge" style="opacity: 0; transition: opacity 0.8s ease;">
+                <span style="font-size: 48px; font-weight: 900; background: linear-gradient(135deg, #f87171, #fb923c); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">94</span>
+                <span style="font-size: 14px; color: #64748b;">/100</span>
+              </div>
+            </div>
+            <div id="scoreCriteria" style="display: flex; flex-direction: column; gap: 12px;"></div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 16px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Lead Routing</h3>
+            <div id="routingCards" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CALENDAR PANEL ==================== -->
+    <div class="content-panel" id="panel-calendar">
+      <div style="display: flex; gap: 28px; height: 100%;">
+        <div style="flex: 1;">
+          <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Calendar</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-bottom: 24px;">Week of March 10–14, 2026</p>
+          <div class="glass" style="padding: 20px; border-radius: 16px;">
+            <div style="display: flex; gap: 2px;" id="calGrid"></div>
+          </div>
+          <!-- Confirmation card -->
+          <div class="glass" id="bookingConfirm" style="padding: 24px; border-radius: 16px; margin-top: 20px; border: 1px solid rgba(34,197,94,0.3); opacity: 0; transition: opacity 0.8s ease;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+              <span style="font-size: 20px;">✅</span>
+              <span style="font-size: 18px; font-weight: 700; color: #4ade80;">Booking Confirmed — Jennifer Hartwell</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="confirmChecklist"></div>
+          </div>
+        </div>
+        <div style="width: 320px; display: flex; flex-direction: column; gap: 16px;">
+          <div class="glass" style="padding: 24px; border-radius: 16px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">This Week</h3>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div><div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;"><span class="text-slate-400">Calls Booked</span><span style="font-weight: 700; color: #0ea5e9;" id="bookedCount">0</span></div></div>
+              <div><div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;"><span class="text-slate-400">Show Rate</span><span style="font-weight: 700; color: #4ade80;">87%</span></div>
+                <div class="qual-meter"><div class="qual-meter-fill" style="width: 0%; background: #4ade80;" id="showBar"></div></div>
+              </div>
+              <div><div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;"><span class="text-slate-400">Avg Booking-to-Call</span><span style="font-weight: 700; color: #38bdf8;">2.3 days</span></div></div>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 16px; flex: 1;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Upcoming Calls</h3>
+            <div id="upcomingList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Booking slide-in modal -->
+      <div id="bookingModal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2 style="font-size: 20px; font-weight: 700;">📅 New Booking</h2>
+          <span style="color: #64748b; font-size: 20px; cursor: pointer;">✕</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="padding: 16px; border-radius: 10px; background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.2);">
+            <div style="font-size: 12px; color: #0ea5e9; margin-bottom: 4px;">LEAD</div>
+            <div style="font-weight: 600;">Jennifer Hartwell</div>
+            <div style="font-size: 13px; color: #94a3b8;">VP Operations, Meridian Partners</div>
+          </div>
+          <div style="padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">DATE & TIME</div>
+            <div style="font-weight: 600;">Tuesday, March 11 · 2:00 PM EST</div>
+          </div>
+          <div style="padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">COACH</div>
+            <div style="font-weight: 600;">Marcus Rivera</div>
+            <div style="font-size: 13px; color: #94a3b8;">Executive Transition Specialist</div>
+          </div>
+          <div style="padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 4px;">PROGRAM</div>
+            <div style="font-weight: 600;">Executive Transition</div>
+          </div>
+          <div style="padding: 16px; border-radius: 10px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);">
+            <div style="font-size: 12px; color: #4ade80; margin-bottom: 8px;">AUTO-ACTIONS</div>
+            <div style="font-size: 13px; color: #cbd5e1; display: flex; flex-direction: column; gap: 6px;">
+              <div>✅ Calendar invite sent to Jennifer</div>
+              <div>✅ Calendar invite sent to Marcus</div>
+              <div>✅ Prep doc: "Executive Transition Overview"</div>
+              <div>✅ Pre-call questionnaire sent</div>
+              <div>✅ 24h reminder scheduled</div>
+              <div>✅ 1h reminder scheduled</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== FOLLOW-UPS PANEL ==================== -->
+    <div class="content-panel" id="panel-followups">
+      <div style="display: flex; gap: 28px; height: 100%;">
+        <div style="flex: 1;">
+          <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">No-Show Recovery</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-bottom: 24px;">Automated follow-up sequences for missed appointments</p>
+          <!-- Lead card -->
+          <div class="glass" style="padding: 20px; border-radius: 14px; border: 1px solid rgba(249,115,22,0.3); margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, rgba(249,115,22,0.3), rgba(249,115,22,0.1)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fb923c; font-size: 16px;">MT</div>
+              <div style="flex: 1;">
+                <div style="font-size: 18px; font-weight: 700;">Michael Torres</div>
+                <div style="font-size: 13px; color: #94a3b8;">Founder, Apex Strategy Group</div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 13px; color: #fb923c; font-weight: 600;">❌ No-Show</div>
+                <div style="font-size: 12px; color: #64748b;">March 7, 3:00 PM</div>
+              </div>
+            </div>
+          </div>
+          <div id="followupTimeline" style="position: relative; padding-left: 24px;">
+            <div style="position: absolute; left: 7px; top: 0; width: 2px; height: 0; background: linear-gradient(180deg, #fb923c, #4ade80); transition: height 4s ease;" id="timelineLine"></div>
+          </div>
+        </div>
+        <div style="width: 340px; display: flex; flex-direction: column; gap: 16px;">
+          <div class="glass" style="padding: 24px; border-radius: 16px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Recovery Stats</h3>
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="position: relative; width: 160px; height: 160px; margin: 0 auto;">
+                <svg width="160" height="160" style="transform: rotate(-90deg);">
+                  <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12"/>
+                  <circle cx="80" cy="80" r="70" fill="none" stroke="#4ade80" stroke-width="12" stroke-dasharray="440" id="recoveryGauge" stroke-dashoffset="440" stroke-linecap="round" style="transition: stroke-dashoffset 2s ease;"/>
+                </svg>
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                  <div style="font-size: 36px; font-weight: 800; color: #4ade80;" id="recoveryPct">0%</div>
+                  <div style="font-size: 12px; color: #94a3b8;">Recovered</div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; justify-content: space-between; font-size: 14px;"><span class="text-slate-400">No-shows this month</span><span style="font-weight: 700;">14</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;"><span class="text-slate-400">Recovered</span><span style="font-weight: 700; color: #4ade80;">9</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px;"><span class="text-slate-400">Revenue saved</span><span style="font-weight: 700; color: #4ade80;">$67,500</span></div>
+            </div>
+          </div>
+          <div class="glass" id="rebookedCard" style="padding: 20px; border-radius: 14px; border: 1px solid rgba(34,197,94,0.3); opacity: 0; transition: opacity 0.8s ease;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+              <span style="font-size: 18px;">🎉</span>
+              <span style="font-weight: 700; color: #4ade80;">Michael Rebooked!</span>
+            </div>
+            <div style="font-size: 13px; color: #94a3b8;">
+              <div>📅 March 12, 10:00 AM EST</div>
+              <div style="margin-top: 4px;">👤 Coach: Marcus Rivera</div>
+              <div style="margin-top: 4px;">✅ Prep docs re-sent</div>
+              <div style="margin-top: 4px;">⏰ Reminders scheduled</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CORE ENGINE
+// ============================================================
+const TOTAL_DURATION = 90; // seconds
+let startTime = 0;
+const voiceover = new Audio('voiceover.mp3');
+voiceover.preload = 'auto';
+
+// ============================================================
+// CURSOR SYSTEM
+// ============================================================
+const cursor = document.getElementById('fakeCursor');
+let cursorX = 960, cursorY = 540;
+
+function moveCursor(x, y, duration = 800) {
+  return new Promise(resolve => {
+    cursor.style.transition = `top ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1), left ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+    cursorX = x; cursorY = y;
+    setTimeout(resolve, duration);
+  });
+}
+
+function clickAt(x, y) {
+  const ripple = document.createElement('div');
+  ripple.className = 'click-ripple';
+  ripple.style.left = x + 'px';
+  ripple.style.top = y + 'px';
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+}
+
+function clickCursor() {
+  clickAt(cursorX + 4, cursorY + 4);
+}
+
+async function moveAndClick(x, y, moveDur = 600) {
+  await moveCursor(x, y, moveDur);
+  await delay(100);
+  clickCursor();
+  await delay(150);
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Hover effect helpers
+function addHover(el) { if(el) el.classList.add('hovered'); }
+function removeHover(el) { if(el) el.classList.remove('hovered'); }
+
+// ============================================================
+// NAVIGATION SYSTEM
+// ============================================================
+function navigateTo(section) {
+  // Update sidebar
+  document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+  const navItem = document.getElementById('nav-' + section);
+  if (navItem) navItem.classList.add('active');
+  // Update panels
+  document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-' + section);
+  if (panel) panel.classList.add('active');
+}
+
+// ============================================================
+// COUNTER ANIMATION
+// ============================================================
+function animateCounter(el, target, duration = 2000, prefix = '', suffix = '') {
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ============================================================
+// PROGRESS BAR
+// ============================================================
+function updateProgress() {
+  const elapsed = (performance.now() - startTime) / 1000;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  if (pct < 100) requestAnimationFrame(updateProgress);
+}
+
+// ============================================================
+// LEAD DATA
+// ============================================================
+const LEADS = [
+  { name: 'Jennifer Hartwell', title: 'VP Operations', company: 'Meridian Partners', channel: 'Web Form', icon: '🌐', cls: 'tag-web', time: '12s ago', score: 'hot', scoreColor: '#f87171', scoreBg: 'rgba(239,68,68,0.15)' },
+  { name: 'Brandon Okafor', title: 'Founder', company: 'Atlas Ventures', channel: 'Instagram DM', icon: '📱', cls: 'tag-instagram', time: '3m ago', score: 'warm', scoreColor: '#facc15', scoreBg: 'rgba(234,179,8,0.15)' },
+  { name: 'Rachel Summers', title: 'Director', company: 'Pinnacle Group', channel: 'Facebook Ad', icon: '📘', cls: 'tag-facebook', time: '8m ago', score: 'hot', scoreColor: '#f87171', scoreBg: 'rgba(239,68,68,0.15)' },
+  { name: 'David Chen', title: 'CEO', company: 'NovaBridge Capital', channel: 'Email', icon: '📧', cls: 'tag-email', time: '15m ago', score: 'hot', scoreColor: '#f87171', scoreBg: 'rgba(239,68,68,0.15)' },
+  { name: 'Samantha Rhodes', title: 'COO', company: 'Velocity Partners', channel: 'WhatsApp', icon: '💬', cls: 'tag-whatsapp', time: '22m ago', score: 'warm', scoreColor: '#facc15', scoreBg: 'rgba(234,179,8,0.15)' },
+  { name: 'Karen Mitchell', title: 'SVP', company: 'BrightStar Holdings', channel: 'Web Form', icon: '🌐', cls: 'tag-web', time: '34m ago', score: 'hot', scoreColor: '#f87171', scoreBg: 'rgba(239,68,68,0.15)' },
+  { name: 'Anthony Williams', title: 'Managing Director', company: 'Zenith Advisory', channel: 'Referral', icon: '🤝', cls: 'tag-referral', time: '41m ago', score: 'hot', scoreColor: '#f87171', scoreBg: 'rgba(239,68,68,0.15)' },
+  { name: 'Lisa Nguyen', title: 'Partner', company: 'Summit Legal', channel: 'Instagram DM', icon: '📱', cls: 'tag-instagram', time: '1h ago', score: 'cold', scoreColor: '#818cf8', scoreBg: 'rgba(99,102,241,0.15)' },
+  { name: 'Robert Castillo', title: 'VP Sales', company: 'Forge Industries', channel: 'Facebook Ad', icon: '📘', cls: 'tag-facebook', time: '1.5h ago', score: 'warm', scoreColor: '#facc15', scoreBg: 'rgba(234,179,8,0.15)' },
+  { name: 'Emily Watson', title: 'Director of HR', company: 'Clearwater Systems', channel: 'Web Form', icon: '🌐', cls: 'tag-web', time: '2h ago', score: 'warm', scoreColor: '#facc15', scoreBg: 'rgba(234,179,8,0.15)' },
+];
+
+function buildLeadCards() {
+  const list = document.getElementById('leadsList');
+  list.innerHTML = '';
+  LEADS.forEach((lead, i) => {
+    const initials = lead.name.split(' ').map(n => n[0]).join('');
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.id = 'lead-' + i;
+    card.innerHTML = `
+      <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, rgba(14,165,233,0.25), rgba(14,165,233,0.08)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #38bdf8; font-size: 14px; flex-shrink: 0;">${initials}</div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 15px; font-weight: 600;">${lead.name}</span>
+          ${i === 0 ? '<span class="live-dot"></span>' : ''}
+        </div>
+        <div style="font-size: 13px; color: #94a3b8;">${lead.title}, ${lead.company}</div>
+      </div>
+      <span class="tag ${lead.cls}">${lead.icon} ${lead.channel}</span>
+      <span style="font-size: 12px; color: #64748b; width: 80px; text-align: right;">${lead.time}</span>
+      <span style="padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; background: ${lead.scoreBg}; color: ${lead.scoreColor}; text-transform: uppercase;">${lead.score}</span>
+    `;
+    // Expandable detail
+    const details = document.createElement('div');
+    details.className = 'lead-card-details';
+    details.id = 'lead-details-' + i;
+    details.innerHTML = `
+      <div style="padding: 12px 20px 4px 58px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px;">
+        <div><span style="color: #64748b;">Budget:</span> <span style="color: #cbd5e1;">${lead.score === 'hot' ? '$10-20K' : lead.score === 'warm' ? '$5-10K' : 'TBD'}</span></div>
+        <div><span style="color: #64748b;">Timeline:</span> <span style="color: #cbd5e1;">${lead.score === 'hot' ? 'Immediate' : lead.score === 'warm' ? '1-3 months' : '6+ months'}</span></div>
+        <div><span style="color: #64748b;">Source:</span> <span style="color: #cbd5e1;">${lead.channel}</span></div>
+        <div><span style="color: #64748b;">Status:</span> <span style="color: ${lead.scoreColor};">${lead.score === 'hot' ? '🔥 Ready to book' : lead.score === 'warm' ? '🟡 Nurturing' : '🧊 Long-term'}</span></div>
+      </div>
+    `;
+    card.appendChild(details);
+    list.appendChild(card);
+  });
+}
+
+// ============================================================
+// CHAT DATA
+// ============================================================
+const CHAT_MESSAGES = [
+  { type: 'ai', text: "Hi Jennifer! Thanks for your interest in Elevate. Quick question — what's the biggest leadership challenge you're facing right now?" },
+  { type: 'user', text: "I just got promoted to VP and I'm managing a team of 40 for the first time. Feeling overwhelmed." },
+  { type: 'ai', text: "That's a huge transition — congratulations! Managing 40 people is a different skillset entirely. Have you worked with an executive coach before?" },
+  { type: 'user', text: "No, this would be my first time. A colleague recommended you." },
+  { type: 'ai', text: "Great to hear! And just so I can match you with the right program — what's your approximate budget for coaching this year?" },
+  { type: 'user', text: "My company has approved up to $15,000 for professional development." },
+  { type: 'ai', text: "Perfect — that fits beautifully with our Executive Transition program. Let me find a time for you to connect with our team..." },
+];
+
+const SCORE_CRITERIA = [
+  { label: 'Budget', value: '$15K (within range)', icon: '💰' },
+  { label: 'Timeline', value: 'Immediate need', icon: '⏰' },
+  { label: 'Authority', value: 'Company-approved budget', icon: '🏢' },
+  { label: 'Need', value: 'New leadership role', icon: '🎯' },
+  { label: 'Referral', value: 'Word-of-mouth', icon: '🤝' },
+];
+
+const ROUTING = [
+  { label: 'Hot', sub: 'Score 80+', count: 12, desc: 'Auto-book priority slots', color: '#f87171', bg: 'rgba(239,68,68,0.1)', icon: '🔥' },
+  { label: 'Warm', sub: 'Score 50-79', count: 23, desc: 'Nurture sequence', color: '#facc15', bg: 'rgba(234,179,8,0.1)', icon: '🟡' },
+  { label: 'Cold', sub: 'Score <50', count: 12, desc: 'Long-term drip', color: '#818cf8', bg: 'rgba(99,102,241,0.1)', icon: '🧊' },
+];
+
+// ============================================================
+// CALENDAR DATA
+// ============================================================
+const CAL_DAYS = ['Mon 10', 'Tue 11', 'Wed 12', 'Thu 13', 'Fri 14'];
+const CAL_SLOTS = [
+  [0, '9:00 AM', 'David Chen', 'booked'],
+  [0, '11:00 AM', 'Karen Mitchell', 'booked'],
+  [0, '2:00 PM', 'Rachel Summers', 'booked'],
+  [1, '10:00 AM', 'Anthony Williams', 'booked'],
+  [1, '2:00 PM', '', 'available'],
+  [1, '4:00 PM', '', 'available'],
+  [2, '9:00 AM', 'Samantha Rhodes', 'booked'],
+  [2, '11:00 AM', '', 'available'],
+  [2, '3:00 PM', 'Brandon Okafor', 'booked'],
+  [3, '10:00 AM', 'Robert Castillo', 'booked'],
+  [3, '1:00 PM', '', 'available'],
+  [3, '3:00 PM', 'Emily Watson', 'booked'],
+  [4, '9:00 AM', 'Lisa Nguyen', 'booked'],
+  [4, '11:00 AM', '', 'available'],
+  [4, '2:00 PM', '', 'available'],
+];
+
+const UPCOMING = [
+  { name: 'David Chen', time: 'Mon 10, 9:00 AM', coach: 'Marcus Rivera' },
+  { name: 'Karen Mitchell', time: 'Mon 10, 11:00 AM', coach: 'Sarah Kim' },
+  { name: 'Rachel Summers', time: 'Mon 10, 2:00 PM', coach: 'Marcus Rivera' },
+  { name: 'Anthony Williams', time: 'Tue 11, 10:00 AM', coach: 'James Patterson' },
+];
+
+function buildCalendar() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  CAL_DAYS.forEach((day, di) => {
+    const col = document.createElement('div');
+    col.style.cssText = `flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.02); min-height: 420px;`;
+    let html = `<div style="font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 16px; text-align: center;">${day}</div>`;
+    CAL_SLOTS.filter(s => s[0] === di).forEach(slot => {
+      const [, time, name, status] = slot;
+      const slotId = `cal-${di}-${time.replace(/\s/g,'')}`;
+      if (status === 'booked') {
+        html += `<div class="cal-slot booked" id="${slotId}"><div style="color: #64748b;">${time}</div><div style="color: #cbd5e1; font-weight: 500; margin-top: 2px;">${name}</div></div>`;
+      } else {
+        html += `<div class="cal-slot available" id="${slotId}"><div style="color: #64748b;">${time}</div><div style="color: #475569; margin-top: 2px;">Available</div></div>`;
+      }
+    });
+    col.innerHTML = html;
+    grid.appendChild(col);
+  });
+}
+
+function buildUpcoming() {
+  const list = document.getElementById('upcomingList');
+  list.innerHTML = '';
+  UPCOMING.forEach(call => {
+    const el = document.createElement('div');
+    el.style.cssText = 'padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); font-size: 12px;';
+    el.innerHTML = `<div style="font-weight: 600; color: #cbd5e1;">${call.name}</div><div style="color: #64748b; margin-top: 2px;">${call.time}</div><div style="color: #475569; margin-top: 2px;">${call.coach}</div>`;
+    list.appendChild(el);
+  });
+}
+
+// ============================================================
+// FOLLOW-UP DATA
+// ============================================================
+const FU_STEPS = [
+  { time: '+5 min', type: 'SMS', icon: '💬', color: '#4ade80', msg: "Hi Michael, looks like we missed you! No worries — want to reschedule? Here are some open slots this week." },
+  { time: '+2 hours', type: 'Email', icon: '📧', color: '#38bdf8', msg: '"Still want to chat?" — personalized with 3 calendar options.' },
+  { time: '+24 hours', type: 'SMS', icon: '💬', color: '#4ade80', msg: "Hey Michael, just circling back. Your booking link is still active — grab any time." },
+  { time: '+3 days', type: 'Email', icon: '📧', color: '#38bdf8', msg: '"3 new coaching spots opened up this month" — scarcity + value.' },
+  { time: 'Result', type: 'Rebooked!', icon: '🎉', color: '#4ade80', msg: 'Michael rebooked → March 12, 10:00 AM with Marcus Rivera' },
+];
+
+function buildFollowups() {
+  const tl = document.getElementById('followupTimeline');
+  // Keep the timeline line, clear steps
+  const line = document.getElementById('timelineLine');
+  tl.innerHTML = '';
+  tl.appendChild(line);
+  FU_STEPS.forEach((step, i) => {
+    const el = document.createElement('div');
+    el.className = 'follow-step';
+    el.id = 'fu-step-' + i;
+    const isResult = i === FU_STEPS.length - 1;
+    el.innerHTML = `
+      <div style="width: 16px; height: 16px; border-radius: 50%; background: ${step.color}; flex-shrink: 0; z-index: 1; margin-top: 4px;"></div>
+      <div class="glass" style="flex: 1; padding: 16px 20px; border-radius: 12px; ${isResult ? 'border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.05);' : ''}">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 16px;">${step.icon}</span>
+          <span style="font-weight: 700; color: ${step.color};">${step.time}</span>
+          <span style="font-size: 12px; color: #94a3b8;">— ${step.type}</span>
+        </div>
+        <div style="font-size: 13px; color: #cbd5e1; line-height: 1.5;">${step.msg}</div>
+    `;
+    tl.appendChild(el);
+  });
+}
+
+// ============================================================
+// TOAST NOTIFICATIONS
+// ============================================================
+function showToast(title, body, duration = 3000) {
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ============================================================
+// MAIN DEMO SEQUENCE
+// ============================================================
+async function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  var cb=document.getElementById('controlBar'); cb.classList.remove('initially-hidden'); cb.style.display='flex';
+  startTime = performance.now();
+  requestAnimationFrame(updateProgress);
+  voiceover.play().catch(() => {});
+
+  // === HOOK (0-8s) ===
+  await runHookScene();
+
+  // === Show app, cursor appears ===
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('app').style.opacity = '1';
+  cursor.style.display = 'block';
+  buildLeadCards();
+
+  // === SCENE 1: LEADS (8-25s) — ~17s ===
+  await runLeadsScene();
+
+  // === SCENE 2: QUALIFICATION (25-42s) — ~17s ===
+  await runQualificationScene();
+
+  // === SCENE 3: CALENDAR (42-58s) — ~16s ===
+  await runCalendarScene();
+
+  // === SCENE 4: FOLLOW-UPS (58-72s) — ~14s ===
+  await runFollowupsScene();
+
+  // === SCENE 5: COST + CTA (72-90s) — ~18s ===
+  await runCTAScene();
+}
+
+// ============================================================
+// SCENE: HOOK (0-8s)
+// ============================================================
+async function runHookScene() {
+  const hookText = document.getElementById('hookText');
+  const logo = document.getElementById('logoReveal');
+  // Fade in question
+  await delay(1500);
+  hookText.style.opacity = '1';
+  await delay(4500);
+  // Fade out question, show logo
+  hookText.style.opacity = '0';
+  await delay(800);
+  logo.style.opacity = '1';
+  await delay(1200);
+  logo.style.opacity = '0';
+}
+
+// ============================================================
+// SCENE: LEADS (8-25s)
+// ============================================================
+async function runLeadsScene() {
+  navigateTo('leads');
+  animateCounter(document.getElementById('leadCounter'), 47, 2500);
+
+  // Cursor moves around the leads area, cards appear one by one
+  // Show first 4 cards quickly
+  for (let i = 0; i < 4; i++) {
+    const card = document.getElementById('lead-' + i);
+    card.classList.add('visible');
+    await delay(400);
+  }
+
+  // Notification toast for new lead
+  showToast('🔔 New Lead!', 'Jennifer Hartwell via Web Form — 12 seconds ago');
+
+  // Cursor hovers over lead cards
+  await moveCursor(800, 340, 500);
+  addHover(document.getElementById('lead-0'));
+  await delay(600);
+
+  // Click to expand Jennifer's card
+  await moveAndClick(800, 310, 400);
+  document.getElementById('lead-details-0').classList.add('open');
+  document.getElementById('lead-0').classList.add('expanded');
+  await delay(1500);
+
+  // Show more cards while browsing
+  for (let i = 4; i < 7; i++) {
+    document.getElementById('lead-' + i).classList.add('visible');
+    await delay(300);
+  }
+
+  // Move cursor to "Hot" tab
+  removeHover(document.getElementById('lead-0'));
+  const hotTab = document.getElementById('tab-hot');
+  await moveCursor(470, 190, 500);
+  addHover(hotTab);
+  await delay(400);
+  await moveAndClick(470, 190, 100);
+  // Switch to hot tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  hotTab.classList.add('active');
+  hotTab.classList.remove('hovered');
+  // Filter: hide non-hot cards
+  LEADS.forEach((l, i) => {
+    const card = document.getElementById('lead-' + i);
+    if (l.score !== 'hot') card.style.opacity = '0.2';
+  });
+  await delay(1500);
+
+  // Back to All tab
+  const allTab = document.getElementById('tab-all');
+  await moveCursor(340, 190, 400);
+  await moveAndClick(340, 190, 100);
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  allTab.classList.add('active');
+  LEADS.forEach((l, i) => {
+    const card = document.getElementById('lead-' + i);
+    if (card.classList.contains('visible')) card.style.opacity = '1';
+  });
+  await delay(800);
+
+  // Scroll down slightly to show more leads
+  for (let i = 7; i < 10; i++) {
+    document.getElementById('lead-' + i).classList.add('visible');
+    await delay(200);
+  }
+  const scrollInner = document.querySelector('.scroll-inner');
+  scrollInner.style.transform = 'translateY(-60px)';
+  await delay(1200);
+  scrollInner.style.transform = 'translateY(0)';
+  await delay(500);
+}
+
+// ============================================================
+// SCENE: QUALIFICATION (25-42s)
+// ============================================================
+async function runQualificationScene() {
+  // Cursor moves to sidebar "Qualification"
+  const navQ = document.getElementById('nav-qualification');
+  await moveCursor(130, 238, 600);
+  addHover(navQ);
+  await delay(300);
+  await moveAndClick(130, 238, 100);
+  removeHover(navQ);
+  navigateTo('qualification');
+  await delay(400);
+
+  // Build chat and scorecard
+  const chatArea = document.getElementById('chatArea');
+  chatArea.innerHTML = '';
+  const scoreCriteria = document.getElementById('scoreCriteria');
+  scoreCriteria.innerHTML = '';
+  const routingCards = document.getElementById('routingCards');
+  routingCards.innerHTML = '';
+
+  // Chat messages appear with typing indicators
+  for (let i = 0; i < CHAT_MESSAGES.length; i++) {
+    const msg = CHAT_MESSAGES[i];
+    // Show typing indicator for AI
+    if (msg.type === 'ai' && i > 0) {
+      const typing = document.createElement('div');
+      typing.className = 'chat-bubble ai visible';
+      typing.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+      chatArea.appendChild(typing);
+      await delay(800);
+      typing.remove();
+    }
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${msg.type}`;
+    if (msg.type === 'ai') {
+      bubble.innerHTML = `<div style="font-size: 11px; color: #0ea5e9; margin-bottom: 4px; font-weight: 600;">Elevate AI</div>${msg.text}`;
+    } else {
+      bubble.textContent = msg.text;
+    }
+    chatArea.appendChild(bubble);
+    await delay(50);
+    bubble.classList.add('visible');
+
+    // Cursor follows the conversation on the right side
+    const chatY = 340 + Math.min(i * 50, 300);
+    moveCursor(700 + Math.random() * 100, chatY, 600);
+
+    await delay(1400);
+  }
+
+  // Score criteria appear
+  SCORE_CRITERIA.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-criterion';
+    row.innerHTML = `<span style="font-size: 18px;">${c.icon}</span><div style="flex: 1;"><div style="font-size: 13px; font-weight: 600;">${c.label}</div><div style="font-size: 12px; color: #94a3b8;">${c.value}</div></div><span style="color: #4ade80; font-size: 16px;">✅</span>`;
+    scoreCriteria.appendChild(row);
+    setTimeout(() => row.classList.add('visible'), i * 400);
+  });
+
+  // Cursor moves to scorecard area
+  await moveCursor(1500, 280, 500);
+  await delay(1500);
+
+  // Score badge appears
+  document.getElementById('scoreBadge').style.opacity = '1';
+  await delay(800);
+
+  // Routing cards
+  ROUTING.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = `display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: ${r.bg}; border: 1px solid ${r.color}33; opacity: 0; transition: opacity 0.5s ease;`;
+    row.innerHTML = `<span style="font-size: 20px;">${r.icon}</span><div style="flex: 1;"><div style="font-size: 14px; font-weight: 600; color: ${r.color};">${r.label} <span style="font-size: 11px; color: #64748b; font-weight: 400;">${r.sub}</span></div><div style="font-size: 12px; color: #94a3b8;">${r.desc}</div></div><span style="font-size: 20px; font-weight: 800; color: ${r.color};">${r.count}</span>`;
+    routingCards.appendChild(row);
+    setTimeout(() => { row.style.opacity = '1'; }, 400 + i * 500);
+  });
+
+  // Cursor hovers over the Hot routing card
+  await moveCursor(1500, 580, 500);
+  await delay(1500);
+}
+
+// ============================================================
+// SCENE: CALENDAR (42-58s)
+// ============================================================
+async function runCalendarScene() {
+  // Navigate via sidebar
+  const navC = document.getElementById('nav-calendar');
+  document.getElementById('calBadge').style.display = 'inline';
+  await moveCursor(130, 282, 600);
+  addHover(navC);
+  await delay(300);
+  await moveAndClick(130, 282, 100);
+  removeHover(navC);
+  navigateTo('calendar');
+  buildCalendar();
+  buildUpcoming();
+  await delay(300);
+
+  // Animate stats
+  animateCounter(document.getElementById('bookedCount'), 18, 1500);
+  setTimeout(() => { document.getElementById('showBar').style.width = '87%'; }, 500);
+
+  // Cursor browses the calendar
+  await moveCursor(600, 400, 500);
+  await delay(600);
+
+  // Hover over Monday slots
+  await moveCursor(420, 350, 400);
+  await delay(500);
+
+  // Cursor moves to Tuesday available slot (2:00 PM)
+  const targetSlot = document.getElementById('cal-1-2:00PM');
+  await moveCursor(560, 380, 500);
+  if (targetSlot) {
+    targetSlot.classList.add('hovered');
+    await delay(400);
+  }
+
+  // Click the available slot — booking modal slides in
+  await moveAndClick(560, 380, 100);
+  if (targetSlot) targetSlot.classList.remove('hovered');
+  document.getElementById('bookingModal').classList.add('open');
+  await delay(2000);
+
+  // Cursor browses the modal
+  await moveCursor(1550, 500, 500);
+  await delay(1500);
+
+  // Move cursor down to see auto-actions
+  await moveCursor(1550, 700, 500);
+  await delay(1500);
+
+  // Close modal
+  document.getElementById('bookingModal').classList.remove('open');
+  await delay(400);
+
+  // The slot is now booked — update it
+  if (targetSlot) {
+    targetSlot.classList.remove('available');
+    targetSlot.classList.add('new-booking');
+    targetSlot.innerHTML = `<div style="color: #64748b;">2:00 PM</div><div style="color: #38bdf8; font-weight: 600; margin-top: 2px;">✨ Jennifer Hartwell</div><div style="color: #0ea5e9; font-size: 10px; margin-top: 2px;">NEW BOOKING</div>`;
+  }
+
+  // Show confirmation card
+  const confirmChecklist = document.getElementById('confirmChecklist');
+  confirmChecklist.innerHTML = '';
+  const checks = [
+    { text: 'Calendar invite sent to Jennifer', icon: '📅' },
+    { text: 'Calendar invite sent to Marcus', icon: '👤' },
+    { text: 'Prep doc sent', icon: '📄' },
+    { text: 'Pre-call questionnaire sent', icon: '📝' },
+    { text: '24h reminder scheduled', icon: '⏰' },
+    { text: '1h reminder scheduled', icon: '🔔' },
+  ];
+  checks.forEach((item, i) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; background: rgba(34,197,94,0.05); font-size: 13px; color: #cbd5e1; opacity: 0; transition: opacity 0.4s ease;';
+    el.innerHTML = `<span>${item.icon}</span><span>✅ ${item.text}</span>`;
+    confirmChecklist.appendChild(el);
+    setTimeout(() => { el.style.opacity = '1'; }, 300 + i * 400);
+  });
+  document.getElementById('bookingConfirm').style.opacity = '1';
+
+  // Cursor watches the checklist fill in
+  await moveCursor(700, 800, 500);
+  await delay(3000);
+}
+
+// ============================================================
+// SCENE: FOLLOW-UPS (58-72s)
+// ============================================================
+async function runFollowupsScene() {
+  // Navigate
+  const navF = document.getElementById('nav-followups');
+  document.getElementById('fuBadge').style.display = 'inline';
+  await moveCursor(130, 326, 600);
+  addHover(navF);
+  await delay(300);
+  await moveAndClick(130, 326, 100);
+  removeHover(navF);
+  navigateTo('followups');
+  buildFollowups();
+  await delay(400);
+
+  // Recovery gauge
+  setTimeout(() => {
+    document.getElementById('recoveryGauge').style.strokeDashoffset = String(440 - 440 * 0.64);
+    document.getElementById('recoveryPct').textContent = '64%';
+  }, 500);
+
+  // Timeline line grows
+  setTimeout(() => {
+    document.getElementById('timelineLine').style.height = '100%';
+  }, 800);
+
+  // Follow-up steps appear one by one, cursor follows
+  for (let i = 0; i < FU_STEPS.length; i++) {
+    const step = document.getElementById('fu-step-' + i);
+    step.classList.add('visible');
+    const stepY = 400 + i * 100;
+    moveCursor(600, Math.min(stepY, 800), 400);
+    await delay(2200);
+  }
+
+  // Cursor moves to see rebooked result
+  await moveCursor(1500, 700, 500);
+  document.getElementById('rebookedCard').style.opacity = '1';
+  await delay(1500);
+}
+
+// ============================================================
+// SCENE: CTA (72-90s)
+// ============================================================
+async function runCTAScene() {
+  // Fade out app
+  cursor.style.display = 'none';
+  document.getElementById('app').style.opacity = '0';
+  await delay(600);
+
+  // Show CTA overlay
+  const cta = document.getElementById('ctaOverlay');
+  cta.style.display = 'flex';
+  await delay(200);
+
+  // Cost cards appear
+  document.getElementById('costHuman').classList.add('visible');
+  await delay(500);
+  document.getElementById('ctaVs').style.opacity = '1';
+  document.getElementById('ctaVs').style.transition = 'opacity 0.6s ease';
+  await delay(500);
+  document.getElementById('costAI').classList.add('visible');
+  await delay(3000);
+
+  // Savings
+  const savings = document.getElementById('ctaSavings');
+  savings.style.opacity = '1';
+  savings.style.transition = 'opacity 0.8s ease';
+  await delay(4000);
+
+  // Logo + CTA
+  const logo = document.getElementById('ctaLogo');
+  logo.style.opacity = '1';
+  logo.style.transition = 'opacity 1s ease';
+  await delay(6000);
+
+  // Gentle fade at the very end
+  cta.style.transition = 'opacity 2s ease';
+  cta.style.opacity = '0.9';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+buildLeadCards();
+buildCalendar();
+buildUpcoming();
+buildFollowups();
+
+
+</script>
+
+<!-- Playback Control Bar -->
+  <div class="cb-scrubber" id="cbScrubber">
+    <div class="cb-scrubber-fill" id="cbScrubberFill"></div>
+    <div class="cb-scrubber-thumb" id="cbScrubberThumb"></div>
+  </div>
+  <div class="cb-vol-wrap">
+    <button id="cbVolIcon" title="Mute">🔊</button>
+    <input type="range" class="cb-vol-slider" id="cbVolSlider" min="0" max="1" step="0.05" value="1">
+  </div>
+</div>
+      </div>
+  <div class="cb-time" id="cbTimeDisplay">0:00 / 0:00</div>
+  <button id="cbPlayPause" title="Play/Pause" onclick="window._cbToggle&&window._cbToggle()">⏸</button>
+  <button id="cbRestart" title="Restart" onclick="location.reload()">⏮</button>
+</div>
+<script>
+(function(){
+  // Show mobile overlay after demo starts
+  var mo = document.getElementById("mobilePause");
+  var icon = document.getElementById("mobilePauseIcon");
+  var orig = window._cbToggle;
+  var paused = false;
+  
+  // Show overlay when play button is dismissed
+  var checkPlay = setInterval(function(){
+    var pb = document.getElementById("playBtn");
+    if(pb && (pb.classList.contains("hidden") || pb.style.display==="none")){
+      mo.style.display = "block";
+      clearInterval(checkPlay);
+    }
+  }, 200);
+  
+  // Override toggle to show icon feedback
+  window._cbToggle = function(){
+    if(orig) orig();
+    paused = !paused;
+    icon.textContent = paused ? "▶" : "⏸";
+    icon.style.opacity = "1";
+    setTimeout(function(){ if(!paused) icon.style.opacity="0"; }, 800);
+  };
+})();
+</script>
+
+<!-- Simple progress bar at bottom of canvas -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<!-- Pause icon flash -->
+<div id="pauseFlash" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:200px; border-radius:50%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; font-size:80px; color:white; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">⏸</div>
+<script>
+(function(){
+  var paused = false;
+  var demoStarted = false;
+  var flash = document.getElementById("pauseFlash");
+  var progBar = document.getElementById("simpleProgress");
+  var progFill = document.getElementById("simpleProgressFill");
+  
+  // Wait for demo to start
+  var checkStart = setInterval(function(){
+    var pb = document.getElementById("playBtn") || document.getElementById("play-btn");
+    if(pb && (pb.classList.contains("hidden") || pb.style.display==="none")){
+      demoStarted = true;
+      progBar.style.display = "block";
+      clearInterval(checkStart);
+    }
+  }, 200);
+  
+  // Tap anywhere to pause/play
+  document.addEventListener("touchstart", function(e){
+    if(!demoStarted) return;
+    e.preventDefault();
+    paused = !paused;
+    
+    // Flash icon
+    flash.textContent = paused ? "▶" : "⏸";
+    flash.style.opacity = "1";
+    setTimeout(function(){ if(!paused) flash.style.opacity="0"; }, 600);
+    if(paused) flash.style.opacity = "1";
+    
+    // Pause/resume audio
+    try {
+      var a = typeof voiceover !== "undefined" ? voiceover : (typeof audio !== "undefined" ? audio : null);
+      if(a){
+        if(paused){ a.pause(); } else { a.play().catch(function(){}); }
+      }
+    } catch(ex){}
+    
+    // Pause/resume animations
+    if(paused){
+      document.body.classList.add("animations-paused");
+    } else {
+      document.body.classList.remove("animations-paused");
+    }
+  });
+  
+  // Also support mouse click for desktop
+  document.addEventListener("click", function(e){
+    if(!demoStarted) return;
+    if(e.target.closest && e.target.closest("#playBtn,[id]")) return;
+    paused = !paused;
+    flash.textContent = paused ? "▶" : "⏸";
+    flash.style.opacity = "1";
+    setTimeout(function(){ if(!paused) flash.style.opacity="0"; }, 600);
+    if(paused) flash.style.opacity = "1";
+    try {
+      var a = typeof voiceover !== "undefined" ? voiceover : (typeof audio !== "undefined" ? audio : null);
+      if(a){ if(paused){ a.pause(); } else { a.play().catch(function(){}); } }
+    } catch(ex){}
+    if(paused){ document.body.classList.add("animations-paused"); }
+    else { document.body.classList.remove("animations-paused"); }
+  });
+  
+  // Update progress bar
+  function updateSimpleProgress(){
+    try {
+      var a = typeof voiceover !== "undefined" ? voiceover : (typeof audio !== "undefined" ? audio : null);
+      if(a && a.duration && !isNaN(a.duration)){
+        var pct = (a.currentTime / a.duration) * 100;
+        progFill.style.width = pct + "%";
+      }
+    } catch(ex){}
+    requestAnimationFrame(updateSimpleProgress);
+  }
+  requestAnimationFrame(updateSimpleProgress);
+  
+  // Stop audio on page leave
+  window.addEventListener("pagehide", function(){ try { voiceover.pause(); } catch(e){} });
+})();
+</script>
+
+</body>
+</html>
