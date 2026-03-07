@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>Precision Flooring & Surfaces — AI Estimating Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
+.animations-paused * { animation-play-state:paused!important; transition:none!important; }
+
+/* Cursor */
+#cursor { position:absolute; width:24px; height:24px; z-index:9998; pointer-events:none; transition:left 0.6s cubic-bezier(.4,0,.2,1), top 0.6s cubic-bezier(.4,0,.2,1); display:none; }
+#cursor::after { content:''; position:absolute; top:0; left:0; width:0; height:0; border-left:12px solid #0ea5e9; border-right:12px solid transparent; border-bottom:20px solid transparent; filter:drop-shadow(0 2px 8px rgba(14,165,233,0.5)); }
+#cursorRing { position:absolute; width:40px; height:40px; border:2px solid rgba(14,165,233,0.6); border-radius:50%; transform:translate(-8px,-8px) scale(0); pointer-events:none; }
+.cursor-click #cursorRing { animation:clickRing 0.4s ease-out; }
+@keyframes clickRing { 0%{transform:translate(-8px,-8px) scale(0);opacity:1} 100%{transform:translate(-8px,-8px) scale(1.5);opacity:0} }
+
+/* Play button */
+#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+#playBtn .play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; box-shadow:0 0 60px rgba(14,165,233,0.4); transition:transform 0.3s; }
+#playBtn .play-circle:hover { transform:scale(1.1); }
+#playBtn .play-circle::after { content:''; width:0; height:0; border-top:24px solid transparent; border-bottom:24px solid transparent; border-left:40px solid white; margin-left:8px; }
+#playBtn h2 { margin-top:24px; font-size:28px; font-weight:600; color:#94a3b8; }
+#playBtn.hidden { display:none; }
+
+/* Scenes */
+.scene { position:absolute; top:0; left:0; width:1920px; height:1080px; opacity:0; transition:opacity 0.8s ease; pointer-events:none; }
+.scene.active { opacity:1; }
+
+/* Scene 1 - Pain */
+#scene1 { display:flex; align-items:center; justify-content:center; flex-direction:column; }
+#scene1 .pain-text { font-size:42px; font-weight:300; line-height:1.6; text-align:center; max-width:1200px; color:#94a3b8; opacity:0; }
+#scene1 .pain-icon { font-size:80px; margin-bottom:30px; opacity:0; }
+
+/* Scene 2 - Job Intake */
+#scene2 { padding:40px 60px; }
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:30px; }
+.topbar .logo { font-size:22px; font-weight:700; color:#0ea5e9; }
+.topbar .logo span { color:#64748b; font-weight:400; }
+.topbar .user { display:flex; align-items:center; gap:12px; color:#94a3b8; font-size:14px; }
+.topbar .avatar { width:36px; height:36px; border-radius:50%; background:#1e3a5f; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; color:#0ea5e9; }
+
+.notification { position:absolute; top:80px; right:60px; background:#0f2847; border:1px solid #0ea5e9; border-radius:12px; padding:20px 28px; box-shadow:0 8px 32px rgba(14,165,233,0.2); transform:translateX(400px); transition:transform 0.6s cubic-bezier(.4,0,.2,1); max-width:420px; }
+.notification.show { transform:translateX(0); }
+.notification .notif-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.notification .notif-dot { width:10px; height:10px; border-radius:50%; background:#22c55e; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+.notification h3 { font-size:16px; font-weight:600; color:#e2e8f0; }
+.notification p { font-size:14px; color:#94a3b8; line-height:1.5; }
+
+.job-card { background:#0f2847; border-radius:16px; padding:32px; margin-top:20px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:opacity 0.6s; }
+.job-card.show { opacity:1; }
+.job-card h2 { font-size:26px; font-weight:700; margin-bottom:20px; color:#e2e8f0; }
+.job-details { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+.job-detail { background:#0A1628; border-radius:10px; padding:16px 20px; }
+.job-detail .label { font-size:12px; text-transform:uppercase; color:#64748b; letter-spacing:1px; margin-bottom:6px; }
+.job-detail .value { font-size:18px; font-weight:600; color:#e2e8f0; }
+
+/* Scene 3 - Measurements */
+#scene3 { padding:40px 60px; }
+.measure-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin-top:20px; }
+.measure-panel { background:#0f2847; border-radius:16px; padding:28px; border:1px solid rgba(255,255,255,0.06); }
+.measure-panel h3 { font-size:20px; font-weight:700; margin-bottom:20px; color:#0ea5e9; }
+.calc-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+.calc-row:last-child { border-bottom:none; }
+.calc-label { color:#94a3b8; font-size:15px; }
+.calc-value { color:#e2e8f0; font-size:15px; font-weight:600; }
+.calc-value.highlight { color:#22c55e; font-size:18px; }
+.room-visual { width:100%; height:200px; background:#0A1628; border-radius:12px; border:2px dashed rgba(14,165,233,0.3); display:flex; align-items:center; justify-content:center; margin-bottom:20px; position:relative; }
+.room-dim { position:absolute; font-size:14px; color:#0ea5e9; font-weight:600; }
+.room-dim.top { top:10px; left:50%; transform:translateX(-50%); }
+.room-dim.left { left:10px; top:50%; transform:translateY(-50%) rotate(-90deg); }
+.room-rect { width:60%; height:70%; border:2px solid #0ea5e9; border-radius:4px; position:relative; }
+.room-rect::after { content:'Kitchen'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#0ea5e9; font-size:13px; opacity:0.6; }
+
+/* Scene 4 - Material Pricing */
+#scene4 { padding:40px 60px; }
+.material-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:20px; }
+.material-card { background:#0f2847; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); transition:border-color 0.3s; }
+.material-card.selected { border-color:#0ea5e9; box-shadow:0 0 20px rgba(14,165,233,0.15); }
+.material-card .mat-type { font-size:12px; text-transform:uppercase; color:#64748b; letter-spacing:1px; margin-bottom:4px; }
+.material-card .mat-name { font-size:20px; font-weight:700; color:#e2e8f0; margin-bottom:12px; }
+.material-card .mat-price { font-size:28px; font-weight:800; color:#0ea5e9; }
+.material-card .mat-unit { font-size:13px; color:#64748b; }
+.material-card .mat-total { margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:14px; color:#94a3b8; }
+.material-card .mat-total span { color:#e2e8f0; font-weight:600; }
+.counter-section { margin-top:20px; }
+.counter-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px; }
+
+/* Scene 5 - Quote */
+#scene5 { padding:40px 60px; }
+.quote-container { display:grid; grid-template-columns:1.2fr 1fr; gap:30px; margin-top:20px; }
+.quote-panel { background:#0f2847; border-radius:16px; padding:28px; border:1px solid rgba(255,255,255,0.06); }
+.quote-line { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:15px; }
+.quote-line .ql-label { color:#94a3b8; }
+.quote-line .ql-value { color:#e2e8f0; font-weight:600; }
+.quote-total { display:flex; justify-content:space-between; padding:16px 0; margin-top:8px; border-top:2px solid #0ea5e9; font-size:22px; font-weight:700; }
+.quote-total .ql-value { color:#22c55e; }
+.pdf-preview { background:#1a1a2e; border-radius:12px; padding:24px; text-align:center; border:1px solid rgba(255,255,255,0.06); }
+.pdf-preview .pdf-icon { font-size:48px; margin-bottom:12px; }
+.pdf-preview h4 { font-size:16px; font-weight:600; color:#e2e8f0; margin-bottom:8px; }
+.pdf-preview p { font-size:13px; color:#64748b; }
+.send-btn { display:inline-block; margin-top:16px; padding:12px 32px; background:linear-gradient(135deg,#0ea5e9,#0284c7); border-radius:8px; font-size:14px; font-weight:600; color:white; }
+
+/* Scene 6 - Dashboard */
+#scene6 { padding:40px 60px; }
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:20px; }
+.stat-card { background:#0f2847; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); text-align:center; }
+.stat-card .stat-value { font-size:36px; font-weight:800; color:#0ea5e9; }
+.stat-card .stat-label { font-size:13px; color:#64748b; margin-top:4px; }
+.pipeline { background:#0f2847; border-radius:16px; padding:28px; margin-top:20px; border:1px solid rgba(255,255,255,0.06); }
+.pipeline h3 { font-size:18px; font-weight:700; margin-bottom:16px; color:#e2e8f0; }
+.pipe-row { display:grid; grid-template-columns:200px 100px 100px 1fr 100px; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:14px; }
+.pipe-row .name { color:#e2e8f0; font-weight:500; }
+.pipe-row .type { color:#94a3b8; }
+.pipe-row .amount { color:#e2e8f0; font-weight:600; }
+.pipe-status { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; display:inline-block; }
+.pipe-status.won { background:rgba(34,197,94,0.15); color:#22c55e; }
+.pipe-status.pending { background:rgba(234,179,8,0.15); color:#eab308; }
+.pipe-status.sent { background:rgba(14,165,233,0.15); color:#0ea5e9; }
+.pipe-bar { height:6px; border-radius:3px; background:rgba(255,255,255,0.06); }
+.pipe-bar-fill { height:100%; border-radius:3px; transition:width 1s ease; }
+
+/* Scene 7 - Close */
+#scene7 { display:flex; align-items:center; justify-content:center; flex-direction:column; }
+.close-logo { font-size:64px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; opacity:0; }
+.close-url { font-size:28px; color:#64748b; margin-top:12px; font-weight:400; opacity:0; }
+.close-tagline { font-size:22px; color:#94a3b8; margin-top:24px; font-weight:300; opacity:0; }
+.close-price { font-size:32px; color:#22c55e; margin-top:16px; font-weight:700; opacity:0; }
+
+/* Section header */
+.section-header { margin-bottom:8px; }
+.section-header h2 { font-size:26px; font-weight:700; color:#e2e8f0; }
+.section-header p { font-size:14px; color:#64748b; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<div id="cursor"><div id="cursorRing"></div></div>
+
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"></div>
+  <h2>Precision Flooring & Surfaces — AI Estimating Demo</h2>
+</div>
+
+<!-- Scene 1: Pain -->
+<div class="scene" id="scene1">
+  <div class="pain-icon">📋</div>
+  <div class="pain-text">You spend 2 hours on every estimate.<br>Measuring. Pricing materials. Calculating waste. Typing up quotes.<br><span style="color:#ef4444;font-weight:600;">Half of them don't even close.</span></div>
+</div>
+
+<!-- Scene 2: Job Intake -->
+<div class="scene" id="scene2">
+  <div class="topbar">
+    <div class="logo">Precision Flooring <span>& Surfaces</span></div>
+    <div class="user"><span>Mike Reynolds</span><div class="avatar">MR</div></div>
+  </div>
+  <div class="notification" id="notif1">
+    <div class="notif-header"><div class="notif-dot"></div><h3>New Estimate Request</h3></div>
+    <p><strong>Sarah Mitchell</strong> — Kitchen flooring + countertop replacement<br>47 Coral Bay Drive, Grand Cayman</p>
+  </div>
+  <div class="job-card" id="jobCard1">
+    <h2>🏠 Job #1047 — Mitchell Kitchen Renovation</h2>
+    <div class="job-details">
+      <div class="job-detail"><div class="label">Customer</div><div class="value">Sarah Mitchell</div></div>
+      <div class="job-detail"><div class="label">Job Type</div><div class="value">Flooring + Countertop</div></div>
+      <div class="job-detail"><div class="label">Location</div><div class="value">47 Coral Bay Drive</div></div>
+      <div class="job-detail"><div class="label">Requested Date</div><div class="value">March 15, 2026</div></div>
+      <div class="job-detail"><div class="label">Priority</div><div class="value" style="color:#eab308;">Medium</div></div>
+      <div class="job-detail"><div class="label">Status</div><div class="value" style="color:#0ea5e9;">Estimating</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scene 3: Measurements -->
+<div class="scene" id="scene3">
+  <div class="topbar">
+    <div class="logo">Precision Flooring <span>& Surfaces</span></div>
+    <div class="user"><span>Mike Reynolds</span><div class="avatar">MR</div></div>
+  </div>
+  <div class="section-header"><h2>📐 Auto-Measurement — Job #1047</h2><p>Room dimensions and waste calculations</p></div>
+  <div class="measure-grid">
+    <div class="measure-panel">
+      <h3>Flooring — Kitchen</h3>
+      <div class="room-visual">
+        <div class="room-dim top">14 ft</div>
+        <div class="room-dim left">12 ft</div>
+        <div class="room-rect"></div>
+      </div>
+      <div class="calc-row"><span class="calc-label">Room Dimensions</span><span class="calc-value">14 ft × 12 ft</span></div>
+      <div class="calc-row"><span class="calc-label">Base Area</span><span class="calc-value">168 sq ft</span></div>
+      <div class="calc-row"><span class="calc-label">Waste Factor</span><span class="calc-value">+10% (17 sq ft)</span></div>
+      <div class="calc-row"><span class="calc-label">Total Required</span><span class="calc-value highlight">185 sq ft</span></div>
+    </div>
+    <div class="measure-panel">
+      <h3>Countertop — L-Shape</h3>
+      <div class="room-visual">
+        <div style="width:60%;height:70%;position:relative;">
+          <div style="position:absolute;bottom:0;left:0;width:100%;height:40%;border:2px solid #0ea5e9;border-radius:4px;"></div>
+          <div style="position:absolute;bottom:0;left:0;width:30%;height:100%;border:2px solid #0ea5e9;border-radius:4px;"></div>
+        </div>
+      </div>
+      <div class="calc-row"><span class="calc-label">Run A</span><span class="calc-value">14 ft</span></div>
+      <div class="calc-row"><span class="calc-label">Run B</span><span class="calc-value">8 ft</span></div>
+      <div class="calc-row"><span class="calc-label">Total Linear</span><span class="calc-value">22 lin ft</span></div>
+      <div class="calc-row"><span class="calc-label">Waste Factor</span><span class="calc-value">+8% (1.8 ft)</span></div>
+      <div class="calc-row"><span class="calc-label">Total Required</span><span class="calc-value highlight">23.8 lin ft</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Scene 4: Material Pricing -->
+<div class="scene" id="scene4">
+  <div class="topbar">
+    <div class="logo">Precision Flooring <span>& Surfaces</span></div>
+    <div class="user"><span>Mike Reynolds</span><div class="avatar">MR</div></div>
+  </div>
+  <div class="section-header"><h2>💰 Material Pricing — Job #1047</h2><p>Current supplier pricing • Updated today</p></div>
+  <div class="material-grid">
+    <div class="material-card" id="mat1">
+      <div class="mat-type">Flooring Option A</div>
+      <div class="mat-name">Engineered Hardwood</div>
+      <div class="mat-price">$8.50<span class="mat-unit"> / sq ft</span></div>
+      <div class="mat-total">185 sq ft → <span>$1,572.50</span></div>
+    </div>
+    <div class="material-card" id="mat2">
+      <div class="mat-type">Flooring Option B</div>
+      <div class="mat-name">Luxury Vinyl Plank</div>
+      <div class="mat-price">$5.75<span class="mat-unit"> / sq ft</span></div>
+      <div class="mat-total">185 sq ft → <span>$1,063.75</span></div>
+    </div>
+    <div class="material-card" id="mat3">
+      <div class="mat-type">Flooring Option C</div>
+      <div class="mat-name">Porcelain Tile</div>
+      <div class="mat-price">$7.25<span class="mat-unit"> / sq ft</span></div>
+      <div class="mat-total">185 sq ft → <span>$1,341.25</span></div>
+    </div>
+  </div>
+  <div class="counter-section">
+    <div class="counter-grid">
+      <div class="material-card" id="mat4">
+        <div class="mat-type">Countertop Option A</div>
+        <div class="mat-name">Quartz</div>
+        <div class="mat-price">$85<span class="mat-unit"> / lin ft</span></div>
+        <div class="mat-total">23.8 lin ft → <span>$2,023.00</span></div>
+      </div>
+      <div class="material-card" id="mat5">
+        <div class="mat-type">Countertop Option B</div>
+        <div class="mat-name">Granite</div>
+        <div class="mat-price">$75<span class="mat-unit"> / lin ft</span></div>
+        <div class="mat-total">23.8 lin ft → <span>$1,785.00</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scene 5: Quote Generation -->
+<div class="scene" id="scene5">
+  <div class="topbar">
+    <div class="logo">Precision Flooring <span>& Surfaces</span></div>
+    <div class="user"><span>Mike Reynolds</span><div class="avatar">MR</div></div>
+  </div>
+  <div class="section-header"><h2>📄 Quote — Job #1047</h2><p>Mitchell Kitchen Renovation</p></div>
+  <div class="quote-container">
+    <div class="quote-panel">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:16px;color:#e2e8f0;">Line Items</h3>
+      <div class="quote-line"><span class="ql-label">Engineered Hardwood (185 sq ft)</span><span class="ql-value">$1,572.50</span></div>
+      <div class="quote-line"><span class="ql-label">Quartz Countertop (23.8 lin ft)</span><span class="ql-value">$2,023.00</span></div>
+      <div class="quote-line"><span class="ql-label">Underlayment & Adhesive</span><span class="ql-value">$245.00</span></div>
+      <div class="quote-line"><span class="ql-label">Transition Strips & Trim</span><span class="ql-value">$120.00</span></div>
+      <div class="quote-line"><span class="ql-label">Demolition & Removal</span><span class="ql-value">$380.00</span></div>
+      <div class="quote-line"><span class="ql-label">Labor — Flooring (8 hrs × $65)</span><span class="ql-value">$520.00</span></div>
+      <div class="quote-line"><span class="ql-label">Labor — Countertop (8 hrs × $65)</span><span class="ql-value">$520.00</span></div>
+      <div class="quote-total"><span class="ql-label">Total</span><span class="ql-value">$5,380.50</span></div>
+    </div>
+    <div class="quote-panel" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div class="pdf-preview">
+        <div class="pdf-icon">📄</div>
+        <h4>Quote_1047_Mitchell.pdf</h4>
+        <p>Professional branded quote<br>Ready to send</p>
+        <div class="send-btn">✉️ Send to Customer</div>
+      </div>
+      <p style="margin-top:16px;font-size:14px;color:#64748b;text-align:center;">Generated in <span style="color:#22c55e;font-weight:700;">8 minutes</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- Scene 6: Job Tracking -->
+<div class="scene" id="scene6">
+  <div class="topbar">
+    <div class="logo">Precision Flooring <span>& Surfaces</span></div>
+    <div class="user"><span>Mike Reynolds</span><div class="avatar">MR</div></div>
+  </div>
+  <div class="section-header"><h2>📊 Estimating Dashboard</h2><p>All active estimates and performance</p></div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-value" id="statActive">0</div><div class="stat-label">Active Estimates</div></div>
+    <div class="stat-card"><div class="stat-value" id="statWin">0%</div><div class="stat-label">Win Rate</div></div>
+    <div class="stat-card"><div class="stat-value" id="statAvg">$0</div><div class="stat-label">Avg Job Value</div></div>
+    <div class="stat-card"><div class="stat-value" id="statMonth">$0</div><div class="stat-label">This Month</div></div>
+  </div>
+  <div class="pipeline">
+    <h3>Recent Estimates</h3>
+    <div class="pipe-row" style="color:#64748b;font-size:12px;text-transform:uppercase;letter-spacing:1px;padding-bottom:8px;"><span>Customer</span><span>Type</span><span>Value</span><span>Progress</span><span>Status</span></div>
+    <div class="pipe-row"><span class="name">Sarah Mitchell</span><span class="type">Floor+Counter</span><span class="amount">$5,380</span><span><div class="pipe-bar" style="width:200px"><div class="pipe-bar-fill" style="width:30%;background:#0ea5e9;"></div></div></span><span class="pipe-status sent">Sent</span></div>
+    <div class="pipe-row"><span class="name">James Cooper</span><span class="type">Flooring</span><span class="amount">$3,200</span><span><div class="pipe-bar" style="width:200px"><div class="pipe-bar-fill" style="width:100%;background:#22c55e;"></div></div></span><span class="pipe-status won">Won</span></div>
+    <div class="pipe-row"><span class="name">Maria Santos</span><span class="type">Countertop</span><span class="amount">$2,800</span><span><div class="pipe-bar" style="width:200px"><div class="pipe-bar-fill" style="width:60%;background:#eab308;"></div></div></span><span class="pipe-status pending">Pending</span></div>
+    <div class="pipe-row"><span class="name">David Chen</span><span class="type">Floor+Counter</span><span class="amount">$6,100</span><span><div class="pipe-bar" style="width:200px"><div class="pipe-bar-fill" style="width:100%;background:#22c55e;"></div></div></span><span class="pipe-status won">Won</span></div>
+    <div class="pipe-row"><span class="name">Lisa Park</span><span class="type">Flooring</span><span class="amount">$4,500</span><span><div class="pipe-bar" style="width:200px"><div class="pipe-bar-fill" style="width:45%;background:#0ea5e9;"></div></div></span><span class="pipe-status sent">Sent</span></div>
+  </div>
+</div>
+
+<!-- Scene 7: Close -->
+<div class="scene" id="scene7">
+  <div class="close-price">$500/month</div>
+  <div class="close-logo">SolveWorks</div>
+  <div class="close-url">solveworks.io</div>
+  <div class="close-tagline">Your AI. Only yours.</div>
+</div>
+
+<!-- Progress bar & mobile controls -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:200px; border-radius:50%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; font-size:80px; color:white; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">⏸</div>
+
+<script>
+var voiceover = new Audio('voiceover.mp3');
+var cursor = document.getElementById('cursor');
+var cursorRing = document.getElementById('cursorRing');
+
+window.__demoPaused = false;
+function delay(ms) {
+  return new Promise(resolve => {
+    let remaining = ms;
+    let start = Date.now();
+    function tick() {
+      if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
+      let elapsed = Date.now() - start;
+      remaining -= elapsed;
+      if (remaining <= 0) { resolve(); }
+      else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
+    }
+    setTimeout(tick, Math.min(ms, 50));
+  });
+}
+
+function moveCursor(x, y) {
+  cursor.style.left = x + 'px';
+  cursor.style.top = y + 'px';
+}
+
+function clickAt(x, y) {
+  moveCursor(x, y);
+  return delay(300).then(function() {
+    cursor.classList.add('cursor-click');
+    cursorRing.style.animation = 'none';
+    cursorRing.offsetHeight;
+    cursorRing.style.animation = '';
+    cursor.classList.add('cursor-click');
+    return delay(400);
+  }).then(function() {
+    cursor.classList.remove('cursor-click');
+  });
+}
+
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function animateValue(el, start, end, prefix, suffix, duration) {
+  var startTime = null;
+  prefix = prefix || '';
+  suffix = suffix || '';
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var progress = Math.min((ts - startTime) / duration, 1);
+    var current = Math.floor(start + (end - start) * progress);
+    el.textContent = prefix + current.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+async function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  cursor.style.display = 'block';
+  moveCursor(960, 540);
+  
+  voiceover.play().catch(function(){});
+
+  // Scene 1: Pain (0-12s)
+  showScene('scene1');
+  await delay(500);
+  var painIcon = document.querySelector('#scene1 .pain-icon');
+  painIcon.style.transition = 'opacity 0.8s';
+  painIcon.style.opacity = '1';
+  await delay(600);
+  var painText = document.querySelector('#scene1 .pain-text');
+  painText.style.transition = 'opacity 1s';
+  painText.style.opacity = '1';
+  moveCursor(700, 400);
+  await delay(3000);
+  moveCursor(1100, 500);
+  await delay(3000);
+  moveCursor(900, 600);
+  await delay(4500);
+
+  // Scene 2: Job Intake (12-22s)
+  showScene('scene2');
+  await delay(800);
+  moveCursor(1600, 120);
+  document.getElementById('notif1').classList.add('show');
+  await delay(1500);
+  await clickAt(1500, 140);
+  await delay(1000);
+  document.getElementById('jobCard1').classList.add('show');
+  moveCursor(600, 400);
+  await delay(2000);
+  moveCursor(1000, 450);
+  await delay(2000);
+  moveCursor(400, 500);
+  await delay(2500);
+
+  // Scene 3: Auto-Measurement (22-38s)
+  showScene('scene3');
+  await delay(800);
+  moveCursor(400, 350);
+  await delay(2000);
+  await clickAt(350, 520);
+  await delay(1500);
+  moveCursor(600, 580);
+  await delay(2000);
+  moveCursor(1200, 350);
+  await delay(2000);
+  await clickAt(1300, 520);
+  await delay(1500);
+  moveCursor(1400, 600);
+  await delay(2000);
+  moveCursor(960, 540);
+  await delay(3000);
+
+  // Scene 4: Material Pricing (38-52s)
+  showScene('scene4');
+  await delay(800);
+  moveCursor(300, 350);
+  await delay(1500);
+  await clickAt(300, 320);
+  document.getElementById('mat1').classList.add('selected');
+  await delay(1500);
+  moveCursor(700, 350);
+  await delay(1000);
+  await clickAt(960, 320);
+  document.getElementById('mat1').classList.remove('selected');
+  document.getElementById('mat2').classList.add('selected');
+  await delay(1200);
+  await clickAt(300, 320);
+  document.getElementById('mat2').classList.remove('selected');
+  document.getElementById('mat1').classList.add('selected');
+  await delay(1200);
+  moveCursor(500, 700);
+  await delay(1000);
+  await clickAt(500, 680);
+  document.getElementById('mat4').classList.add('selected');
+  await delay(1500);
+  moveCursor(1200, 700);
+  await delay(1500);
+  moveCursor(960, 540);
+  await delay(2000);
+
+  // Scene 5: Quote Generation (52-68s)
+  showScene('scene5');
+  await delay(800);
+  moveCursor(400, 300);
+  await delay(1500);
+  moveCursor(400, 400);
+  await delay(1500);
+  moveCursor(400, 500);
+  await delay(1500);
+  moveCursor(400, 600);
+  await delay(1500);
+  moveCursor(400, 680);
+  await delay(1500);
+  await clickAt(1350, 550);
+  await delay(2000);
+  moveCursor(1350, 650);
+  await delay(2000);
+  moveCursor(960, 540);
+  await delay(3500);
+
+  // Scene 6: Job Tracking (68-82s)
+  showScene('scene6');
+  await delay(600);
+  animateValue(document.getElementById('statActive'), 0, 12, '', '', 1000);
+  animateValue(document.getElementById('statWin'), 0, 68, '', '%', 1000);
+  animateValue(document.getElementById('statAvg'), 0, 4200, '$', '', 1000);
+  animateValue(document.getElementById('statMonth'), 0, 28500, '$', '', 1000);
+  moveCursor(300, 250);
+  await delay(1500);
+  moveCursor(700, 250);
+  await delay(1500);
+  moveCursor(1100, 250);
+  await delay(1500);
+  moveCursor(1500, 250);
+  await delay(1500);
+  moveCursor(600, 500);
+  await delay(2000);
+  moveCursor(900, 600);
+  await delay(2000);
+  moveCursor(960, 540);
+  await delay(2000);
+
+  // Scene 7: Close (82-90s)
+  showScene('scene7');
+  await delay(500);
+  cursor.style.display = 'none';
+  var cp = document.querySelector('.close-price');
+  cp.style.transition = 'opacity 0.8s';
+  cp.style.opacity = '1';
+  await delay(600);
+  var cl = document.querySelector('.close-logo');
+  cl.style.transition = 'opacity 1s';
+  cl.style.opacity = '1';
+  await delay(600);
+  var cu = document.querySelector('.close-url');
+  cu.style.transition = 'opacity 0.8s';
+  cu.style.opacity = '1';
+  await delay(600);
+  var ct = document.querySelector('.close-tagline');
+  ct.style.transition = 'opacity 0.8s';
+  ct.style.opacity = '1';
+}
+</script>
+
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.textContent=paused?"▶":"⏸";
+    flash.style.opacity="1";
+    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a){if(paused)a.pause();else a.play().catch(function(){});}
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused)document.body.classList.add("animations-paused");
+    else{window.__demoPaused=false;document.body.classList.remove("animations-paused");}
+  }
+  document.addEventListener("touchstart",function(e){if(!started)return;e.preventDefault();try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  document.addEventListener("click",function(e){if(!started||e.target.closest("#playBtn"))return;try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  function upd(){
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
+})();
+</script>
+</body>
+</html>
