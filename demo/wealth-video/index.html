@@ -7,24 +7,77 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; user-select: none; }
 
-.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
-.scene.active { opacity: 1; pointer-events: auto; }
-
-#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
+/* ==================== PLAY BUTTON ==================== */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2000; flex-direction: column; gap: 24px; }
 #playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
 #playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
 #playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
 #playBtn.hidden { display: none; }
+#playBtn .play-label { font-size: 16px; color: #64748b; font-weight: 400; letter-spacing: 0.1em; }
 
-#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; transition: width 0.5s linear; }
+/* ==================== PROGRESS BAR ==================== */
+#progressWrap { position: fixed; bottom: 0; left: 0; width: 1920px; height: 4px; background: rgba(255,255,255,0.06); z-index: 1500; }
+#progressBar { height: 100%; width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8); transition: width 0.3s linear; }
 
+/* ==================== FAKE CURSOR ==================== */
+#cursor { position: absolute; width: 24px; height: 24px; z-index: 1800; pointer-events: none; transition: left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), top 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); left: 960px; top: 540px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+#cursor svg { width: 24px; height: 24px; }
+#cursor.fast { transition-duration: 0.4s; }
+#cursor.slow { transition-duration: 1.2s; }
+#cursor.instant { transition-duration: 0s; }
+#cursor.hidden { opacity: 0; }
+
+/* Click ripple */
+#clickRipple { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(14,165,233,0.8); z-index: 1799; pointer-events: none; opacity: 0; transform: scale(0); }
+#clickRipple.active { animation: rippleAnim 0.6s ease-out forwards; }
+@keyframes rippleAnim {
+  0% { opacity: 1; transform: scale(0); }
+  100% { opacity: 0; transform: scale(2.5); }
+}
+
+/* Hover glow on cursor target */
+.cursor-hover { box-shadow: 0 0 0 2px rgba(14,165,233,0.3) !important; transition: box-shadow 0.2s ease !important; }
+
+/* ==================== OPENING HOOK ==================== */
+#hookOverlay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; z-index: 1600; display: flex; align-items: center; justify-content: center; opacity: 1; transition: opacity 0.8s ease; }
+#hookOverlay.hidden { opacity: 0; pointer-events: none; }
+#hookText { font-size: 38px; font-weight: 300; line-height: 1.7; text-align: center; max-width: 950px; opacity: 0; transition: opacity 0.8s ease; }
+#hookText span { color: #0ea5e9; font-weight: 600; }
+#hookLogo { position: absolute; opacity: 0; transition: opacity 0.8s ease; text-align: center; }
+#hookLogo .logo-text { font-size: 64px; font-weight: 800; letter-spacing: -1px; }
+#hookLogo .logo-sub { font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300; }
+
+/* ==================== CTA OVERLAY ==================== */
+#ctaOverlay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #0A1628; z-index: 1600; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
+#ctaOverlay.visible { opacity: 1; pointer-events: auto; }
+
+/* ==================== DASHBOARD LAYOUT ==================== */
+#dashboard { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; display: flex; opacity: 0; transition: opacity 0.6s ease; }
+#dashboard.visible { opacity: 1; }
+
+/* Sidebar */
+.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 0 24px 30px; font-size: 20px; font-weight: 700; }
+.sidebar-info { padding: 0 24px 24px; font-size: 12px; color: #475569; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-info .firm { font-weight: 600; color: #94a3b8; font-size: 13px; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; border-left: 3px solid transparent; transition: all 0.25s ease; position: relative; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item.hover-highlight { color: #94a3b8; background: rgba(255,255,255,0.04); }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-badge { background: rgba(239,68,68,0.3); color: #f87171; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: auto; font-weight: 600; }
+
+/* Content area */
+#contentArea { flex: 1; position: relative; overflow: hidden; }
+.content-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 32px 40px; opacity: 0; transform: translateX(30px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; overflow: hidden; }
+.content-panel.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+/* ==================== SHARED STYLES ==================== */
 .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
 .text-slate-300 { color: #cbd5e1; }
 .text-slate-400 { color: #94a3b8; }
 .text-slate-500 { color: #64748b; }
-.text-accent { color: #0ea5e9; }
 
 .tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
 .tag-growth { background: rgba(34,197,94,0.2); color: #4ade80; }
@@ -37,924 +90,878 @@ html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A162
 .badge-warn { background: rgba(234,179,8,0.2); color: #facc15; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
 .badge-alert { background: rgba(239,68,68,0.2); color: #f87171; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
 
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
-@keyframes expandIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+.stat-card { padding: 20px 24px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); transition: border-color 0.3s, box-shadow 0.3s; }
+.stat-card.hover-highlight { border-color: rgba(14,165,233,0.3); box-shadow: 0 0 20px rgba(14,165,233,0.1); }
+.stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+.stat-label { font-size: 12px; color: #94a3b8; }
 
-.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; }
-.sidebar-logo { padding: 0 24px 30px; font-size: 20px; font-weight: 700; }
-.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
-.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
-.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
-.sidebar-badge { background: rgba(239,68,68,0.3); color: #f87171; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: auto; font-weight: 600; }
+/* Scrollable container */
+.scroll-container { overflow: hidden; position: relative; }
+.scroll-inner { transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); }
 
+/* Data table */
 .data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .data-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .data-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-.data-table tr { opacity: 0; }
-.data-table tr.visible { animation: slideInRight 0.4s ease forwards; }
+.data-table tbody tr { transition: background 0.2s ease; }
+.data-table tbody tr.hover-highlight { background: rgba(14,165,233,0.06); }
+.data-table tbody tr.click-highlight { background: rgba(14,165,233,0.12); }
 
-.stat-card { padding: 20px 24px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
-.stat-card .stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
-.stat-card .stat-label { font-size: 12px; color: #94a3b8; }
+/* Row expand */
+.row-expand { max-height: 0; overflow: hidden; transition: max-height 0.5s ease, opacity 0.5s ease; opacity: 0; }
+.row-expand.open { max-height: 300px; opacity: 1; }
 
-.news-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; }
-.news-item.visible { animation: slideInRight 0.5s ease forwards; }
+/* Drift alert panel */
+.drift-panel { position: absolute; right: 40px; top: 200px; width: 400px; opacity: 0; transform: translateX(20px) scale(0.95); transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 10; }
+.drift-panel.visible { opacity: 1; transform: translateX(0) scale(1); }
 
-.report-card { padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; cursor: pointer; transition: border-color 0.2s; }
-.report-card.visible { animation: expandIn 0.5s ease forwards; }
-.report-card:hover { border-color: rgba(14,165,233,0.3); }
+/* Report cards */
+.report-card { padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; }
+.report-card.hover-highlight { border-color: rgba(14,165,233,0.4); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(14,165,233,0.15); }
 
-.prospect-card { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; margin-bottom: 12px; }
-.prospect-card.visible { animation: fadeInUp 0.5s ease forwards; }
+/* Report preview slide-in */
+.report-preview { position: absolute; bottom: 30px; left: 40px; right: 40px; opacity: 0; transform: translateY(30px); transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.report-preview.visible { opacity: 1; transform: translateY(0); }
 
-.compliance-row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; opacity: 0; }
-.compliance-row.visible { animation: slideInRight 0.4s ease forwards; }
+/* Prospect card */
+.prospect-card { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px; transition: border-color 0.2s, background 0.2s; }
+.prospect-card.hover-highlight { border-color: rgba(14,165,233,0.3); background: rgba(255,255,255,0.06); }
 
+/* Drip panel slide-in */
+.drip-panel { opacity: 0; transform: translateX(30px); transition: all 0.5s ease; }
+.drip-panel.visible { opacity: 1; transform: translateX(0); }
+
+/* Compliance row */
+.compliance-row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; transition: border-color 0.2s; }
+.compliance-row.hover-highlight { border-color: rgba(14,165,233,0.3); }
+
+/* Tab bar */
+.tab-bar { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.tab-item { padding: 10px 24px; font-size: 13px; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.25s ease; }
+.tab-item.active { color: #0ea5e9; border-bottom-color: #0ea5e9; }
+.tab-item.hover-highlight { color: #94a3b8; }
+
+/* Cost cards */
 .cost-card { padding: 36px; border-radius: 16px; text-align: center; flex: 1; }
 .cost-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
-.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); animation: pulseGlow 2s infinite; }
+.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+.cost-green.glow { animation: pulseGlow 2s infinite; }
 
 .funnel-number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Element reveal animations */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+.anim-hidden { opacity: 0; }
+.anim-fadeInUp { animation: fadeInUp 0.5s ease forwards; }
+.anim-slideInRight { animation: slideInRight 0.4s ease forwards; }
+
+/* Modal overlay */
+.modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; display: flex; align-items: center; justify-content: center; }
+.modal-overlay.visible { opacity: 1; pointer-events: auto; }
+.modal-content { background: #0f1d32; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 32px; max-width: 700px; width: 90%; transform: scale(0.9) translateY(20px); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.modal-overlay.visible .modal-content { transform: scale(1) translateY(0); }
 </style>
 </head>
 <body>
 
 <!-- PLAY BUTTON -->
 <div id="playBtn" onclick="startPresentation()">
-  <div class="play-circle">
-    <div class="play-triangle"></div>
-  </div>
+  <div class="play-circle"><div class="play-triangle"></div></div>
+  <div class="play-label">CLICK TO PLAY</div>
 </div>
 
 <!-- PROGRESS BAR -->
-<div id="progressBar" style="width: 0%"></div>
+<div id="progressWrap"><div id="progressBar"></div></div>
 
-<!-- ==================== SCENE 0: OPENING HOOK ==================== -->
-<div class="scene" id="scene0">
-  <div style="text-align: center; width: 100%;">
-    <div id="s0-hook" style="font-size: 40px; font-weight: 300; line-height: 1.6; opacity: 0; max-width: 950px; margin: 0 auto;">
-      Your paraplanner is buried in 200 quarterly reports.<br>
-      <span style="color: #0ea5e9; font-weight: 600;">Your AI finished them at 4am.</span>
-    </div>
-    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
-        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
-      </div>
-      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
-    </div>
+<!-- FAKE CURSOR -->
+<div id="cursor" class="hidden">
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 3L19 12L12 13L9 20L5 3Z" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+  </svg>
+</div>
+<div id="clickRipple"></div>
+
+<!-- OPENING HOOK OVERLAY -->
+<div id="hookOverlay">
+  <div id="hookText">
+    Your paraplanner is buried in 200 quarterly reports.<br>
+    <span>Your AI finished them at 4am.</span>
+  </div>
+  <div id="hookLogo">
+    <div class="logo-text"><span style="color:#fff;">Solve</span><span style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Works</span></div>
+    <div class="logo-sub">Your AI. Only yours.</div>
   </div>
 </div>
 
-<!-- ==================== SCENE 1: PORTFOLIO MONITORING ==================== -->
-<div class="scene" id="scene1">
-  <div style="display: flex; width: 1920px; height: 1080px;">
-    <div class="sidebar">
-      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
-      <div style="padding: 0 24px 24px; font-size: 12px; color: #475569; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #94a3b8; font-size: 13px;">Meridian Wealth Advisors</div>
-        <div style="margin-top: 2px;">Independent RIA</div>
-      </div>
-      <div class="sidebar-item active">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-        Portfolios
-        <span class="sidebar-badge">7</span>
-      </div>
-      <div class="sidebar-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Clients
-      </div>
-      <div class="sidebar-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-        Reports
-      </div>
-      <div class="sidebar-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Market Intel
-      </div>
-      <div class="sidebar-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Compliance
-      </div>
-      <div style="flex: 1;"></div>
-      <div class="sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Settings
-      </div>
+<!-- CTA OVERLAY -->
+<div id="ctaOverlay">
+  <div style="font-size:72px;font-weight:800;letter-spacing:-1px;opacity:0;" id="ctaLogo">
+    <span style="color:#fff;">Solve</span><span style="background:linear-gradient(135deg,#0ea5e9,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Works</span>
+  </div>
+  <div style="font-size:22px;color:#94a3b8;font-weight:300;opacity:0;" id="ctaTagline">Your AI. Only yours.</div>
+  <div style="font-size:18px;color:#0ea5e9;font-weight:500;margin-top:12px;opacity:0;" id="ctaUrl">solveworks.io</div>
+  <div style="font-size:18px;color:#cbd5e1;font-weight:300;margin-top:16px;max-width:600px;text-align:center;opacity:0;" id="ctaCta">See what it looks like for your practice. Let's talk.</div>
+</div>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="dashboard">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+    <div class="sidebar-info">
+      <div class="firm">Meridian Wealth Advisors</div>
+      <div style="margin-top:2px;">Independent RIA</div>
     </div>
-    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div class="sidebar-item active" data-panel="portfolios" id="nav-portfolios">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      Portfolios <span class="sidebar-badge">7</span>
+    </div>
+    <div class="sidebar-item" data-panel="clients" id="nav-clients">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Clients
+    </div>
+    <div class="sidebar-item" data-panel="reports" id="nav-reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Reports
+    </div>
+    <div class="sidebar-item" data-panel="compliance" id="nav-compliance">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Compliance
+    </div>
+    <div style="flex:1;"></div>
+    <div class="sidebar-item" style="border-top:1px solid rgba(255,255,255,0.06);padding-top:20px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+
+  <!-- Content Area -->
+  <div id="contentArea">
+
+    <!-- ========== PORTFOLIOS PANEL ========== -->
+    <div class="content-panel active" id="panel-portfolios">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
         <div>
-          <h1 style="font-size: 28px; font-weight: 700;">Client Portfolio Overview</h1>
-          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Real-time monitoring across all client accounts</p>
+          <h1 style="font-size:28px;font-weight:700;">Client Portfolio Overview</h1>
+          <p class="text-slate-400" style="font-size:14px;margin-top:4px;">Real-time monitoring across all client accounts</p>
         </div>
-        <div style="font-size: 12px; color: #475569;">Last scan: <span style="color: #4ade80;">2 min ago</span></div>
+        <div style="font-size:12px;color:#475569;">Last scan: <span style="color:#4ade80;">2 min ago</span></div>
       </div>
       <!-- Stat cards -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;" id="s1-stats">
-        <div class="stat-card" style="opacity: 0;">
-          <div class="stat-value" style="color: #fff;" id="s1-aum">$0</div>
-          <div class="stat-label">Total AUM <span style="color: #4ade80; font-weight: 600;">+2.3%</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;" id="pf-stats">
+        <div class="stat-card anim-hidden" id="stat-aum">
+          <div class="stat-value" style="color:#fff;" id="val-aum">$280.4M</div>
+          <div class="stat-label">Total AUM <span style="color:#4ade80;font-weight:600;">+2.3%</span></div>
         </div>
-        <div class="stat-card" style="opacity: 0;">
-          <div class="stat-value" style="color: #fff;" id="s1-families">0</div>
+        <div class="stat-card anim-hidden" id="stat-families">
+          <div class="stat-value" style="color:#fff;">200</div>
           <div class="stat-label">Client Families</div>
         </div>
-        <div class="stat-card" style="opacity: 0;">
-          <div class="stat-value" style="color: #facc15;" id="s1-drift">0</div>
+        <div class="stat-card anim-hidden" id="stat-drift">
+          <div class="stat-value" style="color:#facc15;">7</div>
           <div class="stat-label">Drift Alerts</div>
         </div>
-        <div class="stat-card" style="opacity: 0;">
-          <div class="stat-value" style="color: #f87171;" id="s1-rebal">0</div>
+        <div class="stat-card anim-hidden" id="stat-rebal">
+          <div class="stat-value" style="color:#f87171;">3</div>
           <div class="stat-label">Rebalancing Due</div>
         </div>
       </div>
       <!-- Client table -->
-      <div class="glass" style="border-radius: 12px; overflow: hidden; flex: 1;">
-        <table class="data-table" id="s1-table">
-          <thead>
-            <tr style="opacity: 1;">
-              <th>Client Family</th>
-              <th>AUM</th>
-              <th>Model</th>
-              <th>Drift Status</th>
-              <th>Last Review</th>
-            </tr>
-          </thead>
-          <tbody id="s1-tbody"></tbody>
-        </table>
+      <div class="glass scroll-container" style="border-radius:12px;height:calc(100% - 200px);overflow:hidden;">
+        <div class="scroll-inner" id="pf-scroll">
+          <table class="data-table" id="pf-table">
+            <thead><tr><th>Client Family</th><th>AUM</th><th>Model</th><th>Drift Status</th><th>Last Review</th></tr></thead>
+            <tbody id="pf-tbody"></tbody>
+          </table>
+        </div>
       </div>
-      <!-- Drift alert popup -->
-      <div id="s1-drift-alert" style="position: absolute; right: 60px; top: 340px; width: 380px; opacity: 0; z-index: 10;">
-        <div class="glass" style="padding: 24px; border-radius: 14px; border: 1px solid rgba(234,179,8,0.3);">
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
-            <span style="font-size: 20px;">⚠️</span>
+      <!-- Drift alert panel -->
+      <div class="drift-panel" id="driftPanel">
+        <div class="glass" style="padding:24px;border-radius:14px;border:1px solid rgba(234,179,8,0.3);">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <span style="font-size:20px;">⚠️</span>
             <div>
-              <div style="font-weight: 600; font-size: 15px;">Drift Alert — Henderson Family Trust</div>
-              <div style="font-size: 12px; color: #94a3b8;">Growth 60/40 Model — 4.2% drift detected</div>
+              <div style="font-weight:600;font-size:15px;">Drift Alert — Henderson Family Trust</div>
+              <div style="font-size:12px;color:#94a3b8;">Growth 60/40 Model — 4.2% drift detected</div>
             </div>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px;">
             <span class="text-slate-400">Asset Class</span>
             <span class="text-slate-400">Current</span>
             <span class="text-slate-400">Target</span>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-            <span style="color: #cbd5e1;">US Equities</span>
-            <span style="color: #fb923c; font-weight: 600;">42.8%</span>
-            <span style="color: #4ade80;">38.0%</span>
+          <div style="font-size:13px;">
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><span style="color:#cbd5e1;">US Equities</span><span style="color:#fb923c;font-weight:600;">42.8%</span><span style="color:#4ade80;">38.0%</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><span style="color:#cbd5e1;">Int'l Equities</span><span style="color:#fb923c;font-weight:600;">21.4%</span><span style="color:#4ade80;">22.0%</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><span style="color:#cbd5e1;">Fixed Income</span><span style="color:#fb923c;font-weight:600;">30.2%</span><span style="color:#4ade80;">35.0%</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;"><span style="color:#cbd5e1;">Alternatives</span><span style="color:#cbd5e1;">5.6%</span><span style="color:#4ade80;">5.0%</span></div>
           </div>
-          <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-            <span style="color: #cbd5e1;">Int'l Equities</span>
-            <span style="color: #fb923c; font-weight: 600;">21.4%</span>
-            <span style="color: #4ade80;">22.0%</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
-            <span style="color: #cbd5e1;">Fixed Income</span>
-            <span style="color: #fb923c; font-weight: 600;">30.2%</span>
-            <span style="color: #4ade80;">35.0%</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0;">
-            <span style="color: #cbd5e1;">Alternatives</span>
-            <span style="color: #cbd5e1;">5.6%</span>
-            <span style="color: #4ade80;">5.0%</span>
-          </div>
-          <div style="margin-top: 14px; padding: 10px; border-radius: 8px; background: rgba(14,165,233,0.1); font-size: 12px; color: #38bdf8;">
+          <div style="margin-top:14px;padding:10px;border-radius:8px;background:rgba(14,165,233,0.1);font-size:12px;color:#38bdf8;">
             <strong>AI Recommendation:</strong> Sell $176K US equities → Buy $143K fixed income, $33K int'l equities
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ==================== SCENE 2: MARKET INTELLIGENCE ==================== -->
-<div class="scene" id="scene2">
-  <div style="display: flex; width: 1920px; height: 1080px;">
-    <div class="sidebar">
-      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
-      <div style="padding: 0 24px 24px; font-size: 12px; color: #475569; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #94a3b8; font-size: 13px;">Meridian Wealth Advisors</div>
-      </div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Portfolios</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>Reports</div>
-      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Market Intel</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Compliance</div>
-    </div>
-    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
-      <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 6px;">Market Intelligence</h1>
-      <p class="text-slate-400" style="font-size: 14px; margin-bottom: 28px;">AI-monitored events mapped to your client portfolios</p>
-      <div style="display: flex; gap: 28px; height: calc(100% - 100px);">
-        <!-- Left: Market events -->
-        <div style="flex: 1.2;">
-          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #94a3b8;">Live Market Feed</h3>
-          <div id="s2-events"></div>
-        </div>
-        <!-- Right: Affected clients + draft -->
-        <div style="flex: 1;">
-          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #94a3b8;">Client Impact Analysis</h3>
-          <div id="s2-impact" style="margin-bottom: 24px;"></div>
-          <!-- Draft communication -->
-          <div id="s2-draft" style="opacity: 0;">
-            <div class="glass" style="padding: 20px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.2);">
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <span style="font-size: 16px;">📝</span>
-                <span style="font-size: 13px; font-weight: 600; color: #0ea5e9;">AI-Generated Draft — Rate Decision Update</span>
-              </div>
-              <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1;">
-                <em>Dear [Client Name],</em><br><br>
-                The Federal Reserve held rates steady at 5.25–5.50% today, signaling continued patience on potential cuts. For your portfolio, this means:<br><br>
-                • Your fixed income allocation continues to benefit from elevated yields<br>
-                • Short-duration positioning remains appropriate<br>
-                • No immediate changes recommended to your current strategy<br><br>
-                <em>[Personalized paragraph based on client's specific holdings and IPS]</em><br><br>
-                I'll be in touch if conditions change. As always, happy to discuss.<br>
-                <em>— [Advisor Name], Meridian Wealth Advisors</em>
-              </div>
-              <div style="margin-top: 12px; display: flex; gap: 10px;">
-                <span style="font-size: 11px; padding: 4px 10px; border-radius: 6px; background: rgba(34,197,94,0.15); color: #4ade80;">34 personalized versions ready</span>
-                <span style="font-size: 11px; padding: 4px 10px; border-radius: 6px; background: rgba(14,165,233,0.15); color: #38bdf8;">Awaiting advisor approval</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== SCENE 3: QUARTERLY REPORTS ==================== -->
-<div class="scene" id="scene3">
-  <div style="display: flex; width: 1920px; height: 1080px;">
-    <div class="sidebar">
-      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
-      <div style="padding: 0 24px 24px; font-size: 12px; color: #475569; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #94a3b8; font-size: 13px;">Meridian Wealth Advisors</div>
-      </div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Portfolios</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</div>
-      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Reports</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Market Intel</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Compliance</div>
-    </div>
-    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <!-- ========== REPORTS PANEL ========== -->
+    <div class="content-panel" id="panel-reports">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
         <div>
-          <h1 style="font-size: 28px; font-weight: 700;">Quarterly Reports — Q1 2026</h1>
-          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Auto-generated personalized reports for every client family</p>
+          <h1 style="font-size:28px;font-weight:700;">Quarterly Reports — Q1 2026</h1>
+          <p class="text-slate-400" style="font-size:14px;margin-top:4px;">Auto-generated personalized reports for every client family</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <div class="glass" style="padding: 10px 20px; display: flex; align-items: center; gap: 10px;">
-            <div style="width: 10px; height: 10px; border-radius: 50%; background: #4ade80;"></div>
-            <span style="font-size: 13px;"><span id="s3-count" style="color: #4ade80; font-weight: 700;">0</span> / 200 reports complete</span>
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div class="glass" style="padding:10px 20px;display:flex;align-items:center;gap:10px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:#4ade80;"></div>
+            <span style="font-size:13px;"><span style="color:#4ade80;font-weight:700;" id="rpt-count">200</span> / 200 reports complete</span>
           </div>
-          <div style="font-size: 12px; color: #475569;">Generated at 4:12 AM EST</div>
+          <div style="font-size:12px;color:#475569;">Generated at 4:12 AM EST</div>
         </div>
+      </div>
+      <!-- Tab bar -->
+      <div class="tab-bar" id="rpt-tabs">
+        <div class="tab-item active" id="tab-all">All Reports</div>
+        <div class="tab-item" id="tab-pending">Pending Review (12)</div>
+        <div class="tab-item" id="tab-sent">Sent (188)</div>
       </div>
       <!-- Report cards grid -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;" id="s3-grid"></div>
-      <!-- Expanded report preview -->
-      <div id="s3-preview" style="opacity: 0;">
-        <div class="glass" style="padding: 24px; border-radius: 14px; border: 1px solid rgba(14,165,233,0.2);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;" id="rpt-grid"></div>
+      <!-- Report preview -->
+      <div class="report-preview" id="rptPreview">
+        <div class="glass" style="padding:24px;border-radius:14px;border:1px solid rgba(14,165,233,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <div>
-              <div style="font-size: 16px; font-weight: 700;">Henderson Family Trust — Q1 2026 Report Preview</div>
-              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Growth 60/40 Model · AUM: $4.2M · Q1 Return: +3.8%</div>
+              <div style="font-size:16px;font-weight:700;">Henderson Family Trust — Q1 2026 Report Preview</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Growth 60/40 Model · AUM: $4.2M · Q1 Return: +3.8%</div>
             </div>
             <span class="badge-ok">✅ Compliance reviewed</span>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
-            <div style="padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">📊 Performance</div>
-              <div style="font-size: 12px; color: #cbd5e1;">+3.8% vs benchmark +3.2% · Outperformed by 60bps</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;">
+            <div style="padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">📊 Performance</div>
+              <div style="font-size:12px;color:#cbd5e1;">+3.8% vs benchmark +3.2% · Outperformed by 60bps</div>
             </div>
-            <div style="padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">🎯 Allocation</div>
-              <div style="font-size: 12px; color: #cbd5e1;">64.2% equity vs 60% target · Drift: 4.2%</div>
+            <div style="padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">🎯 Allocation</div>
+              <div style="font-size:12px;color:#cbd5e1;">64.2% equity vs 60% target · Drift: 4.2%</div>
             </div>
-            <div style="padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">💬 Commentary</div>
-              <div style="font-size: 12px; color: #cbd5e1;">Tech overweight drove alpha · Rate sensitivity reduced</div>
+            <div style="padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">💬 Commentary</div>
+              <div style="font-size:12px;color:#cbd5e1;">Tech overweight drove alpha · Rate sensitivity reduced</div>
             </div>
-            <div style="padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">⚡ Actions</div>
-              <div style="font-size: 12px; color: #cbd5e1;">2 rebalancing trades recommended</div>
+            <div style="padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">⚡ Actions</div>
+              <div style="font-size:12px;color:#cbd5e1;">2 rebalancing trades recommended</div>
             </div>
-            <div style="padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);">
-              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">📅 Next Review</div>
-              <div style="font-size: 12px; color: #cbd5e1;">April 22, 2026</div>
+            <div style="padding:12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+              <div style="font-size:11px;color:#64748b;margin-bottom:4px;">📅 Next Review</div>
+              <div style="font-size:12px;color:#cbd5e1;">April 22, 2026</div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ==================== SCENE 4: PROSPECT NURTURE ==================== -->
-<div class="scene" id="scene4">
-  <div style="display: flex; width: 1920px; height: 1080px;">
-    <div class="sidebar">
-      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
-      <div style="padding: 0 24px 24px; font-size: 12px; color: #475569; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #94a3b8; font-size: 13px;">Meridian Wealth Advisors</div>
-      </div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Portfolios</div>
-      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>Reports</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Market Intel</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Compliance</div>
-    </div>
-    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <!-- ========== CLIENTS / PROSPECTS PANEL ========== -->
+    <div class="content-panel" id="panel-clients">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
         <div>
-          <h1 style="font-size: 28px; font-weight: 700;">Prospect Pipeline</h1>
-          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated nurture for referrals and leads</p>
+          <h1 style="font-size:28px;font-weight:700;">Prospect Pipeline</h1>
+          <p class="text-slate-400" style="font-size:14px;margin-top:4px;">Automated nurture for referrals and leads</p>
         </div>
-        <div style="display: flex; gap: 12px;" id="s4-stats">
-          <div class="glass" style="padding: 8px 16px; font-size: 13px; opacity: 0;"><span style="color: #0ea5e9; font-weight: 700;">24</span> <span class="text-slate-400">active prospects</span></div>
-          <div class="glass" style="padding: 8px 16px; font-size: 13px; opacity: 0;"><span style="color: #4ade80; font-weight: 700;">8</span> <span class="text-slate-400">referral leads</span></div>
-          <div class="glass" style="padding: 8px 16px; font-size: 13px; opacity: 0;"><span style="color: #fb923c; font-weight: 700;">3</span> <span class="text-slate-400">meetings this month</span></div>
+        <div style="display:flex;gap:12px;" id="cl-stats">
+          <div class="glass" style="padding:8px 16px;font-size:13px;"><span style="color:#0ea5e9;font-weight:700;">24</span> <span class="text-slate-400">active prospects</span></div>
+          <div class="glass" style="padding:8px 16px;font-size:13px;"><span style="color:#4ade80;font-weight:700;">8</span> <span class="text-slate-400">referral leads</span></div>
+          <div class="glass" style="padding:8px 16px;font-size:13px;"><span style="color:#fb923c;font-weight:700;">3</span> <span class="text-slate-400">meetings this month</span></div>
         </div>
       </div>
-      <div style="display: flex; gap: 28px; height: calc(100% - 100px);">
+      <div style="display:flex;gap:28px;height:calc(100% - 100px);">
         <!-- Left: Prospect cards -->
-        <div style="flex: 1;" id="s4-prospects"></div>
+        <div style="flex:1;" id="cl-prospects"></div>
         <!-- Right: Drip sequence -->
-        <div style="flex: 1;" id="s4-drip" style="opacity: 0;">
-          <div class="glass" style="padding: 24px; border-radius: 14px; height: 100%;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-              <span style="font-size: 18px;">📧</span>
+        <div style="flex:1;">
+          <div class="drip-panel glass" style="padding:24px;border-radius:14px;height:100%;" id="dripPanel">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+              <span style="font-size:18px;">📧</span>
               <div>
-                <div style="font-size: 15px; font-weight: 600;">Active Drip — Dr. Rachel Okafor</div>
-                <div style="font-size: 12px; color: #94a3b8;">Physician · Referred by Nakamura family</div>
+                <div style="font-size:15px;font-weight:600;">Active Drip — Dr. Rachel Okafor</div>
+                <div style="font-size:12px;color:#94a3b8;">Physician · Referred by Nakamura family</div>
               </div>
             </div>
-            <div id="s4-sequence"></div>
+            <div id="cl-sequence"></div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ==================== SCENE 5: COMPLIANCE ==================== -->
-<div class="scene" id="scene5">
-  <div style="display: flex; width: 1920px; height: 1080px;">
-    <div class="sidebar">
-      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
-      <div style="padding: 0 24px 24px; font-size: 12px; color: #475569; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
-        <div style="font-weight: 600; color: #94a3b8; font-size: 13px;">Meridian Wealth Advisors</div>
-      </div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Portfolios</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clients</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>Reports</div>
-      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Market Intel</div>
-      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Compliance</div>
-    </div>
-    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <!-- ========== COMPLIANCE PANEL ========== -->
+    <div class="content-panel" id="panel-compliance">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
         <div>
-          <h1 style="font-size: 28px; font-weight: 700;">Compliance Hub</h1>
-          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated documentation, monitoring, and audit trail</p>
+          <h1 style="font-size:28px;font-weight:700;">Compliance Hub</h1>
+          <p class="text-slate-400" style="font-size:14px;margin-top:4px;">Automated documentation, monitoring, and audit trail</p>
         </div>
-        <div id="s5-score" style="opacity: 0;">
-          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 12px;">
-            <div style="width: 48px; height: 48px; border-radius: 50%; border: 3px solid #4ade80; display: flex; align-items: center; justify-content: center;">
-              <span style="font-size: 18px; font-weight: 800; color: #4ade80;">98</span>
+        <div id="comp-score">
+          <div class="glass" style="padding:12px 20px;display:flex;align-items:center;gap:12px;">
+            <div style="width:48px;height:48px;border-radius:50%;border:3px solid #4ade80;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:18px;font-weight:800;color:#4ade80;">98</span>
             </div>
             <div>
-              <div style="font-size: 14px; font-weight: 600;">Compliance Score</div>
-              <div style="font-size: 11px; color: #4ade80;">Excellent</div>
+              <div style="font-size:14px;font-weight:600;">Compliance Score</div>
+              <div style="font-size:11px;color:#4ade80;">Excellent</div>
             </div>
           </div>
         </div>
       </div>
-      <div style="display: flex; gap: 28px;">
+      <div style="display:flex;gap:28px;">
         <!-- Meeting Notes -->
-        <div style="flex: 1;">
-          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #94a3b8;">📝 Auto-Generated Meeting Notes</h3>
-          <div id="s5-meetings"></div>
+        <div style="flex:1;">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:#94a3b8;">📝 Auto-Generated Meeting Notes</h3>
+          <div id="comp-meetings"></div>
         </div>
         <!-- ADV + Audit -->
-        <div style="flex: 1;">
-          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #94a3b8;">📋 Regulatory Monitoring</h3>
-          <div id="s5-adv" style="margin-bottom: 24px;"></div>
-          <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #94a3b8;">🔍 Audit Trail</h3>
-          <div id="s5-audit"></div>
+        <div style="flex:1;">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:#94a3b8;">📋 Regulatory Monitoring</h3>
+          <div id="comp-adv" style="margin-bottom:24px;"></div>
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;color:#94a3b8;">🔍 Audit Trail</h3>
+          <div id="comp-audit"></div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ==================== SCENE 6: BOTTOM LINE + CTA ==================== -->
-<div class="scene" id="scene6">
-  <div style="width: 1920px; height: 1080px; padding: 60px 100px; display: flex; flex-direction: column; justify-content: center;">
-    <!-- Quarterly stats -->
-    <div style="text-align: center; margin-bottom: 16px;">
-      <span style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; font-weight: 600;">What Your AI Does Every Quarter</span>
+    <!-- ========== COST PANEL (Bottom Line) ========== -->
+    <div class="content-panel" id="panel-cost">
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:100%;padding:0 60px;">
+        <div style="text-align:center;margin-bottom:16px;">
+          <span style="font-size:13px;text-transform:uppercase;letter-spacing:0.15em;color:#64748b;font-weight:600;">What Your AI Does Every Quarter</span>
+        </div>
+        <div style="display:flex;gap:16px;justify-content:center;margin-bottom:40px;" id="cost-stats">
+          <div class="glass anim-hidden" style="padding:20px 28px;border-radius:12px;text-align:center;">
+            <div class="funnel-number">200</div>
+            <div class="text-slate-400" style="font-size:12px;margin-top:4px;">Quarterly Reports</div>
+          </div>
+          <div class="glass anim-hidden" style="padding:20px 28px;border-radius:12px;text-align:center;">
+            <div class="funnel-number">1,200+</div>
+            <div class="text-slate-400" style="font-size:12px;margin-top:4px;">Market Events</div>
+          </div>
+          <div class="glass anim-hidden" style="padding:20px 28px;border-radius:12px;text-align:center;">
+            <div class="funnel-number">847</div>
+            <div class="text-slate-400" style="font-size:12px;margin-top:4px;">Client Comms</div>
+          </div>
+          <div class="glass anim-hidden" style="padding:20px 28px;border-radius:12px;text-align:center;">
+            <div class="funnel-number">24</div>
+            <div class="text-slate-400" style="font-size:12px;margin-top:4px;">Prospects Nurtured</div>
+          </div>
+          <div class="glass anim-hidden" style="padding:20px 28px;border-radius:12px;text-align:center;">
+            <div class="funnel-number">100%</div>
+            <div class="text-slate-400" style="font-size:12px;margin-top:4px;">Compliance Docs</div>
+          </div>
+        </div>
+        <!-- Time saved -->
+        <div style="text-align:center;margin-bottom:36px;opacity:0;" id="cost-time">
+          <div class="glass" style="display:inline-block;padding:14px 36px;border-radius:10px;">
+            <span class="text-slate-400" style="font-size:15px;">Time saved: </span>
+            <span style="font-size:24px;font-weight:800;color:#0ea5e9;">~160 hours/quarter</span>
+            <span class="text-slate-400" style="font-size:15px;"> of paraplanner work</span>
+          </div>
+        </div>
+        <!-- Cost comparison -->
+        <div style="display:flex;gap:32px;align-items:center;justify-content:center;opacity:0;margin-bottom:30px;" id="cost-compare">
+          <div class="cost-card cost-red" style="max-width:380px;">
+            <div style="font-size:14px;color:#f87171;margin-bottom:8px;font-weight:600;">Paraplanner + Admin</div>
+            <div style="font-size:44px;font-weight:800;color:#fca5a5;">~$6,000</div>
+            <div class="text-slate-400" style="font-size:14px;">/month</div>
+            <div style="font-size:12px;color:#64748b;margin-top:8px;">salary · benefits · training · turnover risk</div>
+          </div>
+          <div style="font-size:28px;color:#475569;">vs</div>
+          <div class="cost-card cost-green" style="max-width:380px;" id="cost-ai-card">
+            <div style="font-size:14px;color:#0ea5e9;margin-bottom:8px;font-weight:600;">Your AI Agent</div>
+            <div style="font-size:44px;font-weight:800;color:#38bdf8;">$500</div>
+            <div class="text-slate-400" style="font-size:14px;">/month</div>
+            <div style="font-size:12px;color:#64748b;margin-top:8px;">24/7 · no vacation · no turnover · always current</div>
+          </div>
+        </div>
+        <!-- Savings -->
+        <div style="text-align:center;opacity:0;" id="cost-savings">
+          <div class="glass" style="display:inline-block;padding:16px 48px;border-radius:12px;border:1px solid rgba(34,197,94,0.3);">
+            <span class="text-slate-400" style="font-size:16px;">Annual savings: </span>
+            <span style="font-size:32px;font-weight:800;color:#4ade80;">$66,000</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div style="display: flex; gap: 16px; justify-content: center; margin-bottom: 48px;" id="s6-stats">
-      <div class="glass" style="padding: 20px 28px; border-radius: 12px; text-align: center; opacity: 0;">
-        <div class="funnel-number" id="s6-s1">0</div>
-        <div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Quarterly Reports</div>
-      </div>
-      <div class="glass" style="padding: 20px 28px; border-radius: 12px; text-align: center; opacity: 0;">
-        <div class="funnel-number" id="s6-s2">0</div>
-        <div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Market Events Analyzed</div>
-      </div>
-      <div class="glass" style="padding: 20px 28px; border-radius: 12px; text-align: center; opacity: 0;">
-        <div class="funnel-number" id="s6-s3">0</div>
-        <div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Client Comms Drafted</div>
-      </div>
-      <div class="glass" style="padding: 20px 28px; border-radius: 12px; text-align: center; opacity: 0;">
-        <div class="funnel-number" id="s6-s4">0</div>
-        <div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Prospects Nurtured</div>
-      </div>
-      <div class="glass" style="padding: 20px 28px; border-radius: 12px; text-align: center; opacity: 0;">
-        <div class="funnel-number">100%</div>
-        <div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Compliance Docs</div>
-      </div>
-    </div>
-    <!-- Time saved -->
-    <div id="s6-time" style="text-align: center; margin-bottom: 40px; opacity: 0;">
-      <div class="glass" style="display: inline-block; padding: 14px 36px; border-radius: 10px;">
-        <span class="text-slate-400" style="font-size: 15px;">Time saved: </span>
-        <span style="font-size: 24px; font-weight: 800; color: #0ea5e9;">~160 hours/quarter</span>
-        <span class="text-slate-400" style="font-size: 15px;"> of paraplanner work</span>
-      </div>
-    </div>
-    <!-- Cost comparison -->
-    <div id="s6-cost" style="display: flex; gap: 32px; align-items: center; justify-content: center; opacity: 0; margin-bottom: 36px;">
-      <div class="cost-card cost-red" style="max-width: 400px;">
-        <div style="font-size: 14px; color: #f87171; margin-bottom: 8px; font-weight: 600;">Paraplanner + Admin</div>
-        <div style="font-size: 44px; font-weight: 800; color: #fca5a5;">~$6,000</div>
-        <div class="text-slate-400" style="font-size: 14px;">/month</div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 8px;">salary · benefits · training · turnover risk</div>
-      </div>
-      <div style="font-size: 28px; color: #475569;">vs</div>
-      <div class="cost-card cost-green" style="max-width: 400px;">
-        <div style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px; font-weight: 600;">Your AI Agent</div>
-        <div style="font-size: 44px; font-weight: 800; color: #38bdf8;">$500</div>
-        <div class="text-slate-400" style="font-size: 14px;">/month</div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 8px;">24/7 · no vacation · no turnover · always current</div>
-      </div>
-    </div>
-    <!-- Savings -->
-    <div id="s6-savings" style="text-align: center; opacity: 0;">
-      <div class="glass" style="display: inline-block; padding: 16px 48px; border-radius: 12px; border: 1px solid rgba(34,197,94,0.3);">
-        <span class="text-slate-400" style="font-size: 16px;">Annual savings: </span>
-        <span style="font-size: 32px; font-weight: 800; color: #4ade80;">$66,000</span>
-      </div>
-    </div>
-  </div>
-</div>
 
-<!-- ==================== SCENE 7: CLOSING CTA ==================== -->
-<div class="scene" id="scene7">
-  <div style="text-align: center;">
-    <div id="s7-logo" style="opacity: 0;">
-      <div style="font-size: 72px; font-weight: 800; letter-spacing: -1px;">
-        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
-      </div>
-    </div>
-    <div id="s7-tagline" style="opacity: 0; font-size: 22px; color: #94a3b8; margin-top: 16px; font-weight: 300;">Your AI. Only yours.</div>
-    <div id="s7-url" style="opacity: 0; font-size: 18px; color: #0ea5e9; margin-top: 24px; font-weight: 500;">solveworks.io</div>
-    <div id="s7-cta" style="opacity: 0; font-size: 18px; color: #cbd5e1; margin-top: 28px; font-weight: 300; max-width: 600px; margin-left: auto; margin-right: auto;">See what it looks like for your practice. Let's talk.</div>
   </div>
 </div>
 
 <script>
 // ============================================================
-// CONFIGURATION — scene durations in seconds
+// DATA
 // ============================================================
-// Scene 0: Hook (15s), Scene 1: Portfolios (70s), Scene 2: Market (55s),
-// Scene 3: Reports (60s), Scene 4: Prospects (50s), Scene 5: Compliance (45s),
-// Scene 6: Bottom Line (45s), Scene 7: CTA (20s)
-const SCENE_DURATIONS = [15, 70, 55, 60, 50, 45, 45, 20];
-const TOTAL_DURATION = SCENE_DURATIONS.reduce((a, b) => a + b, 0);
-let currentScene = -1;
-let presentationStartTime = 0;
+const CLIENTS = [
+  { name:'Henderson Family Trust', aum:'$4.2M', model:'Growth 60/40', mc:'tag-growth', drift:'⚠️ 4.2% drift', dc:'badge-warn', review:'Jan 15' },
+  { name:'Nakamura & Associates', aum:'$8.7M', model:'Aggressive 80/20', mc:'tag-aggressive', drift:'✅ Within range', dc:'badge-ok', review:'Feb 28' },
+  { name:'The Whitfield Foundation', aum:'$12.1M', model:'Conservative 30/70', mc:'tag-conservative', drift:'🔴 6.8% drift', dc:'badge-alert', review:'Dec 3' },
+  { name:'Chen Family Office', aum:'$6.3M', model:'Balanced 50/50', mc:'tag-balanced', drift:'✅ Within range', dc:'badge-ok', review:'Feb 14' },
+  { name:'Patterson Retirement Trust', aum:'$3.8M', model:'Income 20/80', mc:'tag-income', drift:'⚠️ 3.1% drift', dc:'badge-warn', review:'Jan 22' },
+  { name:'Morrison Estate', aum:'$5.5M', model:'Growth 60/40', mc:'tag-growth', drift:'✅ Within range', dc:'badge-ok', review:'Mar 1' },
+  { name:'Alvarez Family Holdings', aum:'$9.4M', model:'Aggressive 80/20', mc:'tag-aggressive', drift:'⚠️ 5.7% drift', dc:'badge-warn', review:'Nov 18' },
+  { name:'Sullivan Trust', aum:'$7.1M', model:'Balanced 50/50', mc:'tag-balanced', drift:'✅ Within range', dc:'badge-ok', review:'Mar 3' },
+  { name:'Park Family Foundation', aum:'$2.9M', model:'Conservative 30/70', mc:'tag-conservative', drift:'✅ Within range', dc:'badge-ok', review:'Feb 20' },
+  { name:'Williams Charitable Trust', aum:'$6.8M', model:'Income 20/80', mc:'tag-income', drift:'✅ Within range', dc:'badge-ok', review:'Mar 5' },
+  { name:'O\'Brien Family Office', aum:'$11.3M', model:'Aggressive 80/20', mc:'tag-aggressive', drift:'✅ Within range', dc:'badge-ok', review:'Feb 10' },
+];
+
+const REPORTS = [
+  { name:'Henderson Family Trust', aum:'$4.2M', ret:'+3.8%', color:'#4ade80' },
+  { name:'Nakamura & Associates', aum:'$8.7M', ret:'+5.2%', color:'#4ade80' },
+  { name:'The Whitfield Foundation', aum:'$12.1M', ret:'+1.4%', color:'#facc15' },
+  { name:'Chen Family Office', aum:'$6.3M', ret:'+4.1%', color:'#4ade80' },
+  { name:'Patterson Retirement Trust', aum:'$3.8M', ret:'+2.6%', color:'#4ade80' },
+  { name:'Morrison Estate', aum:'$5.5M', ret:'+4.7%', color:'#4ade80' },
+];
+
+const PROSPECTS = [
+  { name:'Dr. Rachel Okafor', source:'Referred by Nakamura', assets:'$2.1M est.', stage:'Educational drip (Email 3/6)', sc:'#0ea5e9' },
+  { name:'James & Linda Pruitt', source:'Seminar attendee', assets:'$1.5M est.', stage:'Meeting scheduled Mar 14', sc:'#4ade80' },
+  { name:'The Kaplan Group', source:'COI referral (attorney)', assets:'$5.8M est.', stage:'Initial outreach sent', sc:'#fb923c' },
+];
+
+const DRIP_STEPS = [
+  { title:'Welcome + Investment philosophy', status:'✅ Sent, opened', done:true },
+  { title:'Retirement income planning', status:'✅ Sent, opened, clicked', done:true },
+  { title:'Market outlook for your portfolio', status:'📤 Sending today', done:false, active:true },
+  { title:'Case study: A family like yours', status:'Scheduled', done:false },
+  { title:'Complimentary portfolio review', status:'Scheduled', done:false },
+  { title:'Personal invitation from advisor', status:'Scheduled', done:false },
+];
+
+const MEETINGS = [
+  { date:'Mar 5', title:'Henderson Annual Review', status:'Generated ✅', filed:'Filed to CRM ✅' },
+  { date:'Mar 3', title:'Whitfield Foundation Rebalancing', status:'Generated ✅', filed:'Filed to CRM ✅' },
+  { date:'Mar 1', title:'Morrison Estate Check-in', status:'Generated ✅', filed:'Filed to CRM ✅' },
+  { date:'Feb 28', title:'Nakamura Quarterly Review', status:'Generated ✅', filed:'Filed to CRM ✅' },
+  { date:'Feb 25', title:'Patterson Trust Update', status:'Generated ✅', filed:'Filed to CRM ✅' },
+];
+
+const AUDIT_TRAIL = [
+  { action:'Trade recommendation generated', detail:'Henderson — Sell $176K US equities', time:'Today 9:14 AM' },
+  { action:'Advisor approval received', detail:'Sarah Mitchell approved via dashboard', time:'Today 10:02 AM' },
+  { action:'Trade executed', detail:'Custodian confirmation received', time:'Today 10:45 AM' },
+  { action:'Documentation filed', detail:'Trade memo + rationale → CRM', time:'Today 10:46 AM' },
+];
 
 // ============================================================
-// UTILITIES
+// CURSOR SYSTEM
 // ============================================================
-function animateCounter(el, target, duration = 2000, prefix = '', suffix = '') {
-  const start = performance.now();
-  function update(now) {
-    const p = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - p, 3);
-    el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix;
-    if (p < 1) requestAnimationFrame(update);
-  }
-  requestAnimationFrame(update);
+const cursor = document.getElementById('cursor');
+const clickRipple = document.getElementById('clickRipple');
+
+function moveCursor(x, y, speed) {
+  if (speed === 'fast') cursor.className = 'fast';
+  else if (speed === 'slow') cursor.className = 'slow';
+  else if (speed === 'instant') cursor.className = 'instant';
+  else cursor.className = '';
+  cursor.style.left = x + 'px';
+  cursor.style.top = y + 'px';
 }
 
-function fadeIn(el, delay = 0, duration = 500) {
-  setTimeout(() => { el.style.transition = `opacity ${duration}ms ease`; el.style.opacity = '1'; }, delay);
+function showCursor() { cursor.classList.remove('hidden'); }
+function hideCursor() { cursor.classList.add('hidden'); }
+
+function clickAt(x, y) {
+  clickRipple.style.left = (x - 20) + 'px';
+  clickRipple.style.top = (y - 20) + 'px';
+  clickRipple.classList.remove('active');
+  void clickRipple.offsetWidth; // reflow
+  clickRipple.classList.add('active');
 }
 
-function fadeOut(el, delay = 0, duration = 500) {
-  setTimeout(() => { el.style.transition = `opacity ${duration}ms ease`; el.style.opacity = '0'; }, delay);
+function hoverEl(el) { if (el) el.classList.add('hover-highlight'); }
+function unhoverEl(el) { if (el) el.classList.remove('hover-highlight'); }
+
+// ============================================================
+// PANEL SWITCHING
+// ============================================================
+function switchPanel(panelId) {
+  document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  const panel = document.getElementById('panel-' + panelId);
+  const nav = document.getElementById('nav-' + panelId);
+  if (panel) panel.classList.add('active');
+  if (nav) nav.classList.add('active');
 }
 
 // ============================================================
-// AUDIO
+// POPULATE STATIC CONTENT
+// ============================================================
+function populatePortfolioTable() {
+  const tbody = document.getElementById('pf-tbody');
+  tbody.innerHTML = '';
+  CLIENTS.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.id = 'client-row-' + i;
+    tr.innerHTML = `
+      <td style="font-weight:600;">${c.name}</td>
+      <td class="text-slate-300">${c.aum}</td>
+      <td><span class="tag ${c.mc}">${c.model}</span></td>
+      <td><span class="${c.dc}">${c.drift}</span></td>
+      <td class="text-slate-500">${c.review}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function populateReportGrid() {
+  const grid = document.getElementById('rpt-grid');
+  grid.innerHTML = '';
+  REPORTS.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'report-card';
+    card.id = 'rpt-card-' + i;
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div><div style="font-size:14px;font-weight:600;">${r.name}</div><div style="font-size:12px;color:#94a3b8;margin-top:2px;">${r.aum}</div></div>
+        <div style="text-align:right;"><div style="font-size:18px;font-weight:700;color:${r.color};">${r.ret}</div><div style="font-size:11px;color:#64748b;">Q1 Return</div></div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(34,197,94,0.15);color:#4ade80;">✅ Generated</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(14,165,233,0.15);color:#38bdf8;">📊 5 sections</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(168,85,247,0.15);color:#c084fc;">Personalized</span>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function populateProspects() {
+  const container = document.getElementById('cl-prospects');
+  container.innerHTML = '';
+  PROSPECTS.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'prospect-card';
+    card.id = 'prospect-' + i;
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div><div style="font-size:15px;font-weight:600;">${p.name}</div><div style="font-size:12px;color:#94a3b8;margin-top:2px;">${p.source}</div></div>
+        <div style="text-align:right;"><div style="font-size:14px;font-weight:600;color:#0ea5e9;">${p.assets}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:8px;height:8px;border-radius:50%;background:${p.sc};"></div>
+        <span style="font-size:12px;color:${p.sc};">${p.stage}</span>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function populateDripSequence() {
+  const container = document.getElementById('cl-sequence');
+  container.innerHTML = '';
+  DRIP_STEPS.forEach((step, i) => {
+    const dotColor = step.done ? '#4ade80' : step.active ? '#0ea5e9' : '#334155';
+    const el = document.createElement('div');
+    el.style.cssText = 'display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);';
+    el.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0;">
+        <div style="width:12px;height:12px;border-radius:50%;background:${dotColor};${step.active?'box-shadow:0 0 10px rgba(14,165,233,0.5);':''}"></div>
+      </div>
+      <div>
+        <div style="font-size:13px;font-weight:500;color:${step.done||step.active?'#cbd5e1':'#64748b'};">Email ${i+1}: ${step.title}</div>
+        <div style="font-size:11px;color:${step.done?'#4ade80':step.active?'#0ea5e9':'#475569'};margin-top:2px;">${step.status}</div>
+      </div>`;
+    container.appendChild(el);
+  });
+}
+
+function populateCompliance() {
+  // Meetings
+  const meetContainer = document.getElementById('comp-meetings');
+  meetContainer.innerHTML = '';
+  MEETINGS.forEach((m, i) => {
+    const row = document.createElement('div');
+    row.className = 'compliance-row';
+    row.id = 'comp-meet-' + i;
+    row.innerHTML = `
+      <div style="width:60px;font-size:12px;color:#64748b;font-weight:500;">${m.date}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${m.title}</div></div>
+      <div style="display:flex;gap:10px;font-size:11px;"><span style="color:#4ade80;">${m.status}</span><span style="color:#38bdf8;">${m.filed}</span></div>`;
+    meetContainer.appendChild(row);
+  });
+  // ADV
+  const advContainer = document.getElementById('comp-adv');
+  advContainer.innerHTML = `<div class="compliance-row">
+    <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Form ADV Part 2A</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">Last updated: Jan 15, 2026 · Next review: Jul 15, 2026</div></div>
+    <div style="display:flex;gap:10px;font-size:11px;"><span style="color:#4ade80;">Material changes: 0</span><span class="badge-ok">✅ Current</span></div>
+  </div>`;
+  // Audit
+  const auditContainer = document.getElementById('comp-audit');
+  auditContainer.innerHTML = '';
+  AUDIT_TRAIL.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.className = 'compliance-row';
+    row.id = 'comp-audit-' + i;
+    row.innerHTML = `
+      <div style="width:16px;display:flex;flex-direction:column;align-items:center;">
+        <div style="width:8px;height:8px;border-radius:50%;background:#0ea5e9;"></div>
+        ${i < AUDIT_TRAIL.length-1 ? '<div style="width:2px;height:30px;background:rgba(14,165,233,0.2);margin-top:4px;"></div>' : ''}
+      </div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${a.action}</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">${a.detail}</div></div>
+      <div style="font-size:11px;color:#64748b;">${a.time}</div>`;
+    auditContainer.appendChild(row);
+  });
+}
+
+// ============================================================
+// TIMELINE ENGINE
 // ============================================================
 const voiceover = new Audio('voiceover.mp3');
 voiceover.preload = 'auto';
+let startTime = 0;
+const TOTAL_DURATION = 90;
 
-// ============================================================
-// SCENE MANAGEMENT
-// ============================================================
-function showScene(index) {
-  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
-  const scene = document.getElementById('scene' + index);
-  if (scene) {
-    scene.classList.add('active');
-    currentScene = index;
-    window['initScene' + index]?.();
+function at(seconds, fn) {
+  setTimeout(fn, seconds * 1000);
+}
+
+function fadeIn(el, dur) {
+  if (!el) return;
+  el.style.transition = `opacity ${dur||500}ms ease, transform ${dur||500}ms ease`;
+  el.style.opacity = '1';
+  if (el.style.transform && el.style.transform.includes('translate')) {
+    el.style.transform = el.style.transform.replace(/translate[XY]\([^)]+\)/g, 'translateX(0) translateY(0)');
   }
 }
 
-function advanceScene() {
-  const next = currentScene + 1;
-  if (next >= SCENE_DURATIONS.length) {
-    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
-    return;
-  }
-  showScene(next);
-  setTimeout(advanceScene, SCENE_DURATIONS[next] * 1000);
+function revealEl(el) {
+  if (!el) return;
+  el.classList.remove('anim-hidden');
+  el.classList.add('anim-fadeInUp');
 }
 
 function updateProgress() {
-  if (currentScene < 0) return;
-  const elapsed = (performance.now() - presentationStartTime) / 1000;
-  document.getElementById('progressBar').style.width = Math.min((elapsed / TOTAL_DURATION) * 100, 100) + '%';
-  if (elapsed < TOTAL_DURATION) requestAnimationFrame(updateProgress);
+  const elapsed = (performance.now() - startTime) / 1000;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  if (elapsed < TOTAL_DURATION + 2) requestAnimationFrame(updateProgress);
 }
 
+// ============================================================
+// MAIN TIMELINE — ~90 seconds synced to voiceover
+// ============================================================
+function runTimeline() {
+  // Populate all content first (hidden)
+  populatePortfolioTable();
+  populateReportGrid();
+  populateProspects();
+  populateDripSequence();
+  populateCompliance();
+
+  // ── HOOK (0–8s) ──
+  at(0.5, () => { document.getElementById('hookText').style.opacity = '1'; });
+  at(5.5, () => { document.getElementById('hookText').style.opacity = '0'; });
+  at(6.5, () => {
+    document.getElementById('hookLogo').style.opacity = '1';
+  });
+  at(7.5, () => {
+    document.getElementById('hookOverlay').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('visible');
+    showCursor();
+    moveCursor(960, 400, 'instant');
+  });
+
+  // ── SCENE 1: PORTFOLIO MONITORING (8–25s) ──
+  // Reveal stat cards with cursor hovering over them
+  at(8.5, () => { moveCursor(500, 180); });
+  at(9.2, () => { revealEl(document.getElementById('stat-aum')); });
+  at(9.8, () => { moveCursor(720, 180); hoverEl(document.getElementById('stat-aum')); });
+  at(10.3, () => { unhoverEl(document.getElementById('stat-aum')); revealEl(document.getElementById('stat-families')); });
+  at(10.8, () => { moveCursor(940, 180); revealEl(document.getElementById('stat-drift')); });
+  at(11.3, () => { hoverEl(document.getElementById('stat-drift')); });
+  at(11.8, () => { unhoverEl(document.getElementById('stat-drift')); revealEl(document.getElementById('stat-rebal')); moveCursor(1160, 180); });
+  
+  // Cursor moves to table area — rows already visible
+  at(12.5, () => { moveCursor(700, 350, 'slow'); });
+  
+  // Hover over Henderson row
+  at(14, () => { moveCursor(700, 330); hoverEl(document.getElementById('client-row-0')); });
+  at(15, () => { unhoverEl(document.getElementById('client-row-0')); moveCursor(700, 380); hoverEl(document.getElementById('client-row-1')); });
+  at(16, () => { unhoverEl(document.getElementById('client-row-1')); moveCursor(700, 430); hoverEl(document.getElementById('client-row-2')); });
+  
+  // Scroll down the table
+  at(17, () => { unhoverEl(document.getElementById('client-row-2')); moveCursor(800, 500, 'slow'); });
+  at(17.5, () => { document.getElementById('pf-scroll').style.transform = 'translateY(-80px)'; });
+  at(19, () => { document.getElementById('pf-scroll').style.transform = 'translateY(-160px)'; });
+  
+  // Click Henderson (scroll back up, click first row)
+  at(20, () => { document.getElementById('pf-scroll').style.transform = 'translateY(0)'; moveCursor(700, 330, 'fast'); });
+  at(21, () => {
+    clickAt(700, 330);
+    document.getElementById('client-row-0').classList.add('click-highlight');
+    // Show drift panel
+    document.getElementById('driftPanel').classList.add('visible');
+  });
+  // Cursor moves to drift panel
+  at(22, () => { moveCursor(1450, 400, 'slow'); });
+  at(23, () => { hoverEl(document.querySelector('.drift-panel .glass')); });
+  at(24.5, () => { unhoverEl(document.querySelector('.drift-panel .glass')); });
+
+  // ── SCENE 2: REPORTS (25–42s) ──
+  // Cursor moves to Reports in sidebar
+  at(25, () => {
+    document.getElementById('driftPanel').classList.remove('visible');
+    document.getElementById('client-row-0').classList.remove('click-highlight');
+    moveCursor(140, 306);
+  });
+  at(25.8, () => { hoverEl(document.getElementById('nav-reports')); });
+  at(26.3, () => {
+    clickAt(140, 306);
+    unhoverEl(document.getElementById('nav-reports'));
+    switchPanel('reports');
+  });
+  
+  // Hover over report cards
+  at(28, () => { moveCursor(500, 280, 'slow'); });
+  at(29.5, () => { hoverEl(document.getElementById('rpt-card-0')); moveCursor(500, 320); });
+  at(31, () => { unhoverEl(document.getElementById('rpt-card-0')); hoverEl(document.getElementById('rpt-card-1')); moveCursor(830, 320); });
+  at(32.5, () => { unhoverEl(document.getElementById('rpt-card-1')); hoverEl(document.getElementById('rpt-card-2')); moveCursor(1160, 320); });
+  at(34, () => { unhoverEl(document.getElementById('rpt-card-2')); moveCursor(500, 500); });
+  at(35, () => { hoverEl(document.getElementById('rpt-card-3')); });
+  at(36, () => { unhoverEl(document.getElementById('rpt-card-3')); });
+  
+  // Click Henderson report to expand preview
+  at(36.5, () => { moveCursor(500, 300, 'fast'); });
+  at(37.3, () => {
+    clickAt(500, 300);
+    hoverEl(document.getElementById('rpt-card-0'));
+    document.getElementById('rptPreview').classList.add('visible');
+  });
+  at(38, () => { unhoverEl(document.getElementById('rpt-card-0')); });
+  // Cursor scans the preview
+  at(38.5, () => { moveCursor(600, 780, 'slow'); });
+  at(40, () => { moveCursor(1000, 780); });
+  at(41.5, () => { moveCursor(1400, 780); });
+
+  // ── SCENE 3: PROSPECTS (42–55s) ──
+  at(42, () => {
+    document.getElementById('rptPreview').classList.remove('visible');
+    moveCursor(140, 268);
+  });
+  at(42.8, () => { hoverEl(document.getElementById('nav-clients')); });
+  at(43.3, () => {
+    clickAt(140, 268);
+    unhoverEl(document.getElementById('nav-clients'));
+    switchPanel('clients');
+  });
+  
+  // Hover prospect cards
+  at(44.5, () => { moveCursor(500, 200, 'slow'); });
+  at(46, () => { hoverEl(document.getElementById('prospect-0')); moveCursor(500, 230); });
+  at(47.5, () => { unhoverEl(document.getElementById('prospect-0')); hoverEl(document.getElementById('prospect-1')); moveCursor(500, 340); });
+  at(49, () => { unhoverEl(document.getElementById('prospect-1')); hoverEl(document.getElementById('prospect-2')); moveCursor(500, 440); });
+  at(50, () => { unhoverEl(document.getElementById('prospect-2')); });
+  
+  // Click first prospect to show drip panel
+  at(50.5, () => { moveCursor(500, 230, 'fast'); });
+  at(51, () => {
+    clickAt(500, 230);
+    document.getElementById('prospect-0').classList.add('hover-highlight');
+    document.getElementById('dripPanel').classList.add('visible');
+  });
+  at(52, () => { moveCursor(1100, 350, 'slow'); });
+  at(53, () => { moveCursor(1100, 500); });
+  at(54.5, () => { document.getElementById('prospect-0').classList.remove('hover-highlight'); });
+
+  // ── SCENE 4: COMPLIANCE (55–72s) ──
+  at(55, () => {
+    document.getElementById('dripPanel').classList.remove('visible');
+    moveCursor(140, 344);
+  });
+  at(55.8, () => { hoverEl(document.getElementById('nav-compliance')); });
+  at(56.3, () => {
+    clickAt(140, 344);
+    unhoverEl(document.getElementById('nav-compliance'));
+    switchPanel('compliance');
+  });
+  
+  // Hover over meeting notes
+  at(58, () => { moveCursor(600, 250, 'slow'); });
+  at(59, () => { hoverEl(document.getElementById('comp-meet-0')); });
+  at(60.5, () => { unhoverEl(document.getElementById('comp-meet-0')); hoverEl(document.getElementById('comp-meet-1')); moveCursor(600, 310); });
+  at(62, () => { unhoverEl(document.getElementById('comp-meet-1')); hoverEl(document.getElementById('comp-meet-2')); moveCursor(600, 370); });
+  at(63.5, () => { unhoverEl(document.getElementById('comp-meet-2')); });
+  
+  // Move to audit trail
+  at(64, () => { moveCursor(1200, 350, 'slow'); });
+  at(65.5, () => { hoverEl(document.getElementById('comp-audit-0')); });
+  at(67, () => { unhoverEl(document.getElementById('comp-audit-0')); hoverEl(document.getElementById('comp-audit-1')); moveCursor(1200, 420); });
+  at(68.5, () => { unhoverEl(document.getElementById('comp-audit-1')); hoverEl(document.getElementById('comp-audit-2')); moveCursor(1200, 490); });
+  at(70, () => { unhoverEl(document.getElementById('comp-audit-2')); hoverEl(document.getElementById('comp-audit-3')); moveCursor(1200, 560); });
+  at(71.5, () => { unhoverEl(document.getElementById('comp-audit-3')); });
+
+  // ── SCENE 5: COST + CTA (72–90s) ──
+  at(72, () => { hideCursor(); switchPanel('cost'); });
+  
+  // Reveal stat cards one by one
+  const costCards = () => document.querySelectorAll('#cost-stats .glass');
+  at(73, () => { const cards = costCards(); if(cards[0]) revealEl(cards[0]); });
+  at(74, () => { const cards = costCards(); if(cards[1]) revealEl(cards[1]); });
+  at(75, () => { const cards = costCards(); if(cards[2]) revealEl(cards[2]); });
+  at(76, () => { const cards = costCards(); if(cards[3]) revealEl(cards[3]); });
+  at(77, () => { const cards = costCards(); if(cards[4]) revealEl(cards[4]); });
+  
+  // Time saved
+  at(78.5, () => {
+    const el = document.getElementById('cost-time');
+    el.style.transition = 'opacity 0.6s ease';
+    el.style.opacity = '1';
+  });
+  
+  // Cost comparison
+  at(80.5, () => {
+    const el = document.getElementById('cost-compare');
+    el.style.transition = 'opacity 0.8s ease';
+    el.style.opacity = '1';
+  });
+  at(82, () => { document.getElementById('cost-ai-card').classList.add('glow'); });
+  
+  // Savings
+  at(84, () => {
+    const el = document.getElementById('cost-savings');
+    el.style.transition = 'opacity 0.8s ease';
+    el.style.opacity = '1';
+  });
+  
+  // Transition to CTA
+  at(86, () => {
+    document.getElementById('dashboard').style.transition = 'opacity 1s ease';
+    document.getElementById('dashboard').style.opacity = '0';
+    document.getElementById('ctaOverlay').classList.add('visible');
+  });
+  at(87, () => {
+    const el = document.getElementById('ctaLogo');
+    el.style.transition = 'opacity 1s ease'; el.style.opacity = '1';
+  });
+  at(88, () => {
+    const el = document.getElementById('ctaTagline');
+    el.style.transition = 'opacity 0.8s ease'; el.style.opacity = '1';
+  });
+  at(89, () => {
+    document.getElementById('ctaUrl').style.transition = 'opacity 0.8s ease';
+    document.getElementById('ctaUrl').style.opacity = '1';
+    document.getElementById('ctaCta').style.transition = 'opacity 0.8s ease';
+    document.getElementById('ctaCta').style.opacity = '1';
+  });
+}
+
+// ============================================================
+// START
+// ============================================================
 function startPresentation() {
   document.getElementById('playBtn').classList.add('hidden');
-  presentationStartTime = performance.now();
+  startTime = performance.now();
   voiceover.play().catch(() => {});
-  showScene(0);
-  setTimeout(advanceScene, SCENE_DURATIONS[0] * 1000);
   requestAnimationFrame(updateProgress);
-}
-
-// ============================================================
-// SCENE 0: Opening Hook
-// ============================================================
-function initScene0() {
-  const hook = document.getElementById('s0-hook');
-  const logo = document.getElementById('s0-logo');
-  fadeIn(hook, 1500, 1000);
-  fadeOut(hook, 8000, 800);
-  fadeIn(logo, 9500, 1000);
-}
-
-// ============================================================
-// SCENE 1: Portfolio Monitoring
-// ============================================================
-const S1_CLIENTS = [
-  { name: 'Henderson Family Trust', aum: '$4.2M', model: 'Growth 60/40', modelClass: 'tag-growth', drift: '⚠️ 4.2% drift', driftClass: 'badge-warn', review: 'Jan 15' },
-  { name: 'Nakamura & Associates', aum: '$8.7M', model: 'Aggressive 80/20', modelClass: 'tag-aggressive', drift: '✅ Within range', driftClass: 'badge-ok', review: 'Feb 28' },
-  { name: 'The Whitfield Foundation', aum: '$12.1M', model: 'Conservative 30/70', modelClass: 'tag-conservative', drift: '🔴 6.8% drift', driftClass: 'badge-alert', review: 'Dec 3' },
-  { name: 'Chen Family Office', aum: '$6.3M', model: 'Balanced 50/50', modelClass: 'tag-balanced', drift: '✅ Within range', driftClass: 'badge-ok', review: 'Feb 14' },
-  { name: 'Patterson Retirement Trust', aum: '$3.8M', model: 'Income 20/80', modelClass: 'tag-income', drift: '⚠️ 3.1% drift', driftClass: 'badge-warn', review: 'Jan 22' },
-  { name: 'Morrison Estate', aum: '$5.5M', model: 'Growth 60/40', modelClass: 'tag-growth', drift: '✅ Within range', driftClass: 'badge-ok', review: 'Mar 1' },
-  { name: 'Alvarez Family Holdings', aum: '$9.4M', model: 'Aggressive 80/20', modelClass: 'tag-aggressive', drift: '⚠️ 5.7% drift', driftClass: 'badge-warn', review: 'Nov 18' },
-  { name: 'Sullivan Trust', aum: '$7.1M', model: 'Balanced 50/50', modelClass: 'tag-balanced', drift: '✅ Within range', driftClass: 'badge-ok', review: 'Mar 3' },
-  { name: 'Park Family Foundation', aum: '$2.9M', model: 'Conservative 30/70', modelClass: 'tag-conservative', drift: '✅ Within range', driftClass: 'badge-ok', review: 'Feb 20' },
-];
-
-function initScene1() {
-  // Stat cards
-  const statCards = document.querySelectorAll('#s1-stats .stat-card');
-  statCards.forEach((card, i) => fadeIn(card, 500 + i * 400, 500));
-  setTimeout(() => animateCounter(document.getElementById('s1-aum'), 280.4, 2000, '$', 'M'), 600);
-  setTimeout(() => animateCounter(document.getElementById('s1-families'), 200, 2000), 1000);
-  setTimeout(() => animateCounter(document.getElementById('s1-drift'), 7, 1500), 1400);
-  setTimeout(() => animateCounter(document.getElementById('s1-rebal'), 3, 1500), 1800);
-
-  // Client rows
-  const tbody = document.getElementById('s1-tbody');
-  tbody.innerHTML = '';
-  S1_CLIENTS.forEach((c, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td style="font-weight: 600;">${c.name}</td>
-      <td class="text-slate-300">${c.aum}</td>
-      <td><span class="tag ${c.modelClass}">${c.model}</span></td>
-      <td><span class="${c.driftClass}">${c.drift}</span></td>
-      <td class="text-slate-500">${c.review}</td>
-    `;
-    tbody.appendChild(tr);
-    setTimeout(() => tr.classList.add('visible'), 4000 + i * 3500);
-  });
-
-  // Drift alert popup
-  fadeIn(document.getElementById('s1-drift-alert'), 40000, 800);
-}
-
-// ============================================================
-// SCENE 2: Market Intelligence
-// ============================================================
-const S2_EVENTS = [
-  { color: '#f87171', icon: '🔴', title: 'Fed announces 25bp rate hold', impact: 'Bond portfolios, income strategies', time: '38 min ago' },
-  { color: '#facc15', icon: '🟡', title: 'NVDA earnings beat by 12%', impact: 'Tech-heavy growth models', time: '2 hours ago' },
-  { color: '#38bdf8', icon: '🔵', title: 'CAD weakens 1.8% vs USD', impact: 'International allocations', time: '4 hours ago' },
-  { color: '#facc15', icon: '🟡', title: '10Y Treasury yield hits 4.65%', impact: 'Fixed income duration', time: 'yesterday' },
-];
-
-const S2_IMPACTS = [
-  { event: 'Fed rate hold', clients: '34 clients', detail: 'Bond exposure >30%' },
-  { event: 'NVDA earnings', clients: '18 clients', detail: 'Hold NVDA directly' },
-  { event: 'CAD/USD move', clients: '12 clients', detail: '>15% international' },
-];
-
-function initScene2() {
-  const evContainer = document.getElementById('s2-events');
-  evContainer.innerHTML = '';
-  S2_EVENTS.forEach((e, i) => {
-    const item = document.createElement('div');
-    item.className = 'news-item';
-    item.innerHTML = `
-      <div style="font-size: 20px; flex-shrink: 0;">${e.icon}</div>
-      <div style="flex: 1;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-          <span style="font-weight: 600; font-size: 14px;">${e.title}</span>
-          <span style="font-size: 11px; color: #64748b;">${e.time}</span>
-        </div>
-        <div style="font-size: 12px; color: #94a3b8;">Impact: ${e.impact}</div>
-      </div>
-    `;
-    evContainer.appendChild(item);
-    setTimeout(() => item.classList.add('visible'), 2000 + i * 5000);
-  });
-
-  // Impact cards
-  const impContainer = document.getElementById('s2-impact');
-  impContainer.innerHTML = '';
-  S2_IMPACTS.forEach((imp, i) => {
-    const card = document.createElement('div');
-    card.className = 'news-item';
-    card.innerHTML = `
-      <div style="flex: 1;">
-        <div style="font-size: 13px; color: #94a3b8; margin-bottom: 4px;">${imp.event}</div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 20px; font-weight: 700; color: #0ea5e9;">${imp.clients}</span>
-          <span style="font-size: 12px; color: #64748b;">${imp.detail}</span>
-        </div>
-      </div>
-      <div style="font-size: 11px; padding: 4px 10px; border-radius: 6px; background: rgba(14,165,233,0.15); color: #38bdf8;">Mapped</div>
-    `;
-    impContainer.appendChild(card);
-    setTimeout(() => card.classList.add('visible'), 12000 + i * 4000);
-  });
-
-  // Draft communication
-  fadeIn(document.getElementById('s2-draft'), 30000, 800);
-}
-
-// ============================================================
-// SCENE 3: Quarterly Reports
-// ============================================================
-const S3_REPORTS = [
-  { name: 'Henderson Family Trust', aum: '$4.2M', ret: '+3.8%', color: '#4ade80' },
-  { name: 'Nakamura & Associates', aum: '$8.7M', ret: '+5.2%', color: '#4ade80' },
-  { name: 'The Whitfield Foundation', aum: '$12.1M', ret: '+1.4%', color: '#facc15' },
-  { name: 'Chen Family Office', aum: '$6.3M', ret: '+4.1%', color: '#4ade80' },
-  { name: 'Patterson Retirement Trust', aum: '$3.8M', ret: '+2.6%', color: '#4ade80' },
-  { name: 'Morrison Estate', aum: '$5.5M', ret: '+4.7%', color: '#4ade80' },
-];
-
-function initScene3() {
-  // Counter
-  setTimeout(() => animateCounter(document.getElementById('s3-count'), 200, 4000), 2000);
-
-  // Report cards
-  const grid = document.getElementById('s3-grid');
-  grid.innerHTML = '';
-  S3_REPORTS.forEach((r, i) => {
-    const card = document.createElement('div');
-    card.className = 'report-card';
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-        <div>
-          <div style="font-size: 14px; font-weight: 600;">${r.name}</div>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${r.aum}</div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-size: 18px; font-weight: 700; color: ${r.color};">${r.ret}</div>
-          <div style="font-size: 11px; color: #64748b;">Q1 Return</div>
-        </div>
-      </div>
-      <div style="display: flex; gap: 6px;">
-        <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #4ade80;">✅ Generated</span>
-        <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(14,165,233,0.15); color: #38bdf8;">📊 5 sections</span>
-        <span style="font-size: 10px; padding: 3px 8px; border-radius: 4px; background: rgba(168,85,247,0.15); color: #c084fc;">Personalized</span>
-      </div>
-    `;
-    grid.appendChild(card);
-    setTimeout(() => card.classList.add('visible'), 5000 + i * 3000);
-  });
-
-  // Preview
-  fadeIn(document.getElementById('s3-preview'), 30000, 800);
-}
-
-// ============================================================
-// SCENE 4: Prospect Nurture
-// ============================================================
-const S4_PROSPECTS = [
-  { name: 'Dr. Rachel Okafor', source: 'Referred by Nakamura', assets: '$2.1M est.', stage: 'Educational drip (Email 3/6)', stageColor: '#0ea5e9' },
-  { name: 'James & Linda Pruitt', source: 'Seminar attendee', assets: '$1.5M est.', stage: 'Meeting scheduled Mar 14', stageColor: '#4ade80' },
-  { name: 'The Kaplan Group', source: 'COI referral (attorney)', assets: '$5.8M est.', stage: 'Initial outreach sent', stageColor: '#fb923c' },
-];
-
-const S4_DRIP = [
-  { title: 'Welcome + Investment philosophy', status: '✅ Sent, opened', done: true },
-  { title: 'Retirement income planning', status: '✅ Sent, opened, clicked', done: true },
-  { title: 'Market outlook for your portfolio', status: '📤 Sending today', done: false, active: true },
-  { title: 'Case study: A family like yours', status: 'Scheduled', done: false },
-  { title: 'Complimentary portfolio review', status: 'Scheduled', done: false },
-  { title: 'Personal invitation from advisor', status: 'Scheduled', done: false },
-];
-
-function initScene4() {
-  // Stats
-  const statEls = document.querySelectorAll('#s4-stats .glass');
-  statEls.forEach((el, i) => fadeIn(el, 1000 + i * 500, 500));
-
-  // Prospect cards
-  const container = document.getElementById('s4-prospects');
-  container.innerHTML = '';
-  S4_PROSPECTS.forEach((p, i) => {
-    const card = document.createElement('div');
-    card.className = 'prospect-card';
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-        <div>
-          <div style="font-size: 15px; font-weight: 600;">${p.name}</div>
-          <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">${p.source}</div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-size: 14px; font-weight: 600; color: #0ea5e9;">${p.assets}</div>
-        </div>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${p.stageColor};"></div>
-        <span style="font-size: 12px; color: ${p.stageColor};">${p.stage}</span>
-      </div>
-    `;
-    container.appendChild(card);
-    setTimeout(() => card.classList.add('visible'), 3000 + i * 5000);
-  });
-
-  // Drip sequence
-  const dripContainer = document.getElementById('s4-drip');
-  fadeIn(dripContainer, 8000, 600);
-  const seqContainer = document.getElementById('s4-sequence');
-  seqContainer.innerHTML = '';
-  S4_DRIP.forEach((step, i) => {
-    const el = document.createElement('div');
-    el.style.cssText = `display: flex; align-items: flex-start; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); opacity: 0;`;
-    const dotColor = step.done ? '#4ade80' : step.active ? '#0ea5e9' : '#334155';
-    const lineColor = step.done ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.06)';
-    el.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0;">
-        <div style="width: 12px; height: 12px; border-radius: 50%; background: ${dotColor}; ${step.active ? 'box-shadow: 0 0 10px rgba(14,165,233,0.5);' : ''}"></div>
-      </div>
-      <div>
-        <div style="font-size: 13px; font-weight: 500; color: ${step.done || step.active ? '#cbd5e1' : '#64748b'};">Email ${i + 1}: ${step.title}</div>
-        <div style="font-size: 11px; color: ${step.done ? '#4ade80' : step.active ? '#0ea5e9' : '#475569'}; margin-top: 2px;">${step.status}</div>
-      </div>
-    `;
-    seqContainer.appendChild(el);
-    setTimeout(() => { el.style.transition = 'opacity 0.4s ease'; el.style.opacity = '1'; }, 12000 + i * 3000);
-  });
-}
-
-// ============================================================
-// SCENE 5: Compliance
-// ============================================================
-const S5_MEETINGS = [
-  { date: 'Mar 5', title: 'Henderson Annual Review', status: 'Generated ✅', filed: 'Filed to CRM ✅' },
-  { date: 'Mar 3', title: 'Whitfield Foundation Rebalancing', status: 'Generated ✅', filed: 'Filed to CRM ✅' },
-  { date: 'Mar 1', title: 'Morrison Estate Check-in', status: 'Generated ✅', filed: 'Filed to CRM ✅' },
-  { date: 'Feb 28', title: 'Nakamura Quarterly Review', status: 'Generated ✅', filed: 'Filed to CRM ✅' },
-  { date: 'Feb 25', title: 'Patterson Trust Update', status: 'Generated ✅', filed: 'Filed to CRM ✅' },
-];
-
-const S5_AUDIT = [
-  { action: 'Trade recommendation generated', detail: 'Henderson — Sell $176K US equities', time: 'Today 9:14 AM' },
-  { action: 'Advisor approval received', detail: 'Sarah Mitchell approved via dashboard', time: 'Today 10:02 AM' },
-  { action: 'Trade executed', detail: 'Custodian confirmation received', time: 'Today 10:45 AM' },
-  { action: 'Documentation filed', detail: 'Trade memo + rationale → CRM', time: 'Today 10:46 AM' },
-];
-
-function initScene5() {
-  // Compliance score
-  fadeIn(document.getElementById('s5-score'), 2000, 600);
-
-  // Meeting notes
-  const meetContainer = document.getElementById('s5-meetings');
-  meetContainer.innerHTML = '';
-  S5_MEETINGS.forEach((m, i) => {
-    const row = document.createElement('div');
-    row.className = 'compliance-row';
-    row.innerHTML = `
-      <div style="width: 60px; font-size: 12px; color: #64748b; font-weight: 500;">${m.date}</div>
-      <div style="flex: 1;">
-        <div style="font-size: 13px; font-weight: 500;">${m.title}</div>
-      </div>
-      <div style="display: flex; gap: 10px; font-size: 11px;">
-        <span style="color: #4ade80;">${m.status}</span>
-        <span style="color: #38bdf8;">${m.filed}</span>
-      </div>
-    `;
-    meetContainer.appendChild(row);
-    setTimeout(() => row.classList.add('visible'), 3000 + i * 3000);
-  });
-
-  // ADV
-  const advContainer = document.getElementById('s5-adv');
-  advContainer.innerHTML = '';
-  const advCard = document.createElement('div');
-  advCard.className = 'compliance-row';
-  advCard.innerHTML = `
-    <div style="flex: 1;">
-      <div style="font-size: 13px; font-weight: 500;">Form ADV Part 2A</div>
-      <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Last updated: Jan 15, 2026 · Next review: Jul 15, 2026</div>
-    </div>
-    <div style="display: flex; gap: 10px; font-size: 11px;">
-      <span style="color: #4ade80;">Material changes: 0</span>
-      <span class="badge-ok">✅ Current</span>
-    </div>
-  `;
-  advContainer.appendChild(advCard);
-  setTimeout(() => advCard.classList.add('visible'), 18000);
-
-  // Audit trail
-  const auditContainer = document.getElementById('s5-audit');
-  auditContainer.innerHTML = '';
-  S5_AUDIT.forEach((a, i) => {
-    const row = document.createElement('div');
-    row.className = 'compliance-row';
-    row.innerHTML = `
-      <div style="width: 16px; display: flex; flex-direction: column; align-items: center;">
-        <div style="width: 8px; height: 8px; border-radius: 50%; background: #0ea5e9;"></div>
-        ${i < S5_AUDIT.length - 1 ? '<div style="width: 2px; height: 30px; background: rgba(14,165,233,0.2); margin-top: 4px;"></div>' : ''}
-      </div>
-      <div style="flex: 1;">
-        <div style="font-size: 13px; font-weight: 500;">${a.action}</div>
-        <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">${a.detail}</div>
-      </div>
-      <div style="font-size: 11px; color: #64748b;">${a.time}</div>
-    `;
-    auditContainer.appendChild(row);
-    setTimeout(() => row.classList.add('visible'), 24000 + i * 3000);
-  });
-}
-
-// ============================================================
-// SCENE 6: Bottom Line
-// ============================================================
-function initScene6() {
-  const statCards = document.querySelectorAll('#s6-stats .glass');
-  statCards.forEach((card, i) => {
-    fadeIn(card, 1000 + i * 1500, 500);
-  });
-  setTimeout(() => animateCounter(document.getElementById('s6-s1'), 200, 2000), 1500);
-  setTimeout(() => animateCounter(document.getElementById('s6-s2'), 1200, 2000, '', '+'), 3000);
-  setTimeout(() => animateCounter(document.getElementById('s6-s3'), 847, 2000), 4500);
-  setTimeout(() => animateCounter(document.getElementById('s6-s4'), 24, 1500), 6000);
-
-  fadeIn(document.getElementById('s6-time'), 12000, 800);
-  fadeIn(document.getElementById('s6-cost'), 18000, 800);
-  fadeIn(document.getElementById('s6-savings'), 28000, 800);
-}
-
-// ============================================================
-// SCENE 7: CTA
-// ============================================================
-function initScene7() {
-  fadeIn(document.getElementById('s7-logo'), 2000, 1000);
-  fadeIn(document.getElementById('s7-tagline'), 5000, 800);
-  fadeIn(document.getElementById('s7-url'), 8000, 800);
-  fadeIn(document.getElementById('s7-cta'), 11000, 800);
-  setTimeout(() => {
-    document.querySelectorAll('.scene').forEach(s => {
-      s.style.transition = 'opacity 1.5s ease';
-      s.style.opacity = '0';
-    });
-  }, 18000);
+  runTimeline();
 }
 </script>
 </body>
