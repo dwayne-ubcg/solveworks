@@ -1,6 +1,7 @@
 #!/bin/bash
 # Brody SolveWorks dashboard sync
-# Fetches Calendly events + invitees, updates data files, git pushes
+# Fetches Calendly events + invitees, updates data files, git pull --rebase origin main 2>&1 || true
+  git pushes
 # Runs every 30 minutes via cron on Brody's Mac Mini
 
 set -e
@@ -104,6 +105,7 @@ if git diff --cached --quiet; then
   echo "[$(date)] No changes to push"
 else
   git commit -m "sync: brody data $(date +%Y-%m-%d_%H:%M)"
+  git pull --rebase origin main 2>&1 || true
   git push
   echo "[$(date)] Pushed updates"
 fi
