@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>Summit Staffing Partners — Owner Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; user-select:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
+.animations-paused * { animation-play-state:paused !important; transition:none !important; }
+#app { position:absolute; top:0; left:0; width:1920px; height:1032px; opacity:0; }
+
+/* Play Button */
+#playBtn { position:fixed; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+#playBtn .play-circle { width:120px; height:120px; border-radius:50%; background:rgba(14,165,233,0.15); border:3px solid #0ea5e9; display:flex; align-items:center; justify-content:center; transition:all 0.3s; }
+#playBtn:hover .play-circle { background:rgba(14,165,233,0.3); transform:scale(1.1); }
+#playBtn .play-circle span { font-size:48px; color:#0ea5e9; margin-left:8px; }
+#playBtn .title { margin-top:32px; font-size:28px; font-weight:700; color:white; letter-spacing:1px; }
+#playBtn .subtitle { margin-top:12px; font-size:16px; color:#64748B; }
+.hidden { display:none !important; }
+
+/* Cursor */
+#cursor { position:absolute; z-index:9000; pointer-events:none; width:24px; height:24px; transition:all 0.6s cubic-bezier(0.4,0,0.2,1); }
+#cursor::after { content:''; position:absolute; top:0; left:0; width:0; height:0; border-left:10px solid white; border-top:6px solid transparent; border-bottom:6px solid transparent; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+#cursorRing { position:absolute; top:-12px; left:-12px; width:48px; height:48px; border-radius:50%; border:2px solid rgba(14,165,233,0.6); opacity:0; transform:scale(0.5); pointer-events:none; }
+.cursor-click #cursorRing { opacity:1; transform:scale(1); transition:all 0.3s; }
+
+/* Sidebar */
+#sidebar { position:absolute; left:0; top:0; width:240px; height:1032px; background:#0D1B2A; border-right:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; padding:20px 0; }
+.sidebar-logo { padding:0 24px; margin-bottom:32px; }
+.sidebar-logo h2 { font-size:18px; font-weight:800; color:white; }
+.sidebar-logo span { font-size:11px; color:#64748B; letter-spacing:2px; text-transform:uppercase; }
+.nav-item { padding:12px 24px; display:flex; align-items:center; gap:12px; font-size:14px; color:#64748B; cursor:pointer; transition:all 0.3s; border-left:3px solid transparent; }
+.nav-item.active { color:#0ea5e9; background:rgba(14,165,233,0.08); border-left-color:#0ea5e9; }
+.nav-item .icon { font-size:18px; width:24px; text-align:center; }
+.sidebar-badges { margin-top:auto; padding:16px 24px; display:flex; flex-direction:column; gap:8px; }
+.badge { padding:6px 12px; border-radius:6px; font-size:10px; font-weight:600; text-align:center; letter-spacing:1px; }
+.badge-ceipal { background:rgba(59,130,246,0.15); color:#60A5FA; border:1px solid rgba(59,130,246,0.3); }
+.badge-qb { background:rgba(34,197,94,0.15); color:#4ADE80; border:1px solid rgba(34,197,94,0.3); }
+.badge-zi { background:rgba(168,85,247,0.15); color:#C084FC; border:1px solid rgba(168,85,247,0.3); }
+
+/* Main Content */
+#mainContent { position:absolute; left:240px; top:0; width:1680px; height:1032px; overflow:hidden; }
+.header { padding:20px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); }
+.header h1 { font-size:22px; font-weight:700; color:white; }
+.header .date { font-size:13px; color:#64748B; }
+.header .user-badge { display:flex; align-items:center; gap:10px; }
+.header .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#6366f1); display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; }
+
+/* Content Area */
+.content { padding:24px 32px; }
+
+/* Panels */
+.panel { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:20px; opacity:0; transform:translateY(20px); transition:opacity 0.6s, transform 0.6s; }
+.panel.visible { opacity:1; transform:translateY(0); }
+.panel-title { font-size:13px; font-weight:600; color:#64748B; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:16px; }
+.panel-value { font-size:36px; font-weight:800; color:white; }
+.panel-sub { font-size:13px; color:#64748B; margin-top:4px; }
+.panel-value .up { color:#4ADE80; font-size:14px; font-weight:600; }
+.panel-value .down { color:#F87171; font-size:14px; font-weight:600; }
+
+/* Sections */
+.section { display:none; }
+.section.active { display:block; }
+
+/* Notification */
+#notification { position:absolute; top:80px; right:40px; width:420px; background:#111B2E; border:1px solid rgba(14,165,233,0.3); border-radius:16px; padding:20px; opacity:0; transform:translateX(100px); transition:all 0.5s; z-index:100; box-shadow:0 20px 60px rgba(0,0,0,0.4); }
+#notification.visible { opacity:1; transform:translateX(0); }
+#notification .notif-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+#notification .notif-icon { width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,#0ea5e9,#6366f1); display:flex; align-items:center; justify-content:center; font-size:16px; }
+#notification .notif-title { font-size:14px; font-weight:700; color:white; }
+#notification .notif-time { font-size:11px; color:#64748B; }
+#notification .notif-body { font-size:13px; line-height:1.6; color:#94A3B8; }
+#notification .notif-body strong { color:#E2E8F0; }
+
+/* KPI Row */
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+
+/* Chart bars */
+.chart-bar-container { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+.chart-label { width:80px; font-size:12px; color:#94A3B8; text-align:right; }
+.chart-bar-bg { flex:1; height:28px; background:rgba(255,255,255,0.04); border-radius:6px; overflow:hidden; }
+.chart-bar { height:100%; border-radius:6px; width:0; transition:width 1.2s ease-out; }
+.chart-bar-val { width:60px; font-size:13px; font-weight:600; color:white; }
+
+/* Team table */
+.team-table { width:100%; border-collapse:collapse; }
+.team-table th { font-size:11px; color:#64748B; text-transform:uppercase; letter-spacing:1px; padding:10px 12px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.06); }
+.team-table td { padding:12px; font-size:13px; border-bottom:1px solid rgba(255,255,255,0.03); }
+.team-table .name { font-weight:600; color:white; }
+.team-table .good { color:#4ADE80; }
+.team-table .warn { color:#FBBF24; }
+.team-table .bad { color:#F87171; }
+.rank-badge { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; font-size:11px; font-weight:700; }
+.rank-1 { background:rgba(234,179,8,0.2); color:#FBBF24; }
+.rank-2 { background:rgba(148,163,184,0.2); color:#94A3B8; }
+.rank-3 { background:rgba(180,83,9,0.2); color:#D97706; }
+.rank-other { background:rgba(255,255,255,0.05); color:#64748B; }
+
+/* Pipeline cards */
+.pipeline-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.pipeline-card { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:16px; }
+.pipeline-card .req-title { font-size:14px; font-weight:600; color:white; margin-bottom:4px; }
+.pipeline-card .req-client { font-size:12px; color:#0ea5e9; margin-bottom:8px; }
+.pipeline-card .req-meta { font-size:11px; color:#64748B; }
+.pipeline-card.at-risk { border-color:rgba(248,113,113,0.4); }
+.pipeline-card.at-risk .req-meta .risk { color:#F87171; font-weight:600; }
+.pipeline-card.healthy { border-color:rgba(74,222,128,0.3); }
+
+/* Client profit */
+.client-row { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.client-row .client-name { width:180px; font-size:14px; font-weight:600; color:white; }
+.client-row .client-bar-bg { flex:1; height:24px; background:rgba(255,255,255,0.04); border-radius:6px; overflow:hidden; }
+.client-row .client-bar { height:100%; border-radius:6px; transition:width 1s ease-out; }
+.client-row .client-val { width:100px; text-align:right; font-size:14px; font-weight:700; color:white; }
+.client-row .client-margin { width:60px; text-align:right; font-size:12px; }
+
+/* AI Activity */
+.ai-log { display:flex; flex-direction:column; gap:12px; }
+.ai-log-item { display:flex; align-items:center; gap:16px; padding:14px 16px; background:rgba(14,165,233,0.04); border:1px solid rgba(14,165,233,0.1); border-radius:10px; opacity:0; transform:translateX(-20px); transition:all 0.4s; }
+.ai-log-item.visible { opacity:1; transform:translateX(0); }
+.ai-log-item .ai-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.ai-log-item .ai-text { font-size:13px; color:#94A3B8; flex:1; }
+.ai-log-item .ai-text strong { color:white; }
+.ai-log-item .ai-count { font-size:22px; font-weight:800; color:#0ea5e9; }
+
+/* Count-up animation */
+.count-up { display:inline-block; }
+
+/* Close screen */
+#closeScreen { position:absolute; top:0; left:0; width:1920px; height:1080px; background:#0A1628; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; z-index:8000; pointer-events:none; transition:opacity 0.8s; }
+#closeScreen.visible { opacity:1; }
+#closeScreen .close-text { font-size:28px; font-weight:300; color:#94A3B8; max-width:700px; text-align:center; line-height:1.6; }
+#closeScreen .close-brand { margin-top:40px; font-size:42px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#6366f1); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+#closeScreen .close-tagline { margin-top:12px; font-size:16px; color:#64748B; letter-spacing:3px; text-transform:uppercase; }
+</style>
+</head>
+<body>
+
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"><span>▶</span></div>
+  <div class="title">Summit Staffing Partners</div>
+  <div class="subtitle">Owner Dashboard Demo — 90 seconds</div>
+</div>
+
+<div id="cursor"><div id="cursorRing"></div></div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <h2>Summit Staffing</h2>
+      <span>Partners</span>
+    </div>
+    <div class="nav-item active" data-nav="dashboard"><span class="icon">📊</span> Dashboard</div>
+    <div class="nav-item" data-nav="pipeline"><span class="icon">🔄</span> Pipeline</div>
+    <div class="nav-item" data-nav="team"><span class="icon">👥</span> Team</div>
+    <div class="nav-item" data-nav="clients"><span class="icon">🏢</span> Clients</div>
+    <div class="nav-item" data-nav="financials"><span class="icon">💰</span> Financials</div>
+    <div class="nav-item" data-nav="ai"><span class="icon">🤖</span> AI Activity</div>
+    <div class="sidebar-badges">
+      <div class="badge badge-ceipal">⚡ CEIPAL ATS</div>
+      <div class="badge badge-qb">📗 QuickBooks Online</div>
+      <div class="badge badge-zi">🔍 ZoomInfo Pro</div>
+    </div>
+  </div>
+
+  <div id="mainContent">
+    <div class="header">
+      <div>
+        <h1 id="pageTitle">Owner Dashboard</h1>
+        <div class="date">Friday, March 7, 2026 · 7:02 AM</div>
+      </div>
+      <div class="user-badge">
+        <span style="font-size:13px;color:#64748B;">Sarah Mitchell, CEO</span>
+        <div class="avatar">SM</div>
+      </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification">
+      <div class="notif-header">
+        <div class="notif-icon">🤖</div>
+        <div>
+          <div class="notif-title">Morning Briefing</div>
+          <div class="notif-time">Just now · via Telegram</div>
+        </div>
+      </div>
+      <div class="notif-body">
+        <strong>3 placements confirmed</strong> overnight. <strong>$47K in fees locked.</strong><br>
+        2 invoices overdue (Meridian Health, TechForge).<br>
+        🎉 <strong>Maria hit her monthly target</strong> — 8 placements, $112K billed.
+      </div>
+    </div>
+
+    <!-- Section: Dashboard / Revenue -->
+    <div class="section active" id="sec-dashboard">
+      <div class="content">
+        <div class="kpi-row">
+          <div class="panel" id="kpi1">
+            <div class="panel-title">Monthly Revenue</div>
+            <div class="panel-value">$<span class="count-up" data-target="347">0</span>K <span class="up">↑ 18%</span></div>
+            <div class="panel-sub">vs $294K last month</div>
+          </div>
+          <div class="panel" id="kpi2">
+            <div class="panel-title">Gross Profit Margin</div>
+            <div class="panel-value"><span class="count-up" data-target="42">0</span>% <span class="up">↑ 3.2%</span></div>
+            <div class="panel-sub">Target: 40%</div>
+          </div>
+          <div class="panel" id="kpi3">
+            <div class="panel-title">Outstanding Invoices</div>
+            <div class="panel-value">$<span class="count-up" data-target="89">0</span>K <span class="down">2 overdue</span></div>
+            <div class="panel-sub">$34K past 30 days</div>
+          </div>
+          <div class="panel" id="kpi4">
+            <div class="panel-title">Cash Flow Forecast</div>
+            <div class="panel-value">$<span class="count-up" data-target="215">0</span>K</div>
+            <div class="panel-sub">Next 30 days projected</div>
+          </div>
+        </div>
+        <div class="panel" id="revenueChart" style="margin-bottom:20px;">
+          <div class="panel-title">Revenue by Recruiter — March</div>
+          <div class="chart-bar-container"><div class="chart-label">Maria S.</div><div class="chart-bar-bg"><div class="chart-bar" data-width="92%" style="background:linear-gradient(90deg,#0ea5e9,#38bdf8);"></div></div><div class="chart-bar-val">$112K</div></div>
+          <div class="chart-bar-container"><div class="chart-label">James T.</div><div class="chart-bar-bg"><div class="chart-bar" data-width="74%" style="background:linear-gradient(90deg,#6366f1,#818cf8);"></div></div><div class="chart-bar-val">$89K</div></div>
+          <div class="chart-bar-container"><div class="chart-label">Rachel K.</div><div class="chart-bar-bg"><div class="chart-bar" data-width="61%" style="background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="chart-bar-val">$74K</div></div>
+          <div class="chart-bar-container"><div class="chart-label">David L.</div><div class="chart-bar-bg"><div class="chart-bar" data-width="42%" style="background:linear-gradient(90deg,#ec4899,#f472b6);"></div></div><div class="chart-bar-val">$51K</div></div>
+          <div class="chart-bar-container"><div class="chart-label">Priya N.</div><div class="chart-bar-bg"><div class="chart-bar" data-width="18%" style="background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div><div class="chart-bar-val">$21K</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Team -->
+    <div class="section" id="sec-team">
+      <div class="content">
+        <div class="panel" id="teamPanel">
+          <div class="panel-title">Team Performance — March 2026</div>
+          <table class="team-table">
+            <tr><th></th><th>Recruiter</th><th>Placements</th><th>Pipeline Value</th><th>Fill Rate</th><th>Avg Time-to-Fill</th><th>Status</th></tr>
+            <tr><td><span class="rank-badge rank-1">1</span></td><td class="name">Maria Santos</td><td>8</td><td>$184K</td><td class="good">94%</td><td class="good">18 days</td><td class="good">🔥 Target Hit</td></tr>
+            <tr><td><span class="rank-badge rank-2">2</span></td><td class="name">James Torres</td><td>6</td><td>$142K</td><td class="good">87%</td><td>22 days</td><td class="good">On Track</td></tr>
+            <tr><td><span class="rank-badge rank-3">3</span></td><td class="name">Rachel Kim</td><td>5</td><td>$118K</td><td>79%</td><td>25 days</td><td>Steady</td></tr>
+            <tr><td><span class="rank-badge rank-other">4</span></td><td class="name">David Liu</td><td>3</td><td>$87K</td><td class="warn">68%</td><td class="warn">31 days</td><td class="warn">⚠️ Needs Coaching</td></tr>
+            <tr><td><span class="rank-badge rank-other">5</span></td><td class="name">Priya Nair</td><td>1</td><td>$43K</td><td class="bad">52%</td><td class="bad">38 days</td><td class="bad">🆕 Ramping Up</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Pipeline -->
+    <div class="section" id="sec-pipeline">
+      <div class="content">
+        <div class="kpi-row" style="grid-template-columns:repeat(3,1fr); margin-bottom:24px;">
+          <div class="panel" id="pipeKpi1">
+            <div class="panel-title">Total Pipeline Value</div>
+            <div class="panel-value">$<span class="count-up" data-target="1240">0</span>K</div>
+            <div class="panel-sub">34 open requisitions</div>
+          </div>
+          <div class="panel" id="pipeKpi2">
+            <div class="panel-title">At Risk (Aging 30+ Days)</div>
+            <div class="panel-value" style="color:#F87171;"><span class="count-up" data-target="6">0</span> reqs</div>
+            <div class="panel-sub">$287K at risk</div>
+          </div>
+          <div class="panel" id="pipeKpi3">
+            <div class="panel-title">Predicted Closings</div>
+            <div class="panel-value" style="color:#4ADE80;"><span class="count-up" data-target="11">0</span> this month</div>
+            <div class="panel-sub">$418K projected fees</div>
+          </div>
+        </div>
+        <div class="panel" id="pipelineCards">
+          <div class="panel-title">Active Requisitions</div>
+          <div class="pipeline-grid">
+            <div class="pipeline-card healthy"><div class="req-title">Sr. DevOps Engineer</div><div class="req-client">Meridian Health</div><div class="req-meta">12 candidates · 3 interviews · <span style="color:#4ADE80;">Day 8</span></div></div>
+            <div class="pipeline-card healthy"><div class="req-title">Product Manager</div><div class="req-client">NovaTech Solutions</div><div class="req-meta">8 candidates · 2 interviews · <span style="color:#4ADE80;">Day 11</span></div></div>
+            <div class="pipeline-card at-risk"><div class="req-title">VP of Engineering</div><div class="req-client">Apex Industries</div><div class="req-meta">4 candidates · 0 interviews · <span class="risk">Day 34 ⚠️</span></div></div>
+            <div class="pipeline-card healthy"><div class="req-title">Data Analyst</div><div class="req-client">CloudBridge Inc.</div><div class="req-meta">15 candidates · 4 interviews · <span style="color:#4ADE80;">Day 6</span></div></div>
+            <div class="pipeline-card at-risk"><div class="req-title">Sales Director</div><div class="req-client">TechForge</div><div class="req-meta">3 candidates · 1 interview · <span class="risk">Day 41 ⚠️</span></div></div>
+            <div class="pipeline-card healthy"><div class="req-title">UX Designer</div><div class="req-client">Bright Path Labs</div><div class="req-meta">9 candidates · 2 interviews · <span style="color:#4ADE80;">Day 14</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Clients -->
+    <div class="section" id="sec-clients">
+      <div class="content">
+        <div class="panel" id="clientPanel">
+          <div class="panel-title">Client Profitability — Gross Profit YTD</div>
+          <div class="client-row"><div class="client-name">Meridian Health</div><div class="client-bar-bg"><div class="client-bar" data-width="95%" style="background:linear-gradient(90deg,#4ADE80,#22c55e);"></div></div><div class="client-val">$218K</div><div class="client-margin good">44%</div></div>
+          <div class="client-row"><div class="client-name">NovaTech Solutions</div><div class="client-bar-bg"><div class="client-bar" data-width="78%" style="background:linear-gradient(90deg,#0ea5e9,#38bdf8);"></div></div><div class="client-val">$179K</div><div class="client-margin good">41%</div></div>
+          <div class="client-row"><div class="client-name">CloudBridge Inc.</div><div class="client-bar-bg"><div class="client-bar" data-width="62%" style="background:linear-gradient(90deg,#6366f1,#818cf8);"></div></div><div class="client-val">$143K</div><div class="client-margin">38%</div></div>
+          <div class="client-row"><div class="client-name">Bright Path Labs</div><div class="client-bar-bg"><div class="client-bar" data-width="48%" style="background:linear-gradient(90deg,#8b5cf6,#a78bfa);"></div></div><div class="client-val">$110K</div><div class="client-margin">36%</div></div>
+          <div class="client-row"><div class="client-name">TechForge</div><div class="client-bar-bg"><div class="client-bar" data-width="35%" style="background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div></div><div class="client-val">$81K</div><div class="client-margin warn">28%</div></div>
+          <div class="client-row"><div class="client-name">Apex Industries</div><div class="client-bar-bg"><div class="client-bar" data-width="22%" style="background:linear-gradient(90deg,#F87171,#ef4444);"></div></div><div class="client-val">$52K</div><div class="client-margin bad">19%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: AI Activity -->
+    <div class="section" id="sec-ai">
+      <div class="content">
+        <div class="panel" id="aiPanel">
+          <div class="panel-title">AI Actions — Overnight (11 PM – 7 AM)</div>
+          <div class="ai-log">
+            <div class="ai-log-item" data-delay="0"><div class="ai-icon" style="background:rgba(168,85,247,0.15);">🔍</div><div class="ai-text">Sourced <strong>340 candidates</strong> from ZoomInfo matching 12 open reqs</div><div class="ai-count">340</div></div>
+            <div class="ai-log-item" data-delay="200"><div class="ai-icon" style="background:rgba(14,165,233,0.15);">📧</div><div class="ai-text">Sent <strong>89 outreach emails</strong> via CEIPAL sequences</div><div class="ai-count">89</div></div>
+            <div class="ai-log-item" data-delay="400"><div class="ai-icon" style="background:rgba(74,222,128,0.15);">📅</div><div class="ai-text">Scheduled <strong>12 interviews</strong> with qualified candidates</div><div class="ai-count">12</div></div>
+            <div class="ai-log-item" data-delay="600"><div class="ai-icon" style="background:rgba(251,191,36,0.15);">🔔</div><div class="ai-text">Followed up on <strong>6 no-responses</strong> from prior outreach</div><div class="ai-count">6</div></div>
+            <div class="ai-log-item" data-delay="800"><div class="ai-icon" style="background:rgba(236,72,153,0.15);">✅</div><div class="ai-text">Confirmed <strong>3 placements</strong> and updated QuickBooks invoices</div><div class="ai-count">3</div></div>
+            <div class="ai-log-item" data-delay="1000"><div class="ai-icon" style="background:rgba(99,102,241,0.15);">📊</div><div class="ai-text">Generated morning briefing and sent via <strong>Telegram</strong></div><div class="ai-count">1</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Close Screen -->
+<div id="closeScreen">
+  <div class="close-text">This is what running a staffing firm looks like<br>when AI handles the grind.</div>
+  <div class="close-brand">SolveWorks</div>
+  <div class="close-tagline">Your AI. Only yours.</div>
+</div>
+
+<script>
+// Pause-aware delay
+window.__demoPaused = false;
+function delay(ms) {
+  return new Promise(resolve => {
+    let remaining = ms;
+    let start = Date.now();
+    function tick() {
+      if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
+      let elapsed = Date.now() - start;
+      remaining -= elapsed;
+      if (remaining <= 0) { resolve(); }
+      else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
+    }
+    setTimeout(tick, Math.min(ms, 50));
+  });
+}
+
+var voiceover = new Audio('voiceover.mp3');
+var cursor = document.getElementById('cursor');
+cursor.style.left = '960px';
+cursor.style.top = '540px';
+
+function moveCursor(x, y) {
+  cursor.style.left = x + 'px';
+  cursor.style.top = y + 'px';
+}
+
+function clickCursor() {
+  cursor.classList.add('cursor-click');
+  setTimeout(() => cursor.classList.remove('cursor-click'), 400);
+}
+
+function setNav(name) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector('[data-nav="'+name+'"]').classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  var titles = {dashboard:'Owner Dashboard',team:'Team Performance',pipeline:'Pipeline Health',clients:'Client Profitability',ai:'AI Activity'};
+  document.getElementById('pageTitle').textContent = titles[name] || 'Dashboard';
+}
+
+function showPanels(ids) {
+  ids.forEach((id, i) => {
+    setTimeout(() => {
+      var el = document.getElementById(id);
+      if (el) el.classList.add('visible');
+    }, i * 200);
+  });
+}
+
+function animateBars(container) {
+  var bars = (container || document).querySelectorAll('.chart-bar[data-width]');
+  bars.forEach((b, i) => {
+    setTimeout(() => { b.style.width = b.getAttribute('data-width'); }, i * 150);
+  });
+}
+
+function animateClientBars() {
+  document.querySelectorAll('.client-bar[data-width]').forEach((b, i) => {
+    setTimeout(() => { b.style.width = b.getAttribute('data-width'); }, i * 150);
+  });
+}
+
+function countUp(el, target, duration) {
+  var start = 0, startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var progress = Math.min((ts - startTime) / duration, 1);
+    el.textContent = Math.floor(progress * target);
+    if (progress < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(step);
+}
+
+function animateCounts(container) {
+  (container || document).querySelectorAll('.count-up[data-target]').forEach(el => {
+    countUp(el, parseInt(el.getAttribute('data-target')), 1200);
+  });
+}
+
+function showAiLogs() {
+  document.querySelectorAll('.ai-log-item').forEach((item, i) => {
+    setTimeout(() => item.classList.add('visible'), i * 300);
+  });
+}
+
+async function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  document.getElementById('app').style.opacity = '1';
+
+  try { await voiceover.play(); } catch(e) {}
+
+  // Scene 1: Morning briefing notification (0-12s)
+  moveCursor(1200, 300);
+  await delay(500);
+  document.getElementById('notification').classList.add('visible');
+  await delay(11500);
+
+  // Scene 2: Revenue Dashboard (12-28s)
+  document.getElementById('notification').classList.remove('visible');
+  await delay(300);
+  moveCursor(120, 180);
+  await delay(400);
+  clickCursor();
+  setNav('dashboard');
+  showPanels(['kpi1','kpi2','kpi3','kpi4']);
+  animateCounts(document.getElementById('sec-dashboard'));
+  await delay(1500);
+  showPanels(['revenueChart']);
+  animateBars(document.getElementById('revenueChart'));
+  moveCursor(800, 500);
+  await delay(6000);
+  moveCursor(1100, 400);
+  await delay(6000);
+
+  // Scene 3: Team Performance (28-42s)
+  moveCursor(120, 260);
+  await delay(400);
+  clickCursor();
+  setNav('team');
+  showPanels(['teamPanel']);
+  moveCursor(800, 350);
+  await delay(5000);
+  moveCursor(600, 500);
+  await delay(4000);
+  moveCursor(900, 550);
+  await delay(4000);
+
+  // Scene 4: Pipeline Health (42-55s)
+  moveCursor(120, 220);
+  await delay(400);
+  clickCursor();
+  setNav('pipeline');
+  showPanels(['pipeKpi1','pipeKpi2','pipeKpi3']);
+  animateCounts(document.getElementById('sec-pipeline'));
+  await delay(2000);
+  showPanels(['pipelineCards']);
+  moveCursor(700, 500);
+  await delay(4000);
+  moveCursor(1200, 450);
+  await delay(5000);
+
+  // Scene 5: Client Profitability (55-67s)
+  moveCursor(120, 300);
+  await delay(400);
+  clickCursor();
+  setNav('clients');
+  showPanels(['clientPanel']);
+  animateClientBars();
+  moveCursor(800, 350);
+  await delay(5000);
+  moveCursor(900, 500);
+  await delay(5000);
+
+  // Scene 6: AI Activity (67-82s)
+  moveCursor(120, 380);
+  await delay(400);
+  clickCursor();
+  setNav('ai');
+  showPanels(['aiPanel']);
+  showAiLogs();
+  moveCursor(800, 300);
+  await delay(5000);
+  moveCursor(700, 500);
+  await delay(5000);
+  moveCursor(900, 400);
+  await delay(3000);
+
+  // Scene 7: Close (82-90s)
+  document.getElementById('app').style.transition = 'opacity 1s';
+  document.getElementById('app').style.opacity = '0';
+  cursor.style.display = 'none';
+  await delay(800);
+  document.getElementById('closeScreen').classList.add('visible');
+}
+</script>
+
+<!-- Mobile Controls -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:200px; border-radius:50%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; font-size:80px; color:white; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">⏸</div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.textContent=paused?"▶":"⏸";
+    flash.style.opacity="1";
+    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a){if(paused)a.pause();else a.play().catch(function(){});}
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused)document.body.classList.add("animations-paused");
+    else{window.__demoPaused=false;document.body.classList.remove("animations-paused");}
+  }
+  document.addEventListener("touchstart",function(e){if(!started)return;e.preventDefault();try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  document.addEventListener("click",function(e){if(!started||e.target.closest("#playBtn"))return;try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
+  function upd(){
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
+})();
+</script>
+
+</body>
+</html>
