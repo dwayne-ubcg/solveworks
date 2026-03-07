@@ -1,0 +1,56 @@
+{
+  "model": "anthropic/claude-sonnet-4-6",
+  "channels": {
+    "telegram": {
+      "botToken": "REPLACE_WITH_BOT_TOKEN",
+      "allowFrom": ["REPLACE_WITH_CHAT_ID"],
+      "dmHistoryLimit": 200,
+      "dmPolicy": "pairing",
+      "dms": {
+        "REPLACE_WITH_CHAT_ID": {
+          "historyLimit": 200
+        }
+      }
+    }
+  },
+  "session": {
+    "reset": {
+      "idleMinutes": 240
+    }
+  },
+  "heartbeat": {
+    "intervalMinutes": 30,
+    "model": "anthropic/claude-haiku-4-5"
+  },
+  "cron": {
+    "jobs": [
+      {
+        "name": "morning-briefing",
+        "schedule": "0 8 * * *",
+        "timezone": "America/Los_Angeles",
+        "message": "You are delivering Mike's morning briefing. Read memory/active-tasks.md and recent daily memory files. Check CEIPAL for overnight req changes. Check QuickBooks for revenue updates. Build the briefing with: 1) Pipeline snapshot (new leads, stage changes, deals at risk), 2) Revenue MTD vs target, 3) Recruiter pulse (top performers, coaching flags), 4) Active reqs status with candidate counts, 5) Overnight activity summary, 6) One unexpected insight. Format for Telegram — concise, scannable, numbers first. Send directly to Mike via Telegram bot API: curl -s -X POST 'https://api.telegram.org/botREPLACE_WITH_BOT_TOKEN/sendMessage' -H 'Content-Type: application/json' -d '{\"chat_id\": \"REPLACE_WITH_CHAT_ID\", \"text\": \"YOUR_BRIEFING\", \"parse_mode\": \"Markdown\"}'",
+        "noDeliver": true,
+        "timeoutSeconds": 300,
+        "model": "anthropic/claude-sonnet-4-6"
+      },
+      {
+        "name": "pipeline-check",
+        "schedule": "0 */4 * * *",
+        "timezone": "America/Los_Angeles",
+        "message": "Pipeline health check. Review active leads and candidates in pipeline. Check for: 1) Leads stuck in same stage >5 days, 2) Reqs open >30 days with <3 candidates, 3) Candidates awaiting feedback >48 hours, 4) Any placement confirmations needed. If anything needs Mike's attention, send via Telegram bot API: curl -s -X POST 'https://api.telegram.org/botREPLACE_WITH_BOT_TOKEN/sendMessage' -H 'Content-Type: application/json' -d '{\"chat_id\": \"REPLACE_WITH_CHAT_ID\", \"text\": \"YOUR_MESSAGE\", \"parse_mode\": \"Markdown\"}'. If nothing urgent, write a brief note to memory/daily file and stay quiet.",
+        "noDeliver": true,
+        "timeoutSeconds": 240,
+        "model": "anthropic/claude-haiku-4-5"
+      },
+      {
+        "name": "nightly-security",
+        "schedule": "0 2 * * *",
+        "timezone": "America/Los_Angeles",
+        "message": "Run nightly security audit. Check: 1) openclaw gateway status — must show running + RPC ok, 2) Tailscale connectivity, 3) No unexpected listening ports (lsof -nP -iTCP -sTCP:LISTEN), 4) Disk space check, 5) Verify API keys still valid (CEIPAL, ZoomInfo, QuickBooks, RingCentral). Write results to memory/security-check.json. Only alert Mike if something is wrong — send via Telegram bot API: curl -s -X POST 'https://api.telegram.org/botREPLACE_WITH_BOT_TOKEN/sendMessage' -H 'Content-Type: application/json' -d '{\"chat_id\": \"REPLACE_WITH_CHAT_ID\", \"text\": \"🚨 Security Alert: YOUR_MESSAGE\", \"parse_mode\": \"Markdown\"}'",
+        "noDeliver": true,
+        "timeoutSeconds": 240,
+        "model": "anthropic/claude-haiku-4-5"
+      }
+    ]
+  }
+}

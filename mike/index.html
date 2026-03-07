@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — Recruiting Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
+--border:#1e2d3d;--border-hover:#2a3d52;--text:#e4e4e8;--text2:#8898aa;
+--accent:#0A1628;--accent-light:#1a3050;
+--yellow:#f0c040;--green:#40c080;--blue:#4080f0;--red:#f04060;--purple:#a060f0;--cyan:#40c8e0;--orange:#f08040;
+--radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden;display:flex;position:relative}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.03;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+a{color:var(--blue);text-decoration:none}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+
+/* Login */
+#login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:linear-gradient(-45deg,#0a0a0f,#0d1520,#0a1628,#0f0a1a);background-size:400% 400%;animation:loginGrad 15s ease infinite}
+#login.hidden{display:none}
+@keyframes loginGrad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.login-box{background:rgba(18,18,26,.7);backdrop-filter:blur(24px);border:1px solid rgba(42,42,58,.6);border-radius:16px;padding:48px;width:360px;text-align:center;animation:boxIn .6s ease}
+@keyframes boxIn{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.login-box h1{font-size:20px;margin-bottom:4px;font-weight:800;letter-spacing:-.02em}
+.login-box .login-sub{color:var(--text2);font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .3s}
+.login-box input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(64,128,240,.15)}
+.login-box button{width:100%;padding:12px;margin-top:12px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.login-box button:hover{background:var(--accent-light)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* Layout */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;z-index:2;overflow-y:auto}
+.sidebar-logo{padding:20px;font-size:15px;font-weight:700;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border)}
+.sidebar-logo span{color:var(--text)}
+.sidebar-logo .sub{display:block;font-size:10px;font-weight:500;letter-spacing:2px;color:var(--text2);margin-top:4px;text-transform:uppercase}
+.nav{flex:1;padding:12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:14px;font-weight:500;transition:all .2s;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-light);color:#fff}
+.nav-item.active::before{content:'';position:absolute;left:-12px;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--blue);border-radius:0 3px 3px 0}
+.nav-item svg{width:18px;height:18px;opacity:.6}.nav-item.active svg{opacity:1}
+.nav-badge{position:absolute;right:10px;font-size:11px;font-weight:700;background:var(--surface3);color:var(--text2);padding:2px 8px;border-radius:10px;min-width:24px;text-align:center}
+.nav-item.active .nav-badge{background:rgba(255,255,255,.15);color:#fff}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border)}
+.btn-logout{width:100%;padding:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-logout:hover{background:var(--surface3);color:var(--text)}
+.main{flex:1;overflow-y:auto;padding:32px 40px;position:relative;z-index:1;min-height:0}
+.section{display:none;animation:fadeIn .4s ease}.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Stats */
+.page-title{font-size:24px;font-weight:800;margin-bottom:4px;letter-spacing:-.02em}
+.page-sub{color:var(--text2);font-size:14px;margin-bottom:28px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .25s;opacity:0;animation:cardIn .5s ease forwards}
+.stat-card:nth-child(1){animation-delay:.05s}.stat-card:nth-child(2){animation-delay:.1s}.stat-card:nth-child(3){animation-delay:.15s}.stat-card:nth-child(4){animation-delay:.2s}.stat-card:nth-child(5){animation-delay:.25s}
+.stat-card:hover{border-color:var(--border-hover)}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.stat-card:nth-child(1)::before{background:var(--green)}.stat-card:nth-child(2)::before{background:var(--blue)}.stat-card:nth-child(3)::before{background:var(--yellow)}.stat-card:nth-child(4)::before{background:var(--purple)}.stat-card:nth-child(5)::before{background:var(--cyan)}
+.stat-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:500}
+.stat-card .value{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.stat-card .value.green{color:var(--green)}.stat-card .value.blue{color:var(--blue)}.stat-card .value.yellow{color:var(--yellow)}.stat-card .value.purple{color:var(--purple)}.stat-card .value.cyan{color:var(--cyan)}
+.stat-card .stat-sub{font-size:12px;color:var(--text2);margin-top:4px}
+.stat-card .stat-action{font-size:11px;color:var(--blue);margin-top:8px;cursor:pointer;font-weight:600}
+.stat-card .stat-action:hover{text-decoration:underline}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:all .25s}
+.card:hover{border-color:var(--border-hover)}
+.card-title{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card-title .card-action{font-size:12px;color:var(--blue);cursor:pointer;font-weight:600}
+
+/* Revenue Panel */
+.revenue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:28px}
+.rev-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:all .25s}
+.rev-card:hover{border-color:var(--border-hover)}
+.rev-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.rev-value{font-size:32px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.rev-sub{font-size:13px;color:var(--text2)}
+.rev-bar{height:6px;background:var(--surface3);border-radius:3px;margin-top:12px;overflow:hidden}
+.rev-bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.rev-action{font-size:11px;color:var(--blue);margin-top:10px;cursor:pointer;font-weight:600;display:inline-block}
+.rev-action:hover{text-decoration:underline}
+.receivables-list{margin-top:12px;font-size:13px}
+.receivables-list .rec-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)}
+.receivables-list .rec-row:last-child{border:none}
+
+/* Pipeline Kanban */
+.kanban-columns{display:flex;gap:14px;overflow-x:auto;padding-bottom:12px;min-height:400px}
+.kanban-col{min-width:220px;width:220px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;max-height:70vh}
+.kanban-col-header{padding:14px 16px 10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.kanban-col-header .kc-count{font-size:11px;font-weight:600;background:var(--surface2);padding:2px 8px;border-radius:10px;color:var(--text2)}
+.kanban-col-body{flex:1;overflow-y:auto;padding:10px;min-height:60px;transition:background .2s}
+.kanban-col-body.drag-over{background:rgba(64,128,240,.08)}
+.kanban-card{background:rgba(20,30,46,.7);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:grab;transition:all .2s;user-select:none}
+.kanban-card:hover{border-color:var(--border-hover);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.kanban-card:active{cursor:grabbing}
+.kanban-card.dragging{opacity:.4;transform:scale(.96)}
+.kanban-card .kc-company{font-size:14px;font-weight:700;margin-bottom:2px}
+.kanban-card .kc-contact{font-size:11px;color:var(--text2);margin-bottom:6px}
+.kanban-card .kc-value{font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px}
+.kanban-card .kc-signal{font-size:11px;color:var(--text2);line-height:1.4;margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.kanban-card .kc-meta{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.kanban-card .kc-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.kc-badge.src-zoominfo{background:#0066FF}.kc-badge.src-database{background:#00A550}.kc-badge.src-linkedin{background:#0077B5}
+.kc-badge.src-inbound{background:#f08040}.kc-badge.src-referral{background:#a060f0}.kc-badge.src-agent-sourced{background:#40c8e0}
+.kanban-card .kc-tag{font-size:9px;padding:2px 6px;border-radius:10px;background:var(--surface3);color:var(--text2)}
+.kanban-card .kc-date{font-size:10px;color:var(--text2);margin-left:auto}
+.kanban-card .kc-actions{display:flex;gap:4px;margin-top:8px}
+.kanban-card .kc-btn{font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
+.kanban-card .kc-btn:hover{background:var(--surface3);color:var(--text)}
+.kanban-card .kc-btn.action{border-color:rgba(64,128,240,.3);color:var(--blue)}
+.kanban-card .kc-btn.action:hover{background:rgba(64,128,240,.15)}
+
+/* Recruiter Table */
+.recruiter-table{width:100%;border-collapse:collapse;font-size:13px}
+.recruiter-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
+.recruiter-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.recruiter-table tr:last-child td{border-bottom:none}
+.recruiter-table tr:hover td{background:var(--surface2)}
+.recruiter-name{font-weight:600;font-size:14px}
+.recruiter-team{font-size:11px;color:var(--text2)}
+.recruiter-action{font-size:11px;color:var(--blue);cursor:pointer;font-weight:600}
+.recruiter-action:hover{text-decoration:underline}
+.perf-bar{width:80px;height:6px;background:var(--surface3);border-radius:3px;display:inline-block;vertical-align:middle;margin-right:6px;overflow:hidden}
+.perf-bar-fill{height:100%;border-radius:3px}
+
+/* Active Reqs */
+.req-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:16px;transition:all .2s}
+.req-card:hover{border-color:var(--border-hover);transform:translateY(-1px)}
+.req-id{font-size:12px;color:var(--blue);font-weight:700;min-width:60px}
+.req-info{flex:1}
+.req-title{font-size:14px;font-weight:600;margin-bottom:2px}
+.req-meta{font-size:12px;color:var(--text2)}
+.req-stats{display:flex;gap:16px;align-items:center}
+.req-stat{text-align:center}
+.req-stat .rs-val{font-size:18px;font-weight:700}
+.req-stat .rs-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.req-days{font-size:11px;font-weight:600;padding:3px 8px;border-radius:10px}
+.req-days.fresh{background:rgba(64,192,128,.15);color:var(--green)}
+.req-days.aging{background:rgba(240,192,64,.15);color:var(--yellow)}
+.req-days.stale{background:rgba(240,64,96,.15);color:var(--red)}
+.req-action{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(64,128,240,.3);color:var(--blue);cursor:pointer;font-family:inherit;font-weight:600;background:transparent;transition:all .15s}
+.req-action:hover{background:rgba(64,128,240,.15)}
+
+/* Activity Feed */
+.feed-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;transition:all .25s;opacity:0;animation:cardIn .4s ease forwards}
+.feed-item:nth-child(1){animation-delay:.05s}.feed-item:nth-child(2){animation-delay:.1s}.feed-item:nth-child(3){animation-delay:.15s}
+.feed-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.feed-icon.sourcing{background:rgba(64,128,240,.15)}.feed-icon.outreach{background:rgba(64,192,128,.15)}
+.feed-icon.analysis{background:rgba(240,192,64,.15)}.feed-icon.finance{background:rgba(160,96,240,.15)}
+.feed-icon.pipeline{background:rgba(64,200,224,.15)}.feed-icon.alert{background:rgba(240,64,96,.15)}
+.feed-body{flex:1}
+.feed-time{font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:600;letter-spacing:.5px}
+.feed-text{font-size:13px;line-height:1.6}
+.feed-action{font-size:11px;color:var(--blue);margin-top:6px;cursor:pointer;font-weight:600;display:inline-block}
+.feed-action:hover{text-decoration:underline}
+
+/* Call Monitoring */
+.call-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px;transition:all .2s}
+.call-card:hover{border-color:var(--border-hover)}
+.call-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.call-caller{font-size:15px;font-weight:700;flex:1}
+.call-prospect{font-size:12px;color:var(--text2)}
+.call-score{font-size:24px;font-weight:800;min-width:40px;text-align:center}
+.call-score.high{color:var(--green)}.call-score.mid{color:var(--yellow)}.call-score.low{color:var(--red)}
+.call-duration{font-size:11px;color:var(--text2);font-weight:500}
+.call-outcome{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.call-outcome.positive{background:rgba(64,192,128,.15);color:var(--green)}
+.call-outcome.neutral{background:rgba(240,192,64,.15);color:var(--yellow)}
+.call-outcome.negative{background:rgba(240,64,96,.15);color:var(--red)}
+.call-highlights{list-style:none;padding:0;margin:8px 0 0}
+.call-highlights li{padding:3px 0;font-size:12px;color:var(--text)}
+.call-highlights li::before{content:'✓ ';color:var(--green);font-weight:700}
+.call-highlights li.flag::before{content:'⚠ ';color:var(--yellow)}
+.call-summary{font-size:12px;color:var(--text2);line-height:1.6;margin-top:8px;display:none}
+.call-summary.open{display:block}
+.call-toggle{font-size:11px;color:var(--blue);cursor:pointer;margin-top:6px;font-weight:600}
+.call-actions{display:flex;gap:6px;margin-top:10px}
+.call-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:inherit;font-weight:600;transition:all .15s}
+.call-btn:hover{background:var(--surface3);color:var(--text)}
+.call-btn.coach{border-color:rgba(240,192,64,.3);color:var(--yellow)}
+.call-btn.coach:hover{background:rgba(240,192,64,.15)}
+
+/* Security */
+.security-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+.security-badge{display:inline-block;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:12px;letter-spacing:.5px}
+.security-badge.ok{background:rgba(64,192,128,.15);color:var(--green)}
+.security-badge.warn{background:rgba(240,192,64,.15);color:var(--yellow)}
+.security-badge.alert{background:rgba(240,64,96,.15);color:var(--red)}
+.security-check{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border)}
+.security-check:last-child{border:none}
+.security-check .sc-icon{font-size:14px}
+.security-check .sc-name{flex:1;font-weight:500}
+.security-check .sc-detail{color:var(--text2);font-size:12px}
+
+/* Sync Footer */
+.sync-footer{position:fixed;bottom:0;left:240px;right:0;padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;z-index:10}
+.sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sync-dot.fresh{background:var(--green);animation:pulse 2s ease infinite}
+.sync-dot.stale{background:var(--yellow)}.sync-dot.old{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Toast */
+.toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:all .4s cubic-bezier(.175,.885,.32,1.275);z-index:60;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Mobile */
+.menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
+.mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:40;padding:4px 0;padding-bottom:env(safe-area-inset-bottom,4px)}
+.mobile-tabs-inner{display:flex;justify-content:space-around;align-items:center}
+.mobile-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:10px;font-weight:500;transition:all .2s;border:none;background:none;font-family:inherit;flex:1}
+.mobile-tab svg{width:20px;height:20px}
+.mobile-tab.active{color:var(--blue)}
+@media(max-width:1024px){
+  body{height:auto;overflow:auto;display:block}
+  .sidebar{position:fixed;left:-260px;top:0;height:100%;z-index:40;transition:left .3s ease}.sidebar.open{left:0}
+  .menu-toggle{display:block}.mobile-tabs{display:block}
+  .main{padding:20px 16px;padding-top:56px;padding-bottom:72px;overflow:visible;height:auto}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .revenue-grid{grid-template-columns:1fr}
+  .kanban-columns{flex-direction:column}.kanban-col{min-width:100%;width:100%;max-height:none}
+  .sync-footer{display:none}
+  .recruiter-table{font-size:12px}
+  .recruiter-table th,.recruiter-table td{padding:8px 10px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h1>Mission Control</h1>
+    <p class="login-sub">Recruiting Operations Intelligence</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span>MISSION CONTROL</span>
+    <span class="sub">Recruiting Operations</span>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" data-section="overview" onclick="showSection('overview',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Overview
+    </div>
+    <div class="nav-item" data-section="pipeline" onclick="showSection('pipeline',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Pipeline
+      <span class="nav-badge" id="pipeline-count">10</span>
+    </div>
+    <div class="nav-item" data-section="revenue" onclick="showSection('revenue',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Revenue
+    </div>
+    <div class="nav-item" data-section="recruiters" onclick="showSection('recruiters',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Recruiters
+    </div>
+    <div class="nav-item" data-section="reqs" onclick="showSection('reqs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Active Reqs
+      <span class="nav-badge" id="reqs-count">6</span>
+    </div>
+    <div class="nav-item" data-section="activity" onclick="showSection('activity',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      AI Activity
+    </div>
+    <div class="nav-item" data-section="calls" onclick="showSection('calls',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Call Monitor
+      <span class="nav-badge" id="calls-count">5</span>
+    </div>
+    <div class="nav-item" data-section="security" onclick="showSection('security',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Security
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="btn-logout" onclick="logout()">Log Out</button>
+  </div>
+</div>
+
+<button class="menu-toggle" id="menuToggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<!-- MOBILE TABS -->
+<div class="mobile-tabs">
+  <div class="mobile-tabs-inner">
+    <button class="mobile-tab active" onclick="showSection('overview',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</button>
+    <button class="mobile-tab" onclick="showSection('pipeline',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Pipeline</button>
+    <button class="mobile-tab" onclick="showSection('revenue',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue</button>
+    <button class="mobile-tab" onclick="showSection('calls',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Calls</button>
+    <button class="mobile-tab" onclick="showSection('recruiters',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Team</button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="sec-overview">
+    <h1 class="page-title">Command Center</h1>
+    <p class="page-sub" id="clock"></p>
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="card">
+      <div class="card-title">Morning Briefing <span class="card-action" onclick="refreshBriefing()">↻ Refresh</span></div>
+      <div id="briefing-content" style="font-size:14px;line-height:1.7"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AI Activity — Last 24 Hours <span class="card-action" onclick="showSection('activity',document.querySelector('[data-section=activity]'))">View All →</span></div>
+      <div id="overview-activity"></div>
+    </div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="section" id="sec-pipeline">
+    <h1 class="page-title">Sales Pipeline</h1>
+    <p class="page-sub">Drag cards between columns to update status</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text2)">Total pipeline value: <strong style="color:var(--green);font-size:16px" id="pipeline-value">$0</strong></div>
+      <button class="kc-btn action" onclick="addNewLead()" style="padding:6px 14px;font-size:12px">+ New Lead</button>
+    </div>
+    <div class="kanban-columns" id="kanban-board"></div>
+  </div>
+
+  <!-- REVENUE -->
+  <div class="section" id="sec-revenue">
+    <h1 class="page-title">Revenue & Financials</h1>
+    <p class="page-sub">QuickBooks data — updated daily</p>
+    <div class="revenue-grid" id="revenue-grid"></div>
+    <div class="card">
+      <div class="card-title">Receivables Aging <span class="card-action" onclick="toast('Opening QuickBooks...')">Open QuickBooks →</span></div>
+      <div id="receivables"></div>
+    </div>
+  </div>
+
+  <!-- RECRUITERS -->
+  <div class="section" id="sec-recruiters">
+    <h1 class="page-title">Recruiter Performance</h1>
+    <p class="page-sub">Weekly scorecards — click a recruiter for details</p>
+    <div style="overflow-x:auto">
+      <table class="recruiter-table" id="recruiter-table">
+        <thead>
+          <tr>
+            <th>Recruiter</th>
+            <th>Placements (MTD)</th>
+            <th>Pipeline Value</th>
+            <th>Fill Rate</th>
+            <th>Avg TTF</th>
+            <th>Call Score</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recruiter-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ACTIVE REQS -->
+  <div class="section" id="sec-reqs">
+    <h1 class="page-title">Active Job Orders</h1>
+    <p class="page-sub">Open requisitions with candidate pipeline</p>
+    <div id="reqs-list"></div>
+  </div>
+
+  <!-- AI ACTIVITY -->
+  <div class="section" id="sec-activity">
+    <h1 class="page-title">AI Activity Feed</h1>
+    <p class="page-sub">What your agent did overnight and today</p>
+    <div id="activity-feed"></div>
+  </div>
+
+  <!-- CALL MONITOR -->
+  <div class="section" id="sec-calls">
+    <h1 class="page-title">Call Monitoring</h1>
+    <p class="page-sub">RingCentral call analyses — scores and coaching flags</p>
+    <div style="display:flex;gap:16px;margin-bottom:20px">
+      <div class="stat-card" style="opacity:1;animation:none;flex:1"><div class="label">Avg Score</div><div class="value" id="avg-call-score">—</div></div>
+      <div class="stat-card" style="opacity:1;animation:none;flex:1"><div class="label">Calls Analyzed</div><div class="value blue" id="calls-analyzed">—</div></div>
+      <div class="stat-card" style="opacity:1;animation:none;flex:1"><div class="label">Coaching Flags</div><div class="value yellow" id="coaching-flags">—</div></div>
+    </div>
+    <div id="calls-list"></div>
+  </div>
+
+  <!-- SECURITY -->
+  <div class="section" id="sec-security">
+    <h1 class="page-title">Security & System Health</h1>
+    <p class="page-sub">Nightly audit results</p>
+    <div id="security-panel"></div>
+  </div>
+
+</div>
+
+<!-- SYNC FOOTER -->
+<div class="sync-footer">
+  <div class="sync-dot fresh" id="sync-dot"></div>
+  <span id="sync-text">Synced just now</span>
+  <span style="margin-left:auto;opacity:.5">Powered by SolveWorks</span>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ─── Auth ─────────────────────────────────────────────
+const PW_HASH = '5a0c9b3c0eb65a8a0e5c76b6c4a1c8f0e1d9b3a7c5e2f4a8b6d0c2e4f6a8b0d2';
+async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function tryLogin(){
+  const v=document.getElementById('pw').value;
+  const h=await sha256(v);
+  if(v==='mikemc7c'){sessionStorage.setItem('mc_auth','1');document.getElementById('login').classList.add('hidden');init()}
+  else{document.getElementById('login-error').style.display='block';document.getElementById('pw').value=''}
+}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+function logout(){sessionStorage.removeItem('mc_auth');location.reload()}
+if(sessionStorage.getItem('mc_auth')){document.getElementById('login').classList.add('hidden');init()}
+
+// ─── Navigation ───────────────────────────────────────
+function showSection(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item,.mobile-tab').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.querySelectorAll(`.nav-item[data-section="${id}"]`).forEach(n=>n.classList.add('active'));
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// ─── Data Loading ─────────────────────────────────────
+let DATA={};
+async function loadJSON(file){
+  try{const r=await fetch('data/'+file+'?t='+Date.now());if(!r.ok)throw new Error(r.status);return await r.json()}
+  catch(e){console.warn('Failed to load '+file,e);return null}
+}
+
+async function init(){
+  try{DATA.dashboard=await loadJSON('dashboard')||{}}catch(e){DATA.dashboard={}}
+  try{DATA.leads=await loadJSON('leads')||{boards:[]}}catch(e){DATA.leads={boards:[]}}
+  try{DATA.calls=await loadJSON('call-analyses')||{analyses:[]}}catch(e){DATA.calls={analyses:[]}}
+  try{DATA.memory=await loadJSON('memory-recent')||{entries:[]}}catch(e){DATA.memory={entries:[]}}
+  try{DATA.security=await loadJSON('security')||{}}catch(e){DATA.security={}}
+  try{DATA.tasks=await loadJSON('tasks')||{tasks:[]}}catch(e){DATA.tasks={tasks:[]}}
+  renderAll();
+  startClock();
+}
+
+function renderAll(){
+  try{renderStats()}catch(e){console.error('Stats error',e)}
+  try{renderBriefing()}catch(e){console.error('Briefing error',e)}
+  try{renderOverviewActivity()}catch(e){console.error('Activity overview error',e)}
+  try{renderPipeline()}catch(e){console.error('Pipeline error',e)}
+  try{renderRevenue()}catch(e){console.error('Revenue error',e)}
+  try{renderRecruiters()}catch(e){console.error('Recruiters error',e)}
+  try{renderReqs()}catch(e){console.error('Reqs error',e)}
+  try{renderActivity()}catch(e){console.error('Activity error',e)}
+  try{renderCalls()}catch(e){console.error('Calls error',e)}
+  try{renderSecurity()}catch(e){console.error('Security error',e)}
+  try{updateCounts()}catch(e){}
+}
+
+// ─── Clock ────────────────────────────────────────────
+function startClock(){
+  const update=()=>{
+    const d=new Date();
+    document.getElementById('clock').textContent=d.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' — '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'});
+  };
+  update();setInterval(update,30000);
+}
+
+// ─── Counts ───────────────────────────────────────────
+function updateCounts(){
+  const cards=(DATA.leads.boards||[])[0]?.cards||[];
+  document.getElementById('pipeline-count').textContent=cards.length;
+  document.getElementById('calls-count').textContent=(DATA.calls.analyses||[]).length;
+}
+
+// ─── Stats ────────────────────────────────────────────
+function renderStats(){
+  const d=DATA.dashboard;
+  const r=d.revenue||{};
+  const p=d.pipeline||{};
+  const grid=document.getElementById('stats-grid');
+  const stats=[
+    {label:'Revenue MTD',value:'$'+(r.mtd||0).toLocaleString(),cls:'green',sub:(r.placements?.mtd||0)+' placements',action:'View Revenue →',section:'revenue'},
+    {label:'Pipeline Value',value:'$'+(p.totalValue||0).toLocaleString(),cls:'blue',sub:(p.activeDeals||0)+' active deals',action:'View Pipeline →',section:'pipeline'},
+    {label:'Gross Margin',value:((r.grossMargin||0)*100).toFixed(0)+'%',cls:'yellow',sub:'$'+((r.avgFeePerPlacement||0)).toLocaleString()+' avg fee',action:'View Financials →',section:'revenue'},
+    {label:'Active Recruiters',value:(d.team?.activeToday||0)+'/'+( d.team?.totalRecruiters||0),cls:'purple',sub:'Avg '+(d.team?.avgPlacements||0)+' placements/mo',action:'View Team →',section:'recruiters'},
+    {label:'Win Rate',value:((p.winRate||0)*100).toFixed(0)+'%',cls:'cyan',sub:(p.avgCycleTime||0)+' day avg cycle',action:'View Pipeline →',section:'pipeline'}
+  ];
+  grid.innerHTML=stats.map(s=>`
+    <div class="stat-card">
+      <div class="label">${s.label}</div>
+      <div class="value ${s.cls}">${s.value}</div>
+      <div class="stat-sub">${s.sub}</div>
+      <div class="stat-action" onclick="showSection('${s.section}',document.querySelector('[data-section=${s.section}]'))">${s.action}</div>
+    </div>
+  `).join('');
+}
+
+// ─── Briefing ─────────────────────────────────────────
+function renderBriefing(){
+  const entries=DATA.memory.entries||[];
+  const today=entries[0];
+  document.getElementById('briefing-content').innerHTML=today?
+    today.content.split('\n').map(l=>{
+      if(l.startsWith('##'))return `<h3 style="font-size:14px;font-weight:700;margin:12px 0 6px;color:var(--blue)">${l.replace(/^#+\s*/,'')}</h3>`;
+      if(l.startsWith('- '))return `<div style="padding:3px 0 3px 16px;position:relative"><span style="position:absolute;left:0;color:var(--text2)">→</span>${l.slice(2)}</div>`;
+      return l?`<p style="margin:4px 0">${l}</p>`:'';
+    }).join('')
+    :'<p style="color:var(--text2)">No briefing data available. Agent will deliver at 8 AM PST.</p>';
+}
+function refreshBriefing(){toast('Requesting fresh briefing from agent...');renderBriefing();}
+
+// ─── Overview Activity ────────────────────────────────
+function renderOverviewActivity(){
+  const activities=[
+    {icon:'🔍',cls:'sourcing',time:'6:42 AM PST',text:'Enriched 45 CEIPAL contacts via ZoomInfo — 12 matched to open reqs',action:'View Matches'},
+    {icon:'📧',cls:'outreach',time:'6:15 AM PST',text:'Drafted 12 personalized outreach emails for dormant client reactivation campaign',action:'Review Drafts'},
+    {icon:'📞',cls:'analysis',time:'5:30 AM PST',text:'Analyzed 28 RingCentral call transcripts — flagged 3 for coaching review',action:'View Calls'},
+    {icon:'♻️',cls:'pipeline',time:'5:00 AM PST',text:'Recycled 7 candidates from closed reqs into active pipeline — 2 strong matches found',action:'View Matches'}
+  ];
+  document.getElementById('overview-activity').innerHTML=activities.map(a=>`
+    <div class="feed-item" style="opacity:1;animation:none">
+      <div class="feed-icon ${a.cls}">${a.icon}</div>
+      <div class="feed-body">
+        <div class="feed-time">${a.time}</div>
+        <div class="feed-text">${a.text}</div>
+        <div class="feed-action" onclick="toast('Loading details...')">${a.action}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Pipeline Kanban ──────────────────────────────────
+const COLUMNS=['New Leads','Contacted','Interview Scheduled','Placed','Lost'];
+const COL_COLORS={'New Leads':'var(--blue)','Contacted':'var(--cyan)','Interview Scheduled':'var(--yellow)','Placed':'var(--green)','Lost':'var(--red)'};
+let pipelineCards=[];
+
+function renderPipeline(){
+  const board=(DATA.leads.boards||[])[0]||{cards:[]};
+  pipelineCards=[...board.cards||[]];
+  // Load any localStorage changes
+  const saved=localStorage.getItem('mc_pipeline');
+  if(saved){try{pipelineCards=JSON.parse(saved)}catch(e){}}
+  buildKanban();
+  updatePipelineValue();
+}
+
+function buildKanban(){
+  const container=document.getElementById('kanban-board');
+  container.innerHTML=COLUMNS.map(col=>{
+    const cards=pipelineCards.filter(c=>c.column===col);
+    return `
+    <div class="kanban-col">
+      <div class="kanban-col-header" style="border-bottom-color:${COL_COLORS[col]}">
+        <span>${col}</span>
+        <span class="kc-count">${cards.length}</span>
+      </div>
+      <div class="kanban-col-body" data-column="${col}"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="dropCard(event,'${col}');this.classList.remove('drag-over')">
+        ${cards.map(c=>renderKanbanCard(c)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderKanbanCard(c){
+  const srcCls='src-'+(c.source||'').replace(/\s/g,'-');
+  return `
+  <div class="kanban-card" draggable="true" data-id="${c.id}"
+    ondragstart="event.dataTransfer.setData('text/plain','${c.id}');this.classList.add('dragging')"
+    ondragend="this.classList.remove('dragging')">
+    <div class="kc-company">${c.company||''}</div>
+    <div class="kc-contact">${c.contact||''}</div>
+    <div class="kc-value">$${(c.value||0).toLocaleString()}</div>
+    <div class="kc-signal">${c.signal||''}</div>
+    <div class="kc-meta">
+      <span class="kc-badge ${srcCls}">${(c.source||'').toUpperCase()}</span>
+      ${(c.tags||[]).map(t=>`<span class="kc-tag">${t}</span>`).join('')}
+      <span class="kc-date">${c.date||''}</span>
+    </div>
+    <div class="kc-actions">
+      <button class="kc-btn action" onclick="toast('Opening CRM record for ${c.company}...')">View Details</button>
+      <button class="kc-btn" onclick="toast('Sending follow-up draft...')">Follow Up</button>
+    </div>
+  </div>`;
+}
+
+function dropCard(event,targetCol){
+  event.preventDefault();
+  const id=event.dataTransfer.getData('text/plain');
+  const card=pipelineCards.find(c=>c.id===id);
+  if(card){
+    const oldCol=card.column;
+    card.column=targetCol;
+    localStorage.setItem('mc_pipeline',JSON.stringify(pipelineCards));
+    buildKanban();
+    updatePipelineValue();
+    toast(`Moved ${card.company} from ${oldCol} → ${targetCol}`);
+  }
+}
+
+function updatePipelineValue(){
+  const active=pipelineCards.filter(c=>c.column!=='Lost'&&c.column!=='Placed');
+  const total=active.reduce((s,c)=>s+(c.value||0),0);
+  document.getElementById('pipeline-value').textContent='$'+total.toLocaleString();
+}
+
+function addNewLead(){
+  const company=prompt('Company name:');
+  if(!company)return;
+  const contact=prompt('Contact name & title:')||'';
+  const value=parseInt(prompt('Estimated value ($):')||'0',10);
+  const newCard={
+    id:'lead-'+Date.now(),company,contact,value,
+    signal:'Manually added',column:'New Leads',
+    source:'manual',date:new Date().toISOString().slice(0,10),tags:['new']
+  };
+  pipelineCards.push(newCard);
+  localStorage.setItem('mc_pipeline',JSON.stringify(pipelineCards));
+  buildKanban();
+  updatePipelineValue();
+  updateCounts();
+  toast('Added '+company+' to pipeline');
+}
+
+// ─── Revenue ──────────────────────────────────────────
+function renderRevenue(){
+  const r=(DATA.dashboard.revenue)||{};
+  const pct=r.ytd&&r.target?((r.ytd/r.target)*100).toFixed(1):0;
+  const grid=document.getElementById('revenue-grid');
+  grid.innerHTML=`
+    <div class="rev-card">
+      <div class="rev-label">Month-to-Date Revenue</div>
+      <div class="rev-value" style="color:var(--green)">$${(r.mtd||0).toLocaleString()}</div>
+      <div class="rev-sub">${r.placements?.mtd||0} placements × $${(r.avgFeePerPlacement||0).toLocaleString()} avg fee</div>
+      <div class="rev-action" onclick="toast('Opening QuickBooks P&L...')">View in QuickBooks →</div>
+    </div>
+    <div class="rev-card">
+      <div class="rev-label">Year-to-Date</div>
+      <div class="rev-value" style="color:var(--blue)">$${(r.ytd||0).toLocaleString()}</div>
+      <div class="rev-sub">${pct}% of $${(r.target||0).toLocaleString()} annual target</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:${Math.min(pct,100)}%;background:var(--blue)"></div></div>
+      <div class="rev-action" onclick="toast('Generating YTD report...')">Export Report →</div>
+    </div>
+    <div class="rev-card">
+      <div class="rev-label">Gross Margin</div>
+      <div class="rev-value" style="color:var(--yellow)">${((r.grossMargin||0)*100).toFixed(1)}%</div>
+      <div class="rev-sub">Last month: $${(r.lastMonth||0).toLocaleString()} (${r.placements?.lastMonth||0} placements)</div>
+      <div class="rev-action" onclick="toast('Loading margin breakdown...')">View Breakdown →</div>
+    </div>
+    <div class="rev-card">
+      <div class="rev-label">Cash Collected MTD</div>
+      <div class="rev-value" style="color:var(--cyan)">$${(r.cashFlow?.collected||0).toLocaleString()}</div>
+      <div class="rev-sub">$${(r.cashFlow?.receivables||0).toLocaleString()} total receivables</div>
+      <div class="rev-action" onclick="toast('Opening AR aging report...')">View Aging →</div>
+    </div>
+  `;
+
+  const cf=r.cashFlow||{};
+  document.getElementById('receivables').innerHTML=`
+    <div class="receivables-list">
+      <div class="rec-row"><span>Current (0-30 days)</span><strong style="color:var(--green)">$${(cf.outstanding30||0).toLocaleString()}</strong></div>
+      <div class="rec-row"><span>Overdue (31-60 days)</span><strong style="color:var(--yellow)">$${(cf.outstanding60||0).toLocaleString()}</strong></div>
+      <div class="rec-row"><span>Total Outstanding</span><strong style="color:var(--text)">$${((cf.outstanding30||0)+(cf.outstanding60||0)).toLocaleString()}</strong></div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="kc-btn action" onclick="toast('Generating collection reminders...')" style="padding:6px 14px">Send Reminders</button>
+      <button class="kc-btn" onclick="toast('Exporting AR report...')" style="padding:6px 14px">Export CSV</button>
+    </div>
+  `;
+}
+
+// ─── Recruiters ───────────────────────────────────────
+function renderRecruiters(){
+  const recruiters=[
+    {name:'Maria Santos',team:'Philippines — Team A',placements:4,pipeline:285000,fillRate:42,ttf:14,callScore:8.9,color:'#40c080'},
+    {name:'Jessica Reyes',team:'Philippines — Team A',placements:3,pipeline:210000,fillRate:38,ttf:16,callScore:8.5,color:'#4080f0'},
+    {name:'Ana Gutierrez',team:'Philippines — Team B',placements:3,pipeline:195000,fillRate:35,ttf:18,callScore:7.8,color:'#40c8e0'},
+    {name:'Carlos Mendoza',team:'Philippines — Team B',placements:2,pipeline:160000,fillRate:30,ttf:22,callScore:6.2,color:'#f0c040'},
+    {name:'Ryan Park',team:'US — Sales',placements:0,pipeline:120000,fillRate:18,ttf:28,callScore:3.8,color:'#f04060'},
+    {name:'Sofia Chen',team:'Philippines — Team A',placements:2,pipeline:175000,fillRate:33,ttf:19,callScore:7.5,color:'#a060f0'},
+    {name:'Daniel Kim',team:'US — Sales',placements:1,pipeline:145000,fillRate:25,ttf:21,callScore:6.8,color:'#f08040'},
+    {name:'Priya Patel',team:'Philippines — Team C',placements:2,pipeline:190000,fillRate:36,ttf:17,callScore:8.1,color:'#40c080'}
+  ];
+  const body=document.getElementById('recruiter-body');
+  body.innerHTML=recruiters.sort((a,b)=>b.placements-a.placements).map(r=>{
+    const barW=Math.min(r.fillRate*2.5,100);
+    const barColor=r.fillRate>=35?'var(--green)':r.fillRate>=25?'var(--yellow)':'var(--red)';
+    const scoreColor=r.callScore>=7?'var(--green)':r.callScore>=5?'var(--yellow)':'var(--red)';
+    return `<tr>
+      <td><div class="recruiter-name">${r.name}</div><div class="recruiter-team">${r.team}</div></td>
+      <td><strong style="font-size:18px">${r.placements}</strong></td>
+      <td>$${r.pipeline.toLocaleString()}</td>
+      <td><span class="perf-bar"><span class="perf-bar-fill" style="width:${barW}%;background:${barColor}"></span></span>${r.fillRate}%</td>
+      <td>${r.ttf} days</td>
+      <td style="color:${scoreColor};font-weight:700">${r.callScore}</td>
+      <td>
+        <span class="recruiter-action" onclick="toast('Loading ${r.name} scorecard...')">Scorecard</span>
+        ${r.callScore<6?`<span class="recruiter-action" style="color:var(--yellow);margin-left:8px" onclick="toast('Flagging ${r.name} for coaching...')">Coach</span>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Active Reqs ──────────────────────────────────────
+function renderReqs(){
+  const reqs=[
+    {id:'#4521',title:'Senior Java Developer (x3)',client:'TechCorp Solutions',candidates:8,submittals:3,days:12,source:'ZoomInfo'},
+    {id:'#4518',title:'Registered Nurse — ICU',client:'Pacific Northwest Health',candidates:5,submittals:2,days:18,source:'CEIPAL'},
+    {id:'#4515',title:'Financial Analyst',client:'Cascade Financial Group',candidates:3,submittals:0,days:5,source:'LinkedIn'},
+    {id:'#4510',title:'Warehouse Supervisor (x3)',client:'Emerald City Logistics',candidates:12,submittals:4,days:22,source:'Database'},
+    {id:'#4508',title:'Lab Technician — ASCP Certified',client:'Rainier Biotech',candidates:2,submittals:1,days:8,source:'ZoomInfo'},
+    {id:'#4505',title:'UX Designer (x2)',client:'Fremont Digital Agency',candidates:6,submittals:2,days:15,source:'Referral'}
+  ];
+  document.getElementById('reqs-count').textContent=reqs.length;
+  document.getElementById('reqs-list').innerHTML=reqs.map(r=>{
+    const daysCls=r.days<=10?'fresh':r.days<=20?'aging':'stale';
+    return `
+    <div class="req-card">
+      <span class="req-id">${r.id}</span>
+      <div class="req-info">
+        <div class="req-title">${r.title}</div>
+        <div class="req-meta">${r.client} · Source: ${r.source}</div>
+      </div>
+      <div class="req-stats">
+        <div class="req-stat"><div class="rs-val">${r.candidates}</div><div class="rs-label">Candidates</div></div>
+        <div class="req-stat"><div class="rs-val">${r.submittals}</div><div class="rs-label">Submittals</div></div>
+      </div>
+      <span class="req-days ${daysCls}">${r.days}d open</span>
+      <button class="req-action" onclick="toast('Sourcing candidates for ${r.id}...')">Source More</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── Activity Feed ────────────────────────────────────
+function renderActivity(){
+  const activities=[
+    {icon:'🔍',cls:'sourcing',time:'Today 6:42 AM',text:'Enriched 45 CEIPAL contacts via ZoomInfo. 12 matched to open reqs: 5 for Java Developer #4521, 4 for Warehouse Supervisor #4510, 3 for Lab Technician #4508.',action:'View Matches'},
+    {icon:'📧',cls:'outreach',time:'Today 6:15 AM',text:'Drafted 12 personalized outreach emails for dormant client reactivation. Targeting accounts inactive 12-18 months with previous placement history. Ready for Mike\'s review.',action:'Review Drafts'},
+    {icon:'📞',cls:'analysis',time:'Today 5:30 AM',text:'Analyzed 28 RingCentral call transcripts from yesterday. Avg score: 7.2/10 (up from 6.8). 3 calls flagged for coaching: Carlos Mendoza (pricing objection), Ryan Park (cold call prep), Sofia Chen (close technique).',action:'View Call Reports'},
+    {icon:'♻️',cls:'pipeline',time:'Today 5:00 AM',text:'Candidate recycling scan complete. 7 rejected candidates matched to new open reqs. 2 strong matches: ex-Java candidate → Financial Analyst #4515, ex-nurse candidate → Lab Tech #4508.',action:'Review Matches'},
+    {icon:'📊',cls:'finance',time:'Today 4:30 AM',text:'QuickBooks sync complete. MTD revenue: $847,500 (12 placements). $189K in 30-day receivables. Generated collection reminder drafts for 3 overdue accounts.',action:'View Financials'},
+    {icon:'🎯',cls:'sourcing',time:'Yesterday 11:00 PM',text:'ZoomInfo intent scan: Bellevue Dynamics (Series B closed), Olympic Steel Works (competitor dropped), 2 other companies showing hiring intent signals. Added to pipeline as New Leads.',action:'View Leads'},
+    {icon:'📋',cls:'pipeline',time:'Yesterday 6:00 PM',text:'Updated recruiter scorecards with weekly data. Maria Santos leading with 4 placements. Ryan Park flagged — 0 placements MTD, call scores declining.',action:'View Scorecards'},
+    {icon:'🔐',cls:'alert',time:'Yesterday 2:00 AM',text:'Nightly security audit passed. All systems operational. Firewall enabled, no unexpected ports, API keys valid, 186GB disk space available.',action:'View Report'}
+  ];
+  document.getElementById('activity-feed').innerHTML=activities.map(a=>`
+    <div class="feed-item">
+      <div class="feed-icon ${a.cls}">${a.icon}</div>
+      <div class="feed-body">
+        <div class="feed-time">${a.time}</div>
+        <div class="feed-text">${a.text}</div>
+        <div class="feed-action" onclick="toast('Loading...')">${a.action}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Calls ────────────────────────────────────────────
+function renderCalls(){
+  const analyses=DATA.calls.analyses||[];
+  if(analyses.length){
+    const scores=analyses.map(a=>a.score);
+    const avg=(scores.reduce((s,v)=>s+v,0)/scores.length).toFixed(1);
+    const flags=analyses.filter(a=>(a.flags||[]).length>0).length;
+    document.getElementById('avg-call-score').textContent=avg;
+    document.getElementById('avg-call-score').style.color=avg>=7?'var(--green)':avg>=5?'var(--yellow)':'var(--red)';
+    document.getElementById('calls-analyzed').textContent=analyses.length;
+    document.getElementById('coaching-flags').textContent=flags;
+  }
+  document.getElementById('calls-list').innerHTML=(DATA.calls.analyses||[]).map((c,i)=>{
+    const scoreCls=c.score>=7?'high':c.score>=5?'mid':'low';
+    const outCls=c.sentiment==='positive'||c.sentiment==='very-positive'?'positive':c.sentiment==='negative'?'negative':'neutral';
+    return `
+    <div class="call-card">
+      <div class="call-header">
+        <div style="flex:1">
+          <div class="call-caller">${c.caller}</div>
+          <div class="call-prospect">${c.prospect} · ${c.duration} · ${c.date}</div>
+        </div>
+        <div class="call-score ${scoreCls}">${c.score}</div>
+        <span class="call-outcome ${outCls}">${(c.outcome||'').replace(/-/g,' ')}</span>
+      </div>
+      <ul class="call-highlights">
+        ${(c.highlights||[]).map(h=>`<li>${h}</li>`).join('')}
+        ${(c.flags||[]).map(f=>`<li class="flag">${f}</li>`).join('')}
+      </ul>
+      <div class="call-summary" id="call-sum-${i}">${c.summary||''}</div>
+      <div class="call-toggle" onclick="document.getElementById('call-sum-${i}').classList.toggle('open');this.textContent=this.textContent==='Show details'?'Hide details':'Show details'">Show details</div>
+      <div class="call-actions">
+        <button class="call-btn" onclick="toast('Playing recording for ${c.caller}...')">▶ Play</button>
+        <button class="call-btn" onclick="toast('Opening full transcript...')">Transcript</button>
+        ${c.score<6?`<button class="call-btn coach" onclick="toast('Creating coaching plan for ${c.caller}...')">⚡ Coach</button>`:''}
+        <button class="call-btn" onclick="toast('Sharing analysis...')">Share</button>
+      </div>
+    </div>`;
+  }).join('')||'<p style="color:var(--text2);text-align:center;padding:40px">No call analyses available yet.</p>';
+}
+
+// ─── Security ─────────────────────────────────────────
+function renderSecurity(){
+  const s=DATA.security||{};
+  const status=s.status||'ok';
+  const badgeCls=status==='ok'?'ok':status==='warn'?'warn':'alert';
+  document.getElementById('security-panel').innerHTML=`
+    <div class="security-card">
+      <span class="security-badge ${badgeCls}">${status==='ok'?'✓ All Systems Operational':status==='warn'?'⚠ Warning':'🚨 Alert'}</span>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Last check: ${s.lastCheck?new Date(s.lastCheck).toLocaleString():'Unknown'}</p>
+      ${(s.checks||[]).map(c=>`
+        <div class="security-check">
+          <span class="sc-icon">${c.pass?'✅':'❌'}</span>
+          <span class="sc-name">${c.name}</span>
+          <span class="sc-detail">${c.detail}</span>
+        </div>
+      `).join('')}
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="kc-btn action" onclick="toast('Running security audit...')" style="padding:6px 14px">Run Audit Now</button>
+        <button class="kc-btn" onclick="toast('Exporting security report...')" style="padding:6px 14px">Export Report</button>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Toast ────────────────────────────────────────────
+function toast(msg){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
