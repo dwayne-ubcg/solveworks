@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>SolveWorks Recruiter AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; }
+
+.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; flex-direction: column; gap: 24px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn .play-label { font-size: 16px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; }
+#playBtn.hidden { display: none; }
+
+#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; transition: width 0.5s linear; }
+
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
+.tag-musthave { background: rgba(239,68,68,0.2); color: #f87171; }
+.tag-nicetohave { background: rgba(234,179,8,0.2); color: #facc15; }
+.tag-skill { background: rgba(14,165,233,0.15); color: #38bdf8; }
+.tag-passive { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-active { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-flagged { background: rgba(249,115,22,0.2); color: #fb923c; }
+
+.match-score { display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; font-size: 15px; font-weight: 800; }
+.match-high { background: rgba(34,197,94,0.15); color: #4ade80; border: 2px solid rgba(34,197,94,0.4); }
+.match-med { background: rgba(234,179,8,0.15); color: #facc15; border: 2px solid rgba(234,179,8,0.3); }
+.match-low { background: rgba(249,115,22,0.15); color: #fb923c; border: 2px solid rgba(249,115,22,0.3); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes expandIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scanLine { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+.animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+
+.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; }
+.sidebar-logo { padding: 0 24px 30px; font-size: 20px; font-weight: 700; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-badge { background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-left: auto; }
+
+.email-body { font-size: 14px; line-height: 1.7; color: #cbd5e1; }
+.email-body .cursor { display: inline-block; width: 2px; height: 18px; background: #0ea5e9; animation: blink 0.6s infinite; vertical-align: text-bottom; }
+
+.candidate-card { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; margin-bottom: 10px; }
+.candidate-card.visible { animation: slideInRight 0.5s ease forwards; }
+
+.cost-card { padding: 32px; border-radius: 16px; text-align: center; flex: 1; }
+.cost-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); animation: pulseGlow 2s infinite; }
+
+.schedule-row { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; }
+.schedule-row.visible { animation: slideInRight 0.5s ease forwards; }
+
+.kpi-card { flex: 1; padding: 24px; border-radius: 14px; text-align: center; }
+.kpi-number { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.kpi-delta { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.kpi-delta.up { color: #4ade80; }
+.kpi-delta.down { color: #4ade80; }
+
+.funnel-step { text-align: center; flex: 1; padding: 16px 8px; }
+.funnel-number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.funnel-arrow { color: #0ea5e9; font-size: 24px; display: flex; align-items: center; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="play-circle">
+    <div class="play-triangle"></div>
+  </div>
+  <div class="play-label">CLICK TO START</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progressBar" style="width: 0%"></div>
+
+<!-- ==================== SCENE 0: OPENING HOOK ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-question" style="font-size: 42px; font-weight: 300; line-height: 1.6; opacity: 0; max-width: 900px; margin: 0 auto;">
+      Your best recruiter fills 3 roles a month.<br>
+      Your AI fills <span style="color: #0ea5e9; font-weight: 600;">3 a week</span>.
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: JOB ORDER INTAKE ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <span style="color: #fff;">Solve</span><span style="color: #0ea5e9;">Works</span>
+        <div style="font-size: 11px; color: #475569; font-weight: 400; margin-top: 2px;">Summit Staffing Partners</div>
+      </div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Job Orders
+        <span class="sidebar-badge">1</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Candidates
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Outreach
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Interviews
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+      <div style="flex: 1;"></div>
+      <div class="sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </div>
+    <!-- Main -->
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <!-- Notification banner -->
+      <div id="s1-notif" style="opacity: 0; background: rgba(14,165,233,0.1); border: 1px solid rgba(14,165,233,0.3); border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 20px;">🔔</span>
+        <div>
+          <div style="font-size: 14px; font-weight: 600;">New Job Order — Meridian Health Systems</div>
+          <div style="font-size: 12px; color: #94a3b8;">Received 12 seconds ago · Priority: High</div>
+        </div>
+        <div style="margin-left: auto; font-size: 12px; color: #0ea5e9; font-weight: 600;">PROCESSING...</div>
+      </div>
+
+      <div style="display: flex; gap: 28px;">
+        <!-- Left: Raw Job Order -->
+        <div style="flex: 1;">
+          <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Job Order Details</h2>
+          <div class="glass" style="padding: 24px; border-radius: 14px;" id="s1-joborder">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div>
+                <div style="font-size: 18px; font-weight: 700;">Senior DevOps Engineer</div>
+                <div style="font-size: 13px; color: #94a3b8;">Meridian Health Systems · Austin, TX</div>
+              </div>
+              <div style="background: rgba(34,197,94,0.15); color: #4ade80; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;">ACTIVE</div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div class="glass" style="padding: 14px; border-radius: 10px;">
+                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Compensation</div>
+                <div style="font-size: 18px; font-weight: 700; color: #4ade80;">$130K — $150K</div>
+              </div>
+              <div class="glass" style="padding: 14px; border-radius: 10px;">
+                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Work Model</div>
+                <div style="font-size: 18px; font-weight: 700;">Hybrid</div>
+              </div>
+              <div class="glass" style="padding: 14px; border-radius: 10px;">
+                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Experience</div>
+                <div style="font-size: 18px; font-weight: 700;">5+ Years</div>
+              </div>
+              <div class="glass" style="padding: 14px; border-radius: 10px;">
+                <div style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Start Date</div>
+                <div style="font-size: 18px; font-weight: 700;">Within 30 Days</div>
+              </div>
+            </div>
+            <!-- Requirements parsing -->
+            <div id="s1-reqs" style="opacity: 0;">
+              <div style="font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 10px;">AI-PARSED REQUIREMENTS</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                <span class="tag tag-musthave">Must: AWS (5+ yr)</span>
+                <span class="tag tag-musthave">Must: Kubernetes</span>
+                <span class="tag tag-musthave">Must: CI/CD Pipelines</span>
+                <span class="tag tag-musthave">Must: Infrastructure as Code</span>
+                <span class="tag tag-nicetohave">Nice: Terraform</span>
+                <span class="tag tag-nicetohave">Nice: Healthcare exp</span>
+                <span class="tag tag-nicetohave">Nice: SOC2/HIPAA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Ideal Candidate Profile -->
+        <div style="flex: 1;">
+          <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 16px;">Ideal Candidate Profile</h2>
+          <div class="glass" style="padding: 24px; border-radius: 14px; opacity: 0;" id="s1-profile">
+            <div style="font-size: 13px; color: #0ea5e9; font-weight: 600; margin-bottom: 16px;">🤖 AUTO-GENERATED BY AI</div>
+            <!-- Skill weights -->
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Skill Weight Distribution</div>
+              <div id="s1-skills"></div>
+            </div>
+            <!-- Experience -->
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Ideal Experience Range</div>
+              <div class="glass" style="padding: 12px; border-radius: 8px; display: flex; align-items: center; gap: 12px;">
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; position: relative; overflow: hidden;">
+                  <div style="position: absolute; left: 33%; right: 20%; height: 100%; background: linear-gradient(90deg, #0ea5e9, #38bdf8); border-radius: 4px;"></div>
+                </div>
+                <span style="font-size: 13px; font-weight: 600; color: #38bdf8;">5–8 years</span>
+              </div>
+            </div>
+            <!-- Culture / soft factors -->
+            <div style="margin-bottom: 16px;">
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">Additional Signals</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span class="tag tag-skill">Austin-based or willing to relocate</span>
+                <span class="tag tag-skill">Notice period &lt; 30 days</span>
+                <span class="tag tag-skill">Healthcare industry = bonus</span>
+                <span class="tag tag-skill">Team lead experience preferred</span>
+              </div>
+            </div>
+            <!-- AI confidence -->
+            <div class="glass" style="padding: 14px; border-radius: 10px; margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(34,197,94,0.15); border: 2px solid rgba(34,197,94,0.4); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #4ade80;">97%</div>
+              <div>
+                <div style="font-size: 13px; font-weight: 600;">Profile Confidence</div>
+                <div style="font-size: 11px; color: #64748b;">High match likelihood based on market data</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: DATABASE MINING ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span><div style="font-size:11px;color:#475569;font-weight:400;margin-top:2px;">Summit Staffing Partners</div></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Job Orders</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Candidates</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Outreach</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Interviews</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1 style="font-size: 26px; font-weight: 700;">Candidate Search — Senior DevOps Engineer</h1>
+          <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Meridian Health Systems · Austin, TX · $130K–$150K</p>
+        </div>
+        <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 12px;">
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: #64748b;">Candidates Scanned</div>
+            <div style="font-size: 28px; font-weight: 800; color: #0ea5e9;" id="s2-counter">0</div>
+          </div>
+          <div style="width: 1px; height: 36px; background: rgba(255,255,255,0.1);"></div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: #64748b;">Qualified</div>
+            <div style="font-size: 28px; font-weight: 800; color: #4ade80;" id="s2-qualified">0</div>
+          </div>
+        </div>
+      </div>
+      <!-- Sources -->
+      <div style="display: flex; gap: 12px; margin-bottom: 20px;" id="s2-sources">
+        <div class="glass" style="padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0;">
+          <span style="color: #4ade80;">●</span> Bullhorn ATS <span class="text-slate-500">Connected</span>
+        </div>
+        <div class="glass" style="padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0;">
+          <span style="color: #4ade80;">●</span> LinkedIn Recruiter <span class="text-slate-500">Connected</span>
+        </div>
+        <div class="glass" style="padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0;">
+          <span style="color: #4ade80;">●</span> ZoomInfo <span class="text-slate-500">Connected</span>
+        </div>
+        <div class="glass" style="padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0;">
+          <span style="color: #4ade80;">●</span> Indeed Resume <span class="text-slate-500">Connected</span>
+        </div>
+      </div>
+      <!-- Candidate cards -->
+      <div id="s2-candidates" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: CANDIDATE OUTREACH ==================== -->
+<div class="scene" id="scene3">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span><div style="font-size:11px;color:#475569;font-weight:400;margin-top:2px;">Summit Staffing Partners</div></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Job Orders</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Candidates</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Outreach</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Interviews</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <!-- Part A: Side-by-side outreach -->
+      <div id="s3-emails" style="display: flex; gap: 24px; height: 100%;">
+        <!-- Passive candidate -->
+        <div class="glass" style="flex: 1; padding: 24px; border-radius: 16px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(168,85,247,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #c084fc;">RP</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">To: Raj Patel</div>
+              <div class="text-slate-400" style="font-size: 12px;">Currently @ Helios Tech · Passive Candidate</div>
+            </div>
+            <div style="margin-left: auto;"><span class="tag tag-passive">Passive</span></div>
+          </div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 4px;">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Subject:</strong> An Austin DevOps role that matches your Kubernetes expertise, Raj</div>
+            <div class="email-body" id="s3-email-left"></div>
+          </div>
+        </div>
+        <!-- Active candidate -->
+        <div class="glass" style="flex: 1; padding: 24px; border-radius: 16px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+            <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(34,197,94,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #4ade80;">DK</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 600;">To: Diana Kowalski</div>
+              <div class="text-slate-400" style="font-size: 12px;">Previously @ CloudScale · Active Job Seeker</div>
+            </div>
+            <div style="margin-left: auto;"><span class="tag tag-active">Active</span></div>
+          </div>
+          <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; margin-top: 4px;">
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Subject:</strong> Senior DevOps opening — Austin hybrid, $130-150K</div>
+            <div class="email-body" id="s3-email-right"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Part B: Sequence Timeline -->
+      <div id="s3-timeline" style="display: none; height: 100%;">
+        <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 6px;">Outreach Sequences</h2>
+        <p class="text-slate-400" style="font-size: 13px; margin-bottom: 24px;">Different cadences for passive vs. active candidates</p>
+        <div style="display: flex; gap: 24px;">
+          <!-- Passive sequence -->
+          <div class="glass" style="flex: 1; padding: 24px; border-radius: 14px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="tag tag-passive" style="margin-right: 8px;">Passive</span> Warm Cadence</div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">14-day sequence · 4 touches</div>
+            <div id="s3-passive-seq"></div>
+          </div>
+          <!-- Active sequence -->
+          <div class="glass" style="flex: 1; padding: 24px; border-radius: 14px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;"><span class="tag tag-active" style="margin-right: 8px;">Active</span> Direct Cadence</div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">7-day sequence · 4 touches</div>
+            <div id="s3-active-seq"></div>
+          </div>
+        </div>
+        <!-- Stats -->
+        <div style="display: flex; gap: 16px; margin-top: 24px;" id="s3-seq-stats">
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #0ea5e9;">23</span>
+            <span class="text-slate-400" style="font-size: 13px;">active sequences</span>
+          </div>
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #c084fc;">14</span>
+            <span class="text-slate-400" style="font-size: 13px;">passive candidates</span>
+          </div>
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #4ade80;">9</span>
+            <span class="text-slate-400" style="font-size: 13px;">active candidates</span>
+          </div>
+          <div class="glass" style="padding: 14px 24px; border-radius: 10px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 24px; font-weight: 800; color: #0ea5e9;">0</span>
+            <span class="text-slate-400" style="font-size: 13px;">templates used</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: INTERVIEW SCHEDULING ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span><div style="font-size:11px;color:#475569;font-weight:400;margin-top:2px;">Summit Staffing Partners</div></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Job Orders</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Candidates</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Outreach</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Interviews</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 4px;">Interview Coordination</h1>
+      <p class="text-slate-400" style="font-size: 13px; margin-bottom: 24px;">AI matches availability across candidate, recruiter, and hiring manager</p>
+
+      <div style="display: flex; gap: 24px;">
+        <!-- Calendar view -->
+        <div style="flex: 2;">
+          <div class="glass" style="padding: 24px; border-radius: 14px;">
+            <!-- Week header -->
+            <div style="display: flex; gap: 2px; margin-bottom: 16px;">
+              <div style="flex: 0.7;"></div>
+              <div style="flex: 1; text-align: center; font-size: 12px; color: #64748b; font-weight: 600;">MON</div>
+              <div style="flex: 1; text-align: center; font-size: 12px; color: #0ea5e9; font-weight: 600;">TUE</div>
+              <div style="flex: 1; text-align: center; font-size: 12px; color: #64748b; font-weight: 600;">WED</div>
+              <div style="flex: 1; text-align: center; font-size: 12px; color: #64748b; font-weight: 600;">THU</div>
+              <div style="flex: 1; text-align: center; font-size: 12px; color: #64748b; font-weight: 600;">FRI</div>
+            </div>
+            <!-- Availability rows -->
+            <div id="s4-calendar"></div>
+            <!-- Overlap highlight -->
+            <div id="s4-match" style="opacity: 0; margin-top: 16px; padding: 14px 20px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 22px;">✅</span>
+              <div>
+                <div style="font-size: 14px; font-weight: 600; color: #4ade80;">Match Found — Tuesday 2:00 PM CST</div>
+                <div style="font-size: 12px; color: #94a3b8;">All three parties available · Calendar invite sent automatically</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Status feed -->
+        <div style="flex: 1;">
+          <div class="glass" style="padding: 20px; border-radius: 14px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Interview Status</div>
+            <div id="s4-status"></div>
+          </div>
+          <!-- Invite preview -->
+          <div class="glass" style="padding: 20px; border-radius: 14px; margin-top: 16px; opacity: 0;" id="s4-invite">
+            <div style="font-size: 12px; color: #0ea5e9; font-weight: 600; margin-bottom: 10px;">📧 AUTO-GENERATED INVITE</div>
+            <div style="font-size: 13px; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">DevOps Interview — Raj Patel × Meridian Health</div>
+            <div style="font-size: 12px; color: #94a3b8; line-height: 1.6;">
+              📅 Tuesday, Mar 11 · 2:00 PM CST<br>
+              👤 Raj Patel (candidate)<br>
+              👤 Sarah Mitchell (recruiter)<br>
+              👤 David Hernandez (hiring mgr)<br>
+              📎 Candidate summary attached<br>
+              📎 Interview prep guide attached
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: ANALYTICS ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span><div style="font-size:11px;color:#475569;font-weight:400;margin-top:2px;">Summit Staffing Partners</div></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Job Orders</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Candidates</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Outreach</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Interviews</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 26px; font-weight: 700;">Performance Analytics</h1>
+          <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Last 30 days · Summit Staffing Partners</p>
+        </div>
+        <div class="glass" style="padding: 8px 16px; border-radius: 8px; font-size: 13px; color: #94a3b8;">
+          Period: <span style="color: #0ea5e9; font-weight: 600;">March 2026</span>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div style="display: flex; gap: 16px; margin-bottom: 24px;" id="s5-kpis">
+        <div class="glass kpi-card" style="opacity: 0;">
+          <div class="kpi-number" id="s5-placements">0</div>
+          <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Placements This Month</div>
+          <div class="kpi-delta up">↑ +38% vs last month</div>
+        </div>
+        <div class="glass kpi-card" style="opacity: 0;">
+          <div class="kpi-number" id="s5-ttf">0</div>
+          <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Avg Time-to-Fill (days)</div>
+          <div class="kpi-delta down">↓ -47% (was 34 days)</div>
+        </div>
+        <div class="glass kpi-card" style="opacity: 0;">
+          <div class="kpi-number" id="s5-orders">0</div>
+          <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Active Job Orders</div>
+          <div class="kpi-delta up">↑ +6 new this week</div>
+        </div>
+        <div class="glass kpi-card" style="opacity: 0;">
+          <div style="font-size: 42px; font-weight: 800; color: #4ade80;" id="s5-pipeline">$0</div>
+          <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Pipeline Value</div>
+          <div class="kpi-delta up">↑ In projected fees</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 20px;">
+        <!-- Source Effectiveness -->
+        <div class="glass" style="flex: 1; padding: 24px; border-radius: 14px; opacity: 0;" id="s5-sources">
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Source Effectiveness</div>
+          <div id="s5-source-bars"></div>
+        </div>
+        <!-- Pipeline Funnel -->
+        <div class="glass" style="flex: 1.2; padding: 24px; border-radius: 14px; opacity: 0;" id="s5-funnel">
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Recruitment Funnel</div>
+          <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px;" id="s5-funnel-items"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: COST COMPARISON + CTA ==================== -->
+<div class="scene" id="scene6">
+  <div style="width: 1920px; height: 1080px; padding: 60px 100px; display: flex; flex-direction: column; justify-content: center;">
+    <!-- Cost comparison -->
+    <div id="s6-cost" style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 40px; opacity: 0;">
+      <!-- Junior Recruiter -->
+      <div class="cost-card cost-red" style="max-width: 440px; text-align: left;">
+        <div style="font-size: 14px; color: #f87171; font-weight: 600; margin-bottom: 12px;">Junior Recruiter</div>
+        <div style="font-size: 48px; font-weight: 800; color: #fca5a5; margin-bottom: 16px;">~$5,000<span style="font-size: 18px; color: #94a3b8; font-weight: 400;">/mo</span></div>
+        <div style="font-size: 13px; color: #94a3b8; line-height: 2;">
+          <div>📊 Sources ~40 candidates/week</div>
+          <div>📝 Template-based outreach, ~15 personalized/day</div>
+          <div>📅 Manual scheduling, 2-3 hours/day</div>
+          <div>✅ <span style="color: #cbd5e1; font-weight: 600;">2-3 placements/month</span></div>
+        </div>
+      </div>
+      <!-- VS -->
+      <div style="display: flex; align-items: center; font-size: 32px; color: #475569; font-weight: 300;">vs</div>
+      <!-- AI Agent -->
+      <div class="cost-card cost-green" style="max-width: 440px; text-align: left;">
+        <div style="font-size: 14px; color: #0ea5e9; font-weight: 600; margin-bottom: 12px;">Recruiter AI Agent</div>
+        <div style="font-size: 48px; font-weight: 800; color: #38bdf8; margin-bottom: 16px;">$500<span style="font-size: 18px; color: #94a3b8; font-weight: 400;">/mo</span></div>
+        <div style="font-size: 13px; color: #94a3b8; line-height: 2;">
+          <div>📊 Sources 200+ candidates/week</div>
+          <div>📝 Fully personalized outreach, unlimited</div>
+          <div>📅 Automated scheduling, 24/7</div>
+          <div>✅ <span style="color: #4ade80; font-weight: 600;">10-15 placements/month</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Savings callout -->
+    <div id="s6-savings" style="text-align: center; margin-bottom: 48px; opacity: 0;">
+      <div class="glass" style="display: inline-block; padding: 20px 48px; border-radius: 14px; border: 1px solid rgba(14,165,233,0.3);">
+        <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">10× the output. 10% of the cost.</div>
+      </div>
+    </div>
+
+    <!-- CTA section -->
+    <div id="s6-cta" style="text-align: center; opacity: 0;">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; font-weight: 300; margin-bottom: 16px;">Your AI. Only yours.</div>
+      <div style="font-size: 18px; color: #0ea5e9; font-weight: 500; margin-bottom: 24px;">solveworks.io</div>
+      <div style="font-size: 16px; color: #cbd5e1; font-weight: 300;">Ready to see what your AI recruiter looks like? Let's talk.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const SCENE_DURATIONS = [15, 60, 70, 70, 50, 55, 50];
+const TOTAL_DURATION = SCENE_DURATIONS.reduce((a, b) => a + b, 0);
+let currentScene = -1;
+let presentationStartTime = 0;
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function animateCounter(el, target, duration = 2000, prefix = '', suffix = '') {
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(target * eased);
+    el.textContent = prefix + current.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function typeText(el, text, speed = 35, startDelay = 0) {
+  let i = 0;
+  el.innerHTML = '<span class="cursor"></span>';
+  setTimeout(() => {
+    const interval = setInterval(() => {
+      if (i < text.length) {
+        el.innerHTML = text.substring(0, i + 1).replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => { el.innerHTML = text.replace(/\n/g, '<br>'); }, 2000);
+      }
+    }, speed);
+  }, startDelay);
+}
+
+function fadeIn(el, delay = 0, duration = 500) {
+  setTimeout(() => {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = '1';
+  }, delay);
+}
+
+function fadeOut(el, delay = 0, duration = 500) {
+  setTimeout(() => {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = '0';
+  }, delay);
+}
+
+// ============================================================
+// AUDIO
+// ============================================================
+const voiceover = new Audio('voiceover.mp3');
+voiceover.preload = 'auto';
+
+// ============================================================
+// SCENE MANAGEMENT
+// ============================================================
+function showScene(index) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const scene = document.getElementById('scene' + index);
+  if (scene) {
+    scene.classList.add('active');
+    currentScene = index;
+    window['initScene' + index]?.();
+  }
+}
+
+function advanceScene() {
+  const nextScene = currentScene + 1;
+  if (nextScene >= SCENE_DURATIONS.length) {
+    setTimeout(() => {
+      document.querySelectorAll('.scene').forEach(s => {
+        s.style.transition = 'opacity 1.5s ease';
+        s.style.opacity = '0';
+      });
+    }, 2000);
+    return;
+  }
+  showScene(nextScene);
+  setTimeout(advanceScene, SCENE_DURATIONS[nextScene] * 1000);
+}
+
+function updateProgress() {
+  if (currentScene < 0) return;
+  const elapsed = (performance.now() - presentationStartTime) / 1000;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  if (pct < 100) requestAnimationFrame(updateProgress);
+}
+
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  presentationStartTime = performance.now();
+  voiceover.play().catch(() => {});
+  showScene(0);
+  setTimeout(advanceScene, SCENE_DURATIONS[0] * 1000);
+  requestAnimationFrame(updateProgress);
+}
+
+// ============================================================
+// SCENE 0: Opening Hook
+// ============================================================
+function initScene0() {
+  const q = document.getElementById('s0-question');
+  const logo = document.getElementById('s0-logo');
+  fadeIn(q, 1500, 1000);
+  fadeOut(q, 9000, 800);
+  fadeIn(logo, 10000, 1000);
+}
+
+// ============================================================
+// SCENE 1: Job Order Intake
+// ============================================================
+function initScene1() {
+  // Notification slides in
+  const notif = document.getElementById('s1-notif');
+  notif.style.opacity = '0';
+  setTimeout(() => {
+    notif.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    notif.style.opacity = '1';
+  }, 1000);
+
+  // Requirements appear
+  fadeIn(document.getElementById('s1-reqs'), 8000, 800);
+
+  // Ideal candidate profile
+  fadeIn(document.getElementById('s1-profile'), 12000, 800);
+
+  // Skill bars
+  const skills = [
+    { name: 'AWS', pct: 95, color: '#f97316' },
+    { name: 'Kubernetes', pct: 90, color: '#0ea5e9' },
+    { name: 'CI/CD Pipelines', pct: 85, color: '#8b5cf6' },
+    { name: 'Infrastructure as Code', pct: 80, color: '#22d3ee' },
+    { name: 'Terraform', pct: 60, color: '#facc15' },
+    { name: 'Healthcare Domain', pct: 40, color: '#4ade80' },
+  ];
+  const skillsContainer = document.getElementById('s1-skills');
+  skillsContainer.innerHTML = '';
+  skills.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom: 10px;';
+    row.innerHTML = `
+      <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+        <span style="color: #cbd5e1;">${s.name}</span>
+        <span style="color: ${s.color}; font-weight: 600;">${s.pct}%</span>
+      </div>
+      <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+        <div id="s1-skill-${i}" style="height: 100%; width: 0%; background: ${s.color}; border-radius: 3px; transition: width 1.5s ease;"></div>
+      </div>
+    `;
+    skillsContainer.appendChild(row);
+    setTimeout(() => {
+      document.getElementById('s1-skill-' + i).style.width = s.pct + '%';
+    }, 14000 + i * 300);
+  });
+}
+
+// ============================================================
+// SCENE 2: Database Mining
+// ============================================================
+const S2_CANDIDATES = [
+  { initials: 'RP', name: 'Raj Patel', score: 94, scoreClass: 'match-high', detail: '7yr DevOps · AWS/K8s certified · Austin-based', status: 'Passive — currently employed', statusTag: 'tag-passive', color: 'rgba(168,85,247,0.2)', textColor: '#c084fc', flag: '' },
+  { initials: 'DK', name: 'Diana Kowalski', score: 91, scoreClass: 'match-high', detail: '6yr DevOps · AWS/GCP · Denver → open to relocation', status: 'Active — job seeking', statusTag: 'tag-active', color: 'rgba(34,197,94,0.2)', textColor: '#4ade80', flag: '' },
+  { initials: 'MT', name: 'Marcus Thompson', score: 88, scoreClass: 'match-med', detail: '5yr DevOps · Strong Kubernetes · No AWS cert (3yr AWS exp)', status: 'Passive — open to conversations', statusTag: 'tag-passive', color: 'rgba(234,179,8,0.2)', textColor: '#facc15', flag: '' },
+  { initials: 'YT', name: 'Yuki Tanaka', score: 85, scoreClass: 'match-med', detail: '8yr DevOps · Overqualified risk · Salary expectation $160K', status: 'Passive — currently employed', statusTag: 'tag-passive', color: 'rgba(249,115,22,0.2)', textColor: '#fb923c', flag: '⚠️ Salary above range' },
+  { initials: 'CW', name: 'Chen Wei', score: 82, scoreClass: 'match-low', detail: '5yr DevOps · All skills match · H1-B transfer needed', status: 'Active — job seeking', statusTag: 'tag-active', color: 'rgba(249,115,22,0.2)', textColor: '#fb923c', flag: '⚠️ Visa sponsorship' },
+];
+
+function initScene2() {
+  // Sources animate in
+  const sources = document.querySelectorAll('#s2-sources .glass');
+  sources.forEach((s, i) => fadeIn(s, 1000 + i * 800, 400));
+
+  // Counter
+  setTimeout(() => animateCounter(document.getElementById('s2-counter'), 142, 4000), 2000);
+  setTimeout(() => animateCounter(document.getElementById('s2-qualified'), 23, 2000), 5000);
+
+  // Candidate cards
+  const container = document.getElementById('s2-candidates');
+  container.innerHTML = '';
+  S2_CANDIDATES.forEach((c, i) => {
+    const card = document.createElement('div');
+    card.className = 'candidate-card';
+    card.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="match-score ${c.scoreClass}">${c.score}%</div>
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: ${c.color}; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: ${c.textColor};">${c.initials}</div>
+        <div style="flex: 1;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 16px; font-weight: 600;">${c.name}</span>
+            <span class="tag ${c.statusTag}" style="font-size: 11px;">${c.status}</span>
+            ${c.flag ? `<span class="tag tag-flagged" style="font-size: 11px;">${c.flag}</span>` : ''}
+          </div>
+          <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">${c.detail}</div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="glass" style="padding: 6px 12px; border-radius: 6px; font-size: 11px; color: #0ea5e9; cursor: pointer;">View Profile</div>
+          <div style="padding: 6px 12px; border-radius: 6px; font-size: 11px; background: rgba(14,165,233,0.15); color: #38bdf8; cursor: pointer;">Start Outreach</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 8000 + i * 5000);
+  });
+}
+
+// ============================================================
+// SCENE 3: Candidate Outreach
+// ============================================================
+const S3_LEFT_TEXT = `Raj — I came across your work on the container orchestration migration at Helios Tech. Impressive scale.
+
+I'm working with a health tech company in Austin that's building out their cloud infrastructure team. Senior DevOps, heavy Kubernetes and AWS — right in your wheelhouse. Hybrid role, strong comp in the $130-150K range.
+
+Not sure if you're even looking, but thought it was worth a quick conversation. 10 minutes over coffee?`;
+
+const S3_RIGHT_TEXT = `Diana — saw you're exploring new DevOps opportunities. I have a Senior DevOps role with a growing health tech company in Austin — hybrid model, $130-150K range.
+
+They need Kubernetes and AWS depth, which your background at CloudScale checks both boxes. They're moving fast — looking to have someone start within 30 days.
+
+Want me to get you in front of the hiring manager this week?`;
+
+const S3_PASSIVE_SEQ = [
+  { day: 'Day 1', icon: '✉️', title: 'Warm intro', desc: 'Lead with their work, not the role', color: '#c084fc' },
+  { day: 'Day 4', icon: '💡', title: 'Value-add', desc: 'Company culture intel + team info', color: '#818cf8' },
+  { day: 'Day 8', icon: '✉️', title: 'Soft follow-up', desc: '"Just checking if the timing is better"', color: '#c084fc' },
+  { day: 'Day 14', icon: '🤝', title: 'No-pressure close', desc: '"Happy to reconnect anytime"', color: '#64748b' },
+];
+
+const S3_ACTIVE_SEQ = [
+  { day: 'Day 1', icon: '✉️', title: 'Direct pitch', desc: 'Role details, comp, timeline', color: '#4ade80' },
+  { day: 'Day 2', icon: '👤', title: 'HM intro', desc: 'Offer to connect with hiring manager', color: '#0ea5e9' },
+  { day: 'Day 4', icon: '📋', title: 'Interview prep', desc: 'Send prep guide + company overview', color: '#4ade80' },
+  { day: 'Day 7', icon: '⏰', title: 'Decision push', desc: '"They\'re interviewing this week"', color: '#fb923c' },
+];
+
+function initScene3() {
+  typeText(document.getElementById('s3-email-left'), S3_LEFT_TEXT, 30, 1000);
+  typeText(document.getElementById('s3-email-right'), S3_RIGHT_TEXT, 25, 8000);
+
+  // Switch to timeline at 38s
+  setTimeout(() => {
+    document.getElementById('s3-emails').style.display = 'none';
+    document.getElementById('s3-timeline').style.display = 'block';
+
+    // Passive sequence
+    const passiveContainer = document.getElementById('s3-passive-seq');
+    passiveContainer.innerHTML = '';
+    S3_PASSIVE_SEQ.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.style.cssText = `display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 8px; opacity: 0;`;
+      el.innerHTML = `
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: ${item.color}20; border: 2px solid ${item.color}; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">${item.icon}</div>
+        <div>
+          <div style="font-size: 11px; color: ${item.color}; font-weight: 600;">${item.day}</div>
+          <div style="font-size: 13px; font-weight: 600;">${item.title}</div>
+          <div style="font-size: 11px; color: #64748b;">${item.desc}</div>
+        </div>
+      `;
+      passiveContainer.appendChild(el);
+      setTimeout(() => { el.style.transition = 'opacity 0.4s ease'; el.style.opacity = '1'; }, 1000 + i * 2000);
+    });
+
+    // Active sequence
+    const activeContainer = document.getElementById('s3-active-seq');
+    activeContainer.innerHTML = '';
+    S3_ACTIVE_SEQ.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.style.cssText = `display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 8px; opacity: 0;`;
+      el.innerHTML = `
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: ${item.color}20; border: 2px solid ${item.color}; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">${item.icon}</div>
+        <div>
+          <div style="font-size: 11px; color: ${item.color}; font-weight: 600;">${item.day}</div>
+          <div style="font-size: 13px; font-weight: 600;">${item.title}</div>
+          <div style="font-size: 11px; color: #64748b;">${item.desc}</div>
+        </div>
+      `;
+      activeContainer.appendChild(el);
+      setTimeout(() => { el.style.transition = 'opacity 0.4s ease'; el.style.opacity = '1'; }, 1500 + i * 2000);
+    });
+  }, 38000);
+}
+
+// ============================================================
+// SCENE 4: Interview Scheduling
+// ============================================================
+function initScene4() {
+  const calContainer = document.getElementById('s4-calendar');
+  calContainer.innerHTML = '';
+
+  const people = [
+    { name: 'Raj Patel', role: 'Candidate', color: '#4ade80', slots: [0,0,1,1,0, 0,1,1,0,1, 1,0,1,0,0, 0,0,0,1,0] },
+    { name: 'Sarah Mitchell', role: 'Recruiter', color: '#0ea5e9', slots: [1,0,1,0,1, 0,1,0,1,0, 1,1,1,0,1, 0,0,1,1,0] },
+    { name: 'David Hernandez', role: 'Hiring Mgr', color: '#c084fc', slots: [0,1,0,0,1, 0,1,0,0,1, 0,0,1,0,1, 1,0,0,0,1] },
+  ];
+
+  const timeSlots = ['9:00 AM', '10:00 AM', '11:00 AM', '2:00 PM'];
+
+  people.forEach((person, pi) => {
+    const row = document.createElement('div');
+    row.style.cssText = `display: flex; align-items: center; gap: 2px; margin-bottom: 8px; opacity: 0;`;
+    let html = `<div style="flex: 0.7; font-size: 12px;">
+      <div style="font-weight: 600; color: ${person.color};">${person.name}</div>
+      <div style="color: #64748b; font-size: 11px;">${person.role}</div>
+    </div>`;
+    for (let d = 0; d < 5; d++) {
+      html += '<div style="flex: 1; display: flex; gap: 3px; justify-content: center;">';
+      for (let t = 0; t < 4; t++) {
+        const idx = d * 4 + t;
+        const available = person.slots[idx];
+        // Tuesday 2PM = day 1, timeslot 3
+        const isMatch = d === 1 && t === 3;
+        const bg = isMatch && available ? `background: ${person.color}; opacity: 1;` :
+                   available ? `background: ${person.color}40;` : 'background: rgba(255,255,255,0.04);';
+        html += `<div style="width: 28px; height: 20px; border-radius: 4px; ${bg}" title="${timeSlots[t]}"></div>`;
+      }
+      html += '</div>';
+    }
+    row.innerHTML = html;
+    calContainer.appendChild(row);
+    setTimeout(() => { row.style.transition = 'opacity 0.6s ease'; row.style.opacity = '1'; }, 2000 + pi * 3000);
+  });
+
+  // Legend
+  setTimeout(() => {
+    const legend = document.createElement('div');
+    legend.style.cssText = 'display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: #64748b;';
+    legend.innerHTML = '<span>Time slots: 9 AM, 10 AM, 11 AM, 2 PM</span><span>■ = Available</span>';
+    calContainer.appendChild(legend);
+  }, 10000);
+
+  // Match found
+  fadeIn(document.getElementById('s4-match'), 14000, 800);
+
+  // Status feed
+  const statusContainer = document.getElementById('s4-status');
+  statusContainer.innerHTML = '';
+  const statuses = [
+    { icon: '✅', text: 'Raj Patel — Interview confirmed, Tue 2:00 PM', color: '#4ade80' },
+    { icon: '✅', text: 'Diana Kowalski — Phone screen, Wed 10:30 AM', color: '#4ade80' },
+    { icon: '⏳', text: 'Marcus Thompson — Awaiting HM response', color: '#facc15' },
+    { icon: '📧', text: 'Yuki Tanaka — Availability request sent', color: '#94a3b8' },
+  ];
+  statuses.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.style.cssText = `display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; opacity: 0;`;
+    el.innerHTML = `<span style="font-size: 16px;">${s.icon}</span><span style="color: ${s.color};">${s.text}</span>`;
+    statusContainer.appendChild(el);
+    setTimeout(() => { el.style.transition = 'opacity 0.4s ease'; el.style.opacity = '1'; }, 18000 + i * 3000);
+  });
+
+  // Invite preview
+  fadeIn(document.getElementById('s4-invite'), 30000, 800);
+}
+
+// ============================================================
+// SCENE 5: Analytics
+// ============================================================
+function initScene5() {
+  const kpis = document.querySelectorAll('#s5-kpis .kpi-card');
+  kpis.forEach((k, i) => fadeIn(k, 1000 + i * 1500, 600));
+
+  setTimeout(() => animateCounter(document.getElementById('s5-placements'), 12, 2000), 1000);
+  setTimeout(() => animateCounter(document.getElementById('s5-ttf'), 18, 2000), 2500);
+  setTimeout(() => animateCounter(document.getElementById('s5-orders'), 31, 2000), 4000);
+  setTimeout(() => {
+    const el = document.getElementById('s5-pipeline');
+    const start = performance.now();
+    function update(now) {
+      const progress = Math.min((now - start) / 2000, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = '$' + Math.round(487000 * eased).toLocaleString();
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }, 5500);
+
+  // Source bars
+  fadeIn(document.getElementById('s5-sources'), 12000, 600);
+  const sourceBars = document.getElementById('s5-source-bars');
+  sourceBars.innerHTML = '';
+  const sources = [
+    { name: 'ATS Database (Bullhorn)', pct: 41, color: '#0ea5e9' },
+    { name: 'LinkedIn Recruiter', pct: 28, color: '#818cf8' },
+    { name: 'ZoomInfo', pct: 18, color: '#4ade80' },
+    { name: 'Indeed / Job Boards', pct: 13, color: '#fb923c' },
+  ];
+  sources.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom: 14px;';
+    row.innerHTML = `
+      <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+        <span style="color: #cbd5e1;">${s.name}</span>
+        <span style="color: ${s.color}; font-weight: 700;">${s.pct}%</span>
+      </div>
+      <div style="height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+        <div id="s5-bar-${i}" style="height: 100%; width: 0%; background: ${s.color}; border-radius: 4px; transition: width 1.5s ease;"></div>
+      </div>
+    `;
+    sourceBars.appendChild(row);
+    setTimeout(() => { document.getElementById('s5-bar-' + i).style.width = s.pct + '%'; }, 14000 + i * 400);
+  });
+
+  // Funnel
+  fadeIn(document.getElementById('s5-funnel'), 18000, 600);
+  const funnelContainer = document.getElementById('s5-funnel-items');
+  funnelContainer.innerHTML = '';
+  const funnel = [
+    { num: 847, label: 'Sourced' },
+    { num: 312, label: 'Qualified' },
+    { num: 156, label: 'Contacted' },
+    { num: 89, label: 'Responded' },
+    { num: 47, label: 'Interviewed' },
+    { num: 12, label: 'Placed' },
+  ];
+  funnel.forEach((f, i) => {
+    if (i > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'funnel-arrow';
+      arrow.textContent = '→';
+      arrow.style.opacity = '0';
+      funnelContainer.appendChild(arrow);
+      setTimeout(() => { arrow.style.transition = 'opacity 0.3s ease'; arrow.style.opacity = '1'; }, 20000 + i * 1500);
+    }
+    const step = document.createElement('div');
+    step.className = 'funnel-step';
+    step.style.opacity = '0';
+    step.innerHTML = `
+      <div class="funnel-number" id="s5-fn-${i}">0</div>
+      <div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">${f.label}</div>
+    `;
+    funnelContainer.appendChild(step);
+    setTimeout(() => {
+      step.style.transition = 'opacity 0.5s ease';
+      step.style.opacity = '1';
+      animateCounter(document.getElementById('s5-fn-' + i), f.num, 1500);
+    }, 20000 + i * 1500);
+  });
+}
+
+// ============================================================
+// SCENE 6: Cost Comparison + CTA
+// ============================================================
+function initScene6() {
+  fadeIn(document.getElementById('s6-cost'), 2000, 800);
+  fadeIn(document.getElementById('s6-savings'), 18000, 800);
+  fadeIn(document.getElementById('s6-cta'), 28000, 1000);
+
+  // Fade to black at very end
+  setTimeout(() => {
+    document.querySelectorAll('.scene').forEach(s => {
+      s.style.transition = 'opacity 2s ease';
+      s.style.opacity = '0';
+    });
+  }, 47000);
+}
+</script>
+</body>
+</html>

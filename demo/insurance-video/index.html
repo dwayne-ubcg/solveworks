@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>SolveWorks Insurance Agency AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; }
+
+.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* Play button */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; gap: 32px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+#playBtn .preview-title { font-size: 18px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* Progress bar */
+#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; transition: width 0.5s linear; }
+
+/* Glass card */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+
+/* Tags */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
+.tag-auto { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-home { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-commercial { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tag-life { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-umbrella { background: rgba(6,182,212,0.2); color: #22d3ee; }
+.tag-renters { background: rgba(236,72,153,0.2); color: #f472b6; }
+.tag-workers { background: rgba(245,158,11,0.2); color: #fbbf24; }
+.tag-liability { background: rgba(99,102,241,0.2); color: #818cf8; }
+
+/* Badges */
+.badge-a { background: rgba(34,197,94,0.2); color: #4ade80; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.badge-b { background: rgba(14,165,233,0.2); color: #38bdf8; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.badge-c { background: rgba(234,179,8,0.2); color: #facc15; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.badge-best { background: rgba(34,197,94,0.15); color: #4ade80; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-rec { background: rgba(14,165,233,0.15); color: #38bdf8; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-risk { background: rgba(239,68,68,0.15); color: #f87171; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: rgba(34,197,94,0.15); color: #4ade80; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.badge-sent { background: rgba(14,165,233,0.15); color: #38bdf8; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+
+/* Animations */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes expandIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes countPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+/* Sidebar */
+.sidebar { width: 250px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 28px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 0 24px 12px; }
+.sidebar-logo-main { font-size: 20px; font-weight: 700; }
+.sidebar-agency { font-size: 11px; color: #64748b; padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-item { padding: 11px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-item .count { margin-left: auto; background: rgba(14,165,233,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+
+/* Lead card */
+.lead-card { padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; transform: translateX(30px); }
+.lead-card.visible { opacity: 1; transform: translateX(0); }
+
+/* Quote row */
+.quote-row { display: flex; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; transform: translateY(15px); }
+.quote-row.visible { opacity: 1; transform: translateY(0); }
+.quote-row:last-child { border-bottom: none; }
+
+/* Pipeline column */
+.pipeline-col { flex: 1; padding: 0 10px; }
+.pipeline-header { padding: 12px 16px; border-radius: 10px 10px 0 0; font-size: 13px; font-weight: 600; text-align: center; margin-bottom: 2px; }
+.pipeline-body { border-radius: 0 0 10px 10px; padding: 12px; max-height: 700px; overflow: hidden; }
+.pipeline-card { padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; font-size: 13px; opacity: 0; transition: opacity 0.4s ease, transform 0.4s ease; transform: translateY(15px); }
+.pipeline-card.visible { opacity: 1; transform: translateY(0); }
+
+/* Gap card */
+.gap-card { padding: 18px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; transition: opacity 0.5s ease, transform 0.5s ease; transform: translateX(30px); }
+.gap-card.visible { opacity: 1; transform: translateX(0); }
+
+/* Metric card */
+.metric-card { padding: 24px; border-radius: 14px; text-align: center; }
+.metric-number { font-size: 38px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.metric-label { font-size: 13px; color: #94a3b8; margin-top: 6px; }
+.metric-change { font-size: 12px; margin-top: 4px; }
+.metric-up { color: #4ade80; }
+.metric-down { color: #f87171; }
+
+/* Cost cards */
+.cost-card { padding: 32px; border-radius: 16px; text-align: center; flex: 1; }
+.cost-red { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); }
+.cost-green { background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.25); animation: pulseGlow 2.5s infinite; }
+
+/* Data table */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.data-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.data-table td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.data-table tr { opacity: 0; transition: opacity 0.4s ease; }
+.data-table tr.visible { opacity: 1; }
+
+/* Star rating */
+.stars { color: #fbbf24; font-size: 13px; letter-spacing: 1px; }
+.stars-dim { color: #334155; }
+
+/* Source bar */
+.source-bar { height: 8px; border-radius: 4px; display: flex; overflow: hidden; }
+.source-bar div { height: 100%; transition: width 1.5s ease; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="preview-title">SolveWorks — Insurance Agency AI</div>
+  <div class="play-circle">
+    <div class="play-triangle"></div>
+  </div>
+</div>
+
+<div id="progressBar" style="width: 0%"></div>
+
+<!-- ==================== SCENE 0: OPENING HOOK ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-hook" style="font-size: 40px; font-weight: 300; line-height: 1.6; opacity: 0; max-width: 900px; margin: 0 auto;">
+      847 policies renew next month.<br>
+      <span style="color: #94a3b8; font-size: 32px;">Your CSR is handling them</span><br>
+      <span style="color: #0ea5e9; font-weight: 600;">one phone call at a time.</span>
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: LEAD CAPTURE ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-agency">Lakeshore Insurance Group</div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Leads <span class="count">34</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Policies <span class="count">2,847</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Renewals <span class="count">847</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm12-2h-4a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2z"/><polyline points="13 7 8 12 13 17"/></svg>
+        Quotes
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Cross-Sell <span class="count">47</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Incoming Leads</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">AI-qualified and auto-routed to the right producer</p>
+        </div>
+        <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 32px; font-weight: 800; color: #0ea5e9;" id="s1-counter">0</span>
+          <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">leads qualified<br>this week</span>
+        </div>
+      </div>
+      <!-- Source breakdown -->
+      <div style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748b; margin-bottom: 6px;">
+          <span>Lead Sources</span>
+          <span>This week</span>
+        </div>
+        <div class="source-bar" id="s1-sourcebar">
+          <div style="background: #0ea5e9; width: 0%;" id="s1-src1"></div>
+          <div style="background: #4ade80; width: 0%;" id="s1-src2"></div>
+          <div style="background: #fb923c; width: 0%;" id="s1-src3"></div>
+          <div style="background: #c084fc; width: 0%;" id="s1-src4"></div>
+        </div>
+        <div style="display: flex; gap: 20px; font-size: 11px; color: #94a3b8; margin-top: 6px;">
+          <span><span style="color: #0ea5e9;">●</span> Website 42%</span>
+          <span><span style="color: #4ade80;">●</span> Referrals 28%</span>
+          <span><span style="color: #fb923c;">●</span> Google Ads 18%</span>
+          <span><span style="color: #c084fc;">●</span> Phone 12%</span>
+        </div>
+      </div>
+      <!-- Lead feed -->
+      <div style="display: flex; gap: 24px;">
+        <div style="flex: 1;" id="s1-leads"></div>
+        <div style="width: 340px;">
+          <div class="glass" style="padding: 20px; border-radius: 12px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 16px; color: #94a3b8;">Routing Activity</h3>
+            <div id="s1-routing" style="font-size: 13px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: QUOTE ENGINE ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-agency">Lakeshore Insurance Group</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Leads</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Policies</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Renewals</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm12-2h-4a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2z"/></svg>Quotes</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>Cross-Sell</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <!-- Client header -->
+      <div id="s2-header" style="opacity: 0; margin-bottom: 24px;">
+        <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">← Back to Leads</div>
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <div style="width: 52px; height: 52px; border-radius: 12px; background: linear-gradient(135deg, rgba(34,197,94,0.3), rgba(34,197,94,0.1)); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #4ade80;">MT</div>
+          <div>
+            <h1 style="font-size: 26px; font-weight: 700;">Michael & Jennifer Torres</h1>
+            <div style="display: flex; gap: 16px; margin-top: 4px; font-size: 13px; color: #94a3b8;">
+              <span>🏠 Homeowner's Insurance</span>
+              <span>📐 2,400 sq ft</span>
+              <span>🔨 Built 2018</span>
+              <span>💰 $485,000 replacement</span>
+              <span class="tag tag-home">No Claims</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Quote comparison table -->
+      <div class="glass" style="border-radius: 14px; overflow: hidden; margin-bottom: 20px;" id="s2-table-wrap">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-size: 18px; font-weight: 600;">Carrier Comparison <span class="text-accent">(5 carriers)</span></h2>
+          <span class="text-slate-500" style="font-size: 12px;">Quoted in 4.2 seconds</span>
+        </div>
+        <table class="data-table" id="s2-table">
+          <thead><tr style="opacity:1;"><th>Carrier</th><th>Annual Premium</th><th>Rating</th><th>Coverage A</th><th>Deductible</th><th>Claims Satisfaction</th><th></th></tr></thead>
+          <tbody id="s2-tbody"></tbody>
+        </table>
+      </div>
+      <!-- AI Recommendation -->
+      <div class="glass" id="s2-rec" style="padding: 20px 24px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.3); opacity: 0; display: flex; align-items: center; gap: 16px;">
+        <div style="font-size: 28px;">🤖</div>
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: 600; color: #0ea5e9; margin-bottom: 4px;">AI Recommendation</div>
+          <div style="font-size: 13px; color: #cbd5e1; line-height: 1.5;">
+            <strong>Lakeland Casualty</strong> recommended — best coverage-to-price ratio. $500 deductible (vs $1,000), 98% claims satisfaction, only $73/yr more than the cheapest option. For a family with no prior claims, the lower deductible provides better protection at minimal additional cost.
+          </div>
+        </div>
+        <div style="padding: 10px 24px; background: #0ea5e9; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;">Generate Proposal →</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: RENEWAL MANAGEMENT ==================== -->
+<div class="scene" id="scene3">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-agency">Lakeshore Insurance Group</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Leads</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Policies</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Renewals <span class="count">847</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm12-2h-4a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2z"/></svg>Quotes</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>Cross-Sell</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 28px 36px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1 style="font-size: 26px; font-weight: 700;">Renewal Pipeline</h1>
+          <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Automated 90/60/30 day renewal management</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass" style="padding: 10px 18px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #0ea5e9;" id="s3-total">0</div>
+            <div class="text-slate-500" style="font-size: 11px;">Total Renewals</div>
+          </div>
+          <div class="glass" style="padding: 10px 18px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #4ade80;">94.2%</div>
+            <div class="text-slate-500" style="font-size: 11px;">Retention Rate</div>
+          </div>
+          <div class="glass" style="padding: 10px 18px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 800; color: #fbbf24;" id="s3-requote">0</div>
+            <div class="text-slate-500" style="font-size: 11px;">Re-quote Available</div>
+          </div>
+        </div>
+      </div>
+      <!-- Pipeline columns -->
+      <div style="display: flex; gap: 16px; height: calc(100% - 100px);" id="s3-pipeline">
+        <!-- 90 days -->
+        <div class="pipeline-col">
+          <div class="pipeline-header" style="background: rgba(59,130,246,0.15); color: #60a5fa;">📋 90 Days Out <span style="opacity: 0.7;">· 312 policies</span></div>
+          <div class="pipeline-body glass" id="s3-col90"></div>
+        </div>
+        <!-- 60 days -->
+        <div class="pipeline-col">
+          <div class="pipeline-header" style="background: rgba(234,179,8,0.15); color: #facc15;">📧 60 Days Out <span style="opacity: 0.7;">· 247 policies</span></div>
+          <div class="pipeline-body glass" id="s3-col60"></div>
+        </div>
+        <!-- 30 days -->
+        <div class="pipeline-col">
+          <div class="pipeline-header" style="background: rgba(239,68,68,0.15); color: #f87171;">🔥 30 Days Out <span style="opacity: 0.7;">· 288 policies</span></div>
+          <div class="pipeline-body glass" id="s3-col30"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: CROSS-SELL DETECTION ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-agency">Lakeshore Insurance Group</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Leads</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Policies</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Renewals</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm12-2h-4a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2z"/></svg>Quotes</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Cross-Sell <span class="count">47</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <h1 style="font-size: 26px; font-weight: 700;">Coverage Gap Analysis</h1>
+          <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">AI-detected cross-sell opportunities across your book</p>
+        </div>
+        <div class="glass" style="padding: 12px 20px; display: flex; gap: 24px; font-size: 13px;" id="s4-stats">
+          <div><span style="color: #0ea5e9; font-weight: 700;">47</span> <span class="text-slate-400">active campaigns</span></div>
+          <div><span style="color: #4ade80; font-weight: 700;">12</span> <span class="text-slate-400">converted this month</span></div>
+          <div><span style="color: #fbbf24; font-weight: 700;">$18,400</span> <span class="text-slate-400">new annual premium</span></div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <div style="flex: 1;" id="s4-gaps"></div>
+        <div style="width: 400px;" id="s4-email" style="opacity: 0;">
+          <div class="glass" style="padding: 20px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.2); opacity: 0;" id="s4-email-card">
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">📧 AI-Generated Outreach — Sent 2 days ago</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 6px;"><strong style="color: #cbd5e1;">To:</strong> Robert Ainsworth</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Subject:</strong> A gap in your coverage worth looking at</div>
+            <div style="font-size: 13px; line-height: 1.6; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+              Robert — you've got excellent auto and homeowner's coverage through us, and that's solid. But I noticed you don't carry an umbrella policy.<br><br>
+              With assets like yours, a single lawsuit could exceed your underlying limits. An umbrella policy adds $1M in extra liability protection for about $320 a year — less than a dollar a day.<br><br>
+              Worth a quick conversation?<br><br>
+              <span style="color: #64748b;">— Lakeshore Insurance Group</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; gap: 8px;">
+              <span style="font-size: 11px; color: #4ade80;">✓ Opened</span>
+              <span style="font-size: 11px; color: #38bdf8;">✓ Clicked link</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: ANALYTICS ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-agency">Lakeshore Insurance Group</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Leads</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Policies</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Renewals</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H5a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2zm12-2h-4a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2a2 2 0 0 0 2-2z"/></svg>Quotes</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>Cross-Sell</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 28px 36px; overflow: hidden;">
+      <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 20px;">Agency Performance</h1>
+      <!-- Top metrics -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;" id="s5-metrics"></div>
+      <!-- Producer performance + AI Activity -->
+      <div style="display: flex; gap: 20px;">
+        <div class="glass" style="flex: 1; padding: 20px; border-radius: 14px;">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">Producer Performance</h3>
+          <table class="data-table" id="s5-producers">
+            <thead><tr style="opacity:1;"><th>Producer</th><th>Policies</th><th>Premium</th><th>Retention</th><th></th></tr></thead>
+            <tbody id="s5-prod-body"></tbody>
+          </table>
+        </div>
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; margin-bottom: 16px;" id="s5-activity">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">AI Activity This Month</h3>
+            <div id="s5-activity-items"></div>
+          </div>
+          <!-- Mini trend chart -->
+          <div class="glass" style="padding: 20px; border-radius: 14px;" id="s5-trend">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">6-Month Premium Trend</h3>
+            <div style="display: flex; align-items: flex-end; gap: 8px; height: 120px;" id="s5-bars"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: COST COMPARISON & CTA ==================== -->
+<div class="scene" id="scene6">
+  <div style="width: 1920px; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 120px;">
+    <!-- Cost comparison -->
+    <div id="s6-cost" style="display: flex; gap: 40px; align-items: stretch; margin-bottom: 40px; opacity: 0; width: 100%; max-width: 1200px;">
+      <div class="cost-card cost-red" style="text-align: left;">
+        <div style="font-size: 14px; color: #f87171; margin-bottom: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Traditional Staffing</div>
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">CSR Salary</span><span style="color: #fca5a5;">$3,500/mo</span></div>
+          <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">Producer Salary + Commission</span><span style="color: #fca5a5;">$4,000/mo</span></div>
+          <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">Benefits & Overhead</span><span style="color: #fca5a5;">$1,500/mo</span></div>
+          <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">AMS Software</span><span style="color: #fca5a5;">$400/mo</span></div>
+        </div>
+        <div style="border-top: 1px solid rgba(239,68,68,0.2); padding-top: 16px;">
+          <div style="font-size: 40px; font-weight: 800; color: #fca5a5;">~$9,400</div>
+          <div class="text-slate-400" style="font-size: 14px;">/month</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; font-size: 28px; color: #475569;">vs</div>
+      <div class="cost-card cost-green" style="display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-size: 14px; color: #0ea5e9; margin-bottom: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Your AI Agent</div>
+        <div style="font-size: 56px; font-weight: 800; color: #38bdf8; margin-bottom: 16px;">$500</div>
+        <div class="text-slate-400" style="font-size: 14px; margin-bottom: 20px;">/month</div>
+        <div style="font-size: 13px; color: #94a3b8; line-height: 1.6;">
+          Works 24/7. Never calls in sick.<br>
+          Quotes 5 carriers in seconds.<br>
+          Follows up on every renewal.<br>
+          Finds every cross-sell opportunity.
+        </div>
+      </div>
+    </div>
+    <!-- Savings -->
+    <div id="s6-savings" style="opacity: 0; margin-bottom: 32px;">
+      <div class="glass" style="display: inline-block; padding: 16px 48px; border-radius: 12px; border: 1px solid rgba(34,197,94,0.2);">
+        <span class="text-slate-400" style="font-size: 16px;">Annual savings: </span>
+        <span style="font-size: 32px; font-weight: 800; color: #4ade80;">$106,800</span>
+      </div>
+    </div>
+    <!-- ROI -->
+    <div id="s6-roi" style="opacity: 0; margin-bottom: 40px;">
+      <div class="glass" style="display: inline-block; padding: 16px 48px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.2);">
+        <span class="text-slate-400" style="font-size: 14px;">Cross-sell revenue alone: </span>
+        <span style="font-size: 24px; font-weight: 800; color: #38bdf8;">$2,700/mo in new commission</span>
+      </div>
+    </div>
+    <!-- CTA -->
+    <div id="s6-cta" style="opacity: 0; text-align: center;">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; font-weight: 300; margin-bottom: 16px;">Your AI. Only yours.</div>
+      <div style="font-size: 18px; color: #0ea5e9; font-weight: 500; margin-bottom: 20px;">solveworks.io</div>
+      <div style="font-size: 16px; color: #cbd5e1; font-weight: 300;">Ready to see what it does for your agency? Let's talk.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const SCENE_DURATIONS = [15, 60, 70, 70, 60, 50, 45];
+const TOTAL_DURATION = SCENE_DURATIONS.reduce((a,b) => a+b, 0);
+let currentScene = -1;
+let presentationStartTime = 0;
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function animateCounter(el, target, duration = 2000) {
+  const start = performance.now();
+  function update(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(target * eased).toLocaleString();
+    if (p < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function fadeIn(el, delay = 0, duration = 500) {
+  setTimeout(() => { el.style.transition = `opacity ${duration}ms ease`; el.style.opacity = '1'; }, delay);
+}
+
+function fadeOut(el, delay = 0, duration = 500) {
+  setTimeout(() => { el.style.transition = `opacity ${duration}ms ease`; el.style.opacity = '0'; }, delay);
+}
+
+// ============================================================
+// AUDIO
+// ============================================================
+const voiceover = new Audio('voiceover.mp3');
+voiceover.preload = 'auto';
+
+// ============================================================
+// SCENE MANAGEMENT
+// ============================================================
+function showScene(index) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const scene = document.getElementById('scene' + index);
+  if (scene) { scene.classList.add('active'); currentScene = index; window['initScene' + index]?.(); }
+}
+
+function advanceScene() {
+  const next = currentScene + 1;
+  if (next >= SCENE_DURATIONS.length) { document.querySelectorAll('.scene').forEach(s => s.classList.remove('active')); return; }
+  showScene(next);
+  setTimeout(advanceScene, SCENE_DURATIONS[next] * 1000);
+}
+
+function updateProgress() {
+  if (currentScene < 0) return;
+  const elapsed = (performance.now() - presentationStartTime) / 1000;
+  document.getElementById('progressBar').style.width = Math.min((elapsed / TOTAL_DURATION) * 100, 100) + '%';
+  if (elapsed < TOTAL_DURATION) requestAnimationFrame(updateProgress);
+}
+
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  presentationStartTime = performance.now();
+  voiceover.play().catch(() => {});
+  showScene(0);
+  setTimeout(advanceScene, SCENE_DURATIONS[0] * 1000);
+  requestAnimationFrame(updateProgress);
+}
+
+// ============================================================
+// SCENE 0: Hook
+// ============================================================
+function initScene0() {
+  const hook = document.getElementById('s0-hook');
+  const logo = document.getElementById('s0-logo');
+  fadeIn(hook, 1000, 1000);
+  fadeOut(hook, 9000, 800);
+  fadeIn(logo, 10000, 1000);
+}
+
+// ============================================================
+// SCENE 1: Lead Capture
+// ============================================================
+const S1_LEADS = [
+  { name: 'Jennifer Wu', source: '🌐 Website', line: 'Home', tagClass: 'tag-home', grade: 'A', route: 'Sarah M. (Personal Lines)', time: '2 min ago' },
+  { name: 'Michael Torres', source: '🤝 Referral', line: 'Home', tagClass: 'tag-home', grade: 'A', route: 'Sarah M. (Personal Lines)', time: '18 min ago' },
+  { name: 'Clearwater Marine Ltd.', source: '🌐 Website', line: 'Commercial', tagClass: 'tag-commercial', grade: 'A', route: 'David K. (Commercial)', time: '1 hr ago' },
+  { name: 'Sandra Petrov', source: '📱 Google Ads', line: 'Auto', tagClass: 'tag-auto', grade: 'B', route: 'Rachel T. (Personal Lines)', time: '2 hrs ago' },
+  { name: 'James Okafor', source: '📞 Phone', line: 'Life', tagClass: 'tag-life', grade: 'B', route: 'Mark S. (Life & Health)', time: '3 hrs ago' },
+  { name: 'Patricia Wolfe', source: '🌐 Website', line: 'Auto', tagClass: 'tag-auto', grade: 'A', route: 'Sarah M. (Personal Lines)', time: '4 hrs ago' },
+  { name: 'Harbour Brewing Co.', source: '🤝 Referral', line: 'Commercial', tagClass: 'tag-commercial', grade: 'B', route: 'David K. (Commercial)', time: '5 hrs ago' },
+  { name: 'Robert Ainsworth', source: '📱 Google Ads', line: 'Home', tagClass: 'tag-home', grade: 'A', route: 'Sarah M. (Personal Lines)', time: 'Yesterday' },
+];
+
+function initScene1() {
+  animateCounter(document.getElementById('s1-counter'), 34, 3000);
+  // Source bar animation
+  setTimeout(() => {
+    document.getElementById('s1-src1').style.width = '42%';
+    document.getElementById('s1-src2').style.width = '28%';
+    document.getElementById('s1-src3').style.width = '18%';
+    document.getElementById('s1-src4').style.width = '12%';
+  }, 1000);
+  
+  const container = document.getElementById('s1-leads');
+  container.innerHTML = '';
+  const routing = document.getElementById('s1-routing');
+  routing.innerHTML = '';
+  
+  S1_LEADS.forEach((l, i) => {
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(14,165,233,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #38bdf8;">${l.name.split(' ').map(n=>n[0]).join('')}</div>
+          <div>
+            <div style="font-size: 14px; font-weight: 600;">${l.name}</div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">${l.source} · ${l.time}</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span class="tag ${l.tagClass}">${l.line}</span>
+          <span class="badge-${l.grade.toLowerCase()}">${l.grade}</span>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: #64748b; margin-top: 8px; display: flex; align-items: center; gap: 6px;">
+        → Routed to <span style="color: #0ea5e9;">${l.route}</span>
+      </div>
+    `;
+    container.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 3000 + i * 4000);
+    
+    // Routing log entry
+    setTimeout(() => {
+      const entry = document.createElement('div');
+      entry.style.cssText = 'padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); opacity: 0; transition: opacity 0.4s ease;';
+      entry.innerHTML = `<div style="color: #4ade80; font-size: 11px;">✓ ${l.time}</div><div style="color: #cbd5e1; font-size: 12px; margin-top: 2px;">${l.name} → ${l.route.split(' (')[0]}</div>`;
+      routing.appendChild(entry);
+      setTimeout(() => entry.style.opacity = '1', 100);
+    }, 4000 + i * 4000);
+  });
+}
+
+// ============================================================
+// SCENE 2: Quote Engine
+// ============================================================
+const S2_QUOTES = [
+  { carrier: 'Northbridge Mutual', premium: '$1,847', stars: '★★★★', starsDim: '☆', covA: '$485,000', deductible: '$1,000', satisfaction: '92%', badge: 'badge-best', badgeText: '✅ Best Price' },
+  { carrier: 'Lakeland Casualty', premium: '$1,920', stars: '★★★★★', starsDim: '', covA: '$485,000', deductible: '$500', satisfaction: '98%', badge: 'badge-rec', badgeText: '⭐ Recommended' },
+  { carrier: 'Maplewood Indemnity', premium: '$2,105', stars: '★★★★', starsDim: '☆', covA: '$500,000', deductible: '$1,000', satisfaction: '90%', badge: '', badgeText: '' },
+  { carrier: 'Crestview Insurance Co.', premium: '$2,280', stars: '★★★', starsDim: '☆☆', covA: '$485,000', deductible: '$2,500', satisfaction: '85%', badge: '', badgeText: '' },
+  { carrier: 'Summit National', premium: '$2,410', stars: '★★★★★', starsDim: '', covA: '$525,000', deductible: '$500', satisfaction: '96%', badge: '', badgeText: '' },
+];
+
+function initScene2() {
+  fadeIn(document.getElementById('s2-header'), 500, 600);
+  const tbody = document.getElementById('s2-tbody');
+  tbody.innerHTML = '';
+  
+  S2_QUOTES.forEach((q, i) => {
+    const tr = document.createElement('tr');
+    const isRec = q.badge === 'badge-rec';
+    tr.style.cssText = isRec ? 'background: rgba(14,165,233,0.06);' : '';
+    tr.innerHTML = `
+      <td style="font-weight: ${isRec ? '600' : '500'}; ${isRec ? 'color: #38bdf8;' : ''}">${q.carrier}</td>
+      <td style="font-weight: 700; font-size: 15px; ${isRec ? 'color: #38bdf8;' : 'color: #cbd5e1;'}">${q.premium}<span style="color: #64748b; font-size: 12px; font-weight: 400;">/yr</span></td>
+      <td><span class="stars">${q.stars}</span><span class="stars-dim">${q.starsDim}</span></td>
+      <td class="text-slate-300">${q.covA}</td>
+      <td class="text-slate-300">${q.deductible}</td>
+      <td class="text-slate-300">${q.satisfaction}</td>
+      <td>${q.badgeText ? `<span class="${q.badge}">${q.badgeText}</span>` : ''}</td>
+    `;
+    tbody.appendChild(tr);
+    setTimeout(() => tr.classList.add('visible'), 3000 + i * 5000);
+  });
+  
+  // AI recommendation
+  fadeIn(document.getElementById('s2-rec'), 30000, 800);
+}
+
+// ============================================================
+// SCENE 3: Renewal Management
+// ============================================================
+const S3_90 = [
+  { name: 'D. Patterson', type: 'Auto', premium: '$1,890/yr', date: 'Jun 4', status: 'Auto-renew', statusClass: 'badge-ok' },
+  { name: 'K. Rivera', type: 'Home', premium: '$2,240/yr', date: 'Jun 8', status: 'Auto-renew', statusClass: 'badge-ok' },
+  { name: 'Westport LLC', type: 'Commercial', premium: '$5,600/yr', date: 'Jun 12', status: 'Review needed', statusClass: 'badge-sent' },
+  { name: 'T. Nakamura', type: 'Auto', premium: '$1,340/yr', date: 'Jun 15', status: 'Auto-renew', statusClass: 'badge-ok' },
+  { name: 'L. Dubois', type: 'Home', premium: '$1,920/yr', date: 'Jun 20', status: 'Auto-renew', statusClass: 'badge-ok' },
+];
+const S3_60 = [
+  { name: 'A. Morrison', type: 'Home', premium: '$2,680/yr', date: 'May 3', status: 'Email sent', statusClass: 'badge-sent' },
+  { name: 'R. Singh', type: 'Auto', premium: '$1,560/yr', date: 'May 7', status: 'Quoted', statusClass: 'badge-ok' },
+  { name: 'Bayside Café', type: 'Commercial', premium: '$3,400/yr', date: 'May 11', status: 'Called', statusClass: 'badge-sent' },
+  { name: 'P. Anderson', type: 'Auto + Home', premium: '$3,780/yr', date: 'May 16', status: 'Email sent', statusClass: 'badge-sent' },
+  { name: 'V. Kowalski', type: 'Life', premium: '$840/yr', date: 'May 22', status: 'Quoted', statusClass: 'badge-ok' },
+];
+const S3_30 = [
+  { name: 'M. Chen', type: 'Auto', premium: '$2,340/yr', date: 'Apr 2', status: '⚠️ Re-quote', statusClass: 'badge-risk', highlight: true, note: 'Save $280/yr via Northbridge' },
+  { name: 'J. Williams', type: 'Home', premium: '$1,780/yr', date: 'Apr 5', status: 'Confirmed', statusClass: 'badge-ok' },
+  { name: 'Summit Dental', type: 'Commercial', premium: '$4,800/yr', date: 'Apr 9', status: '⚠️ At risk', statusClass: 'badge-risk' },
+  { name: 'E. Tremblay', type: 'Auto', premium: '$1,220/yr', date: 'Apr 14', status: 'Confirmed', statusClass: 'badge-ok' },
+  { name: 'C. Rodriguez', type: 'Home + Auto', premium: '$3,960/yr', date: 'Apr 18', status: '⚠️ Re-quote', statusClass: 'badge-risk', note: 'Save $190/yr via Lakeland' },
+];
+
+function initScene3() {
+  animateCounter(document.getElementById('s3-total'), 847, 2000);
+  setTimeout(() => animateCounter(document.getElementById('s3-requote'), 23, 1500), 2000);
+  
+  function fillColumn(data, containerId, baseDelay) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    data.forEach((item, i) => {
+      const card = document.createElement('div');
+      card.className = 'pipeline-card';
+      let extra = '';
+      if (item.highlight) extra = `<div style="margin-top: 6px; padding: 6px 8px; background: rgba(239,68,68,0.1); border-radius: 6px; font-size: 11px; color: #fbbf24;">💡 ${item.note}</div>`;
+      else if (item.note) extra = `<div style="margin-top: 6px; font-size: 11px; color: #fbbf24;">💡 ${item.note}</div>`;
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-weight: 600;">${item.name}</span>
+          <span class="${item.statusClass}" style="font-size: 11px;">${item.status}</span>
+        </div>
+        <div style="font-size: 12px; color: #64748b;">${item.type} · ${item.premium} · ${item.date}</div>
+        ${extra}
+      `;
+      container.appendChild(card);
+      setTimeout(() => card.classList.add('visible'), baseDelay + i * 4000);
+    });
+  }
+  
+  fillColumn(S3_90, 's3-col90', 2000);
+  fillColumn(S3_60, 's3-col60', 4000);
+  fillColumn(S3_30, 's3-col30', 6000);
+}
+
+// ============================================================
+// SCENE 4: Cross-Sell Detection
+// ============================================================
+const S4_GAPS = [
+  { name: 'Robert Ainsworth', has: ['Auto ($1,890/yr)', 'Home ($2,100/yr)'], missing: '☂️ Umbrella', missingTag: 'tag-umbrella', est: '$320/yr', note: 'High net worth — strong candidate', icon: 'RA' },
+  { name: 'Patricia Wolfe', has: ['Home ($1,640/yr)'], missing: '🚗 Auto', missingTag: 'tag-auto', est: '$1,450/yr', note: 'Currently insured elsewhere', icon: 'PW' },
+  { name: 'James & Linda Okafor', has: ['Auto ($2,200/yr)', 'Home ($1,980/yr)'], missing: '💀 Life', missingTag: 'tag-life', est: '$840/yr', note: 'Two dependents, no life coverage', icon: 'JO' },
+  { name: 'Clearwater Marine Ltd.', has: ['Commercial Property ($4,200/yr)'], missing: '⚖️ Liability + 👷 Workers Comp', missingTag: 'tag-commercial', est: '$6,800/yr', note: 'Growing — 12 employees', icon: 'CM' },
+  { name: 'Sandra Petrov', has: ['Auto ($1,120/yr)'], missing: '🏠 Renters', missingTag: 'tag-renters', est: '$240/yr', note: 'Apartment lease on file', icon: 'SP' },
+];
+
+function initScene4() {
+  const container = document.getElementById('s4-gaps');
+  container.innerHTML = '';
+  
+  S4_GAPS.forEach((g, i) => {
+    const card = document.createElement('div');
+    card.className = 'gap-card';
+    card.innerHTML = `
+      <div style="display: flex; gap: 14px;">
+        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(14,165,233,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #38bdf8; flex-shrink: 0;">${g.icon}</div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 14px; font-weight: 600;">${g.name}</span>
+            <span style="font-size: 13px; color: #4ade80; font-weight: 600;">${g.est}</span>
+          </div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Has: ${g.has.join(' + ')}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 12px; color: #f87171;">Missing:</span>
+            <span class="tag ${g.missingTag}" style="font-size: 11px;">${g.missing}</span>
+          </div>
+          <div style="font-size: 11px; color: #94a3b8; margin-top: 6px; font-style: italic;">"${g.note}"</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 2000 + i * 6000);
+  });
+  
+  // Show email card at 35s
+  fadeIn(document.getElementById('s4-email-card'), 35000, 800);
+}
+
+// ============================================================
+// SCENE 5: Analytics
+// ============================================================
+const S5_METRICS = [
+  { label: 'Retention Rate', value: '94.2%', change: '↑ 3.1%', changeClass: 'metric-up', subtext: 'Industry avg: 84%' },
+  { label: 'Book of Business', value: '$9.1M', change: '↑ 8.3%', changeClass: 'metric-up', subtext: 'Was $8.4M last quarter' },
+  { label: 'Cross-Sell Rate', value: '26%', change: '↑ 14pts', changeClass: 'metric-up', subtext: 'Industry avg: 12%' },
+  { label: 'Avg Response Time', value: '4 min', change: '↓ from 2.3 hrs', changeClass: 'metric-up', subtext: '97% improvement' },
+];
+
+const S5_PRODUCERS = [
+  { name: 'Sarah Mitchell', policies: 142, premium: '$1.2M', retention: '96%', badge: '⭐ Top' },
+  { name: 'David Kim', policies: 98, premium: '$890K', retention: '93%', badge: '' },
+  { name: 'Rachel Torres', policies: 115, premium: '$1.1M', retention: '95%', badge: '' },
+  { name: 'Mark Sullivan', policies: 87, premium: '$780K', retention: '91%', badge: '' },
+];
+
+const S5_ACTIVITIES = [
+  { icon: '📧', text: '847 renewal emails sent', color: '#38bdf8' },
+  { icon: '📊', text: '312 quotes generated', color: '#4ade80' },
+  { icon: '🎯', text: '47 cross-sell campaigns', color: '#fbbf24' },
+  { icon: '👤', text: '156 leads qualified', color: '#c084fc' },
+];
+
+const S5_BARS_DATA = [7.4, 7.8, 8.0, 8.4, 8.7, 9.1];
+const S5_MONTHS = ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
+
+function initScene5() {
+  // Metrics
+  const metricsContainer = document.getElementById('s5-metrics');
+  metricsContainer.innerHTML = '';
+  S5_METRICS.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'glass metric-card';
+    card.style.cssText = 'opacity: 0; transition: opacity 0.5s ease;';
+    card.innerHTML = `
+      <div class="metric-number">${m.value}</div>
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-change ${m.changeClass}">${m.change}</div>
+      <div style="font-size: 11px; color: #475569; margin-top: 4px;">${m.subtext}</div>
+    `;
+    metricsContainer.appendChild(card);
+    setTimeout(() => card.style.opacity = '1', 1000 + i * 2000);
+  });
+  
+  // Producers
+  const prodBody = document.getElementById('s5-prod-body');
+  prodBody.innerHTML = '';
+  S5_PRODUCERS.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight: 500;">${p.name}</td>
+      <td class="text-slate-300">${p.policies}</td>
+      <td style="color: #4ade80; font-weight: 600;">${p.premium}</td>
+      <td class="text-slate-300">${p.retention}</td>
+      <td style="font-size: 12px;">${p.badge}</td>
+    `;
+    prodBody.appendChild(tr);
+    setTimeout(() => tr.classList.add('visible'), 10000 + i * 2000);
+  });
+  
+  // AI Activity
+  const actItems = document.getElementById('s5-activity-items');
+  actItems.innerHTML = '';
+  S5_ACTIVITIES.forEach((a, i) => {
+    const item = document.createElement('div');
+    item.style.cssText = `padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; gap: 10px; opacity: 0; transition: opacity 0.4s ease;`;
+    item.innerHTML = `<span style="font-size: 18px;">${a.icon}</span><span style="font-size: 13px; color: ${a.color}; font-weight: 500;">${a.text}</span>`;
+    actItems.appendChild(item);
+    setTimeout(() => item.style.opacity = '1', 20000 + i * 3000);
+  });
+  
+  // Trend bars
+  const barsContainer = document.getElementById('s5-bars');
+  barsContainer.innerHTML = '';
+  const maxVal = Math.max(...S5_BARS_DATA);
+  S5_BARS_DATA.forEach((v, i) => {
+    const bar = document.createElement('div');
+    bar.style.cssText = `flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px;`;
+    const height = (v / maxVal) * 100;
+    bar.innerHTML = `
+      <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">$${v}M</span>
+      <div style="width: 100%; height: 0px; background: linear-gradient(180deg, #0ea5e9, #0e7490); border-radius: 4px 4px 0 0; transition: height 1.5s ease;" id="s5-bar-${i}"></div>
+      <span style="font-size: 10px; color: #64748b;">${S5_MONTHS[i]}</span>
+    `;
+    barsContainer.appendChild(bar);
+    setTimeout(() => {
+      document.getElementById('s5-bar-' + i).style.height = height + 'px';
+    }, 32000 + i * 500);
+  });
+}
+
+// ============================================================
+// SCENE 6: Cost Comparison & CTA
+// ============================================================
+function initScene6() {
+  fadeIn(document.getElementById('s6-cost'), 2000, 1000);
+  fadeIn(document.getElementById('s6-savings'), 12000, 800);
+  fadeIn(document.getElementById('s6-roi'), 18000, 800);
+  fadeIn(document.getElementById('s6-cta'), 25000, 1000);
+  // Fade to black
+  setTimeout(() => {
+    document.querySelectorAll('.scene').forEach(s => { s.style.transition = 'opacity 1.5s ease'; s.style.opacity = '0'; });
+  }, 42000);
+}
+</script>
+</body>
+</html>

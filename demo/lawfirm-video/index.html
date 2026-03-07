@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>SolveWorks Law Firm Intake AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; }
+
+.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; gap: 24px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn .play-label { font-size: 16px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; }
+#playBtn.hidden { display: none; }
+
+#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; transition: width 0.5s linear; }
+
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
+.tag-phone { background: rgba(14,165,233,0.2); color: #38bdf8; }
+.tag-web { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-chat { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-referral { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tag-mva { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-slip { background: rgba(234,179,8,0.2); color: #facc15; }
+.tag-medmal { background: rgba(239,68,68,0.2); color: #f87171; }
+.tag-moto { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-high { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.tag-medium { background: rgba(234,179,8,0.15); color: #facc15; }
+.tag-clear { background: rgba(34,197,94,0.15); color: #4ade80; }
+.tag-conflict { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes expandIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes pulseRed { 0%, 100% { box-shadow: 0 0 15px rgba(239,68,68,0.2); } 50% { box-shadow: 0 0 30px rgba(239,68,68,0.4); } }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes scanLine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+.animate-in { animation: fadeInUp 0.6s ease forwards; opacity: 0; }
+
+.sidebar { width: 240px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; }
+.sidebar-logo { padding: 0 24px 30px; font-size: 20px; font-weight: 700; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; }
+.sidebar-firm { padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+.sidebar-firm-name { font-size: 13px; font-weight: 600; color: #cbd5e1; }
+.sidebar-firm-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+.lead-card { padding: 16px 20px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; display: flex; align-items: center; gap: 16px; }
+.lead-card.visible { animation: slideInRight 0.5s ease forwards; }
+.lead-card.high-value { border-color: rgba(239,68,68,0.3); animation: slideInRight 0.5s ease forwards, pulseRed 2s infinite 0.5s; }
+
+.chat-msg { padding: 10px 14px; border-radius: 10px; max-width: 85%; margin-bottom: 8px; font-size: 13px; line-height: 1.6; opacity: 0; }
+.chat-msg.ai { background: rgba(14,165,233,0.12); border: 1px solid rgba(14,165,233,0.2); align-self: flex-start; }
+.chat-msg.user { background: rgba(255,255,255,0.06); align-self: flex-end; margin-left: auto; }
+.chat-msg.visible { animation: fadeInUp 0.4s ease forwards; }
+
+.cursor-blink { display: inline-block; width: 2px; height: 16px; background: #0ea5e9; animation: blink 0.6s infinite; vertical-align: text-bottom; }
+
+.score-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; position: relative; }
+.score-fill { height: 100%; border-radius: 4px; transition: width 1.5s ease; }
+
+.conflict-row { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px; opacity: 0; }
+.conflict-row.visible { animation: slideInRight 0.4s ease forwards; }
+.conflict-row.flagged { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.05); }
+
+.cal-slot { padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; opacity: 0; }
+.cal-slot.visible { animation: expandIn 0.4s ease forwards; }
+.cal-slot.booked { border-color: rgba(14,165,233,0.3); background: rgba(14,165,233,0.06); }
+
+.action-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; opacity: 0; }
+.action-item.visible { animation: fadeInUp 0.3s ease forwards; }
+
+.nurture-step { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; font-size: 13px; opacity: 0; position: relative; }
+.nurture-step.visible { animation: fadeInUp 0.4s ease forwards; }
+
+.funnel-step { text-align: center; flex: 1; padding: 16px; }
+.funnel-number { font-size: 40px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.funnel-arrow { color: #0ea5e9; font-size: 24px; display: flex; align-items: center; padding: 0 4px; }
+
+.cost-card { padding: 28px; border-radius: 16px; text-align: center; flex: 1; }
+.cost-red { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.cost-green { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.3); animation: pulseGlow 2s infinite; }
+
+.cost-feature { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; text-align: left; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="play-circle"><div class="play-triangle"></div></div>
+  <div class="play-label">Law Firm Intake AI Demo</div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progressBar" style="width: 0%"></div>
+
+<!-- ==================== SCENE 0: HOOK ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-hook" style="font-size: 40px; font-weight: 300; line-height: 1.6; opacity: 0; max-width: 900px; margin: 0 auto;">
+      Last night, 23 leads came in from your TV ad.<br>
+      By morning, <span style="color: #f87171; font-weight: 600;">19 had already called another firm.</span>
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: LEAD INTAKE ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Intake
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Cases
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendar
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Conflicts
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+      <div class="sidebar-firm">
+        <div class="sidebar-firm-name">Hargrove & Associates</div>
+        <div class="sidebar-firm-sub">Personal Injury Law</div>
+      </div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Live Intake Feed</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Real-time lead intake across all channels</p>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 28px; font-weight: 800; color: #0ea5e9;" id="s1-counter">0</span>
+            <span class="text-slate-400" style="font-size: 12px; line-height: 1.3;">leads<br>today</span>
+          </div>
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 28px; font-weight: 800; color: #4ade80;" id="s1-response">0</span>
+            <span class="text-slate-400" style="font-size: 12px; line-height: 1.3;">sec avg<br>response</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px; height: calc(100% - 80px);">
+        <!-- Lead cards -->
+        <div style="flex: 1.2;" id="s1-leads"></div>
+        <!-- AI Preview -->
+        <div style="flex: 0.8;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; height: 100%;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px; color: #0ea5e9;">AI Conversation Preview</div>
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 16px;">Maria Santos — Phone Intake</div>
+            <div id="s1-chat" style="display: flex; flex-direction: column;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: CASE QUALIFICATION ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Intake</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cases</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Conflicts</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+      <div class="sidebar-firm"><div class="sidebar-firm-name">Hargrove & Associates</div><div class="sidebar-firm-sub">Personal Injury Law</div></div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">← Back to Intake Feed</div>
+        <h1 style="font-size: 26px; font-weight: 700;">Case Qualification — Maria Santos</h1>
+        <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Real-time AI intake interview with automated case scoring</p>
+      </div>
+      <div style="display: flex; gap: 24px; height: calc(100% - 90px);">
+        <!-- Chat conversation -->
+        <div style="flex: 1;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; height: 100%; overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(14,165,233,0.2); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #38bdf8;">MS</div>
+              <div><div style="font-size: 14px; font-weight: 600;">Maria Santos</div><div style="font-size: 11px; color: #64748b;">📞 Phone — TV Ad — 11:47 PM</div></div>
+            </div>
+            <div id="s2-conversation" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          </div>
+        </div>
+        <!-- Case scoring panel -->
+        <div style="width: 520px;">
+          <div class="glass" style="padding: 24px; border-radius: 14px; margin-bottom: 16px;" id="s2-scoring">
+            <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px;">Case Scoring <span class="text-accent">— Live</span></div>
+            <div id="s2-score-items"></div>
+            <!-- Score gauge -->
+            <div id="s2-gauge" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); opacity: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 14px; font-weight: 600;">Case Score</span>
+                <span style="font-size: 32px; font-weight: 800; color: #f87171;" id="s2-score-num">0</span>
+              </div>
+              <div class="score-bar"><div class="score-fill" id="s2-score-bar" style="width: 0%; background: linear-gradient(90deg, #f87171, #fb923c);"></div></div>
+              <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <span class="tag tag-high" style="font-size: 11px;">🔥 HIGH VALUE</span>
+                <span style="font-size: 12px; color: #94a3b8;">Est. $45,000 – $85,000</span>
+              </div>
+            </div>
+          </div>
+          <!-- Other cases -->
+          <div id="s2-other-cases" style="opacity: 0;">
+            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 10px;">Other Cases Scoring Simultaneously</div>
+            <div id="s2-other-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: CONFLICT CHECK ==================== -->
+<div class="scene" id="scene3">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Intake</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cases</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Conflicts</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+      <div class="sidebar-firm"><div class="sidebar-firm-name">Hargrove & Associates</div><div class="sidebar-firm-sub">Personal Injury Law</div></div>
+    </div>
+    <div style="flex: 1; padding: 36px 44px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Conflict Check</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated scan against entire client database</p>
+        </div>
+        <div class="glass" style="padding: 10px 20px; font-size: 13px;">
+          <span class="text-slate-400">Database: </span><span style="color: #0ea5e9; font-weight: 700;">2,847</span><span class="text-slate-400"> records</span>
+          <span style="margin: 0 12px; color: #334155;">|</span>
+          <span class="text-slate-400">Avg scan: </span><span style="color: #4ade80; font-weight: 700;">0.3s</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 28px;">
+        <!-- Results -->
+        <div style="flex: 1.3;" id="s3-results"></div>
+        <!-- Stats -->
+        <div style="width: 320px;">
+          <div class="glass" style="padding: 24px; border-radius: 14px;" id="s3-stats">
+            <div style="font-size: 15px; font-weight: 600; margin-bottom: 20px;">Database Summary</div>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span class="text-slate-400">Total Records</span><span style="font-weight: 600;">2,847</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span class="text-slate-400">Active Cases</span><span style="font-weight: 600; color: #0ea5e9;">142</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span class="text-slate-400">Closed Cases</span><span style="font-weight: 600;">2,705</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span class="text-slate-400">Scan Time</span><span style="font-weight: 600; color: #4ade80;">0.3s avg</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 13px;"><span class="text-slate-400">Last Updated</span><span style="font-weight: 600; color: #4ade80;">Real-time</span></div>
+            </div>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Scan Progress</div>
+              <div class="score-bar" style="height: 6px;"><div class="score-fill" id="s3-scan-bar" style="width: 0%; background: linear-gradient(90deg, #0ea5e9, #4ade80); transition: width 3s ease;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: SCHEDULING ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Intake</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cases</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Conflicts</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+      <div class="sidebar-firm"><div class="sidebar-firm-name">Hargrove & Associates</div><div class="sidebar-firm-sub">Personal Injury Law</div></div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 20px;">
+        <h1 style="font-size: 26px; font-weight: 700;">Consultation Scheduling</h1>
+        <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">AI matches case type and priority to the right attorney</p>
+      </div>
+      <div style="display: flex; gap: 24px; height: calc(100% - 80px);">
+        <!-- Attorney calendars -->
+        <div style="flex: 1.3;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;" id="s4-attorneys"></div>
+        </div>
+        <!-- Actions & scheduled -->
+        <div style="width: 440px;">
+          <!-- Booking detail -->
+          <div class="glass" style="padding: 20px; border-radius: 14px; margin-bottom: 14px; border: 1px solid rgba(14,165,233,0.2);" id="s4-booking">
+            <div style="font-size: 14px; font-weight: 600; color: #0ea5e9; margin-bottom: 12px;">📋 Scheduling Maria Santos</div>
+            <div id="s4-logic" style="font-size: 12px; color: #94a3b8; display: flex; flex-direction: column; gap: 6px;"></div>
+          </div>
+          <!-- Automated actions -->
+          <div class="glass" style="padding: 20px; border-radius: 14px; margin-bottom: 14px;" id="s4-actions-panel">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Automated Actions</div>
+            <div id="s4-actions"></div>
+          </div>
+          <!-- Today's schedule -->
+          <div id="s4-schedule" style="opacity: 0;">
+            <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 8px;">Today's Consultations</div>
+            <div id="s4-schedule-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: FOLLOW-UP ENGINE ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Intake</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Cases</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Calendar</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Conflicts</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Analytics</div>
+      <div class="sidebar-firm"><div class="sidebar-firm-name">Hargrove & Associates</div><div class="sidebar-firm-sub">Personal Injury Law</div></div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 20px;">
+        <h1 style="font-size: 26px; font-weight: 700;">Follow-Up Engine</h1>
+        <p class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Intelligent nurture sequences — no lead left behind</p>
+      </div>
+      <div style="display: flex; gap: 24px; height: calc(100% - 80px);">
+        <!-- Status breakdown -->
+        <div style="width: 240px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Lead Status</div>
+            <div id="s5-statuses" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          </div>
+        </div>
+        <!-- Nurture sequence -->
+        <div style="flex: 1;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; height: 100%;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(234,179,8,0.2); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #facc15;">CM</div>
+              <div><div style="font-size: 14px; font-weight: 600;">Carlos Mendez</div><div style="font-size: 11px; color: #64748b;">MVA — didn't schedule consultation</div></div>
+            </div>
+            <div id="s5-nurture"></div>
+          </div>
+        </div>
+        <!-- Smart alerts -->
+        <div style="width: 380px;">
+          <div style="font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 10px;">Smart Alerts</div>
+          <div id="s5-alerts"></div>
+          <!-- Conversion stat -->
+          <div id="s5-conv" style="opacity: 0; margin-top: 16px;">
+            <div class="glass" style="padding: 16px 20px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.2); text-align: center;">
+              <div style="font-size: 36px; font-weight: 800; color: #0ea5e9;">34%</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">of unresponsive leads converted<br>through follow-up sequences</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: COST COMPARISON ==================== -->
+<div class="scene" id="scene6">
+  <div style="width: 1920px; height: 1080px; padding: 50px 80px; display: flex; flex-direction: column; justify-content: center;">
+    <div style="text-align: center; margin-bottom: 10px;">
+      <span style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; font-weight: 600;">30-Day Results</span>
+    </div>
+    <!-- Funnel -->
+    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 40px;" id="s6-funnel">
+      <div class="funnel-step"><div class="funnel-number" id="s6-f1">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Leads<br>Received</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s6-f2">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Responded<br><60 sec</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s6-f3">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Fully<br>Qualified</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s6-f4">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Conflicts<br>Checked</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s6-f5">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Consultations<br>Scheduled</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="s6-f6">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Signed<br>Retainers</div></div>
+    </div>
+    <!-- Cost comparison -->
+    <div id="s6-cost" style="display: flex; gap: 32px; align-items: stretch; justify-content: center; opacity: 0; margin-bottom: 28px;">
+      <div class="cost-card cost-red" style="max-width: 420px;">
+        <div style="font-size: 14px; color: #f87171; margin-bottom: 6px; font-weight: 600;">Intake Specialist</div>
+        <div style="font-size: 42px; font-weight: 800; color: #fca5a5;">$4,000–$5,000</div>
+        <div class="text-slate-400" style="font-size: 14px; margin-bottom: 16px;">/month</div>
+        <div style="text-align: left; padding: 0 12px;">
+          <div class="cost-feature"><span style="color: #f87171;">✗</span><span class="text-slate-400">8 AM – 6 PM weekdays only</span></div>
+          <div class="cost-feature"><span style="color: #f87171;">✗</span><span class="text-slate-400">~15 leads/day capacity</span></div>
+          <div class="cost-feature"><span style="color: #f87171;">✗</span><span class="text-slate-400">Misses nights, weekends, holidays</span></div>
+          <div class="cost-feature"><span style="color: #f87171;">✗</span><span class="text-slate-400">Manual conflict checks</span></div>
+          <div class="cost-feature"><span style="color: #f87171;">✗</span><span class="text-slate-400">Manual follow-up</span></div>
+        </div>
+      </div>
+      <div style="font-size: 28px; color: #475569; display: flex; align-items: center;">vs</div>
+      <div class="cost-card cost-green" style="max-width: 420px;">
+        <div style="font-size: 14px; color: #0ea5e9; margin-bottom: 6px; font-weight: 600;">Your AI Agent</div>
+        <div style="font-size: 42px; font-weight: 800; color: #38bdf8;">$500</div>
+        <div class="text-slate-400" style="font-size: 14px; margin-bottom: 16px;">/month</div>
+        <div style="text-align: left; padding: 0 12px;">
+          <div class="cost-feature"><span style="color: #4ade80;">✓</span><span class="text-slate-300">Responds 24/7/365</span></div>
+          <div class="cost-feature"><span style="color: #4ade80;">✓</span><span class="text-slate-300">Unlimited simultaneous leads</span></div>
+          <div class="cost-feature"><span style="color: #4ade80;">✓</span><span class="text-slate-300">Instant conflict checks</span></div>
+          <div class="cost-feature"><span style="color: #4ade80;">✓</span><span class="text-slate-300">Automated scheduling + intake forms</span></div>
+          <div class="cost-feature"><span style="color: #4ade80;">✓</span><span class="text-slate-300">Intelligent follow-up sequences</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- ROI -->
+    <div id="s6-roi" style="text-align: center; opacity: 0;">
+      <div class="glass" style="display: inline-block; padding: 20px 48px; border-radius: 14px; border: 1px solid rgba(34,197,94,0.2);">
+        <div style="font-size: 13px; color: #94a3b8; margin-bottom: 6px;">Capture just 5 more cases/month × $25K avg fee</div>
+        <div style="font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">$125,000 additional annual revenue</div>
+        <div style="font-size: 14px; color: #64748b; margin-top: 6px;">For $500/month.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 7: CLOSING CTA ==================== -->
+<div class="scene" id="scene7">
+  <div style="text-align: center;">
+    <div id="s7-logo" style="opacity: 0;">
+      <div style="font-size: 72px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+    </div>
+    <div id="s7-tagline" style="opacity: 0; font-size: 22px; color: #94a3b8; margin-top: 16px; font-weight: 300;">Your AI. Only yours.</div>
+    <div id="s7-url" style="opacity: 0; font-size: 18px; color: #0ea5e9; margin-top: 20px; font-weight: 500;">solveworks.io</div>
+    <div id="s7-cta" style="opacity: 0; font-size: 18px; color: #cbd5e1; margin-top: 28px; font-weight: 300; max-width: 600px; margin-left: auto; margin-right: auto;">Ready to stop losing leads overnight? Let's talk.</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION
+// ============================================================
+const SCENE_DURATIONS = [15, 70, 75, 45, 55, 55, 50, 15];
+const TOTAL_DURATION = SCENE_DURATIONS.reduce((a,b) => a+b, 0);
+let currentScene = -1;
+let presentationStartTime = 0;
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function animateCounter(el, target, duration = 2000) {
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased).toLocaleString();
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function fadeIn(el, delay = 0, duration = 500) {
+  setTimeout(() => { el.style.transition = `opacity ${duration}ms ease`; el.style.opacity = '1'; }, delay);
+}
+
+function fadeOut(el, delay = 0, duration = 500) {
+  setTimeout(() => { el.style.transition = `opacity ${duration}ms ease`; el.style.opacity = '0'; }, delay);
+}
+
+// ============================================================
+// AUDIO
+// ============================================================
+const voiceover = new Audio('voiceover.mp3');
+voiceover.preload = 'auto';
+
+// ============================================================
+// SCENE MANAGEMENT
+// ============================================================
+function showScene(index) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const scene = document.getElementById('scene' + index);
+  if (scene) { scene.classList.add('active'); currentScene = index; window['initScene' + index]?.(); }
+}
+
+function advanceScene() {
+  const next = currentScene + 1;
+  if (next >= SCENE_DURATIONS.length) { document.querySelectorAll('.scene').forEach(s => s.classList.remove('active')); return; }
+  showScene(next);
+  setTimeout(advanceScene, SCENE_DURATIONS[next] * 1000);
+}
+
+function updateProgress() {
+  if (currentScene < 0) return;
+  const elapsed = (performance.now() - presentationStartTime) / 1000;
+  document.getElementById('progressBar').style.width = Math.min((elapsed / TOTAL_DURATION) * 100, 100) + '%';
+  if (elapsed < TOTAL_DURATION) requestAnimationFrame(updateProgress);
+}
+
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  presentationStartTime = performance.now();
+  voiceover.play().catch(() => {});
+  showScene(0);
+  setTimeout(advanceScene, SCENE_DURATIONS[0] * 1000);
+  requestAnimationFrame(updateProgress);
+}
+
+// ============================================================
+// SCENE 0: Hook
+// ============================================================
+function initScene0() {
+  const hook = document.getElementById('s0-hook');
+  const logo = document.getElementById('s0-logo');
+  fadeIn(hook, 1500, 1000);
+  fadeOut(hook, 10000, 800);
+  fadeIn(logo, 11000, 1000);
+}
+
+// ============================================================
+// SCENE 1: Lead Intake
+// ============================================================
+const S1_LEADS = [
+  { icon: '📞', name: 'Maria Santos', source: 'Phone — TV Ad', time: '11:47 PM', response: '8 sec', color: '#38bdf8', tagClass: 'tag-phone' },
+  { icon: '🌐', name: 'James Mitchell', source: 'Web Form', time: '2:14 AM', response: 'Instant', color: '#c084fc', tagClass: 'tag-web' },
+  { icon: '💬', name: 'Denise Walker', source: 'Website Chat', time: '6:30 AM', response: '3 sec', color: '#4ade80', tagClass: 'tag-chat' },
+  { icon: '🤝', name: 'Robert Kim', source: 'Attorney Referral', time: '8:15 AM', response: '12 sec', color: '#fb923c', tagClass: 'tag-referral' },
+];
+
+const S1_CHAT = [
+  { role: 'ai', text: "Thank you for calling Hargrove & Associates. I understand you may have been in an accident — I'm here to help. Can you tell me a little about what happened?" },
+  { role: 'user', text: "Yeah, I was rear-ended at a red light about three weeks ago. I've been having really bad neck pain." },
+  { role: 'ai', text: "I'm sorry to hear that, Maria. A rear-end collision can cause serious injuries. I'd like to ask a few questions so we can see how our attorneys can help you. When exactly did the accident occur?" },
+  { role: 'user', text: "February 12th." },
+  { role: 'ai', text: "Thank you. And have you received any medical treatment since the accident?" },
+];
+
+function initScene1() {
+  animateCounter(document.getElementById('s1-counter'), 23, 3000);
+  setTimeout(() => animateCounter(document.getElementById('s1-response'), 8, 1500), 2000);
+
+  const container = document.getElementById('s1-leads');
+  container.innerHTML = '';
+  S1_LEADS.forEach((lead, i) => {
+    const card = document.createElement('div');
+    card.className = 'lead-card';
+    card.innerHTML = `
+      <div style="font-size: 28px;">${lead.icon}</div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="font-size: 16px; font-weight: 600;">${lead.name}</div>
+          <span class="tag ${lead.tagClass}">${lead.source}</span>
+        </div>
+        <div style="display: flex; gap: 16px; margin-top: 6px; font-size: 12px; color: #94a3b8;">
+          <span>🕐 ${lead.time}</span>
+          <span>⚡ Response: <span style="color: #4ade80; font-weight: 600;">${lead.response}</span></span>
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+    setTimeout(() => card.classList.add('visible'), 5000 + i * 12000);
+  });
+
+  // Chat messages
+  const chatContainer = document.getElementById('s1-chat');
+  chatContainer.innerHTML = '';
+  S1_CHAT.forEach((msg, i) => {
+    const el = document.createElement('div');
+    el.className = `chat-msg ${msg.role}`;
+    el.innerHTML = msg.role === 'ai' ? `<span style="color: #0ea5e9; font-size: 11px; font-weight: 600;">AI Agent</span><br>${msg.text}` : msg.text;
+    chatContainer.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), 20000 + i * 8000);
+  });
+}
+
+// ============================================================
+// SCENE 2: Case Qualification
+// ============================================================
+const S2_CONVO = [
+  { role: 'ai', text: "I'm sorry to hear about your accident, Maria. I'd like to ask a few questions to see how we can help. When did the accident occur?" },
+  { role: 'user', text: "About three weeks ago, February 12th." },
+  { role: 'ai', text: "And what type of accident was this?" },
+  { role: 'user', text: "I was rear-ended at a red light on Highway 9." },
+  { role: 'ai', text: "Were you taken to the hospital or received medical treatment?" },
+  { role: 'user', text: "Yes, ER that night, and I've been seeing a chiropractor twice a week since." },
+  { role: 'ai', text: "Are you still experiencing pain or symptoms?" },
+  { role: 'user', text: "Yes, neck and back pain. I can't sleep." },
+];
+
+const S2_SCORES = [
+  { label: 'Case Type', value: 'Motor Vehicle Accident', status: '✅', delay: 8000 },
+  { label: 'Incident Date', value: 'Feb 12, 2026 — within SOL', status: '✅', delay: 16000 },
+  { label: 'Liability', value: 'Rear-end collision — Strong (95%)', status: '🟢', delay: 28000 },
+  { label: 'Medical Treatment', value: 'ER + Ongoing chiropractic', status: '✅', delay: 40000 },
+  { label: 'Injuries', value: 'Cervical/lumbar strain, insomnia', status: '✅', delay: 52000 },
+];
+
+const S2_OTHER = [
+  { name: 'James Mitchell', type: 'Slip & Fall', score: 62, level: 'Medium', tagClass: 'tag-medium', color: '#facc15' },
+  { name: 'Denise Walker', type: 'Medical Malpractice', score: 91, level: '🔥 HIGH VALUE', tagClass: 'tag-high', color: '#f87171' },
+  { name: 'Robert Kim', type: 'Motorcycle Accident', score: 74, level: 'Medium-High', tagClass: 'tag-medium', color: '#fb923c' },
+];
+
+function initScene2() {
+  const convoEl = document.getElementById('s2-conversation');
+  convoEl.innerHTML = '';
+  S2_CONVO.forEach((msg, i) => {
+    const el = document.createElement('div');
+    el.className = `chat-msg ${msg.role}`;
+    el.innerHTML = msg.role === 'ai' ? `<span style="color: #0ea5e9; font-size: 11px; font-weight: 600;">AI Agent</span><br>${msg.text}` : msg.text;
+    convoEl.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), 3000 + i * 7000);
+  });
+
+  const scoreItems = document.getElementById('s2-score-items');
+  scoreItems.innerHTML = '';
+  S2_SCORES.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; opacity: 0;';
+    row.innerHTML = `<span class="text-slate-400">${s.label}</span><span style="font-weight: 500;">${s.status} ${s.value}</span>`;
+    scoreItems.appendChild(row);
+    setTimeout(() => { row.style.transition = 'opacity 0.5s ease'; row.style.opacity = '1'; }, s.delay);
+  });
+
+  // Score gauge
+  setTimeout(() => {
+    const gauge = document.getElementById('s2-gauge');
+    gauge.style.opacity = '1';
+    animateCounter(document.getElementById('s2-score-num'), 87, 1500);
+    document.getElementById('s2-score-bar').style.width = '87%';
+  }, 58000);
+
+  // Other cases
+  setTimeout(() => {
+    document.getElementById('s2-other-cases').style.transition = 'opacity 0.6s ease';
+    document.getElementById('s2-other-cases').style.opacity = '1';
+    const list = document.getElementById('s2-other-list');
+    list.innerHTML = '';
+    S2_OTHER.forEach((c, i) => {
+      const el = document.createElement('div');
+      el.className = 'lead-card';
+      el.innerHTML = `
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 600;">${c.name}</span>
+            <span class="tag ${c.tagClass}" style="font-size: 10px;">${c.level}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 11px; color: #94a3b8;">${c.type}</span>
+            <span style="font-size: 18px; font-weight: 800; color: ${c.color};">${c.score}</span>
+          </div>
+          <div class="score-bar" style="margin-top: 6px; height: 4px;"><div class="score-fill" style="width: ${c.score}%; background: ${c.color};"></div></div>
+        </div>
+      `;
+      list.appendChild(el);
+      setTimeout(() => el.classList.add('visible'), 1000 + i * 2000);
+    });
+  }, 62000);
+}
+
+// ============================================================
+// SCENE 3: Conflict Check
+// ============================================================
+const S3_CHECKS = [
+  { name: 'Maria Santos', status: 'clear', result: 'No conflicts found', detail: 'Scanned 2,847 records in 0.3s', delay: 3000 },
+  { name: 'James Mitchell', status: 'clear', result: 'No conflicts found', detail: 'Scanned 2,847 records in 0.3s', delay: 10000 },
+  { name: 'Denise Walker', status: 'conflict', result: 'POTENTIAL CONFLICT DETECTED', detail: 'Match: "Walker, Thomas — Case #2024-0847 (opposing party)"', extra: 'Flagged for attorney review — held from scheduling\nAlert sent to: Sarah Hargrove, Managing Partner', delay: 18000 },
+  { name: 'Robert Kim', status: 'clear', result: 'No conflicts found', detail: 'Scanned 2,847 records in 0.3s', delay: 32000 },
+];
+
+function initScene3() {
+  // Scan bar
+  setTimeout(() => { document.getElementById('s3-scan-bar').style.width = '100%'; }, 500);
+
+  const container = document.getElementById('s3-results');
+  container.innerHTML = '';
+  S3_CHECKS.forEach((c, i) => {
+    const row = document.createElement('div');
+    row.className = `conflict-row ${c.status === 'conflict' ? 'flagged' : ''}`;
+    const icon = c.status === 'clear' ? '✅' : '⚠️';
+    const tagClass = c.status === 'clear' ? 'tag-clear' : 'tag-conflict';
+    const tagText = c.status === 'clear' ? 'Clear' : 'Conflict';
+    let html = `
+      <div style="font-size: 24px;">${icon}</div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 15px; font-weight: 600;">${c.name}</span>
+          <span class="tag ${tagClass}">${tagText}</span>
+        </div>
+        <div style="font-size: 13px; color: ${c.status === 'conflict' ? '#f87171' : '#4ade80'}; font-weight: 500;">${c.result}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">${c.detail}</div>
+    `;
+    if (c.extra) {
+      html += `<div style="margin-top: 8px; padding: 10px 12px; background: rgba(239,68,68,0.08); border-radius: 8px; font-size: 12px; color: #fca5a5; line-height: 1.6;">${c.extra.replace('\n', '<br>')}</div>`;
+    }
+    html += `</div>`;
+    row.innerHTML = html;
+    container.appendChild(row);
+    setTimeout(() => row.classList.add('visible'), c.delay);
+  });
+}
+
+// ============================================================
+// SCENE 4: Scheduling
+// ============================================================
+const S4_ATTORNEYS = [
+  { initials: 'SH', name: 'Sarah Hargrove', title: 'Managing Partner', types: 'MVA, Med Mal', color: '#38bdf8', match: true },
+  { initials: 'DC', name: 'David Chen', title: 'Senior Associate', types: 'MVA, Wrongful Death', color: '#4ade80', match: true },
+  { initials: 'NB', name: 'Nicole Baptiste', title: 'Associate', types: 'Slip & Fall, Premises', color: '#c084fc', match: false },
+  { initials: 'MT', name: 'Marcus Torres', title: 'Associate', types: 'MVA, Product Liability', color: '#fb923c', match: true },
+];
+
+const S4_LOGIC = [
+  { text: '🔍 Case Type: Motor Vehicle → Matches S. Hargrove, D. Chen, M. Torres', delay: 2000 },
+  { text: '⭐ Case Score: 87 (High) → Prioritize senior attorney', delay: 6000 },
+  { text: '📅 Selected: Sarah Hargrove — Next available: Tomorrow 10:00 AM', delay: 10000 },
+  { text: '✅ Status: CONFIRMED', delay: 14000 },
+];
+
+const S4_ACTIONS = [
+  { icon: '✅', text: 'Calendar hold created', delay: 18000 },
+  { icon: '✅', text: 'Confirmation text sent to Maria Santos', delay: 21000 },
+  { icon: '✅', text: 'Intake forms sent (accident report, medical auth, insurance)', delay: 24000 },
+  { icon: '✅', text: 'Case file created in management system', delay: 27000 },
+  { icon: '⏳', text: 'Reminder scheduled: 2 hours before appointment', delay: 30000 },
+];
+
+const S4_SCHEDULE = [
+  { time: '10:00 AM', name: 'Maria Santos', atty: 'S. Hargrove', type: 'MVA', score: 87, high: true },
+  { time: '11:30 AM', name: 'Robert Kim', atty: 'D. Chen', type: 'Motorcycle', score: 74, high: false },
+  { time: '2:00 PM', name: 'James Mitchell', atty: 'N. Baptiste', type: 'Slip & Fall', score: 62, high: false },
+];
+
+function initScene4() {
+  const grid = document.getElementById('s4-attorneys');
+  grid.innerHTML = '';
+  S4_ATTORNEYS.forEach((atty, i) => {
+    const card = document.createElement('div');
+    card.className = 'glass';
+    card.style.cssText = `padding: 16px; border-radius: 12px; ${atty.match ? 'border: 1px solid rgba(14,165,233,0.2);' : 'opacity: 0.5;'}`;
+    card.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+        <div style="width: 36px; height: 36px; border-radius: 50%; background: ${atty.color}20; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: ${atty.color};">${atty.initials}</div>
+        <div><div style="font-size: 13px; font-weight: 600;">${atty.name}</div><div style="font-size: 11px; color: #64748b;">${atty.title}</div></div>
+      </div>
+      <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">${atty.types}</div>
+      ${atty.match ? '<div style="font-size: 11px; color: #0ea5e9;">✓ Matches case type</div>' : '<div style="font-size: 11px; color: #475569;">— No match</div>'}
+    `;
+    grid.appendChild(card);
+  });
+
+  // Booking logic
+  const logicEl = document.getElementById('s4-logic');
+  logicEl.innerHTML = '';
+  S4_LOGIC.forEach(l => {
+    const el = document.createElement('div');
+    el.className = 'action-item';
+    el.textContent = l.text;
+    logicEl.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), l.delay);
+  });
+
+  // Actions
+  const actionsEl = document.getElementById('s4-actions');
+  actionsEl.innerHTML = '';
+  S4_ACTIONS.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'action-item';
+    el.innerHTML = `<span>${a.icon}</span> ${a.text}`;
+    actionsEl.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), a.delay);
+  });
+
+  // Schedule
+  fadeIn(document.getElementById('s4-schedule'), 36000, 600);
+  setTimeout(() => {
+    const list = document.getElementById('s4-schedule-list');
+    list.innerHTML = '';
+    S4_SCHEDULE.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'cal-slot booked';
+      el.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 13px; font-weight: 600; color: #0ea5e9;">${s.time}</span>
+            <span style="font-size: 13px; margin-left: 8px;">${s.name}</span>
+            <span style="font-size: 11px; color: #64748b; margin-left: 6px;">w/ ${s.atty}</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 11px; color: #94a3b8;">${s.type}</span>
+            ${s.high ? '<span class="tag tag-high" style="font-size: 10px;">🔥 87</span>' : `<span style="font-size: 12px; font-weight: 700; color: #facc15;">${s.score}</span>`}
+          </div>
+        </div>
+      `;
+      list.appendChild(el);
+      setTimeout(() => el.classList.add('visible'), 37000 + i * 2000);
+    });
+  }, 36000);
+}
+
+// ============================================================
+// SCENE 5: Follow-Up Engine
+// ============================================================
+const S5_STATUSES = [
+  { icon: '🟢', label: 'Signed', count: 8, color: '#4ade80' },
+  { icon: '🔵', label: 'Scheduled', count: 6, color: '#38bdf8' },
+  { icon: '🟡', label: 'Nurturing', count: 14, color: '#facc15' },
+  { icon: '🔴', label: 'Declined', count: 3, color: '#f87171' },
+  { icon: '⚪', label: 'Unresponsive', count: 7, color: '#94a3b8' },
+];
+
+const S5_NURTURE = [
+  { day: 'Day 1', icon: '✅', text: '"Thank you for reaching out, Carlos. We understand this is a difficult time..."', status: 'Sent', color: '#4ade80' },
+  { day: 'Day 3', icon: '✅', text: '"Just checking in — we have openings this week if you\'d like to discuss your case..."', status: 'Sent', color: '#4ade80' },
+  { day: 'Day 7', icon: '⏳', text: '"Carlos, cases like yours have a statute of limitations. We want to make sure..."', status: 'Scheduled', color: '#facc15' },
+  { day: 'Day 14', icon: '⏳', text: '"We know choosing legal representation is a big decision. We\'re here when you\'re ready."', status: 'Scheduled', color: '#facc15' },
+];
+
+const S5_ALERTS = [
+  { icon: '🚨', title: 'SOL Alert', text: 'Patricia Dunn — MVA from March 2024. Statute of limitations expires in 47 days. Re-engagement triggered.', color: '#f87171', delay: 25000 },
+  { icon: '🔔', title: 'Re-engagement', text: 'Anthony Brooks — initially declined. New Google review mentions ongoing pain. Outreach triggered.', color: '#fb923c', delay: 33000 },
+];
+
+function initScene5() {
+  const statusEl = document.getElementById('s5-statuses');
+  statusEl.innerHTML = '';
+  S5_STATUSES.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.style.cssText = `display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); opacity: 0;`;
+    el.innerHTML = `<div style="display: flex; align-items: center; gap: 8px; font-size: 13px;"><span>${s.icon}</span><span class="text-slate-300">${s.label}</span></div><span style="font-size: 16px; font-weight: 700; color: ${s.color};">${s.count}</span>`;
+    statusEl.appendChild(el);
+    setTimeout(() => { el.style.transition = 'opacity 0.4s ease'; el.style.opacity = '1'; }, 2000 + i * 1500);
+  });
+
+  // Nurture steps
+  const nurtureEl = document.getElementById('s5-nurture');
+  nurtureEl.innerHTML = '';
+  S5_NURTURE.forEach((n, i) => {
+    const el = document.createElement('div');
+    el.className = 'nurture-step';
+    el.innerHTML = `
+      <div style="width: 36px; flex-shrink: 0; text-align: center;">
+        <div style="font-size: 16px;">${n.icon}</div>
+        ${i < S5_NURTURE.length - 1 ? '<div style="width: 2px; height: 40px; background: rgba(255,255,255,0.08); margin: 4px auto 0;"></div>' : ''}
+      </div>
+      <div>
+        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+          <span style="font-size: 12px; font-weight: 600; color: #0ea5e9;">${n.day}</span>
+          <span style="font-size: 11px; color: ${n.color};">${n.status}</span>
+        </div>
+        <div style="font-size: 12px; color: #94a3b8; line-height: 1.5; font-style: italic;">${n.text}</div>
+      </div>
+    `;
+    nurtureEl.appendChild(el);
+    setTimeout(() => el.classList.add('visible'), 10000 + i * 4000);
+  });
+
+  // Alerts
+  const alertsEl = document.getElementById('s5-alerts');
+  alertsEl.innerHTML = '';
+  S5_ALERTS.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'glass';
+    el.style.cssText = `padding: 14px; border-radius: 10px; margin-bottom: 10px; border: 1px solid ${a.color}30; opacity: 0;`;
+    el.innerHTML = `
+      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+        <span style="font-size: 16px;">${a.icon}</span>
+        <span style="font-size: 13px; font-weight: 600; color: ${a.color};">${a.title}</span>
+      </div>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.5;">${a.text}</div>
+    `;
+    alertsEl.appendChild(el);
+    setTimeout(() => { el.style.transition = 'opacity 0.6s ease'; el.style.opacity = '1'; }, a.delay);
+  });
+
+  // Conversion stat
+  fadeIn(document.getElementById('s5-conv'), 42000, 800);
+}
+
+// ============================================================
+// SCENE 6: Cost Comparison
+// ============================================================
+function initScene6() {
+  const funnelData = [
+    { id: 's6-f1', target: 312, delay: 1000 },
+    { id: 's6-f2', target: 287, delay: 3000 },
+    { id: 's6-f3', target: 198, delay: 5000 },
+    { id: 's6-f4', target: 23, delay: 7000 },
+    { id: 's6-f5', target: 156, delay: 9000 },
+    { id: 's6-f6', target: 47, delay: 11000 },
+  ];
+  funnelData.forEach(f => {
+    setTimeout(() => animateCounter(document.getElementById(f.id), f.target, 2000), f.delay);
+  });
+
+  fadeIn(document.getElementById('s6-cost'), 18000, 800);
+  fadeIn(document.getElementById('s6-roi'), 34000, 800);
+}
+
+// ============================================================
+// SCENE 7: Closing CTA
+// ============================================================
+function initScene7() {
+  fadeIn(document.getElementById('s7-logo'), 2000, 1000);
+  fadeIn(document.getElementById('s7-tagline'), 4000, 800);
+  fadeIn(document.getElementById('s7-url'), 6000, 800);
+  fadeIn(document.getElementById('s7-cta'), 8000, 800);
+  setTimeout(() => {
+    document.querySelectorAll('.scene').forEach(s => { s.style.transition = 'opacity 1.5s ease'; s.style.opacity = '0'; });
+  }, 13000);
+}
+</script>
+</body>
+</html>
