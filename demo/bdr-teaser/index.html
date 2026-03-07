@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<meta name="robots" content="noindex, nofollow">
+<title>SolveWorks BDR Agent — 60s Teaser</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; color: #fff; }
+
+.scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; opacity: 0; transition: opacity 0.4s ease; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* Play button */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; gap: 24px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn .play-label { font-size: 14px; color: rgba(255,255,255,0.4); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; }
+#playBtn.hidden { display: none; }
+
+/* Progress bar */
+#progressBar { position: fixed; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, #0ea5e9, #38bdf8); z-index: 999; width: 0%; transition: width 0.3s linear; }
+
+/* Glass card */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+/* Tag colors */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-block; }
+.tag-saas { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-hrtech { background: rgba(168,85,247,0.2); color: #c084fc; }
+.tag-fintech { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-logistics { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tag-martech { background: rgba(6,182,212,0.2); color: #22d3ee; }
+.tag-cloud { background: rgba(99,102,241,0.2); color: #818cf8; }
+.tag-consulting { background: rgba(236,72,153,0.2); color: #f472b6; }
+.tag-itservices { background: rgba(100,116,139,0.2); color: #94a3b8; }
+
+/* Validation badges */
+.badge-valid { background: rgba(34,197,94,0.2); color: #4ade80; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+
+/* Filter chips */
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); }
+
+/* Table */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.data-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.data-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.data-table tr { opacity: 0; transform: translateX(30px); transition: all 0.3s ease; }
+.data-table tr.visible { opacity: 1; transform: translateX(0); }
+
+/* Contact card */
+.contact-card { padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; transform: scale(0.8); transition: all 0.4s ease; }
+.contact-card.visible { opacity: 1; transform: scale(1); }
+.avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+
+/* Email cursor */
+.cursor { display: inline-block; width: 2px; height: 16px; background: #0ea5e9; animation: blink 0.5s infinite; vertical-align: text-bottom; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Animations */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 30px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 60px rgba(14,165,233,0.6); } }
+@keyframes countUp { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+/* Sidebar mini */
+.sidebar { width: 220px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 24px 0; flex-shrink: 0; }
+.sidebar-logo { padding: 0 20px 24px; font-size: 18px; font-weight: 700; }
+.sidebar-item { padding: 10px 20px; font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; }
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+</style>
+</head>
+<body>
+
+<!-- Play Button -->
+<div id="playBtn">
+  <div class="play-circle">
+    <div class="play-triangle"></div>
+  </div>
+  <div class="play-label">60-second teaser</div>
+</div>
+
+<!-- Progress Bar -->
+<div id="progressBar"></div>
+
+<!-- SCENE 0: Hook (0-5s) -->
+<div class="scene" id="scene0" style="background: #000;">
+  <div style="text-align: center; max-width: 900px;">
+    <div id="hookText" style="font-size: 42px; font-weight: 300; line-height: 1.4; letter-spacing: -0.5px; opacity: 0;">
+      What if you could hire a sales team of 20…<br>
+      <span style="font-weight: 700; color: #0ea5e9;">for $500 a month?</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 1: Hit List Flash (5-20s) -->
+<div class="scene" id="scene1" style="background: #0A1628;">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo" style="color: #0ea5e9;">⚡ BDR Agent</div>
+      <div class="sidebar-item active">
+        <span>📋</span> Hit List
+      </div>
+      <div class="sidebar-item"><span>👤</span> Contacts</div>
+      <div class="sidebar-item"><span>✉️</span> Outreach</div>
+      <div class="sidebar-item"><span>📊</span> Results</div>
+    </div>
+    <!-- Main content -->
+    <div style="flex: 1; padding: 30px 40px; overflow: hidden;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 24px; font-weight: 700;">Company Hit List</div>
+          <div style="color: #64748b; font-size: 14px; margin-top: 4px;">AI-curated prospects matching your ICP</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="chip">🇨🇦 Canada</div>
+          <div class="chip">25–2,500 employees</div>
+          <div class="chip">SaaS / Tech</div>
+          <div style="background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); border-radius: 8px; padding: 8px 20px; font-size: 24px; font-weight: 800; color: #0ea5e9; min-width: 80px; text-align: center;" id="companyCounter">0</div>
+        </div>
+      </div>
+      <!-- Table -->
+      <div class="glass" style="padding: 0; overflow: hidden;">
+        <table class="data-table" id="hitListTable">
+          <thead>
+            <tr style="opacity:1; transform:none;">
+              <th style="width:30%;">Company</th>
+              <th style="width:15%;">Industry</th>
+              <th style="width:12%;">Size</th>
+              <th style="width:18%;">Location</th>
+              <th style="width:12%;">Revenue</th>
+              <th style="width:13%;">Score</th>
+            </tr>
+          </thead>
+          <tbody id="hitListBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 2: Decision Makers (20-28s) -->
+<div class="scene" id="scene2" style="background: #0A1628;">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo" style="color: #0ea5e9;">⚡ BDR Agent</div>
+      <div class="sidebar-item"><span>📋</span> Hit List</div>
+      <div class="sidebar-item active"><span>👤</span> Contacts</div>
+      <div class="sidebar-item"><span>✉️</span> Outreach</div>
+      <div class="sidebar-item"><span>📊</span> Results</div>
+    </div>
+    <div style="flex: 1; padding: 40px 50px; display: flex; flex-direction: column;">
+      <div style="margin-bottom: 30px;">
+        <div style="font-size: 24px; font-weight: 700;">Decision Makers Found</div>
+        <div style="color: #64748b; font-size: 14px; margin-top: 4px;">Ridgeline Technologies — Key contacts identified</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; align-content: center;">
+        <!-- Contact 1 -->
+        <div class="contact-card" id="contact1">
+          <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px;">
+            <div class="avatar" style="background: rgba(59,130,246,0.2); color: #60a5fa;">SC</div>
+            <div>
+              <div style="font-weight: 700; font-size: 16px;">Sarah Chen</div>
+              <div style="color: #94a3b8; font-size: 13px;">Chief Executive Officer</div>
+            </div>
+            <span class="badge-valid" style="margin-left: auto;">✓ Verified</span>
+          </div>
+          <div style="color: #94a3b8; font-size: 13px; display: flex; gap: 16px;">
+            <span>📧 sarah.chen@ridgelinetech.ca</span>
+            <span>🔗 LinkedIn</span>
+          </div>
+        </div>
+        <!-- Contact 2 -->
+        <div class="contact-card" id="contact2">
+          <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px;">
+            <div class="avatar" style="background: rgba(34,197,94,0.2); color: #4ade80;">MW</div>
+            <div>
+              <div style="font-weight: 700; font-size: 16px;">Marcus Webb</div>
+              <div style="color: #94a3b8; font-size: 13px;">Chief Financial Officer</div>
+            </div>
+            <span class="badge-valid" style="margin-left: auto;">✓ Verified</span>
+          </div>
+          <div style="color: #94a3b8; font-size: 13px; display: flex; gap: 16px;">
+            <span>📧 m.webb@ridgelinetech.ca</span>
+            <span>🔗 LinkedIn</span>
+          </div>
+        </div>
+        <!-- Contact 3 -->
+        <div class="contact-card" id="contact3">
+          <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px;">
+            <div class="avatar" style="background: rgba(168,85,247,0.2); color: #c084fc;">PS</div>
+            <div>
+              <div style="font-weight: 700; font-size: 16px;">Priya Sharma</div>
+              <div style="color: #94a3b8; font-size: 13px;">VP of Sales</div>
+            </div>
+            <span class="badge-valid" style="margin-left: auto;">✓ Verified</span>
+          </div>
+          <div style="color: #94a3b8; font-size: 13px; display: flex; gap: 16px;">
+            <span>📧 priya.sharma@ridgelinetech.ca</span>
+            <span>🔗 LinkedIn</span>
+          </div>
+        </div>
+        <!-- Contact 4 -->
+        <div class="contact-card" id="contact4">
+          <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px;">
+            <div class="avatar" style="background: rgba(249,115,22,0.2); color: #fb923c;">JP</div>
+            <div>
+              <div style="font-weight: 700; font-size: 16px;">Jason Park</div>
+              <div style="color: #94a3b8; font-size: 13px;">Director of IT</div>
+            </div>
+            <span class="badge-valid" style="margin-left: auto;">✓ Verified</span>
+          </div>
+          <div style="color: #94a3b8; font-size: 13px; display: flex; gap: 16px;">
+            <span>📧 j.park@ridgelinetech.ca</span>
+            <span>🔗 LinkedIn</span>
+          </div>
+        </div>
+      </div>
+      <!-- Counter -->
+      <div id="contactsCounter" style="text-align: center; margin-top: 20px; font-size: 20px; font-weight: 600; color: #0ea5e9; opacity: 0; transition: opacity 0.5s;">
+        342 contacts across 87 companies
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 3: Personalized Emails (28-45s) -->
+<div class="scene" id="scene3" style="background: #0A1628;">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo" style="color: #0ea5e9;">⚡ BDR Agent</div>
+      <div class="sidebar-item"><span>📋</span> Hit List</div>
+      <div class="sidebar-item"><span>👤</span> Contacts</div>
+      <div class="sidebar-item active"><span>✉️</span> Outreach</div>
+      <div class="sidebar-item"><span>📊</span> Results</div>
+    </div>
+    <div style="flex: 1; padding: 30px 40px; display: flex; flex-direction: column;">
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 22px; font-weight: 700;">Personalized Outreach</div>
+        <div style="color: #64748b; font-size: 14px; margin-top: 4px;">Same company. Different person. Completely different message.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1;">
+        <!-- CEO Email -->
+        <div class="glass" style="padding: 28px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+            <div class="avatar" style="background: rgba(59,130,246,0.2); color: #60a5fa; width: 36px; height: 36px; font-size: 13px;">SC</div>
+            <div>
+              <div style="font-weight: 600; font-size: 14px;">To: Sarah Chen</div>
+              <div style="color: #64748b; font-size: 12px;">CEO, Ridgeline Technologies</div>
+            </div>
+            <div style="margin-left: auto; background: rgba(59,130,246,0.15); color: #60a5fa; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">CEO</div>
+          </div>
+          <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Subject:</div>
+          <div id="ceoSubject" style="font-weight: 600; font-size: 15px; margin-bottom: 16px; color: #e2e8f0; min-height: 22px;"></div>
+          <div style="height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 16px;"></div>
+          <div id="ceoBody" style="font-size: 14px; line-height: 1.7; color: #cbd5e1; flex: 1;"></div>
+        </div>
+        <!-- CFO Email -->
+        <div class="glass" style="padding: 28px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+            <div class="avatar" style="background: rgba(34,197,94,0.2); color: #4ade80; width: 36px; height: 36px; font-size: 13px;">MW</div>
+            <div>
+              <div style="font-weight: 600; font-size: 14px;">To: Marcus Webb</div>
+              <div style="color: #64748b; font-size: 12px;">CFO, Ridgeline Technologies</div>
+            </div>
+            <div style="margin-left: auto; background: rgba(34,197,94,0.15); color: #4ade80; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">CFO</div>
+          </div>
+          <div style="color: #94a3b8; font-size: 12px; margin-bottom: 8px;">Subject:</div>
+          <div id="cfoSubject" style="font-weight: 600; font-size: 15px; margin-bottom: 16px; color: #e2e8f0; min-height: 22px;"></div>
+          <div style="height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 16px;"></div>
+          <div id="cfoBody" style="font-size: 14px; line-height: 1.7; color: #cbd5e1; flex: 1;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4: Stats Punchline (45-65s) -->
+<div class="scene" id="scene4" style="background: #0A1628;">
+  <div style="width: 1400px; text-align: center;">
+    <div style="font-size: 16px; text-transform: uppercase; letter-spacing: 0.2em; color: #64748b; margin-bottom: 40px; font-weight: 600;">90-Day Campaign Results</div>
+    <!-- Funnel -->
+    <div id="funnelRow" style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 60px;">
+      <div class="funnel-stat" style="opacity: 0;">
+        <div style="font-size: 52px; font-weight: 900; color: #0ea5e9;" data-target="2847">0</div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Companies</div>
+      </div>
+      <div class="funnel-arrow" style="color: #334155; font-size: 28px; opacity: 0;">→</div>
+      <div class="funnel-stat" style="opacity: 0;">
+        <div style="font-size: 52px; font-weight: 900; color: #38bdf8;" data-target="8541">0</div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Contacts</div>
+      </div>
+      <div class="funnel-arrow" style="color: #334155; font-size: 28px; opacity: 0;">→</div>
+      <div class="funnel-stat" style="opacity: 0;">
+        <div style="font-size: 52px; font-weight: 900; color: #4ade80;" data-target="7923">0</div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Validated</div>
+      </div>
+      <div class="funnel-arrow" style="color: #334155; font-size: 28px; opacity: 0;">→</div>
+      <div class="funnel-stat" style="opacity: 0;">
+        <div style="font-size: 52px; font-weight: 900; color: #a78bfa;" data-target="23769">0</div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Emails Sent</div>
+      </div>
+      <div class="funnel-arrow" style="color: #334155; font-size: 28px; opacity: 0;">→</div>
+      <div class="funnel-stat" style="opacity: 0;">
+        <div style="font-size: 52px; font-weight: 900; color: #f472b6;" data-target="1412">0</div>
+        <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Replies</div>
+      </div>
+      <div class="funnel-arrow" style="color: #334155; font-size: 28px; opacity: 0;">→</div>
+      <div class="funnel-stat" style="opacity: 0;">
+        <div style="font-size: 64px; font-weight: 900; color: #fbbf24;" data-target="347">0</div>
+        <div style="font-size: 15px; color: #fbbf24; margin-top: 4px; font-weight: 700;">Meetings Booked</div>
+      </div>
+    </div>
+    <!-- Cost comparison -->
+    <div id="costCompare" style="display: flex; justify-content: center; gap: 60px; opacity: 0; transition: opacity 0.6s;">
+      <div class="glass" style="padding: 30px 50px; text-align: center; border-color: rgba(239,68,68,0.3);">
+        <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">20 Human BDRs</div>
+        <div style="font-size: 48px; font-weight: 900; color: #f87171;">$120,000</div>
+        <div style="font-size: 14px; color: #94a3b8;">/month</div>
+      </div>
+      <div style="display: flex; align-items: center; font-size: 36px; color: #334155; font-weight: 300;">vs</div>
+      <div class="glass" style="padding: 30px 50px; text-align: center; border-color: rgba(14,165,233,0.3); animation: pulseGlow 2s infinite;">
+        <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.1em;">Your AI Agent</div>
+        <div style="font-size: 48px; font-weight: 900; color: #0ea5e9;">$500</div>
+        <div style="font-size: 14px; color: #94a3b8;">/month</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5: CTA (65-74s) -->
+<div class="scene" id="scene5" style="background: #000;">
+  <div style="text-align: center;">
+    <div id="ctaLogo" style="opacity: 0; transition: opacity 1s; margin-bottom: 40px;">
+      <div style="font-size: 48px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #0ea5e9;">Solve</span><span style="color: #fff;">Works</span>
+      </div>
+    </div>
+    <div id="ctaTagline" style="opacity: 0; transition: opacity 1s; font-size: 28px; font-weight: 300; color: #94a3b8; margin-bottom: 50px; letter-spacing: 0.05em;">
+      Your AI. Only yours.
+    </div>
+    <div id="ctaLink" style="opacity: 0; transition: opacity 1s;">
+      <a href="https://solveworks.io/demo/bdr-video" style="color: #0ea5e9; font-size: 18px; font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(14,165,233,0.3); padding-bottom: 4px;">
+        Watch the full walkthrough →
+      </a>
+      <div style="margin-top: 12px; color: #64748b; font-size: 14px;">solveworks.io/demo/bdr-video</div>
+    </div>
+    <div id="ctaSite" style="opacity: 0; transition: opacity 1s; margin-top: 60px; color: #334155; font-size: 14px; letter-spacing: 0.1em;">
+      solveworks.io
+    </div>
+  </div>
+</div>
+
+<script>
+// --- DATA ---
+const companies = [
+  { name: 'Ridgeline Technologies', industry: 'SaaS', tag: 'tag-saas', size: '120', location: 'Toronto, ON', revenue: '$14M', score: 94 },
+  { name: 'NovaPeak Solutions', industry: 'FinTech', tag: 'tag-fintech', size: '340', location: 'Vancouver, BC', revenue: '$28M', score: 91 },
+  { name: 'Maple Leaf Analytics', industry: 'MarTech', tag: 'tag-martech', size: '85', location: 'Montreal, QC', revenue: '$9M', score: 89 },
+  { name: 'TrueNorth Digital', industry: 'SaaS', tag: 'tag-saas', size: '210', location: 'Calgary, AB', revenue: '$22M', score: 88 },
+  { name: 'Cascadia HR', industry: 'HR Tech', tag: 'tag-hrtech', size: '156', location: 'Ottawa, ON', revenue: '$16M', score: 87 },
+  { name: 'Boreal Cloud Systems', industry: 'Cloud', tag: 'tag-cloud', size: '430', location: 'Toronto, ON', revenue: '$45M', score: 86 },
+  { name: 'Pacific Rim Consulting', industry: 'Consulting', tag: 'tag-consulting', size: '92', location: 'Victoria, BC', revenue: '$11M', score: 85 },
+  { name: 'Frontier Logistics AI', industry: 'Logistics', tag: 'tag-logistics', size: '278', location: 'Edmonton, AB', revenue: '$31M', score: 84 },
+  { name: 'Granite Peak Software', industry: 'SaaS', tag: 'tag-saas', size: '64', location: 'Waterloo, ON', revenue: '$7M', score: 83 },
+  { name: 'Shield Cyber Solutions', industry: 'IT Services', tag: 'tag-itservices', size: '190', location: 'Halifax, NS', revenue: '$19M', score: 82 },
+  { name: 'Aurora Data Labs', industry: 'SaaS', tag: 'tag-saas', size: '145', location: 'Winnipeg, MB', revenue: '$15M', score: 81 },
+  { name: 'Summit Financial Tech', industry: 'FinTech', tag: 'tag-fintech', size: '320', location: 'Toronto, ON', revenue: '$34M', score: 80 },
+  { name: 'Canopy Marketing AI', industry: 'MarTech', tag: 'tag-martech', size: '78', location: 'Vancouver, BC', revenue: '$8M', score: 79 },
+  { name: 'Timberline ERP', industry: 'SaaS', tag: 'tag-saas', size: '250', location: 'Mississauga, ON', revenue: '$26M', score: 78 },
+  { name: 'Icebreaker Sales Co', industry: 'Consulting', tag: 'tag-consulting', size: '55', location: 'Calgary, AB', revenue: '$6M', score: 77 },
+  { name: 'Polaris Networks', industry: 'Cloud', tag: 'tag-cloud', size: '410', location: 'Montreal, QC', revenue: '$42M', score: 76 },
+  { name: 'Spruce Tech Group', industry: 'IT Services', tag: 'tag-itservices', size: '130', location: 'Ottawa, ON', revenue: '$13M', score: 75 },
+  { name: 'Clearwater Analytics', industry: 'FinTech', tag: 'tag-fintech', size: '95', location: 'Toronto, ON', revenue: '$10M', score: 74 },
+];
+
+const ceoSubjectText = "Ridgeline's Q1 growth and a CRM gap you might not see yet";
+const ceoBodyText = "Sarah — saw your LinkedIn post about expanding the sales team this quarter. Congrats.\n\nThat kind of growth is exciting, but it usually exposes a gap: your current CRM wasn't built for a team that size.";
+const cfoSubjectText = "What Ridgeline is probably overpaying for CRM";
+const cfoBodyText = "Marcus — companies at Ridgeline's stage typically spend 40-60% more on CRM than they need to, mostly because they're on platforms built for enterprises 10x their size.\n\nApex CRM saves mid-market companies an average of $4,200/month versus Salesforce.";
+
+// --- ENGINE ---
+const TOTAL_DURATION = 74000;
+let audio, startTime, progressInterval;
+
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function updateProgress() {
+  if (!startTime) return;
+  const elapsed = Date.now() - startTime;
+  const pct = Math.min((elapsed / TOTAL_DURATION) * 100, 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+// Scene 0: Hook
+function playScene0() {
+  showScene('scene0');
+  const hookText = document.getElementById('hookText');
+  setTimeout(() => { hookText.style.opacity = '1'; hookText.style.transition = 'opacity 1s ease'; }, 300);
+}
+
+// Scene 1: Hit List Flash
+function playScene1() {
+  showScene('scene1');
+  const tbody = document.getElementById('hitListBody');
+  const counter = document.getElementById('companyCounter');
+  tbody.innerHTML = '';
+  let count = 0;
+
+  companies.forEach((c, i) => {
+    setTimeout(() => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600;">${c.name}</td>
+        <td><span class="tag ${c.tag}">${c.industry}</span></td>
+        <td style="color:#94a3b8;">${c.size}</td>
+        <td style="color:#94a3b8;">${c.location}</td>
+        <td style="color:#94a3b8;">${c.revenue}</td>
+        <td><span style="color:#0ea5e9;font-weight:700;">${c.score}</span><span style="color:#334155;">/100</span></td>
+      `;
+      tbody.appendChild(tr);
+      setTimeout(() => tr.classList.add('visible'), 20);
+      count++;
+    }, i * 500);
+  });
+
+  // Counter animation
+  const targetCount = 87;
+  const counterDuration = 14000;
+  const counterStart = Date.now();
+  const counterInterval = setInterval(() => {
+    const elapsed = Date.now() - counterStart;
+    const progress = Math.min(elapsed / counterDuration, 1);
+    counter.textContent = Math.round(progress * targetCount);
+    if (progress >= 1) clearInterval(counterInterval);
+  }, 50);
+}
+
+// Scene 2: Decision Makers
+function playScene2() {
+  showScene('scene2');
+  for (let i = 1; i <= 4; i++) {
+    setTimeout(() => {
+      document.getElementById('contact' + i).classList.add('visible');
+    }, (i - 1) * 1000);
+  }
+  setTimeout(() => {
+    document.getElementById('contactsCounter').style.opacity = '1';
+  }, 5000);
+}
+
+// Scene 3: Personalized Emails - typewriter
+function typeText(elementId, text, speed, callback) {
+  const el = document.getElementById(elementId);
+  let idx = 0;
+  el.innerHTML = '';
+  const interval = setInterval(() => {
+    if (idx < text.length) {
+      let char = text[idx];
+      if (char === '\n') {
+        el.innerHTML += '<br>';
+      } else {
+        el.innerHTML += char;
+      }
+      idx++;
+    } else {
+      clearInterval(interval);
+      if (callback) callback();
+    }
+  }, speed);
+}
+
+function playScene3() {
+  showScene('scene3');
+  // Start both emails simultaneously
+  typeText('ceoSubject', ceoSubjectText, 25);
+  typeText('cfoSubject', cfoSubjectText, 25);
+  setTimeout(() => {
+    typeText('ceoBody', ceoBodyText, 20);
+    typeText('cfoBody', cfoBodyText, 20);
+  }, 1500);
+}
+
+// Scene 4: Stats Punchline
+function animateNumber(el, target, duration) {
+  const start = Date.now();
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(eased * target).toLocaleString();
+    if (progress >= 1) clearInterval(interval);
+  }, 30);
+}
+
+function playScene4() {
+  showScene('scene4');
+  const stats = document.querySelectorAll('.funnel-stat');
+  const arrows = document.querySelectorAll('.funnel-arrow');
+
+  stats.forEach((stat, i) => {
+    setTimeout(() => {
+      stat.style.opacity = '1';
+      stat.style.transition = 'opacity 0.4s ease';
+      const numEl = stat.querySelector('[data-target]');
+      const target = parseInt(numEl.dataset.target);
+      animateNumber(numEl, target, 2000);
+      // Show arrow before this stat (except first)
+      if (i > 0 && arrows[i - 1]) {
+        arrows[i - 1].style.opacity = '1';
+        arrows[i - 1].style.transition = 'opacity 0.3s ease';
+      }
+    }, i * 600);
+  });
+
+  // Show cost comparison after funnel
+  setTimeout(() => {
+    document.getElementById('costCompare').style.opacity = '1';
+  }, 5000);
+}
+
+// Scene 5: CTA
+function playScene5() {
+  showScene('scene5');
+  setTimeout(() => document.getElementById('ctaLogo').style.opacity = '1', 300);
+  setTimeout(() => document.getElementById('ctaTagline').style.opacity = '1', 1200);
+  setTimeout(() => document.getElementById('ctaLink').style.opacity = '1', 2500);
+  setTimeout(() => document.getElementById('ctaSite').style.opacity = '1', 3500);
+}
+
+// --- MASTER TIMELINE ---
+function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  audio = document.getElementById('audioTrack');
+  audio.play();
+  startTime = Date.now();
+  progressInterval = setInterval(updateProgress, 100);
+
+  // Scene 0: 0-5s
+  playScene0();
+
+  // Scene 1: 5-20s
+  setTimeout(playScene1, 5000);
+
+  // Scene 2: 20-28s
+  setTimeout(playScene2, 20000);
+
+  // Scene 3: 28-45s
+  setTimeout(playScene3, 28000);
+
+  // Scene 4: 45-65s
+  setTimeout(playScene4, 45000);
+
+  // Scene 5: 65-74s
+  setTimeout(playScene5, 65000);
+
+  // End
+  setTimeout(() => {
+    clearInterval(progressInterval);
+    document.getElementById('progressBar').style.width = '100%';
+  }, TOTAL_DURATION);
+}
+
+document.getElementById('playBtn').addEventListener('click', startDemo);
+</script>
+
+<audio id="audioTrack" preload="auto">
+  <source src="teaser.mp3" type="audio/mpeg">
+</audio>
+
+</body>
+</html>
