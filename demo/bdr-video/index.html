@@ -624,9 +624,37 @@ function fadeOut(el, delay = 0, duration = 500) {
 }
 
 // ============================================================
+// AUDIO FILES (per scene)
+// ============================================================
+const AUDIO_FILES = [
+  '00-opening-hook.mp3',
+  '01-hit-list.mp3',
+  '02-decision-makers.mp3',
+  '03-email-validation.mp3',
+  '04-personalized-outreach.mp3',
+  '05-auto-sending.mp3',
+  '06-reengagement.mp3',
+  '07-bottom-line.mp3',
+  '08-closing-cta.mp3'
+];
+let currentAudio = null;
+
+// Preload all audio
+const audioElements = AUDIO_FILES.map(f => {
+  const a = new Audio(f);
+  a.preload = 'auto';
+  return a;
+});
+
+// ============================================================
 // SCENE MANAGEMENT
 // ============================================================
 function showScene(index) {
+  // Stop current audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
   // Hide all scenes
   document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
   // Show target
@@ -635,6 +663,11 @@ function showScene(index) {
     scene.classList.add('active');
     currentScene = index;
     sceneStartTime = performance.now();
+    // Play audio for this scene
+    if (audioElements[index]) {
+      currentAudio = audioElements[index];
+      currentAudio.play().catch(() => {});
+    }
     // Trigger scene-specific animations
     window['initScene' + index]?.();
   }
