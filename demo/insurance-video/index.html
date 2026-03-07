@@ -1115,110 +1115,51 @@ function startPresentation() {
 
 </script>
 
-<!-- Playback Control Bar -->
-  <div class="cb-scrubber" id="cbScrubber">
-    <div class="cb-scrubber-fill" id="cbScrubberFill"></div>
-    <div class="cb-scrubber-thumb" id="cbScrubberThumb"></div>
-  </div>
-  <div class="cb-vol-wrap">
-    
-    <input type="range" class="cb-vol-slider" id="cbVolSlider" min="0" max="1" step="0.05" value="1">
-  </div>
-</div>
-        </div>
-  <div class="cb-time" id="cbTimeDisplay">0:00 / 0:00</div>
-  
-  
-</div>
-<script>
-(function(){
-  // Show mobile overlay after demo starts
-  </script>
 
-<!-- Simple progress bar at bottom of canvas -->
+
+
+<!-- Progress bar + tap to pause -->
 <div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
   <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
 </div>
-<!-- Pause icon flash -->
 <div id="pauseFlash" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:200px; height:200px; border-radius:50%; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; font-size:80px; color:white; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">⏸</div>
 <script>
 (function(){
-  var paused = false;
-  var demoStarted = false;
-  var flash = document.getElementById("pauseFlash");
-  var progBar = document.getElementById("simpleProgress");
-  var progFill = document.getElementById("simpleProgressFill");
-  
-  // Wait for demo to start
-  var checkStart = setInterval(function(){
-    var pb = document.getElementById("playBtn") || document.getElementById("play-btn");
-    if(pb && (pb.classList.contains("hidden") || pb.style.display==="none")){
-      demoStarted = true;
-      progBar.style.display = "block";
-      clearInterval(checkStart);
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
     }
-  }, 200);
-  
-  // Tap anywhere to pause/play
-  document.addEventListener("touchstart", function(e){
-    if(!demoStarted) return;
-    e.preventDefault();
-    paused = !paused;
-    
-    // Flash icon
-    flash.textContent = paused ? "▶" : "⏸";
-    flash.style.opacity = "1";
-    setTimeout(function(){ if(!paused) flash.style.opacity="0"; }, 600);
-    if(paused) flash.style.opacity = "1";
-    
-    // Pause/resume audio
-    try {
-      var a = typeof voiceover !== "undefined" ? voiceover : (typeof audio !== "undefined" ? audio : null);
-      if(a){
-        if(paused){ a.pause(); } else { a.play().catch(function(){}); }
-      }
-    } catch(ex){}
-    
-    // Pause/resume animations
-    if(paused){
-      document.body.classList.add("animations-paused");
-    } else {
-      document.body.classList.remove("animations-paused");
-    }
-  });
-  
-  // Also support mouse click for desktop
-  document.addEventListener("click", function(e){
-    if(!demoStarted) return;
-    if(e.target.closest && e.target.closest("#playBtn,[id]")) return;
-    paused = !paused;
-    flash.textContent = paused ? "▶" : "⏸";
-    flash.style.opacity = "1";
-    setTimeout(function(){ if(!paused) flash.style.opacity="0"; }, 600);
-    if(paused) flash.style.opacity = "1";
-    try {
-      var a = typeof voiceover !== "undefined" ? voiceover : (typeof audio !== "undefined" ? audio : null);
-      if(a){ if(paused){ a.pause(); } else { a.play().catch(function(){}); } }
-    } catch(ex){}
-    if(paused){ document.body.classList.add("animations-paused"); }
-    else { document.body.classList.remove("animations-paused"); }
-  });
-  
-  // Update progress bar
-  function updateSimpleProgress(){
-    try {
-      var a = typeof voiceover !== "undefined" ? voiceover : (typeof audio !== "undefined" ? audio : null);
-      if(a && a.duration && !isNaN(a.duration)){
-        var pct = (a.currentTime / a.duration) * 100;
-        progFill.style.width = pct + "%";
-      }
-    } catch(ex){}
-    requestAnimationFrame(updateSimpleProgress);
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.textContent=paused?"▶":"⏸";
+    flash.style.opacity="1";
+    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a){if(paused)a.pause();else a.play().catch(function(){});}
+    }catch(e){}
+    if(paused)document.body.classList.add("animations-paused");
+    else document.body.classList.remove("animations-paused");
   }
-  requestAnimationFrame(updateSimpleProgress);
-  
-  // Stop audio on page leave
-  window.addEventListener("pagehide", function(){ try { voiceover.pause(); } catch(e){} });
+  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
+  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
+  function upd(){
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
+      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
 })();
 </script>
 
