@@ -554,7 +554,30 @@ async function moveAndClick(x, y, moveDur = 600) {
   await delay(150);
 }
 
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+window.__demoPaused = false;
+function delay(ms) {
+  return new Promise(resolve => {
+    let remaining = ms;
+    let start = Date.now();
+    function tick() {
+      if (window.__demoPaused) {
+        // Check again in 100ms
+        setTimeout(tick, 100);
+        start = Date.now();
+        return;
+      }
+      let elapsed = Date.now() - start;
+      remaining -= elapsed;
+      if (remaining <= 0) {
+        resolve();
+      } else {
+        start = Date.now();
+        setTimeout(tick, Math.min(remaining, 50));
+      }
+    }
+    setTimeout(tick, Math.min(ms, 50));
+  });
+}
 
 // Hover effect helpers
 function addHover(el) { if(el) el.classList.add('hovered'); }
@@ -1210,8 +1233,8 @@ buildFollowups();
       var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
       if(a){if(paused)a.pause();else a.play().catch(function(){});}
     }catch(e){}
-    if(paused)document.body.classList.add("animations-paused");
-    else document.body.classList.remove("animations-paused");
+    window.__demoPaused=paused; if(paused)document.body.classList.add("animations-paused");
+    else{window.__demoPaused=false; document.body.classList.remove("animations-paused");}
   }
   document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
   document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
