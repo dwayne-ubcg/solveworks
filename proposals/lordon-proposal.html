@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveWorks — AI Automation Proposal for Lordon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & PRINT === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            color: #2d2a26;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .solution-card,
+            .package-card,
+            .roi-card,
+            .roi-grid,
+            .timeline-item,
+            .bonus-card,
+            .packages-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COLOR PALETTE ===
+           Primary: #6B5E4F (warm taupe)
+           Accent: #B8A99A (soft sand)
+           Rose: #C4A882 (dusty gold)
+           Sage: #8B9E87 (muted sage)
+           Blush: #D4B5A0 (soft blush)
+           Dark: #2D2A26 (rich espresso)
+           Light BG: #FAF8F5 (warm cream)
+           Card BG: #F7F4F0 (light linen)
+        */
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(145deg, #2D2A26 0%, #3D3630 40%, #4A413A 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(196, 168, 130, 0.12), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(139, 158, 135, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #C4A882;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #C4A882;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #B8A99A;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #8B8078;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #B8A99A;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #C4A882, #8B9E87);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.8in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #E8E2DB;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #C4A882;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #8B8078;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #2D2A26;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #8B9E87;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #8B8078;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            color: #2D2A26;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #4A413A;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #4A413A;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #F7F4F0;
+            border: 1px solid #E8E2DB;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+
+        .solution-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #8B9E87, #6B8A66);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .solution-card-desc {
+            font-size: 12px;
+            color: #8B8078;
+        }
+
+        .solution-card p {
+            font-size: 12px;
+            color: #5A524A;
+            margin-bottom: 8px;
+        }
+
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .benefit-tag {
+            background: #E8F0E6;
+            color: #4A6E45;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === PACKAGES === */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            border: 1px solid #E8E2DB;
+            border-radius: 12px;
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            page-break-inside: avoid;
+        }
+
+        .package-card.featured {
+            border: 2px solid #8B9E87;
+            background: linear-gradient(180deg, #F2F5F1 0%, white 30%);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #8B9E87, #6B8A66);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+
+        .package-name {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #8B8078;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .package-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #2D2A26;
+            line-height: 1;
+        }
+
+        .package-price sup {
+            font-size: 16px;
+            font-weight: 600;
+            top: -10px;
+        }
+
+        .package-period {
+            font-size: 11px;
+            color: #8B8078;
+            margin-bottom: 4px;
+        }
+
+        .package-setup {
+            font-size: 11px;
+            color: #8B8078;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #E8E2DB;
+        }
+
+        .package-features {
+            list-style: none;
+            text-align: left;
+            padding: 0;
+        }
+
+        .package-features li {
+            font-size: 11px;
+            color: #4A413A;
+            padding: 4px 0;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #8B9E87;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .package-tagline {
+            font-size: 11px;
+            color: #8B9E87;
+            font-style: italic;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* === ROI SECTION === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .roi-card {
+            background: linear-gradient(135deg, #2D2A26, #3D3630);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .roi-number {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 36px;
+            font-weight: 800;
+            color: #C4A882;
+            line-height: 1.1;
+        }
+
+        .roi-label {
+            font-size: 11px;
+            color: #B8A99A;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8B9E87, #6B8A66);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #E8E2DB;
+            margin-top: 6px;
+        }
+
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #8B8078;
+            margin-bottom: 0;
+        }
+
+        .timeline-week {
+            font-size: 10px;
+            color: #8B9E87;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === BONUS CARDS === */
+        .bonus-card {
+            background: linear-gradient(135deg, #F2F5F1, #E8F0E6);
+            border: 1px solid #C8D8C4;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #4A6E45;
+            margin-bottom: 4px;
+        }
+
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #3D5A38;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(145deg, #2D2A26 0%, #3D3630 40%, #4A413A 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(196, 168, 130, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            font-family: 'Playfair Display', Georgia, serif;
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #B8A99A;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #2D2A26;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #8B8078;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #C4A882;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #8B8078;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #8B8078;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* === CHAT MOCK === */
+        .chat-mock {
+            background: #2D2A26;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #8B8078;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+
+        .chat-bubble.user {
+            background: #8B9E87;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.agent {
+            background: #3D3630;
+            color: #E8E2DB;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+
+        .chat-clear { clear: both; }
+
+        .chat-time {
+            text-align: center;
+            font-size: 9px;
+            color: #5A524A;
+            margin: 10px 0;
+            clear: both;
+        }
+
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #4A413A;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #8B8078;
+            font-weight: 400;
+        }
+
+        /* === INVESTMENT === */
+        .investment-setup {
+            text-align: center;
+            background: linear-gradient(135deg, #2D2A26, #3D3630);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .investment-note {
+            font-size: 12px;
+            color: #8B8078;
+            text-align: center;
+            line-height: 1.7;
+            margin-top: 20px;
+        }
+
+        /* === PARTNER PRICING HIGHLIGHT === */
+        .partner-pricing-box {
+            background: linear-gradient(135deg, #F2F5F1, #E8F0E6);
+            border: 2px solid #8B9E87;
+            border-radius: 14px;
+            padding: 28px 30px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .partner-pricing-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #8B9E87, #6B8A66);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 20px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .price-strikethrough {
+            text-decoration: line-through;
+            color: #B8A99A;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .price-discount {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 38px;
+            font-weight: 800;
+            color: #4A6E45;
+            line-height: 1;
+        }
+
+        /* === LOCATION CARDS === */
+        .location-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .location-card {
+            background: #F7F4F0;
+            border: 1px solid #E8E2DB;
+            border-radius: 10px;
+            padding: 18px 16px;
+            text-align: center;
+        }
+
+        .location-card .loc-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .location-card .loc-city {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #2D2A26;
+            margin-bottom: 4px;
+        }
+
+        .location-card .loc-address {
+            font-size: 10.5px;
+            color: #8B8078;
+            line-height: 1.5;
+        }
+
+        .location-card .loc-label {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8B9E87;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: COVER -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>Your AI-Powered<br>Retail Partner for<br><span>Lordon</span></h1>
+        <div class="cover-subtitle">Three stores. One conversation. Total control.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> March 8, 2026<br>
+            <strong>Valid through:</strong> March 22, 2026<br>
+            <strong>Prepared for:</strong> Lordon — shoplordon.com<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- PAGE 2: PERSONAL LETTER -->
+    <div class="page">
+        <div class="content" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">A Note from Dwayne</div>
+            </div>
+
+            <div style="max-width: 560px; margin: 40px auto 0; padding: 0 10px;">
+                <p style="font-size: 15px; color: #4A413A; line-height: 1.9; margin-bottom: 22px;">
+                    Hi there,
+                </p>
+
+                <p style="font-size: 14px; color: #4A413A; line-height: 1.9; margin-bottom: 22px;">
+                    Running one boutique is a full-time job. Running three across two provinces — Saint John, Moncton, and Halifax — while keeping Lightspeed, Shopify, and Omnisend all in sync? That's a juggling act that steals hours from the work that actually grows Lordon.
+                </p>
+
+                <p style="font-size: 14px; color: #4A413A; line-height: 1.9; margin-bottom: 22px;">
+                    I've been watching what you've built. From that original Canterbury Street location to expanding into Moncton and Halifax — 16K followers on Instagram, a curated online store, a loyal customer base who trusts your eye. You've got the brand. You've got the momentum. What you need is a way to manage the complexity without hiring an entire ops team.
+                </p>
+
+                <p style="font-size: 14px; color: #4A413A; line-height: 1.9; margin-bottom: 22px;">
+                    That's what this proposal is about. An AI agent that sits in the middle of your Lightspeed POS, your Shopify store, and your Omnisend campaigns — and lets you manage all of it through a single Telegram conversation. Check inventory across all three locations. Run a flash sale on Shopify. See which brands are selling through and which are sitting. Get a morning briefing before you've finished your coffee. No new software. No new logins. Just a conversation.
+                </p>
+
+                <p style="font-size: 14px; color: #4A413A; line-height: 1.9; margin-bottom: 40px;">
+                    Take a look. I think you'll see how this fits.
+                </p>
+
+                <p style="font-size: 14px; color: #4A413A; line-height: 1.9; margin-bottom: 40px;">
+                    — Dwayne<br>
+                    <span style="font-size: 12px; color: #8B8078;">SolveWorks | dwayne@solveworks.io</span>
+                </p>
+
+                <div style="border-top: 1px solid #E8E2DB; padding-top: 20px;">
+                    <p style="font-size: 11.5px; color: #8B8078; line-height: 1.7; margin-bottom: 0; font-style: italic;">
+                        "Three stores across two provinces, an online shop, and only so many hours in a day."<br>
+                        <strong style="color: #6B5E4F;">— The reality of running a multi-location boutique</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 3: THE CHALLENGE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>The <span>Multi-Location Challenge</span></h2>
+            <div class="section-subtitle">Three boutiques. Three POS systems. One Shopify store. One Omnisend account. Zero free time.</div>
+
+            <p class="intro-text">
+                Lordon has grown from a single boutique on Canterbury Street in Saint John to three thriving locations across the Maritimes. That growth is a testament to your brand and your taste — but it's also <strong>tripled the operational complexity</strong> of running the business.
+            </p>
+
+            <p class="intro-text">
+                Checking inventory means logging into Lightspeed for each location separately. Managing the online store means a Shopify admin session. Email marketing means switching to Omnisend. Understanding how a brand is performing means pulling reports from multiple systems and stitching them together in your head. Every platform has its own dashboard, its own login, its own logic.
+            </p>
+
+            <div class="location-grid">
+                <div class="location-card">
+                    <div class="loc-icon">🏠</div>
+                    <div class="loc-city">Saint John</div>
+                    <div class="loc-address">27 Canterbury Street<br>Saint John, NB</div>
+                    <div class="loc-label">Original Location</div>
+                </div>
+                <div class="location-card">
+                    <div class="loc-icon">📍</div>
+                    <div class="loc-city">Moncton</div>
+                    <div class="loc-address">1690 Mountain Road<br>Moncton, NB</div>
+                    <div class="loc-label">Newer Location</div>
+                </div>
+                <div class="location-card">
+                    <div class="loc-icon">📍</div>
+                    <div class="loc-city">Halifax</div>
+                    <div class="loc-address">1481 Birmingham Street<br>Halifax, NS</div>
+                    <div class="loc-label">Newer Location</div>
+                </div>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">3</div>
+                    <div class="roi-label">Retail locations across<br>two provinces to manage daily</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">3</div>
+                    <div class="roi-label">Separate platforms<br>Lightspeed · Shopify · Omnisend</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">22K+</div>
+                    <div class="roi-label">Social followers<br>across Instagram &amp; Facebook</div>
+                </div>
+            </div>
+
+            <p class="intro-text" style="margin-top: 10px;">
+                The challenge isn't any single platform — they're all good tools. The challenge is that <strong>you're the integration layer.</strong> You're the one switching between tabs, cross-referencing data, and keeping track of what's happening where. That's not sustainable at three locations — and it only gets harder if you ever open a fourth.
+            </p>
+
+            <p class="disclaimer">* Based on Lordon's current publicly listed locations and tech stack.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4: SOLUTIONS (1 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions</div>
+            </div>
+
+            <h2>What Your Agent <span>Does</span></h2>
+            <div class="section-subtitle">One conversation replaces three dashboards — Lightspeed, Shopify, and Omnisend, unified</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📍</div>
+                        <div>
+                            <h3>Multi-Location Intelligence</h3>
+                            <div class="solution-card-desc">Three stores, one conversation. No more app-switching.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Ask your agent anything across all three locations — inventory levels, daily sales, staff performance — and get answers instantly. <strong>"How many of the Agency Blazers do we have in Moncton?"</strong> or <strong>"Transfer 4 units of the Satin Blouse from Saint John to Halifax."</strong> Cross-location stock checks, consolidated daily sales reports, and location-level performance comparisons — all through a text message.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Cross-location inventory</span>
+                    <span class="benefit-tag">Consolidated reporting</span>
+                    <span class="benefit-tag">Inter-store transfers</span>
+                    <span class="benefit-tag">Location comparisons</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🔗</div>
+                        <div>
+                            <h3>Unified Tech Stack Management</h3>
+                            <div class="solution-card-desc">Lightspeed + Shopify + Omnisend — controlled from one place.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Your agent sits in the middle of your entire tech stack. <strong>Lightspeed POS</strong> for real-time in-store sales data, inventory, and customer profiles. <strong>Shopify</strong> for full online store management — products, collections, discounts, design, orders. <strong>Omnisend</strong> for email campaigns, automations, customer segmentation, and abandoned cart flows. One conversation controls all three platforms. No more switching between apps to piece together the full picture.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Lightspeed POS integration</span>
+                    <span class="benefit-tag">Shopify store management</span>
+                    <span class="benefit-tag">Omnisend campaigns</span>
+                    <span class="benefit-tag">Single control point</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🛍️</div>
+                        <div>
+                            <h3>Conversational Shopify Management</h3>
+                            <div class="solution-card-desc">Update products, run sales, redesign pages — all through chat.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>No Shopify admin logins needed. No web developer. Tell your agent: <strong>"Add the new spring arrivals to the homepage collection"</strong> or <strong>"Create a 20% off weekend sale on all denim."</strong> Update product descriptions, create new collections, manage discount codes, even redesign page layouts — all through Telegram. SolveWorks built and manages 7cellars.ky entirely through chat — same approach, tailored for retail.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Product updates via chat</span>
+                    <span class="benefit-tag">Collection management</span>
+                    <span class="benefit-tag">Discount creation</span>
+                    <span class="benefit-tag">No dev needed</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 5: SOLUTIONS (2 of 2) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">☀️</div>
+                        <div>
+                            <h3>Morning Briefing</h3>
+                            <div class="solution-card-desc">Everything you need to know before your first coffee is done.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Every morning, your agent sends a consolidated briefing: <strong>yesterday's sales across all three locations</strong> — online vs. in-store breakdown, top sellers, stock alerts for items running low, weather-based foot traffic insights, and upcoming Omnisend campaign performance. One message. Three stores. The full picture before you walk into any of them.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Daily sales recap</span>
+                    <span class="benefit-tag">Online vs. in-store</span>
+                    <span class="benefit-tag">Stock alerts</span>
+                    <span class="benefit-tag">Best sellers</span>
+                    <span class="benefit-tag">Weather insights</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📊</div>
+                        <div>
+                            <h3>Sell-Through Intelligence</h3>
+                            <div class="solution-card-desc">Know what's moving, what's sitting, and what to reorder — across all locations.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Brand performance tracking across all three stores. Size curve analysis so you know if you're over-buying smalls and under-buying larges. <strong>Dead stock identification</strong> with markdown recommendations before it's too late. Reorder alerts before you run out of your best sellers. The agent watches sell-through rates constantly — so you spot the patterns weeks before you'd catch them manually.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Brand performance</span>
+                    <span class="benefit-tag">Size curve analysis</span>
+                    <span class="benefit-tag">Dead stock alerts</span>
+                    <span class="benefit-tag">Reorder reminders</span>
+                    <span class="benefit-tag">Markdown recommendations</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">👥</div>
+                        <div>
+                            <h3>Customer Intelligence &amp; Clienteling</h3>
+                            <div class="solution-card-desc">Know your VIPs. Win back lapsed customers. Personalize every touchpoint.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Track VIP customers across all three locations — purchase history, style preferences, average spend. Get <strong>win-back alerts</strong> when loyal customers haven't shopped in a while. Personalized outreach suggestions: "Sarah hasn't visited the Halifax store in 60 days — she bought three blazers last quarter, and the new Autumn Cashmere just arrived." Turn customer data into genuine relationships, not just transactions.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">VIP tracking</span>
+                    <span class="benefit-tag">Purchase history</span>
+                    <span class="benefit-tag">Win-back alerts</span>
+                    <span class="benefit-tag">Style preferences</span>
+                    <span class="benefit-tag">Personalized outreach</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #F2F5F1, #E8F0E6); border: 1px solid #C8D8C4; border-radius: 12px; padding: 22px 24px; margin-top: 16px;">
+                <h3 style="font-size: 14px; color: #4A6E45; margin-bottom: 8px;">💡 How These Work Together</h3>
+                <p style="font-size: 12px; color: #3D5A38; margin-bottom: 0; line-height: 1.7;">Morning briefing spots a best-seller running low in Halifax. You text the agent to transfer units from Saint John. It updates Lightspeed inventory, adjusts Shopify stock counts, and suggests an Omnisend campaign to Halifax customers for the trending item. <strong>Three platforms, one conversation, zero tab-switching.</strong></p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6: SOLUTIONS (3 of 3) — Marketing & Buy Planning -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📱</div>
+                        <div>
+                            <h3>Social &amp; Email Marketing</h3>
+                            <div class="solution-card-desc">Content ideas, campaign creation, and post-purchase flows — all from chat.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Your agent knows what's selling, what just arrived, and what's trending. It suggests <strong>Instagram content ideas</strong> based on new arrivals and top sellers — "The Agency Blazer is your #1 seller this week, here's a carousel concept." Create and schedule Omnisend email campaigns through chat: <strong>"Send a new arrivals email to the Halifax segment on Thursday at 10am."</strong> Set up post-purchase follow-up automations that nurture customers without you lifting a finger.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Instagram content ideas</span>
+                    <span class="benefit-tag">Omnisend via chat</span>
+                    <span class="benefit-tag">Campaign scheduling</span>
+                    <span class="benefit-tag">Post-purchase automations</span>
+                    <span class="benefit-tag">Segment targeting</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🧾</div>
+                        <div>
+                            <h3>Buy Planning &amp; Brand Scorecards</h3>
+                            <div class="solution-card-desc">Data-driven buying decisions. No more gut-only ordering.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Open-to-buy tracking so you know exactly how much budget remains for each category. <strong>Brand scorecards</strong> with sell-through data, margin analysis, and velocity by location — so when a rep walks in, you know exactly how their brand is performing across all three stores. Seasonal budget allocation recommendations based on historical sales patterns. Buy with confidence, not guesswork.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Open-to-buy tracking</span>
+                    <span class="benefit-tag">Brand scorecards</span>
+                    <span class="benefit-tag">Sell-through analysis</span>
+                    <span class="benefit-tag">Seasonal planning</span>
+                    <span class="benefit-tag">Margin tracking</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🖥️</div>
+                        <div>
+                            <h3>Mission Control Dashboard</h3>
+                            <div class="solution-card-desc">Your entire operation on one screen.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>A custom-built, password-protected web dashboard for Lordon. Open it on your phone between meetings, on your tablet at home, or on the computer at any of your three stores. <strong>Sales across all locations, top sellers, stock levels, email campaign performance, customer insights</strong> — all in one view. No Lightspeed login, no Shopify admin, no Omnisend dashboard. Just your business, live, at a glance.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Multi-location sales</span>
+                    <span class="benefit-tag">Inventory overview</span>
+                    <span class="benefit-tag">Campaign metrics</span>
+                    <span class="benefit-tag">Mobile-friendly</span>
+                    <span class="benefit-tag">Private &amp; secure</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 7: MISSION CONTROL SHOWCASE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Mission Control</div>
+            </div>
+
+            <h2>Your <span>Mission Control</span></h2>
+            <div class="section-subtitle">A custom-built command center for Lordon — three stores, one screen</div>
+
+            <p class="intro-text">
+                Every SolveWorks client gets a <strong>Mission Control dashboard</strong> — a private, password-protected web page built specifically for your business. Open it on your phone at the Moncton store, your tablet at home, or the desktop in the Saint John shop. No apps to install. Just your operation, live, at a glance.
+            </p>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <a href="https://solveworks.io/demo/" target="_blank" style="display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #8B9E87, #6B8A66); color: white; font-size: 15px; font-weight: 700; padding: 14px 36px; border-radius: 50px; text-decoration: none; box-shadow: 0 4px 24px rgba(139,158,135,0.35); letter-spacing: 0.3px;">
+                    <span style="font-size: 18px;">🖥️</span> See a Live Demo Dashboard
+                    <span style="font-size: 13px; opacity: 0.85; font-weight: 500;">→ solveworks.io/demo</span>
+                </a>
+                <p style="font-size: 11px; color: #8B8078; margin-top: 8px; margin-bottom: 0;">This is a real client dashboard — yours will be built around Lordon's three locations</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                <div class="solution-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 13px; margin-bottom: 6px;">📊 Multi-Location Sales</h3>
+                    <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Real-time sales across Saint John, Moncton, and Halifax. Online vs. in-store breakdown. Compare location performance side-by-side. Spot trends before they become problems.</p>
+                </div>
+                <div class="solution-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 13px; margin-bottom: 6px;">👗 Inventory at a Glance</h3>
+                    <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Stock levels across all locations in one view. Low-stock alerts, dead-stock flags, and cross-location availability. Know exactly what's where without opening Lightspeed three times.</p>
+                </div>
+                <div class="solution-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 13px; margin-bottom: 6px;">🏷️ Brand Performance</h3>
+                    <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Sell-through rates by brand, by location. See which brands are moving and which are sitting. Pull up a brand scorecard before any buying meeting. Data replaces intuition.</p>
+                </div>
+                <div class="solution-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 13px; margin-bottom: 6px;">📧 Campaign Performance</h3>
+                    <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Omnisend campaign results — open rates, click rates, revenue generated — alongside your daily sales data. See the direct impact of every email you send.</p>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #2D2A26, #3D3630); border-radius: 12px; padding: 22px 24px;">
+                <h3 style="font-size: 14px; color: #C4A882; margin-bottom: 8px;">🔒 Private &amp; Secure</h3>
+                <p style="font-size: 12.5px; color: #B8A99A; margin-bottom: 0; line-height: 1.7;">Your dashboard runs on dedicated hardware in your store. No shared cloud servers. No third-party access. Your sales data, customer information, and inventory stay yours. <strong style="color: #E8E2DB;">Access it from anywhere — your phone between appointments, your tablet at home, or the desktop in any of your three locations.</strong></p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 8: HOW YOU'LL USE IT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">How You'll Use It</div>
+            </div>
+
+            <h2>How You'll <span>Use It</span></h2>
+            <div class="section-subtitle">No new software to learn. Text your agent — like texting your store manager.</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Monday Morning • via Telegram</div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">You</div>
+                    How did we do this weekend across all stores?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Weekend recap (Sat–Sun):<br><br>
+                    <strong>Saint John:</strong> $4,280 (↑12% vs last weekend)<br>
+                    <strong>Moncton:</strong> $3,650 (↑8%)<br>
+                    <strong>Halifax:</strong> $5,120 (↑22% — new arrivals driving traffic)<br>
+                    <strong>Online:</strong> $2,340<br>
+                    <strong>Total:</strong> $15,390<br><br>
+                    🔥 Top seller: Agency Blazer (14 units across all locations)<br>
+                    ⚠️ Low stock: Satin Wrap Blouse — only 2 left in Moncton, 0 in Halifax
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">You</div>
+                    Transfer 3 of the Satin Wraps from Saint John to Halifax
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Done. Transfer created in Lightspeed: 3x Satin Wrap Blouse from Saint John → Halifax. Shopify stock updated. Halifax now shows 3 available online. Want me to send an Omnisend "Back in Stock" email to Halifax customers who viewed this item?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">You</div>
+                    Yes, schedule it for tomorrow at 10am
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Scheduled. Omnisend "Back in Stock" email going to 142 Halifax subscribers tomorrow at 10:00 AM. I'll let you know how it performs. ✓
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">💬</div>
+                    <div>
+                        <div class="usage-point-text">Chat controls everything</div>
+                        <div class="usage-point-desc">Telegram — same as texting. Inventory, sales, campaigns, Shopify.</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">📍</div>
+                    <div>
+                        <div class="usage-point-text">All three stores, one thread</div>
+                        <div class="usage-point-desc">Saint John, Moncton, Halifax — ask about any or all of them.</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🔗</div>
+                    <div>
+                        <div class="usage-point-text">Actions, not just answers</div>
+                        <div class="usage-point-desc">Transfers stock, schedules emails, creates discounts — doesn't just report.</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">⚡</div>
+                    <div>
+                        <div class="usage-point-text">Seconds, not sessions</div>
+                        <div class="usage-point-desc">No logging in. No switching apps. Ask, done.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 9: THE ROI -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">The Numbers</div>
+            </div>
+
+            <h2>The Math on <span>Smarter Retail</span></h2>
+            <div class="section-subtitle">Time saved, stock optimized, customers retained — the ROI is in the details.</div>
+
+            <p class="intro-text">
+                Running three boutique locations means the operational overhead scales faster than the revenue. Every hour spent cross-referencing Lightspeed inventory reports, manually updating Shopify listings, or building Omnisend segments is an hour not spent on the floor with customers, at market finding the next great brand, or planning the next collection drop.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">❌ Today — Manual Operations</div>
+                    <p style="font-size: 11.5px; color: #4A413A; line-height: 1.8; margin-bottom: 0;">
+                        Check Lightspeed for each store separately. Log into Shopify to update products. Switch to Omnisend for email campaigns. Cross-reference spreadsheets for buying decisions. Manually track which brands are performing where. Hours per day on admin, not selling.
+                    </p>
+                </div>
+                <div style="background: linear-gradient(135deg, #F2F5F1, #E8F0E6); border: 1px solid #C8D8C4; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #4A6E45; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">✓ With Your AI Retail Partner</div>
+                    <p style="font-size: 11.5px; color: #3D5A38; line-height: 1.8; margin-bottom: 0;">
+                        Morning briefing lands in your pocket. Ask any question about any store. Transfer stock, schedule campaigns, update products — all through chat. Buy planning backed by real sell-through data. <strong>Your time goes back to curation, customers, and growth.</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">10+</div>
+                    <div class="roi-label">Hours saved per week<br>on admin &amp; cross-referencing</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">$0</div>
+                    <div class="roi-label">Lost sales from stockouts<br>you didn't see coming</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">↑</div>
+                    <div class="roi-label">Customer retention from<br>personalized clienteling &amp; win-backs</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #2D2A26, #3D3630); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #C4A882; margin-bottom: 8px;">📊 Where the Value Compounds</h3>
+                <p style="font-size: 12.5px; color: #B8A99A; margin-bottom: 0; line-height: 1.7;">One prevented stockout on a best-seller pays for a month of the service. One successful win-back campaign for lapsed VIPs covers a quarter. Smarter buying decisions based on real sell-through data save thousands in dead stock markdowns. <strong style="color: #E8E2DB;">The agent doesn't just save time — it makes every decision sharper because the data is always at your fingertips.</strong></p>
+            </div>
+
+            <p class="disclaimer">* Time savings estimated based on typical multi-location retail operations with 3+ platforms.</p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 10: FAQ -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Questions &amp; Answers</div>
+            </div>
+
+            <h2>Common <span>Questions</span></h2>
+            <div class="section-subtitle">Straight answers — no pitch</div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🔗 "How does it connect to Lightspeed, Shopify, and Omnisend?"</h3>
+                <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Through official APIs — the same secure connections other business tools use. We set up the integrations during onboarding. Your logins stay yours. The agent reads and writes data through authorized channels, never by screen-scraping or workarounds.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">📍 "Does it really handle all three locations?"</h3>
+                <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Yes. Each Lightspeed location connects individually. When you ask "How's Halifax doing?" it pulls Halifax data. When you ask "Total sales across all stores" it aggregates. You can compare locations, transfer between them, and get consolidated or location-specific reports — all in the same conversation.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🛍️ "Can it actually change things on my Shopify store?"</h3>
+                <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Yes — product updates, collection changes, discount codes, page edits. SolveWorks built and manages an entire Shopify store (7cellars.ky) through chat. Same approach, tailored for your boutique. You stay in control: the agent proposes changes, you approve, it executes.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">⏱️ "How long until we're up and running?"</h3>
+                <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">Three to four weeks from kickoff. Week one connects your systems and loads your product catalog. Weeks two and three we build out the intelligence layer — brand tracking, morning briefings, customer segmentation. Week four is go-live with hands-on support.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">📱 "Do I need to learn new software?"</h3>
+                <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">No. You text your agent via Telegram — same as texting anyone. Send a question, get an answer. Give an instruction, it gets done. The dashboard is a single web page you can check from your phone. If you can text, you can use this.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🚪 "What if we cancel?"</h3>
+                <p style="font-size: 11.5px; color: #5A524A; margin-bottom: 0; line-height: 1.7;">No long-term contracts. Month-to-month. If you cancel, automations stop and you keep the Mac Mini hardware. Your data is always yours — nothing is locked into our system. We'd rather earn your business every month than lock you in.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 11: TIMELINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>How It <span>Comes Together</span></h2>
+            <div class="section-subtitle">From kickoff to live operation in weeks, not months</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Connect &amp; Configure</div>
+                        <h3>Link Your Systems</h3>
+                        <p>We connect all three Lightspeed locations, your Shopify store, and your Omnisend account. Product catalog imported. Location data mapped. Your Telegram channel set up. Hardware delivered, plugged in, and configured at your primary location.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 2–3 — Build &amp; Train</div>
+                        <h3>Intelligence Layer Goes Live</h3>
+                        <p>Morning briefings, sell-through tracking, customer intelligence, brand scorecards — all built on your real data. Cross-location inventory queries tested. Shopify management workflows configured. Mission Control dashboard customized for Lordon's three locations. You test everything with real scenarios.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Go Live</div>
+                        <h3>Your Agent Starts Working</h3>
+                        <p>First real morning briefing delivered. First cross-location inventory check. First Omnisend campaign scheduled through chat. We're on standby during go-live week for edge cases and refinements — making sure everything works exactly the way you need it.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Evolve</div>
+                        <h3>Smarter Every Season</h3>
+                        <p>As you use it, the system gets more useful — learning your buying patterns, seasonal rhythms, which brands perform where, which customer segments respond to which campaigns. We continuously refine based on your feedback and your data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">4 wks</div>
+                    <div class="roi-label">From kickoff to<br>fully operational</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">No</div>
+                    <div class="roi-label">New software for<br>you or your staff to learn</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">Local</div>
+                    <div class="roi-label">We're in the Maritimes<br>hands-on support, not overseas</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 12: INVESTMENT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Investment</div>
+            </div>
+
+            <h2>Your <span>Investment</span></h2>
+            <div class="section-subtitle">All pricing in USD. No surprises. Cancel anytime.</div>
+
+            <!-- Standard Pricing (strikethrough) -->
+            <div class="investment-setup" style="margin-top: 20px; opacity: 0.7;">
+                <div style="font-size: 11px; font-weight: 600; color: #8B8078; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px;">Standard Pricing</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 40px;">
+                    <div>
+                        <div class="price-strikethrough" style="color: #8B8078;">$2,500 USD</div>
+                        <div style="font-size: 11px; color: #6B5E4F; margin-top: 2px;">One-time setup</div>
+                    </div>
+                    <div style="color: #6B5E4F; font-size: 20px;">+</div>
+                    <div>
+                        <div class="price-strikethrough" style="color: #8B8078;">$500 USD/mo</div>
+                        <div style="font-size: 11px; color: #6B5E4F; margin-top: 2px;">Monthly service</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Partner Pricing (highlighted) -->
+            <div class="partner-pricing-box">
+                <div class="partner-pricing-badge">✦ urbanbutter Partner Pricing ✦</div>
+
+                <div style="display: flex; align-items: center; justify-content: center; gap: 50px; margin-top: 12px;">
+                    <div style="text-align: center;">
+                        <div class="price-discount">$1,500</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #6B5E4F; margin-top: 4px;">USD — One-time setup</div>
+                        <div style="font-size: 10px; color: #8B8078; margin-top: 2px;">Discovery, integrations, dashboard, deploy &amp; onboarding</div>
+                    </div>
+                    <div style="width: 1px; height: 60px; background: #C8D8C4;"></div>
+                    <div style="text-align: center;">
+                        <div class="price-discount">$250</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #6B5E4F; margin-top: 4px;">USD/month</div>
+                        <div style="font-size: 10px; color: #8B8078; margin-top: 2px;">AI agent, monitoring, optimization &amp; support</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid #C8D8C4;">
+                    <div style="font-size: 12px; color: #4A6E45; font-weight: 600;">You save $1,000 on setup + $250/month — that's $4,000+ in year one 💚</div>
+                </div>
+            </div>
+
+            <!-- What's included -->
+            <div class="packages-grid" style="grid-template-columns: 1fr; margin-top: 20px;">
+                <div class="package-card featured" style="max-width: 520px; margin: 0 auto;">
+                    <div class="package-badge">Everything Included</div>
+                    <div class="package-name" style="margin-top: 10px;">Monthly Service — What You Get</div>
+                    <ul class="package-features" style="margin-top: 14px;">
+                        <li>Multi-location intelligence — Saint John, Moncton, Halifax unified</li>
+                        <li>Lightspeed POS integration — all 3 locations connected</li>
+                        <li>Shopify store management — products, collections, discounts via chat</li>
+                        <li>Omnisend campaign management — emails, automations, segments</li>
+                        <li>Morning briefings — daily sales, stock alerts, top sellers</li>
+                        <li>Sell-through intelligence — brand performance, size curves, reorder alerts</li>
+                        <li>Customer intelligence &amp; clienteling — VIPs, win-backs, outreach</li>
+                        <li>Buy planning — open-to-buy, brand scorecards, seasonal budgets</li>
+                        <li>Mission Control Dashboard — custom-built for Lordon</li>
+                        <li>Ongoing optimization, support, and refinement</li>
+                    </ul>
+                    <div class="package-tagline">Built for multi-location boutique retail. Not generic AI.</div>
+                </div>
+            </div>
+
+            <!-- Hardware & API -->
+            <div style="background: linear-gradient(135deg, #2D2A26, #3D3630); border-radius: 12px; padding: 20px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #C4A882; margin-bottom: 10px;">🖥️ You'll Also Need</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 13px; font-weight: 600; color: #E8E2DB; margin-bottom: 4px;">Mac Mini</div>
+                        <p style="font-size: 11px; color: #B8A99A; margin-bottom: 6px; line-height: 1.6;">Your agent's dedicated hardware. Small, silent, runs 24/7 at your primary location. We deliver it pre-configured.</p>
+                        <div style="font-size: 16px; font-weight: 700; color: #C4A882;">~$800 <span style="font-size: 10px; font-weight: 600; color: #8B8078;">USD one-time</span></div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 13px; font-weight: 600; color: #E8E2DB; margin-bottom: 4px;">Anthropic API</div>
+                        <p style="font-size: 11px; color: #B8A99A; margin-bottom: 6px; line-height: 1.6;">The AI engine. Your own account — fully transparent usage costs, no markups from us. We set it up during onboarding.</p>
+                        <div style="font-size: 16px; font-weight: 700; color: #C4A882;">~$100 <span style="font-size: 10px; font-weight: 600; color: #8B8078;">USD/month</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="investment-note" style="margin-top: 16px;">
+                <strong>No long-term contracts. Cancel anytime. Month-to-month.</strong><br>
+                Your data is always yours. If you cancel, automations stop and you keep the hardware.
+            </p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Lordon</span>
+        </div>
+    </div>
+
+    <!-- PAGE 13: CTA -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Three boutiques.<br>One conversation.<br><span style="color: #C4A882;">Effortless control.</span></h2>
+        <p>You built Lordon on impeccable taste and personal service. Let your AI partner handle the operational complexity — so you can focus on what made Lordon special in the first place.</p>
+        <a href="mailto:dwayne@solveworks.io" class="cta-button">Let's Talk →</a>
+        <div class="cta-contact">
+            <p><a href="mailto:dwayne@solveworks.io">dwayne@solveworks.io</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> | <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+            <p style="margin-top: 14px; font-size: 11px; color: #6B5E4F;">This proposal is valid through March 22, 2026.</p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>
