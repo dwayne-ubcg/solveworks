@@ -3,1671 +3,1948 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920">
-<title>Touchstone & Compass × SolveWorks — AI Command Center</title>
+<title>Touchstone × SolveWorks — Your AI, Built for You</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-  :root {
-    --navy: #0A1628;
-    --slate: #1E293B;
-    --slate-light: #334155;
-    --blue: #3B82F6;
-    --blue-glow: rgba(59, 130, 246, 0.15);
-    --green: #22C55E;
-    --green-dim: rgba(34, 197, 94, 0.15);
-    --amber: #F59E0B;
-    --amber-dim: rgba(245, 158, 11, 0.15);
-    --red: #EF4444;
-    --red-dim: rgba(239, 68, 68, 0.15);
-    --text: #F1F5F9;
-    --text-dim: #94A3B8;
-    --text-muted: #64748B;
-    --border: rgba(255,255,255,0.08);
-  }
+:root {
+  --bg: #0A1628;
+  --bg-light: #0F1D32;
+  --bg-card: #121F36;
+  --bg-card-hover: #162844;
+  --accent: #3B82F6;
+  --accent-glow: rgba(59, 130, 246, 0.3);
+  --green: #22C55E;
+  --red: #EF4444;
+  --orange: #F59E0B;
+  --purple: #A855F7;
+  --cyan: #06B6D4;
+  --white: #FFFFFF;
+  --gray: #94A3B8;
+  --gray-dim: #64748B;
+  --border: rgba(255,255,255,0.08);
+}
 
-  body {
-    font-family: 'Inter', -apple-system, sans-serif;
-    background: var(--navy);
-    color: var(--text);
-    width: 1920px;
-    height: 1080px;
-    overflow: hidden;
-    position: relative;
-  }
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  -webkit-font-smoothing: antialiased;
+}
 
-  /* ── Brand Bar ── */
-  .brand-bar {
-    position: fixed;
-    top: 24px;
-    left: 32px;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .brand-bar .logo {
-    width: 36px;
-    height: 36px;
-    background: var(--blue);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 18px;
-    color: #fff;
-  }
-  .brand-bar .brand-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-dim);
-    letter-spacing: 0.5px;
-  }
+/* Brand bar */
+.brand-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(135deg, #0D1B2A, #1A2942);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 1000;
+}
 
-  /* ── Scene Counter ── */
-  .scene-counter {
-    position: fixed;
-    bottom: 28px;
-    right: 40px;
-    z-index: 100;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-muted);
-    letter-spacing: 1px;
-  }
+.brand-logo {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #3B82F6, #06B6D4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
-  /* ── Controls ── */
-  .controls {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(30, 41, 59, 0.9);
-    backdrop-filter: blur(12px);
-    padding: 10px 20px;
-    border-radius: 40px;
-    border: 1px solid var(--border);
-  }
-  .controls button {
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    cursor: pointer;
-    padding: 6px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    width: 36px;
-    height: 36px;
-  }
-  .controls button:hover { color: #fff; background: rgba(255,255,255,0.1); }
-  .controls button.active { color: var(--blue); }
-  .controls .progress-bar {
-    width: 200px;
-    height: 4px;
-    background: var(--slate);
-    border-radius: 2px;
-    overflow: hidden;
-    cursor: pointer;
-  }
-  .controls .progress-fill {
-    height: 100%;
-    background: var(--blue);
-    border-radius: 2px;
-    width: 0%;
-    transition: width 0.3s;
-  }
-  .controls .scene-dots {
-    display: flex;
-    gap: 6px;
-  }
-  .controls .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--slate-light);
-    cursor: pointer;
-    transition: all 0.3s;
-  }
-  .controls .dot.active { background: var(--blue); transform: scale(1.3); }
+.brand-client {
+  font-size: 14px;
+  color: var(--gray);
+  font-weight: 500;
+}
 
-  /* ── Scenes ── */
-  .scene {
-    position: absolute;
-    top: 0; left: 0;
-    width: 1920px;
-    height: 1080px;
-    display: flex;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-    pointer-events: none;
-  }
-  .scene.active {
-    opacity: 1;
-    pointer-events: auto;
-  }
+/* Scene container */
+.scene-container {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  bottom: 80px;
+  overflow: hidden;
+}
 
-  /* ── Scene 1: Hook ── */
-  #scene1 {
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    background: radial-gradient(ellipse at center, #0F2035 0%, var(--navy) 70%);
-  }
-  #scene1 .hook-number {
-    font-size: 180px;
-    font-weight: 900;
-    color: var(--blue);
-    line-height: 1;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.3s forwards;
-  }
-  #scene1 .hook-label {
-    font-size: 28px;
-    font-weight: 300;
-    color: var(--text-dim);
-    margin-top: 8px;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    opacity: 0;
-    animation: fadeUp 0.8s 0.6s forwards;
-  }
-  #scene1 .hook-subtitle {
-    font-size: 20px;
-    color: var(--text-muted);
-    margin-top: 40px;
-    max-width: 700px;
-    text-align: center;
-    line-height: 1.6;
-    opacity: 0;
-    animation: fadeUp 0.8s 1s forwards;
-  }
-  #scene1 .hook-cta {
-    margin-top: 60px;
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text);
-    opacity: 0;
-    animation: fadeUp 0.8s 1.5s forwards;
-  }
-  .pain-items {
-    display: flex;
-    gap: 40px;
-    margin-top: 50px;
-    opacity: 0;
-    animation: fadeUp 0.8s 1.2s forwards;
-  }
-  .pain-item {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 14px;
-  }
-  .pain-item .pain-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-  }
+.scene {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: translateX(40px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  pointer-events: none;
+  padding: 40px 60px;
+  overflow-y: auto;
+}
 
-  /* ── Scene 2: Morning Briefing ── */
-  #scene2 {
-    flex-direction: column;
-    padding: 80px 80px 100px;
-  }
-  .briefing-header {
-    margin-bottom: 32px;
-  }
-  .briefing-header .greeting {
-    font-size: 32px;
-    font-weight: 300;
-    color: var(--text-dim);
-  }
-  .briefing-header .greeting strong {
-    color: var(--text);
-    font-weight: 600;
-  }
-  .briefing-header .date-line {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-top: 4px;
-  }
-  .briefing-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 20px;
-    flex: 1;
-  }
-  .card {
-    background: var(--slate);
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid var(--border);
-  }
-  .card-title {
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .card-title .icon { font-size: 16px; }
+.scene.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
 
-  .project-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .project-row:last-child { border-bottom: none; }
-  .project-name { font-weight: 500; }
-  .status-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .status-active { background: var(--blue-glow); color: var(--blue); }
-  .status-pending { background: var(--amber-dim); color: var(--amber); }
-  .status-done { background: var(--green-dim); color: var(--green); }
-  .status-alert { background: var(--red-dim); color: var(--red); }
+.scene.exit-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
 
-  .followup-item {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-    line-height: 1.5;
-  }
-  .followup-item:last-child { border-bottom: none; }
-  .followup-person {
-    font-weight: 600;
-    color: var(--blue);
-    font-size: 12px;
-    margin-bottom: 2px;
-  }
-  .followup-detail { color: var(--text-dim); font-size: 13px; }
+/* Controls bar */
+.controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(180deg, transparent, rgba(10,22,40,0.95) 30%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 1000;
+  padding: 0 40px;
+}
 
-  .metric-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .metric-row:last-child { border-bottom: none; }
-  .metric-label { color: var(--text-dim); font-size: 14px; }
-  .metric-value { font-weight: 600; font-size: 14px; }
-  .metric-value.green { color: var(--green); }
-  .metric-value.amber { color: var(--amber); }
+.ctrl-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--white);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s;
+}
 
-  .revenue-big {
-    font-size: 48px;
-    font-weight: 800;
-    color: var(--green);
-    margin: 12px 0;
-  }
-  .revenue-sub {
-    font-size: 14px;
-    color: var(--text-dim);
-  }
+.ctrl-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
 
-  /* ── Scene 3: Text Intelligence ── */
-  #scene3 {
-    padding: 80px;
-    gap: 40px;
-  }
-  .text-feed {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  .text-msg {
-    background: var(--slate);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid var(--border);
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-  }
-  .text-msg .msg-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--slate-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    flex-shrink: 0;
-  }
-  .text-msg .msg-body { flex: 1; }
-  .text-msg .msg-from {
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 4px;
-  }
-  .text-msg .msg-text {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
-  .text-msg .msg-action {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--green);
-    background: var(--green-dim);
-    padding: 6px 12px;
-    border-radius: 6px;
-    width: fit-content;
-  }
+.ctrl-btn.play-btn {
+  width: 56px;
+  height: 56px;
+  background: var(--accent);
+  border: none;
+  border-radius: 16px;
+  font-size: 22px;
+}
 
-  .telegram-panel {
-    width: 500px;
-    background: var(--slate);
-    border-radius: 16px;
-    border: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .tg-header {
-    padding: 16px 20px;
-    background: rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 600;
-    font-size: 15px;
-  }
-  .tg-header .tg-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--blue);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-  }
-  .tg-messages {
-    flex: 1;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-  }
-  .tg-msg {
-    max-width: 85%;
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 13px;
-    line-height: 1.5;
-  }
-  .tg-msg.sent {
-    align-self: flex-end;
-    background: var(--blue);
-    color: #fff;
-    border-bottom-right-radius: 4px;
-  }
-  .tg-msg.received {
-    align-self: flex-start;
-    background: rgba(255,255,255,0.08);
-    color: var(--text);
-    border-bottom-left-radius: 4px;
-  }
-  .tg-msg .tg-time {
-    font-size: 10px;
-    color: rgba(255,255,255,0.5);
-    margin-top: 4px;
-    text-align: right;
-  }
+.ctrl-btn.play-btn:hover {
+  background: #2563EB;
+  transform: scale(1.05);
+}
 
-  /* ── Scene 4: Audit Dashboard ── */
-  #scene4 {
-    padding: 80px;
-    flex-direction: column;
-    gap: 24px;
-  }
-  .scene-title {
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-  .scene-subtitle {
-    font-size: 15px;
-    color: var(--text-dim);
-    margin-bottom: 16px;
-  }
-  .audit-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    flex: 1;
-  }
-  .audit-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .audit-row:last-child { border-bottom: none; }
-  .comparison-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-    margin-top: 12px;
-  }
-  .comparison-cell {
-    background: rgba(0,0,0,0.2);
-    padding: 14px;
-    border-radius: 8px;
-    text-align: center;
-  }
-  .comparison-cell .comp-label {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-  }
-  .comparison-cell .comp-value {
-    font-size: 20px;
-    font-weight: 700;
-  }
-  .alert-banner {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
-    border-radius: 8px;
-    font-size: 13px;
-    line-height: 1.5;
-    margin-top: 12px;
-  }
-  .alert-banner.warning { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-  .alert-banner.success { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-  .alert-banner .alert-icon { font-size: 20px; flex-shrink: 0; }
+/* Scene dots */
+.scene-dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-  .remnant-card {
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    padding: 16px;
-    margin-top: 12px;
-  }
-  .remnant-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    font-size: 13px;
-    color: var(--text-dim);
-  }
-  .remnant-row .val { color: var(--text); font-weight: 500; }
+.scene-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gray-dim);
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
 
-  /* ── Scene 5: Invoice Watchdog ── */
-  #scene5 {
-    padding: 80px;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .invoice-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-    flex: 1;
-  }
-  .invoice-item {
-    padding: 16px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    margin-bottom: 12px;
-    border-left: 3px solid var(--border);
-  }
-  .invoice-item.flagged { border-left-color: var(--red); }
-  .invoice-item.missing { border-left-color: var(--amber); }
-  .invoice-item.ok { border-left-color: var(--green); }
-  .invoice-item .inv-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-  .invoice-item .inv-id { font-weight: 600; font-size: 15px; }
-  .invoice-item .inv-detail { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
-  .invoice-item .inv-amount { font-weight: 700; font-size: 18px; }
+.scene-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+  transform: scale(1.3);
+}
 
-  .sync-status {
-    padding: 12px 16px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    margin-bottom: 8px;
-  }
-  .sync-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-  .sync-dot.green { background: var(--green); }
-  .sync-dot.amber { background: var(--amber); }
+.scene-dot.completed {
+  background: var(--green);
+}
 
-  .weekly-summary {
-    background: rgba(0,0,0,0.3);
-    border-radius: 8px;
-    padding: 20px;
-    margin-top: auto;
-  }
-  .weekly-summary .ws-title {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-  }
-  .ws-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 14px;
-  }
+/* Progress bar */
+.progress-wrap {
+  position: fixed;
+  bottom: 78px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.05);
+  z-index: 1001;
+}
 
-  /* ── Scene 6: Cash Flow ── */
-  #scene6 {
-    padding: 80px;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .cashflow-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-    flex: 1;
-  }
-  .chart-container {
-    background: var(--slate);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    padding: 24px;
-    position: relative;
-  }
-  .chart-bars {
-    display: flex;
-    align-items: flex-end;
-    gap: 8px;
-    height: 280px;
-    padding-top: 20px;
-  }
-  .chart-bar-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-  .chart-bar-pair {
-    display: flex;
-    gap: 4px;
-    align-items: flex-end;
-    height: 240px;
-  }
-  .chart-bar {
-    width: 28px;
-    border-radius: 4px 4px 0 0;
-    transition: height 0.5s ease;
-  }
-  .chart-bar.revenue { background: var(--blue); }
-  .chart-bar.cost { background: var(--slate-light); }
-  .chart-bar.profit { background: var(--green); opacity: 0.7; }
-  .chart-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 8px;
-  }
-  .chart-legend {
-    display: flex;
-    gap: 20px;
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-dim);
-  }
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-  }
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  width: 0%;
+  transition: width 0.3s linear;
+}
 
-  .pipeline-number {
-    font-size: 40px;
-    font-weight: 800;
-    color: var(--blue);
-    margin: 8px 0;
-  }
-  .pipeline-label {
-    font-size: 13px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+/* Scene counter */
+.scene-counter {
+  font-size: 13px;
+  color: var(--gray);
+  font-weight: 500;
+  min-width: 60px;
+  text-align: center;
+}
 
-  .aging-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .aging-item:last-child { border-bottom: none; }
-  .aging-days {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-  }
-  .aging-days.ok { background: var(--green-dim); color: var(--green); }
-  .aging-days.warn { background: var(--amber-dim); color: var(--amber); }
-  .aging-days.overdue { background: var(--red-dim); color: var(--red); }
+/* Typography */
+.scene-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
 
-  /* ── Scene 7: Tyler's Sales ── */
-  #scene7 {
-    padding: 80px;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .sales-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-    flex: 1;
-  }
-  .client-card {
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .client-name {
-    font-weight: 600;
-    font-size: 15px;
-    margin-bottom: 4px;
-  }
-  .client-detail {
-    font-size: 13px;
-    color: var(--text-dim);
-    line-height: 1.5;
-  }
-  .cross-sell-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: 4px;
-    background: var(--blue-glow);
-    color: var(--blue);
-    margin-top: 8px;
-  }
-  .sample-alert {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: var(--amber-dim);
-    border-radius: 6px;
-    font-size: 13px;
-    color: var(--amber);
-    margin-bottom: 12px;
-  }
-  .prospect-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-  }
-  .prospect-row:last-child { border-bottom: none; }
-  .prospect-area {
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-  .match-score {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    background: var(--green-dim);
-    color: var(--green);
-  }
+.scene-title {
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 24px;
+  max-width: 900px;
+}
 
-  /* ── Scene 8: Slab Inventory ── */
-  #scene8 {
-    padding: 80px;
-    flex-direction: column;
-    gap: 20px;
-  }
-  .slab-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    flex: 1;
-  }
-  .slab-item {
-    display: flex;
-    gap: 16px;
-    padding: 16px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
-    margin-bottom: 12px;
-    align-items: center;
-  }
-  .slab-swatch {
-    width: 60px;
-    height: 60px;
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-  .slab-info { flex: 1; }
-  .slab-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-  .slab-dims { font-size: 13px; color: var(--text-dim); }
-  .slab-status { font-size: 12px; margin-top: 4px; }
+.scene-subtitle {
+  font-size: 20px;
+  color: var(--gray);
+  line-height: 1.6;
+  max-width: 800px;
+  margin-bottom: 32px;
+}
 
-  .estimate-panel {
-    background: rgba(0,0,0,0.15);
-    border-radius: 8px;
-    padding: 20px;
-    border: 1px dashed var(--border);
-  }
-  .estimate-panel .ep-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .estimate-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-  }
-  .estimate-row:last-child { border-bottom: none; }
-  .estimate-row .er-label { color: var(--text-dim); }
-  .estimate-row .er-value { font-weight: 600; }
+/* Cards */
+.card-grid {
+  display: grid;
+  gap: 16px;
+}
 
-  /* ── Scene 9: ServiceLane Vision ── */
-  #scene9 {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: radial-gradient(ellipse at center, #0F2035 0%, var(--navy) 70%);
-    text-align: center;
-  }
-  .vision-title {
-    font-size: 48px;
-    font-weight: 800;
-    margin-bottom: 16px;
-    background: linear-gradient(135deg, var(--blue) 0%, #818CF8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .vision-subtitle {
-    font-size: 22px;
-    color: var(--text-dim);
-    max-width: 700px;
-    line-height: 1.6;
-    margin-bottom: 50px;
-  }
-  .contractor-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    max-width: 900px;
-    margin-bottom: 60px;
-  }
-  .contractor-tile {
-    width: 130px;
-    height: 80px;
-    background: var(--slate);
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-  .contractor-tile:nth-child(1) { animation: tileFade 2s 0.1s forwards; opacity: 0; }
-  .contractor-tile:nth-child(2) { animation: tileFade 2s 0.2s forwards; opacity: 0; }
-  .contractor-tile:nth-child(3) { animation: tileFade 2s 0.3s forwards; opacity: 0; }
-  .contractor-tile:nth-child(4) { animation: tileFade 2s 0.4s forwards; opacity: 0; }
-  .contractor-tile:nth-child(5) { animation: tileFade 2s 0.5s forwards; opacity: 0; }
-  .contractor-tile:nth-child(6) { animation: tileFade 2s 0.6s forwards; opacity: 0; }
-  .contractor-tile:nth-child(7) { animation: tileFade 2s 0.7s forwards; opacity: 0; }
-  .contractor-tile:nth-child(8) { animation: tileFade 2s 0.8s forwards; opacity: 0; }
-  .contractor-tile:nth-child(9) { animation: tileFade 2s 0.9s forwards; opacity: 0; }
-  .contractor-tile:nth-child(10) { animation: tileFade 2s 1.0s forwards; opacity: 0; }
-  .contractor-tile:nth-child(11) { animation: tileFade 2s 1.1s forwards; opacity: 0; }
-  .contractor-tile:nth-child(12) { animation: tileFade 2s 1.2s forwards; opacity: 0; }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  transition: all 0.3s;
+}
 
-  .cta-line {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--text);
-  }
-  .cta-line .cta-brand {
-    color: var(--blue);
-  }
-  .cta-sub {
-    font-size: 16px;
-    color: var(--text-muted);
-    margin-top: 8px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
+.card:hover {
+  border-color: rgba(59,130,246,0.3);
+  background: var(--bg-card-hover);
+}
 
-  /* ── Animations ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes tileFade {
-    from { opacity: 0; transform: scale(0.9); }
-    to { opacity: 1; transform: scale(1); }
-  }
-  .fade-in {
-    opacity: 0;
-    animation: fadeUp 0.6s forwards;
-  }
-  .fade-in-1 { animation-delay: 0.1s; }
-  .fade-in-2 { animation-delay: 0.3s; }
-  .fade-in-3 { animation-delay: 0.5s; }
-  .fade-in-4 { animation-delay: 0.7s; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.badge-green { background: rgba(34,197,94,0.15); color: var(--green); }
+.badge-red { background: rgba(239,68,68,0.15); color: var(--red); }
+.badge-orange { background: rgba(245,158,11,0.15); color: var(--orange); }
+.badge-blue { background: rgba(59,130,246,0.15); color: var(--accent); }
+.badge-purple { background: rgba(168,85,247,0.15); color: var(--purple); }
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  flex: 1;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--gray);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Kanban */
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.kanban-col {
+  background: var(--bg-light);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+
+.kanban-col-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--gray);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-count {
+  background: var(--bg-card);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.kanban-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.kanban-card:hover {
+  border-color: rgba(59,130,246,0.3);
+  transform: translateY(-1px);
+}
+
+.kanban-card .source {
+  font-size: 11px;
+  color: var(--gray-dim);
+  margin-top: 6px;
+}
+
+.kanban-card .assignee {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.kanban-card.overdue {
+  border-left: 3px solid var(--red);
+}
+
+/* Chat mockup */
+.chat-mockup {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 480px;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.chat-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.chat-msg {
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-msg.user .chat-bubble {
+  background: var(--accent);
+  color: white;
+  align-self: flex-end;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.chat-msg.bot .chat-bubble {
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.chat-bubble {
+  padding: 10px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 380px;
+}
+
+/* iMessage feed */
+.imessage-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.imessage-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.imessage-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.imessage-content {
+  flex: 1;
+}
+
+.imessage-sender {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.imessage-text {
+  font-size: 13px;
+  color: var(--gray);
+  margin-bottom: 6px;
+}
+
+.imessage-action {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Plaud */
+.plaud-item {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.plaud-quote {
+  font-size: 14px;
+  font-style: italic;
+  color: var(--gray);
+  margin-bottom: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--purple);
+}
+
+.plaud-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Project list */
+.project-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.project-name {
+  font-weight: 600;
+  font-size: 14px;
+  flex: 1;
+}
+
+.project-bar {
+  width: 200px;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.project-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.project-status {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Invoice table */
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.invoice-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gray-dim);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.invoice-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Bar chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 140px;
+  margin-top: 16px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--accent), rgba(59,130,246,0.3));
+  transition: height 1s ease;
+  min-width: 20px;
+}
+
+.bar-label {
+  font-size: 10px;
+  color: var(--gray-dim);
+  text-align: center;
+}
+
+.bar-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+/* DWG Pipeline */
+.pipeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 24px;
+}
+
+.pipeline-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  text-align: center;
+  flex: 1;
+  position: relative;
+}
+
+.pipeline-step .step-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.pipeline-step .step-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gray);
+}
+
+.pipeline-arrow {
+  color: var(--accent);
+  font-size: 20px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Sales metrics */
+.metric-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  flex: 1;
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--gray);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* CTA */
+.cta-section {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.cta-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--accent), #2563EB);
+  color: white;
+  padding: 16px 48px;
+  border-radius: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 0.5px;
+}
+
+.cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px var(--accent-glow);
+}
+
+/* Two column layout */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+/* Alert box */
+.alert-box {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.alert-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.alert-text {
+  font-size: 13px;
+  color: var(--red);
+  font-weight: 500;
+}
+
+/* Summary box */
+.summary-box {
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 16px;
+}
+
+.summary-text {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Remnant match */
+.remnant-match {
+  background: rgba(34,197,94,0.08);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Closing scene */
+.closing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 32px 0;
+}
+
+.closing-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+}
+
+.closing-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.closing-label {
+  font-size: 14px;
+  color: var(--gray);
+  font-weight: 500;
+}
+
+/* Revenue split donut */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Aging buckets */
+.aging-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.aging-bucket {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.aging-days {
+  font-size: 11px;
+  color: var(--gray-dim);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.aging-amount {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+/* Discrepancy flag */
+.flag-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+/* Weather */
+.weather-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+/* Scrollbar */
+.scene::-webkit-scrollbar { width: 4px; }
+.scene::-webkit-scrollbar-track { background: transparent; }
+.scene::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* Animate in */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scene.active .animate-in {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+.scene.active .delay-1 { animation-delay: 0.1s; opacity: 0; }
+.scene.active .delay-2 { animation-delay: 0.2s; opacity: 0; }
+.scene.active .delay-3 { animation-delay: 0.3s; opacity: 0; }
+.scene.active .delay-4 { animation-delay: 0.4s; opacity: 0; }
+.scene.active .delay-5 { animation-delay: 0.5s; opacity: 0; }
+.scene.active .delay-6 { animation-delay: 0.6s; opacity: 0; }
+
 </style>
 </head>
 <body>
 
 <!-- Brand Bar -->
 <div class="brand-bar">
-  <div class="logo">S</div>
-  <div class="brand-name">SOLVEWORKS</div>
+  <div class="brand-logo">SOLVEWORKS</div>
+  <div class="brand-client">Prepared for Craig Lucas — Touchstone Countertops</div>
 </div>
 
-<!-- Scene Counter -->
-<div class="scene-counter"><span id="currentScene">1</span> / 9</div>
+<!-- Scenes -->
+<div class="scene-container">
+
+  <!-- SCENE 1: THE HOOK -->
+  <div class="scene active" id="scene-1">
+    <div class="two-col" style="align-items:center; min-height:100%;">
+      <div>
+        <div class="scene-label animate-in">Scene 01</div>
+        <div class="scene-title animate-in delay-1">Never Lose<br>Another Text</div>
+        <div class="scene-subtitle animate-in delay-2">120 texts. Every day. Across 5 people. Clients, suppliers, contractors — all hitting your team's iPhones. By Friday, half are forgotten.</div>
+        <div class="stats-row animate-in delay-3">
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--red);">120+</div>
+            <div class="stat-label">Daily Texts</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--orange);">5</div>
+            <div class="stat-label">Team Members</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--red);">$6,800</div>
+            <div class="stat-label">Invoice Lost</div>
+          </div>
+        </div>
+        <div class="card animate-in delay-4" style="border-left:3px solid var(--green);">
+          <div style="font-size:14px;font-weight:600;color:var(--green);margin-bottom:8px;">The Fix: One Mac Mini</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.6;">Monitors Craig, Tyler, Jason, Shelley — every iMessage captured, categorized, tracked. Zero apps. Zero behavior change. They keep texting. The AI watches.</div>
+        </div>
+      </div>
+      <div class="animate-in delay-3" style="display:flex;flex-direction:column;gap:12px;">
+        <div class="card" style="text-align:center;padding:32px;">
+          <div style="font-size:64px;margin-bottom:16px;">🖥️</div>
+          <div style="font-size:20px;font-weight:700;margin-bottom:8px;">Mac Mini</div>
+          <div style="font-size:13px;color:var(--gray);">Always on. Always watching.<br>Your office. Your data. Your AI.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="card" style="text-align:center;padding:14px;">
+            <div style="font-size:24px;">👤</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px;">Craig</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px;">
+            <div style="font-size:24px;">👤</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px;">Tyler</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px;">
+            <div style="font-size:24px;">👤</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px;">Jason</div>
+          </div>
+          <div class="card" style="text-align:center;padding:14px;">
+            <div style="font-size:24px;">👤</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px;">Shelley</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 2: MORNING BRIEFING -->
+  <div class="scene" id="scene-2">
+    <div class="two-col">
+      <div>
+        <div class="scene-label animate-in">Scene 02</div>
+        <div class="scene-title animate-in delay-1" style="font-size:36px;">Your Monday Morning,<br>Solved</div>
+
+        <div class="weather-bar animate-in delay-2">
+          <span>🌤️</span> <span style="font-weight:600;">-2°C</span> <span style="color:var(--gray);">Roads clear — installs are a go</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--gray-dim);">Monday, 6:00 AM</span>
+        </div>
+
+        <div class="card animate-in delay-2" style="margin-bottom:12px;">
+          <div class="card-header">
+            <div class="card-title">📋 Today's Installs</div>
+            <div class="badge badge-green">3 CONFIRMED</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div>🔨 Cole Harbour — kitchen countertop</div>
+            <div>🔨 Bedford — condo vanity + backsplash</div>
+            <div>🔨 Clayton Park — bathroom vanity</div>
+          </div>
+        </div>
+
+        <div class="card animate-in delay-3" style="margin-bottom:12px;">
+          <div class="card-header">
+            <div class="card-title">📞 Tyler's Follow-ups</div>
+            <div class="badge badge-orange">4 CLIENTS</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div>Morrison Kitchen — <span style="color:var(--red);">last contact 6 days ago</span></div>
+            <div>Sarah K. — sample promised, not sent</div>
+            <div>Mrs. Park — quote requested Wednesday</div>
+            <div>Robbie Roberts — March 24th unconfirmed</div>
+          </div>
+        </div>
+
+        <div class="alert-box animate-in delay-4">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-text">2 quotes expiring today — $12,400 total at risk</div>
+        </div>
+
+        <div class="flag-item animate-in delay-5" style="margin-top:8px;">
+          <span>💰</span>
+          <span style="color:var(--orange);">$4,200 in unbilled work from Airport project</span>
+        </div>
+
+        <div class="flag-item animate-in delay-5">
+          <span>📊</span>
+          <span style="color:var(--orange);">Shelley: 3 invoices sent, 1 disputed, $2,800 discrepancy flagged</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="stats-row animate-in delay-2" style="flex-wrap:wrap;">
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--accent);">24</div>
+            <div class="stat-label">Active Jobs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--green);">$142K</div>
+            <div class="stat-label">Pipeline</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">187</div>
+            <div class="stat-label">Slabs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" style="color:var(--cyan);">34</div>
+            <div class="stat-label">Remnants</div>
+          </div>
+        </div>
+
+        <div class="chat-mockup animate-in delay-3">
+          <div class="chat-header">
+            <div class="chat-avatar">🤖</div>
+            <div>
+              <div class="chat-name">Touchstone AI</div>
+              <div style="font-size:11px;color:var(--gray-dim);">Telegram</div>
+            </div>
+          </div>
+          <div class="chat-msg user">
+            <div class="chat-bubble">What did Tyler commit to this week?</div>
+          </div>
+          <div class="chat-msg bot">
+            <div class="chat-bubble">
+              <div style="font-weight:600;margin-bottom:6px;">Tyler's commitments this week:</div>
+              <div style="line-height:1.8;">
+                1. Send quartz sample to Sarah K. <span style="color:var(--red);">(3 days overdue)</span><br>
+                2. Quote for Mrs. Park — due Wednesday<br>
+                3. Follow up Morrison Kitchen — stale 6 days<br>
+                4. Confirm Robbie Roberts meeting March 24<br>
+                5. Bedford condo final measurements
+              </div>
+              <div style="margin-top:8px;font-size:11px;color:var(--gray-dim);">Source: Tyler's iMessage threads, analyzed today</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 3: TEXT MESSAGE INTELLIGENCE -->
+  <div class="scene" id="scene-3">
+    <div class="scene-label animate-in">Scene 03</div>
+    <div class="scene-title animate-in delay-1" style="font-size:36px;">Text Message Intelligence</div>
+    <div class="scene-subtitle animate-in delay-2" style="margin-bottom:20px;">Every text across your team — captured, categorized, and actioned automatically.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="imessage-feed">
+          <div class="imessage-item animate-in delay-2">
+            <div class="imessage-avatar" style="background:rgba(59,130,246,0.2);color:var(--accent);">TL</div>
+            <div class="imessage-content">
+              <div class="imessage-sender">Tyler Lucas <span style="color:var(--gray-dim);font-weight:400;">← Client message</span></div>
+              <div class="imessage-text">"Hey Tyler, what's the price on Caesarstone quartz for a 40 sq ft kitchen? Need it for our Dartmouth reno."</div>
+              <div class="imessage-action" style="color:var(--accent);">📋 QUOTE REQUEST — Task auto-created on Tyler's board</div>
+            </div>
+          </div>
+
+          <div class="imessage-item animate-in delay-3">
+            <div class="imessage-avatar" style="background:rgba(168,85,247,0.2);color:var(--purple);">JL</div>
+            <div class="imessage-content">
+              <div class="imessage-sender">Jason <span style="color:var(--gray-dim);font-weight:400;">→ Supplier</span></div>
+              <div class="imessage-text">"Can you get the Mapei adhesive order to Burnside by Thursday? We've got 3 installs next week."</div>
+              <div class="imessage-action" style="color:var(--purple);">📦 MATERIAL ORDER — Delivery date added to calendar (Thu)</div>
+            </div>
+          </div>
+
+          <div class="imessage-item animate-in delay-4">
+            <div class="imessage-avatar" style="background:rgba(34,197,94,0.2);color:var(--green);">CL</div>
+            <div class="imessage-content">
+              <div class="imessage-sender">Craig Lucas <span style="color:var(--gray-dim);font-weight:400;">← Client message</span></div>
+              <div class="imessage-text">"Craig, can we push the install to Thursday instead? The electrician won't be done until Wednesday."</div>
+              <div class="imessage-action" style="color:var(--green);">📅 SCHEDULE CHANGE — Calendar updated automatically</div>
+            </div>
+          </div>
+
+          <div class="imessage-item animate-in delay-5">
+            <div class="imessage-avatar" style="background:rgba(6,182,212,0.2);color:var(--cyan);">SH</div>
+            <div class="imessage-content">
+              <div class="imessage-sender">Shelley <span style="color:var(--gray-dim);font-weight:400;">← Client payment</span></div>
+              <div class="imessage-text">"Payment sent — $4,200 e-transfer for the Cole Harbour kitchen. Reference #CTK-2847."</div>
+              <div class="imessage-action" style="color:var(--cyan);">💰 PAYMENT RECEIVED — Invoice #CTK-2847 marked paid</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="alert-box animate-in delay-3" style="margin-top:0;">
+          <div class="alert-icon">🚨</div>
+          <div>
+            <div class="alert-text" style="font-weight:700;">Falling Through the Cracks</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:4px;">Tyler promised Sarah K. a quartz sample <strong style="color:var(--red);">3 days ago</strong> — extracted from his text thread. Still not done.</div>
+          </div>
+        </div>
+
+        <div class="summary-box animate-in delay-4" style="margin-top:16px;">
+          <div style="font-size:20px;font-weight:800;margin-bottom:8px;">End of Day Summary</div>
+          <div class="summary-text" style="font-size:28px;">47 <span style="font-size:14px;font-weight:400;">messages across your team</span></div>
+          <div style="display:flex;gap:24px;margin-top:12px;">
+            <div>
+              <div style="font-size:24px;font-weight:800;color:var(--orange);">8</div>
+              <div style="font-size:12px;color:var(--gray);">Need Action</div>
+            </div>
+            <div>
+              <div style="font-size:24px;font-weight:800;color:var(--red);">3</div>
+              <div style="font-size:12px;color:var(--gray);">Urgent</div>
+            </div>
+            <div>
+              <div style="font-size:24px;font-weight:800;color:var(--green);">36</div>
+              <div style="font-size:12px;color:var(--gray);">Resolved</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card animate-in delay-5" style="margin-top:16px;">
+          <div style="font-size:13px;font-weight:600;color:var(--gray);margin-bottom:8px;">HOW IT WORKS</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            ✅ Mac Mini reads iMessages locally<br>
+            ✅ AI categorizes each message<br>
+            ✅ Tasks auto-created, calendar auto-updated<br>
+            ✅ Zero apps for your team to install<br>
+            ✅ Zero behavior change required
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 4: PLAUD INTELLIGENCE -->
+  <div class="scene" id="scene-4">
+    <div class="scene-label animate-in">Scene 04</div>
+    <div class="scene-title animate-in delay-1" style="font-size:36px;">Plaud Transcript Intelligence</div>
+    <div class="scene-subtitle animate-in delay-2">Clip it to your shirt. Forget it's there. The AI catches every commitment.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="plaud-item animate-in delay-2">
+          <div style="font-size:28px;">🎙️</div>
+          <div style="flex:1;">
+            <div class="plaud-quote">"Yeah Robbie, let's meet at the Bedford site — March 24th, 10 AM works for me."</div>
+            <div class="plaud-action">✅ Calendar event created — Robbie Roberts, Bedford site, Mar 24, 10:00 AM</div>
+          </div>
+        </div>
+
+        <div class="plaud-item animate-in delay-3">
+          <div style="font-size:28px;">🎙️</div>
+          <div style="flex:1;">
+            <div class="plaud-quote">"Tell the electrician we'll have the countertop ready by April 1st, no problem."</div>
+            <div class="plaud-action">✅ Deadline created — Countertop ready, tracked against CNC schedule</div>
+          </div>
+        </div>
+
+        <div class="plaud-item animate-in delay-4">
+          <div style="font-size:28px;">🎙️</div>
+          <div style="flex:1;">
+            <div class="plaud-quote">"Jason, we're gonna need 4 more slabs of that Caesarstone Empira White for the Clayton Park job."</div>
+            <div class="plaud-action">✅ Purchase order flagged — 4x Caesarstone Empira White, assigned to Jason</div>
+          </div>
+        </div>
+
+        <div class="plaud-item animate-in delay-5">
+          <div style="font-size:28px;">🎙️</div>
+          <div style="flex:1;">
+            <div class="plaud-quote">"Mrs. Chen, I'll knock 5% off the backsplash since we're doing the full kitchen. Deal."</div>
+            <div class="plaud-action">✅ CRM updated — 5% discount noted, auto-applied to Mrs. Chen's next quote</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card animate-in delay-3" style="text-align:center;padding:32px;">
+          <div style="font-size:64px;margin-bottom:16px;">📱</div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px;">Plaud Recorder</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.6;">Credit-card sized. Clips to your shirt. Records everything. Transcribes automatically.</div>
+        </div>
+
+        <div class="summary-box animate-in delay-4" style="margin-top:16px;">
+          <div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px;">Today's Recording Summary</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <strong style="color:var(--white);">3 hours</strong> of job site conversations<br>
+            <strong style="color:var(--white);">4</strong> commitments extracted<br>
+            <strong style="color:var(--white);">2</strong> calendar events created<br>
+            <strong style="color:var(--white);">1</strong> purchase order flagged<br>
+            <strong style="color:var(--white);">1</strong> CRM discount applied
+          </div>
+        </div>
+
+        <div class="card animate-in delay-5" style="margin-top:16px;border-left:3px solid var(--purple);">
+          <div style="font-size:13px;font-weight:600;color:var(--purple);margin-bottom:4px;">YOUR AI LISTENED TO 3 HOURS TODAY</div>
+          <div style="font-size:13px;color:var(--gray);">Every verbal promise → tracked task. Every date mentioned → calendar event. Every purchase discussed → order flagged. No more "I forgot I said that."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 5: KANBAN -->
+  <div class="scene" id="scene-5">
+    <div class="scene-label animate-in">Scene 05</div>
+    <div class="scene-title animate-in delay-1" style="font-size:32px;">Everything Becomes a Task</div>
+    <div style="display:flex;gap:12px;margin-bottom:16px;" class="animate-in delay-2">
+      <div class="badge badge-blue">📱 From Text</div>
+      <div class="badge badge-purple">🎙️ From Plaud</div>
+      <div class="badge" style="background:rgba(255,255,255,0.06);color:var(--gray);">📋 Manual</div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <div class="badge" style="background:var(--bg-card);border:1px solid var(--border);color:var(--gray);cursor:pointer;">Filter: All</div>
+        <div class="badge" style="background:var(--bg-card);border:1px solid var(--border);color:var(--gray);cursor:pointer;">By Person</div>
+        <div class="badge" style="background:var(--bg-card);border:1px solid var(--border);color:var(--gray);cursor:pointer;">By Urgency</div>
+      </div>
+    </div>
+
+    <div class="kanban animate-in delay-3">
+      <div class="kanban-col">
+        <div class="kanban-col-title">🔵 New <span class="kanban-count">3</span></div>
+        <div class="kanban-card">
+          <div>📱 Follow up Morrison Kitchen quote</div>
+          <div class="assignee">Tyler</div>
+          <div class="source">Client text — expiring today</div>
+        </div>
+        <div class="kanban-card">
+          <div>🎙️ Order 4 slabs Caesarstone Empira White</div>
+          <div class="assignee">Jason</div>
+          <div class="source">Plaud recording — yesterday</div>
+        </div>
+        <div class="kanban-card">
+          <div>📱 Quote quartz pricing — Dartmouth reno</div>
+          <div class="assignee">Tyler</div>
+          <div class="source">Client text — today</div>
+        </div>
+      </div>
+
+      <div class="kanban-col">
+        <div class="kanban-col-title">🟡 In Progress <span class="kanban-count">2</span></div>
+        <div class="kanban-card">
+          <div>🎙️ Meet Robbie Roberts, Bedford site</div>
+          <div style="font-size:12px;color:var(--white);font-weight:600;">March 24, 10:00 AM</div>
+          <div class="assignee">Craig</div>
+          <div class="source">Plaud recording — yesterday</div>
+        </div>
+        <div class="kanban-card">
+          <div>📋 Reconcile Livingstone Q1 invoices</div>
+          <div class="assignee">Shelley</div>
+          <div class="source">Weekly audit — recurring</div>
+        </div>
+      </div>
+
+      <div class="kanban-col">
+        <div class="kanban-col-title">🟠 Waiting <span class="kanban-count">2</span></div>
+        <div class="kanban-card overdue">
+          <div>📱 Send sample to Sarah K.</div>
+          <div class="assignee">Tyler</div>
+          <div class="source" style="color:var(--red);font-weight:600;">⚠️ OVERDUE — 3 days</div>
+        </div>
+        <div class="kanban-card">
+          <div>📱 Adhesive delivery — Burnside</div>
+          <div class="assignee">Jason</div>
+          <div class="source">Supplier text — ETA Thursday</div>
+        </div>
+      </div>
+
+      <div class="kanban-col">
+        <div class="kanban-col-title">🟢 Done <span class="kanban-count">3</span></div>
+        <div class="kanban-card" style="opacity:0.6;">
+          <div>📱 Cole Harbour payment received</div>
+          <div class="assignee">Shelley</div>
+          <div class="source">$4,200 — auto-marked paid</div>
+        </div>
+        <div class="kanban-card" style="opacity:0.6;">
+          <div>🎙️ Mrs. Chen discount applied</div>
+          <div class="assignee">Craig</div>
+          <div class="source">5% backsplash — CRM updated</div>
+        </div>
+        <div class="kanban-card" style="opacity:0.6;">
+          <div>📱 Calendar updated — install rescheduled</div>
+          <div class="assignee">Craig</div>
+          <div class="source">Client request — moved to Thursday</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 6: PROJECT TRACKER -->
+  <div class="scene" id="scene-6">
+    <div class="scene-label animate-in">Scene 06</div>
+    <div class="scene-title animate-in delay-1" style="font-size:32px;">Project Tracker & Livingstone Audit</div>
+
+    <div class="two-col animate-in delay-2">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--gray);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">Active Projects</div>
+
+        <div class="project-item">
+          <div style="font-size:18px;">🔨</div>
+          <div class="project-name">Cole Harbour Kitchen<div style="font-size:11px;color:var(--gray-dim);">Residential — Mrs. Thompson</div></div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:85%;background:var(--green);"></div></div>
+          <div class="project-status" style="color:var(--green);">85%</div>
+        </div>
+
+        <div class="project-item">
+          <div style="font-size:18px;">🔨</div>
+          <div class="project-name">Bedford Condo Reno<div style="font-size:11px;color:var(--gray-dim);">Residential — Anderson unit</div></div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:60%;background:var(--accent);"></div></div>
+          <div class="project-status" style="color:var(--accent);">60%</div>
+        </div>
+
+        <div class="project-item">
+          <div style="font-size:18px;">🔨</div>
+          <div class="project-name">Clayton Park Vanity<div style="font-size:11px;color:var(--gray-dim);">Residential — Chen bathroom</div></div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:40%;background:var(--orange);"></div></div>
+          <div class="project-status" style="color:var(--orange);">40%</div>
+        </div>
+
+        <div class="project-item">
+          <div style="font-size:18px;">🏢</div>
+          <div class="project-name">Airport Terminal Counters<div style="font-size:11px;color:var(--gray-dim);">Commercial — Halifax Airport Authority</div></div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:95%;background:var(--green);"></div></div>
+          <div class="project-status" style="color:var(--green);">95%</div>
+        </div>
+
+        <div class="project-item">
+          <div style="font-size:18px;">🔨</div>
+          <div class="project-name">Portland Hills Vanity<div style="font-size:11px;color:var(--gray-dim);">Residential — Bianco Romano remnant</div></div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:15%;background:var(--purple);"></div></div>
+          <div class="project-status" style="color:var(--purple);">15%</div>
+        </div>
+
+        <div class="project-item">
+          <div style="font-size:18px;">🏢</div>
+          <div class="project-name">Dartmouth Office Reno<div style="font-size:11px;color:var(--gray-dim);">Commercial — Morrison Properties</div></div>
+          <div class="project-bar"><div class="project-bar-fill" style="width:25%;background:var(--cyan);"></div></div>
+          <div class="project-status" style="color:var(--cyan);">25%</div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--orange);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">⚠️ Livingstone Acquisition Audit</div>
+
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-header">
+            <div class="card-title">Invoice Cross-Reference</div>
+            <div class="badge badge-red">3 DISCREPANCIES</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            Shelley's invoices vs Livingstone records — automated comparison running against MySQL CRM data.
+          </div>
+        </div>
+
+        <div class="flag-item">
+          <span>🚩</span>
+          <div>
+            <div style="color:var(--red);font-weight:600;">$162 added to paid invoice</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px;">Invoice #LV-4821 — modification AFTER payment recorded</div>
+          </div>
+        </div>
+
+        <div class="flag-item">
+          <span>📊</span>
+          <div>
+            <div style="color:var(--orange);font-weight:600;">Earnout calculation tracking</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px;">Q1 milestones: 2 of 4 met — on pace for target</div>
+          </div>
+        </div>
+
+        <div class="flag-item">
+          <span>💎</span>
+          <div>
+            <div style="color:var(--orange);font-weight:600;">Remnant credit: $799 outstanding</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:2px;">Livingstone transferred remnants — credit still owed</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;border-left:3px solid var(--green);">
+          <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:4px;">MYSQL CRM SYNC</div>
+          <div style="font-size:13px;color:var(--gray);">Your existing database stays. The AI reads it, cross-references it, and flags issues automatically. No migration needed.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 7: INVOICE WATCHDOG -->
+  <div class="scene" id="scene-7">
+    <div class="scene-label animate-in">Scene 07</div>
+    <div class="scene-title animate-in delay-1" style="font-size:32px;">Invoice Watchdog & Cash Flow</div>
+
+    <div class="two-col animate-in delay-2">
+      <div>
+        <div class="stats-row" style="flex-wrap:wrap;">
+          <div class="stat-card" style="border-top:3px solid var(--green);">
+            <div class="stat-value" style="color:var(--green);font-size:22px;">$48,200</div>
+            <div class="stat-label">Paid This Month</div>
+          </div>
+          <div class="stat-card" style="border-top:3px solid var(--orange);">
+            <div class="stat-value" style="color:var(--orange);font-size:22px;">$18,600</div>
+            <div class="stat-label">Outstanding</div>
+          </div>
+          <div class="stat-card" style="border-top:3px solid var(--red);">
+            <div class="stat-value" style="color:var(--red);font-size:22px;">$7,400</div>
+            <div class="stat-label">Overdue</div>
+          </div>
+        </div>
+
+        <div class="alert-box" style="margin-top:0;margin-bottom:12px;">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-text">$2,800 discrepancy flagged — Livingstone invoice reconciliation</div>
+        </div>
+
+        <div class="flag-item">
+          <span>💰</span>
+          <span style="color:var(--orange);font-weight:600;">$4,200 unbilled — Airport Terminal project (95% complete)</span>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="card-header">
+            <div class="card-title">QuickBooks Sync</div>
+            <div class="badge badge-green">✅ CONNECTED</div>
+          </div>
+          <div style="font-size:12px;color:var(--gray);">Last sync: 12 minutes ago — all entries matched</div>
+        </div>
+
+        <div style="font-size:14px;font-weight:700;color:var(--gray);margin:16px 0 8px;text-transform:uppercase;letter-spacing:1px;">Receivables Aging</div>
+
+        <div class="aging-row">
+          <div class="aging-bucket" style="border-top:3px solid var(--green);">
+            <div class="aging-days">0-30 Days</div>
+            <div class="aging-amount" style="color:var(--green);">$12,400</div>
+          </div>
+          <div class="aging-bucket" style="border-top:3px solid var(--orange);">
+            <div class="aging-days">31-60 Days</div>
+            <div class="aging-amount" style="color:var(--orange);">$6,200</div>
+          </div>
+          <div class="aging-bucket" style="border-top:3px solid var(--red);">
+            <div class="aging-days">61-90 Days</div>
+            <div class="aging-amount" style="color:var(--red);">$7,400</div>
+            <div style="font-size:10px;color:var(--red);margin-top:2px;">⚠️ 3 overdue</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--gray);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">90-Day Cash Flow Forecast</div>
+
+        <div class="card" style="padding:20px;">
+          <div class="bar-chart" style="height:160px;">
+            <div class="bar-col">
+              <div class="bar-value">$92K</div>
+              <div class="bar" style="height:60%;"></div>
+              <div class="bar-label">Jan</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-value">$104K</div>
+              <div class="bar" style="height:70%;"></div>
+              <div class="bar-label">Feb</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-value">$118K</div>
+              <div class="bar" style="height:82%;background:linear-gradient(180deg, var(--green), rgba(34,197,94,0.3));"></div>
+              <div class="bar-label">Mar</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-value">$112K</div>
+              <div class="bar" style="height:76%;opacity:0.5;border:1px dashed var(--accent);background:transparent;"></div>
+              <div class="bar-label">Apr</div>
+            </div>
+            <div class="bar-col">
+              <div class="bar-value">$126K</div>
+              <div class="bar" style="height:88%;opacity:0.5;border:1px dashed var(--accent);background:transparent;"></div>
+              <div class="bar-label">May</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--gray-dim);">Solid = actual | Dashed = projected</div>
+        </div>
+
+        <div style="font-size:14px;font-weight:700;color:var(--gray);margin:16px 0 12px;text-transform:uppercase;letter-spacing:1px;">Revenue Split</div>
+
+        <div class="donut-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="16"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#3B82F6" stroke-width="16" stroke-dasharray="188.5 314.16" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#A855F7" stroke-width="16" stroke-dasharray="62.83 314.16" stroke-dashoffset="-188.5" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#06B6D4" stroke-width="16" stroke-dasharray="62.83 314.16" stroke-dashoffset="-251.33" transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="donut-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> Residential — 60%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--purple);"></div> Commercial — 20%</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--cyan);"></div> Contractor — 20%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 8: DWG TO CNC -->
+  <div class="scene" id="scene-8">
+    <div class="scene-label animate-in">Scene 08</div>
+    <div class="scene-title animate-in delay-1" style="font-size:32px;">DWG to CNC — The Fabrication Pipeline</div>
+    <div class="scene-subtitle animate-in delay-2" style="font-size:16px;">Drawing in at 8:00 AM. CNC cutting by 8:05. That's not an estimate — that's fabrication.</div>
+
+    <div class="pipeline animate-in delay-3">
+      <div class="pipeline-step">
+        <div class="step-icon">📐</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">.DWG File</div>
+        <div class="step-label">From MySQL CRM</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-icon">🔄</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">DXF Convert</div>
+        <div class="step-label">Lossless coords</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-icon">📏</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Read Dimensions</div>
+        <div class="step-label">Sink, cooktop cuts</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-icon">🧩</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Slab Layout</div>
+        <div class="step-label">Minimize waste</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="step-icon">⚙️</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">G-Code</div>
+        <div class="step-label">CNC ready</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step" style="border-color:var(--green);">
+        <div class="step-icon">✅</div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Cut</div>
+        <div class="step-label">Human approved</div>
+      </div>
+    </div>
+
+    <div class="two-col animate-in delay-4" style="margin-top:24px;">
+      <div>
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-header">
+            <div class="card-title">📐 Current Drawing: Clayton Park Kitchen</div>
+            <div class="badge badge-green">PROCESSED</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div>Counter length: <strong style="color:var(--white);">142" L-shape</strong></div>
+            <div>Sink cutout: <strong style="color:var(--white);">33" × 22" undermount</strong></div>
+            <div>Cooktop opening: <strong style="color:var(--white);">30" × 21"</strong></div>
+            <div>Edge profile: <strong style="color:var(--white);">Bullnose — island, Ogee — perimeter</strong></div>
+            <div>Material: <strong style="color:var(--white);">Caesarstone Empira White (5143)</strong></div>
+            <div>Slab required: <strong style="color:var(--white);">1 full + 1 remnant possible</strong></div>
+          </div>
+        </div>
+
+        <div class="remnant-match">
+          <span style="font-size:24px;">♻️</span>
+          <div>
+            <div style="font-weight:700;color:var(--green);">Remnant Match Found</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:2px;">26" × 48" Bianco Romano remnant → auto-matched to Portland Hills vanity job. Saves $840 in material.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="border-left:3px solid var(--orange);">
+          <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:8px;">⚠️ SAFETY CHECKS — ALWAYS ON</div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            ✅ Simulated toolpath preview before execution<br>
+            ✅ Bounding box validation — fits slab dimensions<br>
+            ✅ Feed rate limits — within machine spec<br>
+            ✅ Depth checks — won't cut through table<br>
+            ✅ <strong style="color:var(--white);">Human operator approves before loading</strong>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="card-header">
+            <div class="card-title">Inventory Impact</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div>Slabs used today: <strong style="color:var(--white);">2</strong></div>
+            <div>Remnants created: <strong style="color:var(--white);">1 (34" × 28" — usable)</strong></div>
+            <div>Remnants consumed: <strong style="color:var(--white);">1 (Portland Hills vanity)</strong></div>
+            <div>Net inventory: <strong style="color:var(--white);">186 slabs / 34 remnants</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 9: TYLER'S SALES -->
+  <div class="scene" id="scene-9">
+    <div class="scene-label animate-in">Scene 09</div>
+    <div class="scene-title animate-in delay-1" style="font-size:32px;">Tyler's Sales Command Center</div>
+
+    <div class="metric-row animate-in delay-2">
+      <div class="metric-card" style="border-top:3px solid var(--green);">
+        <div class="metric-value" style="color:var(--green);">68%</div>
+        <div class="metric-label">Win Rate</div>
+      </div>
+      <div class="metric-card" style="border-top:3px solid var(--accent);">
+        <div class="metric-value" style="color:var(--accent);">$4,200</div>
+        <div class="metric-label">Avg Deal Size</div>
+      </div>
+      <div class="metric-card" style="border-top:3px solid var(--cyan);">
+        <div class="metric-value" style="color:var(--cyan);">2.4 hrs</div>
+        <div class="metric-label">Avg Response</div>
+      </div>
+      <div class="metric-card" style="border-top:3px solid var(--purple);">
+        <div class="metric-value" style="color:var(--purple);">$142K</div>
+        <div class="metric-label">Pipeline</div>
+      </div>
+      <div class="metric-card" style="border-top:3px solid var(--orange);">
+        <div class="metric-value" style="color:var(--orange);">7,500</div>
+        <div class="metric-label">Client Database</div>
+      </div>
+    </div>
+
+    <div class="two-col animate-in delay-3">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--gray);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;">Tyler's Pipeline</div>
+
+        <div class="card" style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">Morrison Kitchen Reno</div>
+              <div style="font-size:12px;color:var(--gray);">Dartmouth — quartz countertops + backsplash</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:var(--green);">$8,400</div>
+              <div style="font-size:11px;color:var(--red);">Last contact: 6 days ago</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">Sarah K. — Full Kitchen</div>
+              <div style="font-size:12px;color:var(--gray);">Bedford — sample stage</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:var(--green);">$6,200</div>
+              <div style="font-size:11px;color:var(--orange);">Sample overdue 3 days</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:14px;">Mrs. Park — Bathroom Vanity</div>
+              <div style="font-size:12px;color:var(--gray);">Cole Harbour — quote requested</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:var(--green);">$3,800</div>
+              <div style="font-size:11px;color:var(--accent);">Quote due Wednesday</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert-box" style="margin-top:12px;background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2);">
+          <div class="alert-icon">📱</div>
+          <div>
+            <div style="color:var(--accent);font-weight:700;font-size:13px;">Text-Extracted Commitment</div>
+            <div style="font-size:13px;color:var(--gray);margin-top:2px;">"Tyler promised Mrs. Park a quote by Wednesday" — tracked until done</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:12px;border-left:3px solid var(--purple);">
+          <div class="card-header">
+            <div class="card-title">🔄 Cross-Sell Opportunities</div>
+            <div class="badge badge-purple">$29K PIPELINE</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div><strong style="color:var(--white);">Touchstone → Compass Flooring</strong></div>
+            <div>• Morrison Kitchen — hardwood flooring upsell ($12K)</div>
+            <div>• Bedford condo — LVP install ($8K)</div>
+            <div>• Clayton Park — bathroom tile ($4K)</div>
+            <div>• Sarah K. — kitchen tile backsplash + floor ($5K)</div>
+            <div style="margin-top:6px;color:var(--purple);font-weight:600;">These clients already trust you. The AI found the gap.</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-header">
+            <div class="card-title">🔍 Reactivation Opportunities</div>
+            <div class="badge badge-blue">AI FOUND</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div>• 142 clients bought countertops 5+ years ago — upgrade candidates</div>
+            <div>• 89 did kitchen but not bathroom — upsell ready</div>
+            <div>• 34 requested quotes but never closed — re-engage</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📦 Sample Tracking</div>
+          </div>
+          <div style="font-size:13px;color:var(--gray);line-height:1.8;">
+            <div>Sarah K. — Caesarstone White <span style="color:var(--red);">⚠️ 3 days overdue</span></div>
+            <div>Mrs. Park — Silestone Calacatta Gold <span style="color:var(--green);">✅ delivered</span></div>
+            <div>Morrison — Quartz samples x3 <span style="color:var(--orange);">📤 to send</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 10: CLOSING -->
+  <div class="scene" id="scene-10">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%;text-align:center;">
+      <div class="scene-label animate-in" style="font-size:14px;">Scene 10</div>
+      <div class="scene-title animate-in delay-1" style="font-size:48px;max-width:1100px;text-align:center;">One Mac Mini.<br>Your Entire Business.<br>Nothing Falls Through.</div>
+
+      <div class="closing-grid animate-in delay-2" style="max-width:1200px;width:100%;">
+        <div class="closing-card">
+          <div class="closing-icon">📱</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Texts Monitored</div>
+          <div class="closing-label">Every message across your team — captured and categorized</div>
+        </div>
+        <div class="closing-card">
+          <div class="closing-icon">🎙️</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Conversations Captured</div>
+          <div class="closing-label">Job site recordings → commitments, deadlines, action items</div>
+        </div>
+        <div class="closing-card">
+          <div class="closing-icon">✅</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Commitments Tracked</div>
+          <div class="closing-label">Every promise becomes a task — nothing forgotten</div>
+        </div>
+        <div class="closing-card">
+          <div class="closing-icon">💰</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Invoices Watched</div>
+          <div class="closing-label">Discrepancies flagged, unbilled work caught, cash flow forecasted</div>
+        </div>
+        <div class="closing-card">
+          <div class="closing-icon">📐</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px;">Drawings Fabricated</div>
+          <div class="closing-label">DWG → DXF → G-code → CNC. 5 minutes, not 5 hours.</div>
+        </div>
+        <div class="closing-card">
+          <div class="closing-icon">🔒</div>
+          <div style="font-weight:700;font-size:16px;margin-bottom:4px;">100% Private</div>
+          <div class="closing-label">Your hardware. Your data. Nobody else sees it. Ever.</div>
+        </div>
+      </div>
+
+      <div class="animate-in delay-3" style="margin-top:24px;max-width:700px;">
+        <div style="font-size:22px;color:var(--gray);font-weight:500;line-height:1.6;margin-bottom:32px;">
+          Touchstone × SolveWorks<br>
+          <span style="color:var(--white);font-weight:700;">Built for craftsmen in Halifax — not Silicon Valley.</span>
+        </div>
+      </div>
+
+      <div class="cta-section animate-in delay-4">
+        <button class="cta-btn" onclick="window.open('mailto:dwayne@solveworks.io?subject=Touchstone%20Demo%20Follow-Up','_blank')">See It Live — We'll Build This For Your Team</button>
+        <div style="margin-top:16px;font-size:14px;color:var(--gray-dim);">
+          dwayne@solveworks.io — solveworks.io
+        </div>
+      </div>
+
+      <div class="animate-in delay-5" style="margin-top:40px;">
+        <div class="brand-logo" style="font-size:28px;">SOLVEWORKS</div>
+        <div style="font-size:13px;color:var(--gray-dim);margin-top:4px;">Your AI. Only yours.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Progress Bar -->
+<div class="progress-wrap">
+  <div class="progress-bar" id="progress-bar"></div>
+</div>
 
 <!-- Controls -->
 <div class="controls">
-  <button id="prevBtn" onclick="prevScene()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-  </button>
-  <button id="playBtn" onclick="togglePlay()">
-    <svg id="playIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-    <svg id="pauseIcon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-  </button>
-  <button id="nextBtn" onclick="nextScene()">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-  </button>
-  <div class="progress-bar" onclick="seekProgress(event)">
-    <div class="progress-fill" id="progressFill"></div>
-  </div>
-  <div class="scene-dots">
-    <div class="dot active" onclick="goToScene(0)"></div>
-    <div class="dot" onclick="goToScene(1)"></div>
-    <div class="dot" onclick="goToScene(2)"></div>
-    <div class="dot" onclick="goToScene(3)"></div>
-    <div class="dot" onclick="goToScene(4)"></div>
-    <div class="dot" onclick="goToScene(5)"></div>
-    <div class="dot" onclick="goToScene(6)"></div>
-    <div class="dot" onclick="goToScene(7)"></div>
-    <div class="dot" onclick="goToScene(8)"></div>
-  </div>
-</div>
+  <button class="ctrl-btn" id="prev-btn" title="Previous (←)">◀</button>
+  <button class="ctrl-btn play-btn" id="play-btn" title="Play/Pause (Space)">▶</button>
+  <button class="ctrl-btn" id="next-btn" title="Next (→)">▶</button>
 
-<!-- ═══════════════ SCENE 1: THE HOOK ═══════════════ -->
-<div class="scene active" id="scene1">
-  <div style="display:flex;flex-direction:column;align-items:center;">
-    <div class="hook-number">120</div>
-    <div class="hook-label">texts every day</div>
-    <div class="pain-items">
-      <div class="pain-item"><div class="pain-icon">📱</div>Lost follow-ups</div>
-      <div class="pain-item"><div class="pain-icon">💸</div>Unbilled work</div>
-      <div class="pain-item"><div class="pain-icon">🤷</div>Monday chaos</div>
-      <div class="pain-item"><div class="pain-icon">📊</div>No cash visibility</div>
-    </div>
-    <div class="hook-subtitle">"When I go into work tomorrow, I don't really know what I am supposed to do because there are so many things."</div>
-    <div class="hook-cta">This is your command center.</div>
-  </div>
-</div>
+  <div class="scene-dots" id="scene-dots"></div>
 
-<!-- ═══════════════ SCENE 2: MORNING BRIEFING ═══════════════ -->
-<div class="scene" id="scene2">
-  <div class="briefing-header">
-    <div class="greeting">Good morning, <strong>Craig</strong>.</div>
-    <div class="date-line">Monday, March 10, 2026 · 7:02 AM · Touchstone & Compass HQ</div>
-  </div>
-  <div class="briefing-grid">
-    <!-- Active Projects -->
-    <div class="card" style="grid-row: span 2;">
-      <div class="card-title"><span class="icon">📋</span> Active Projects</div>
-      <div class="project-row"><span class="project-name">Morrison Kitchen Reno</span><span class="status-badge status-active">In Progress</span></div>
-      <div class="project-row"><span class="project-name">Airport Terminal — Phase 2</span><span class="status-badge status-pending">Awaiting Material</span></div>
-      <div class="project-row"><span class="project-name">Lindsay's Restaurant (Corey Bell)</span><span class="status-badge status-active">Measuring</span></div>
-      <div class="project-row"><span class="project-name">Henderson Bathroom × 2</span><span class="status-badge status-done">Install Complete</span></div>
-      <div class="project-row"><span class="project-name">Cole Harbour Dental Office</span><span class="status-badge status-active">Fabrication</span></div>
-      <div class="project-row"><span class="project-name">Robbie Roberts — BBQ Station</span><span class="status-badge status-pending">Awaiting Confirm</span></div>
-    </div>
+  <div class="scene-counter" id="scene-counter">1 / 10</div>
 
-    <!-- Follow-ups -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🔔</span> Tyler's Follow-ups Today</div>
-      <div class="followup-item">
-        <div class="followup-person">TYLER → Morrison</div>
-        <div class="followup-detail">Confirm quartz colour selection — client texted Saturday with 3 options. Respond before 10 AM.</div>
-      </div>
-      <div class="followup-item">
-        <div class="followup-person">TYLER → Sarah K.</div>
-        <div class="followup-detail">Send marble sample — promised last Tuesday. Still not shipped. ⚠️</div>
-      </div>
-      <div class="followup-item">
-        <div class="followup-person">TYLER → Compass flooring lead</div>
-        <div class="followup-detail">Henderson loved the countertops — cross-sell flooring for master bath + hallway.</div>
-      </div>
-    </div>
-
-    <!-- Robbie Roberts -->
-    <div class="card">
-      <div class="card-title"><span class="icon">✈️</span> Needs Your Input</div>
-      <div class="followup-item">
-        <div class="followup-person">ROBBIE ROBERTS</div>
-        <div class="followup-detail">Availability March 24–27 for granite remnants — BBQ prep station project. Awaiting confirmation on your Florida trip dates.</div>
-      </div>
-      <div class="followup-item">
-        <div class="followup-person">SHELLEY — FRIDAY INVOICES</div>
-        <div class="followup-detail">2 invoices still in draft status. Henderson (#4870) and Cole Harbour Dental (#4871). Review needed.</div>
-      </div>
-    </div>
-
-    <!-- Revenue -->
-    <div class="card" style="text-align:center; display:flex; flex-direction:column; justify-content:center;">
-      <div class="card-title" style="justify-content:center;"><span class="icon">💰</span> This Week</div>
-      <div class="revenue-big">$52,400</div>
-      <div class="revenue-sub">Countertops $38,200 · Flooring $14,200</div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 3: TEXT INTELLIGENCE ═══════════════ -->
-<div class="scene" id="scene3">
-  <div class="text-feed">
-    <div style="margin-bottom: 8px;">
-      <div class="scene-title">Text Message Intelligence</div>
-      <div class="scene-subtitle">Every message becomes an action — assigned, tracked, completed.</div>
-    </div>
-
-    <div class="text-msg">
-      <div class="msg-avatar">🏗️</div>
-      <div class="msg-body">
-        <div class="msg-from">Dave Mitchell <span style="color:var(--text-muted);font-weight:400;font-size:12px;">· Contractor</span></div>
-        <div class="msg-text">"Hey Craig, got a kitchen reno coming up on Maple St. 42 sq ft of countertop. Can Tyler come measure this week?"</div>
-        <div class="msg-action">✅ Task created → Assigned to Tyler · Measure Maple St kitchen · Due: Wed Mar 12</div>
-      </div>
-    </div>
-
-    <div class="text-msg">
-      <div class="msg-avatar">🪨</div>
-      <div class="msg-body">
-        <div class="msg-from">Supplier <span style="color:var(--text-muted);font-weight:400;font-size:12px;">· Material Question</span></div>
-        <div class="msg-text">"Do you still need that Calacatta Gold slab or should I hold for next order?"</div>
-        <div class="msg-action">✅ Routed to Jason · Material decision needed · Flagged: matches Morrison project</div>
-      </div>
-    </div>
-
-    <div class="text-msg">
-      <div class="msg-avatar">📅</div>
-      <div class="msg-body">
-        <div class="msg-from">Client — Henderson <span style="color:var(--text-muted);font-weight:400;font-size:12px;">· Scheduling</span></div>
-        <div class="msg-text">"Can we do the install next Thursday or Friday?"</div>
-        <div class="msg-action">✅ Calendar checked · Thursday 2-5 PM available · Auto-reply drafted for approval</div>
-      </div>
-    </div>
-
-    <div class="text-msg">
-      <div class="msg-avatar">🔧</div>
-      <div class="msg-body">
-        <div class="msg-from">Lenore <span style="color:var(--text-muted);font-weight:400;font-size:12px;">· Internal</span></div>
-        <div class="msg-text">"Craig — the adhesive order from Jason still hasn't arrived. What do we do about Thursday's install?"</div>
-        <div class="msg-action">✅ Escalated → Jason notified · Install risk flagged · Craig alerted</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="telegram-panel">
-    <div class="tg-header">
-      <div class="tg-avatar">🤖</div>
-      <span>Touchstone AI</span>
-      <span style="margin-left:auto;font-size:11px;color:var(--text-muted);">Online</span>
-    </div>
-    <div class="tg-messages">
-      <div class="tg-msg sent">What did Tyler commit to this week?</div>
-      <div class="tg-msg received">
-        <strong>Tyler's commitments this week:</strong><br><br>
-        1. Morrison Kitchen — confirm quartz colour (Mon)<br>
-        2. Sarah K. — send marble sample (overdue!)<br>
-        3. Maple St — measure 42 sq ft kitchen (Wed)<br>
-        4. Henderson — cross-sell flooring pitch (Thu)<br>
-        5. Robbie Roberts — remnant availability (pending your Florida dates)<br><br>
-        <em>3 on track · 1 overdue · 1 waiting on you</em>
-        <div class="tg-time">7:14 AM</div>
-      </div>
-      <div class="tg-msg sent">Flag the overdue one. Tell Tyler first thing.</div>
-      <div class="tg-msg received">
-        ✅ Done. Tyler notified via text:<br>
-        "Sarah K. marble sample — overdue since last Tuesday. Ship today."
-        <div class="tg-time">7:14 AM</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 4: AUDIT DASHBOARD ═══════════════ -->
-<div class="scene" id="scene4">
-  <div>
-    <div class="scene-title">Project Tracker & Livingstone Audit</div>
-    <div class="scene-subtitle">Earnout calculations, invoice reconciliation, and remnant credits — automated.</div>
-  </div>
-  <div class="audit-grid">
-    <!-- Project Cards -->
-    <div class="card">
-      <div class="card-title"><span class="icon">📊</span> Livingstone Audit — Earnout Calculations</div>
-      <div class="audit-row"><span>Project</span><span style="font-weight:600">Lindsay's Restaurant (Corey Bell)</span></div>
-      <div class="comparison-grid">
-        <div class="comparison-cell">
-          <div class="comp-label">Production Sq Ft</div>
-          <div class="comp-value">86</div>
-        </div>
-        <div class="comparison-cell">
-          <div class="comp-label">Material Cost</div>
-          <div class="comp-value" style="color:var(--text)">$2,408</div>
-        </div>
-        <div class="comparison-cell">
-          <div class="comp-label">Fabrication</div>
-          <div class="comp-value" style="color:var(--text)">$1,720</div>
-        </div>
-      </div>
-
-      <div style="margin-top:16px;font-size:13px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Cross-Check</div>
-      <div class="comparison-grid" style="grid-template-columns:1fr 1fr;">
-        <div class="comparison-cell">
-          <div class="comp-label">Shelley Says</div>
-          <div class="comp-value" style="color:var(--text)">$800 cost · $600 profit</div>
-        </div>
-        <div class="comparison-cell">
-          <div class="comp-label">Livingstone Says</div>
-          <div class="comp-value" style="color:var(--text)">$800 cost · $575 profit</div>
-        </div>
-      </div>
-      <div class="alert-banner success"><span class="alert-icon">✅</span> Within tolerance — $25 variance. Auto-approved.</div>
-
-      <div class="alert-banner warning" style="margin-top:8px;">
-        <span class="alert-icon">⚠️</span>
-        <span><strong>Morrison Kitchen (Nov invoice):</strong> Livingstone added $162 to a previously paid invoice. This is NOT a credit memo — they modified a closed invoice. Flagged for Shelley's review.</span>
-      </div>
-    </div>
-
-    <!-- Remnant Tracking -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🪨</span> Remnant Credit Tracking</div>
-      <div class="remnant-card">
-        <div style="font-weight:600;font-size:14px;margin-bottom:10px;">Henderson Vanity — Calacatta Quartz</div>
-        <div class="remnant-row"><span>Slab Ordered</span><span class="val">Full slab — 120" × 56"</span></div>
-        <div class="remnant-row"><span>Used for Vanity</span><span class="val">48" × 24" (4ft vanity)</span></div>
-        <div class="remnant-row"><span>Usable Remnant</span><span class="val" style="color:var(--green)">22" × 48"</span></div>
-        <div class="remnant-row"><span>Credit Expected</span><span class="val" style="color:var(--green);font-size:16px;font-weight:700;">$487</span></div>
-        <div class="remnant-row"><span>Status</span><span class="val" style="color:var(--amber)">⏳ Awaiting Livingstone confirmation</span></div>
-      </div>
-
-      <div class="remnant-card">
-        <div style="font-weight:600;font-size:14px;margin-bottom:10px;">Cole Harbour Dental — Black Galaxy Granite</div>
-        <div class="remnant-row"><span>Slab Ordered</span><span class="val">Full slab — 110" × 62"</span></div>
-        <div class="remnant-row"><span>Used for Reception</span><span class="val">96" × 26"</span></div>
-        <div class="remnant-row"><span>Usable Remnant</span><span class="val" style="color:var(--green)">36" × 26"</span></div>
-        <div class="remnant-row"><span>Credit Expected</span><span class="val" style="color:var(--green);font-size:16px;font-weight:700;">$312</span></div>
-        <div class="remnant-row"><span>Status</span><span class="val" style="color:var(--green)">✅ Confirmed — credit applied</span></div>
-      </div>
-
-      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:14px;">
-        <span style="color:var(--text-dim)">Total Outstanding Remnant Credits</span>
-        <span style="font-weight:700;color:var(--green);font-size:18px;">$799</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 5: INVOICE WATCHDOG ═══════════════ -->
-<div class="scene" id="scene5">
-  <div>
-    <div class="scene-title">🐕 Invoice Watchdog</div>
-    <div class="scene-subtitle">"If we found one, how many are there?" — Now you know. Every one. Every time.</div>
-  </div>
-  <div class="invoice-grid">
-    <div>
-      <div class="invoice-item flagged">
-        <div class="inv-header">
-          <span class="inv-id">Draft Invoice #4872</span>
-          <span class="status-badge status-alert">⚠️ DISCREPANCY</span>
-        </div>
-        <div class="inv-detail">Shelley started Thursday. Billed: 5 hours. Actual: 40 hours × $80/hr.</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-          <span style="font-size:13px;color:var(--text-dim)">Billed: $400</span>
-          <span style="font-size:13px;color:var(--red);font-weight:600;">Should be: $3,200</span>
-        </div>
-        <div style="color:var(--red);font-size:12px;margin-top:6px;font-weight:600;">Missing: $2,800</div>
-      </div>
-
-      <div class="invoice-item missing">
-        <div class="inv-header">
-          <span class="inv-id">Airport Terminal — Phase 2</span>
-          <span class="status-badge status-pending">NO INVOICE</span>
-        </div>
-        <div class="inv-detail">Work completed February 28. Zero invoices sent.</div>
-        <div style="margin-top:10px;">
-          <span class="inv-amount" style="color:var(--amber);">$4,200 unbilled</span>
-        </div>
-      </div>
-
-      <div class="invoice-item ok">
-        <div class="inv-header">
-          <span class="inv-id">Invoice #4870 — Henderson</span>
-          <span class="status-badge status-done">✅ SENT</span>
-        </div>
-        <div class="inv-detail">$6,800 — Sent March 7. Payment expected within 30 days.</div>
-      </div>
-
-      <div class="invoice-item ok">
-        <div class="inv-header">
-          <span class="inv-id">Invoice #4871 — Cole Harbour Dental</span>
-          <span class="status-badge status-active">DRAFT</span>
-        </div>
-        <div class="inv-detail">$12,400 — Shelley's draft looks correct. Ready to send after review.</div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div class="card">
-        <div class="card-title"><span class="icon">🔗</span> QuickBooks Sync</div>
-        <div class="sync-status" style="background:var(--green-dim);">
-          <div class="sync-dot green"></div>
-          <span style="color:var(--green);font-weight:500;">5 invoices synced</span>
-        </div>
-        <div class="sync-status" style="background:var(--amber-dim);">
-          <div class="sync-dot amber"></div>
-          <span style="color:var(--amber);font-weight:500;">2 pending review</span>
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">Last sync: Today 6:45 AM</div>
-      </div>
-
-      <div class="weekly-summary">
-        <div class="ws-title">📊 Weekly Invoice Audit</div>
-        <div class="ws-row"><span style="color:var(--text-dim)">Projects completed</span><span style="font-weight:600">3</span></div>
-        <div class="ws-row"><span style="color:var(--text-dim)">Invoiced</span><span style="font-weight:600;color:var(--green)">2</span></div>
-        <div class="ws-row"><span style="color:var(--text-dim)">Missing</span><span style="font-weight:600;color:var(--red)">1</span></div>
-        <div class="ws-row" style="border-top:1px solid var(--border);padding-top:12px;margin-top:8px;">
-          <span style="color:var(--text-dim)">Estimated unbilled</span>
-          <span style="font-weight:700;color:var(--red);font-size:18px;">$2,800</span>
-        </div>
-      </div>
-
-      <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:16px;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Revenue Leakage Stopped</div>
-        <div style="font-size:14px;color:var(--text-dim);line-height:1.6;">Every job. Every hour. Every dollar.<br><strong style="color:var(--green)">Tracked.</strong></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 6: CASH FLOW ═══════════════ -->
-<div class="scene" id="scene6">
-  <div>
-    <div class="scene-title">90-Day Cash Flow Forecast</div>
-    <div class="scene-subtitle">Based on active projects, payment terms, and historical patterns.</div>
-  </div>
-  <div class="cashflow-grid">
-    <div class="chart-container">
-      <div class="card-title"><span class="icon">📈</span> Revenue vs. Costs vs. Profit — Next 90 Days</div>
-      <div class="chart-bars">
-        <div class="chart-bar-group">
-          <div class="chart-bar-pair">
-            <div class="chart-bar revenue" style="height:200px;"></div>
-            <div class="chart-bar cost" style="height:130px;"></div>
-            <div class="chart-bar profit" style="height:70px;"></div>
-          </div>
-          <div class="chart-label">March</div>
-        </div>
-        <div class="chart-bar-group">
-          <div class="chart-bar-pair">
-            <div class="chart-bar revenue" style="height:180px;"></div>
-            <div class="chart-bar cost" style="height:115px;"></div>
-            <div class="chart-bar profit" style="height:65px;"></div>
-          </div>
-          <div class="chart-label">April</div>
-        </div>
-        <div class="chart-bar-group">
-          <div class="chart-bar-pair">
-            <div class="chart-bar revenue" style="height:230px;"></div>
-            <div class="chart-bar cost" style="height:140px;"></div>
-            <div class="chart-bar profit" style="height:90px;"></div>
-          </div>
-          <div class="chart-label">May</div>
-        </div>
-      </div>
-      <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Revenue</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--slate-light)"></div> Costs</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Profit</div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div class="card" style="text-align:center;">
-        <div class="pipeline-label">Active Pipeline</div>
-        <div class="pipeline-number">$3.2M</div>
-        <div style="font-size:13px;color:var(--text-dim);">Active + upcoming projects</div>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">📅</span> Monthly Breakdown</div>
-        <div class="metric-row">
-          <span class="metric-label">March Revenue</span>
-          <span class="metric-value green">$148K</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">March Costs</span>
-          <span class="metric-value">$96K</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">March Profit</span>
-          <span class="metric-value green">$52K</span>
-        </div>
-        <div class="metric-row" style="border-top:2px solid var(--border);padding-top:12px;">
-          <span class="metric-label">April Projected</span>
-          <span class="metric-value green">$134K</span>
-        </div>
-        <div class="metric-row">
-          <span class="metric-label">May Projected</span>
-          <span class="metric-value green">$172K</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">⏰</span> Receivables Aging</div>
-        <div class="aging-item">
-          <span>Morrison Kitchen</span>
-          <span style="font-weight:600;">$8,400</span>
-          <span class="aging-days ok">Current</span>
-        </div>
-        <div class="aging-item">
-          <span>Wilson Reno</span>
-          <span style="font-weight:600;">$3,200</span>
-          <span class="aging-days warn">32 days</span>
-        </div>
-        <div class="aging-item">
-          <span>MacPherson Build</span>
-          <span style="font-weight:600;">$6,100</span>
-          <span class="aging-days overdue">58 days</span>
-        </div>
-        <div class="aging-item">
-          <span>Harbour Dental</span>
-          <span style="font-weight:600;">$12,400</span>
-          <span class="aging-days ok">Not yet due</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 7: TYLER'S SALES ═══════════════ -->
-<div class="scene" id="scene7">
-  <div>
-    <div class="scene-title">Tyler's Sales Command Center</div>
-    <div class="scene-subtitle">$50K in countertops last week. Now — sell smarter.</div>
-  </div>
-  <div class="sales-grid">
-    <!-- Active Clients -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🤝</span> Active Clients & Cross-Sell</div>
-      <div class="client-card">
-        <div class="client-name">Henderson Family</div>
-        <div class="client-detail">Countertop install complete — $6,800. Master bath + hallway need flooring.</div>
-        <div class="cross-sell-badge">🏠 FLOORING OPPORTUNITY — Est. $4,200</div>
-      </div>
-      <div class="client-card">
-        <div class="client-name">Morrison Kitchen</div>
-        <div class="client-detail">$8,400 quartz countertop in progress. Open-concept kitchen → dining room hardwood.</div>
-        <div class="cross-sell-badge">🏠 FLOORING OPPORTUNITY — Est. $6,800</div>
-      </div>
-      <div class="client-card">
-        <div class="client-name">Cole Harbour Dental</div>
-        <div class="client-detail">$12,400 commercial countertop. Full office renovation — 2,400 sq ft flooring needed.</div>
-        <div class="cross-sell-badge">🏢 COMMERCIAL FLOORING — Est. $18,000</div>
-      </div>
-    </div>
-
-    <!-- Reminders & Tracking -->
-    <div class="card">
-      <div class="card-title"><span class="icon">⏰</span> Follow-ups & Samples</div>
-      <div class="sample-alert">⚠️ Sarah K. — marble sample promised Tuesday. NOT SENT. Day 6.</div>
-      <div class="client-card">
-        <div class="client-name">Robbie Roberts</div>
-        <div class="client-detail">BBQ prep station — granite remnants. Waiting on Craig's Florida trip dates for March 24-27 availability.</div>
-      </div>
-      <div class="client-card">
-        <div class="client-name">Maple St — Dave Mitchell</div>
-        <div class="client-detail">New lead via text. 42 sq ft kitchen. Measure visit scheduled Wednesday.</div>
-      </div>
-      <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;font-size:14px;padding:8px 0;">
-          <span style="color:var(--text-dim)">Last Week Sales</span>
-          <span style="font-weight:700;color:var(--green);font-size:18px;">$50,200</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;padding:8px 0;">
-          <span style="color:var(--text-dim)">Cross-sell Pipeline</span>
-          <span style="font-weight:700;color:var(--blue);font-size:18px;">$29,000</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Database Mining -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🔍</span> Client Database Mining</div>
-      <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">7,500 clients · Cole Harbour area · 18+ months inactive</div>
-      <div class="prospect-row">
-        <div>
-          <div style="font-weight:500;">Janet Murray</div>
-          <div class="prospect-area">Cole Harbour · Last order: Aug 2024</div>
-        </div>
-        <div class="match-score">92% match</div>
-      </div>
-      <div class="prospect-row">
-        <div>
-          <div style="font-weight:500;">Thompson & Co.</div>
-          <div class="prospect-area">Cole Harbour · Last order: Jun 2024</div>
-        </div>
-        <div class="match-score">88% match</div>
-      </div>
-      <div class="prospect-row">
-        <div>
-          <div style="font-weight:500;">Parkview Builders</div>
-          <div class="prospect-area">Dartmouth · Last order: Sep 2024</div>
-        </div>
-        <div class="match-score">85% match</div>
-      </div>
-      <div class="prospect-row">
-        <div>
-          <div style="font-weight:500;">Lisa Chen Interiors</div>
-          <div class="prospect-area">Cole Harbour · Last order: Jul 2024</div>
-        </div>
-        <div class="match-score">81% match</div>
-      </div>
-      <div style="margin-top:16px;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;font-size:13px;color:var(--text-dim);text-align:center;">
-        <strong style="color:var(--blue);">12</strong> past clients identified · <strong style="color:var(--green);">4</strong> match flooring profile
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 8: SLAB INVENTORY ═══════════════ -->
-<div class="scene" id="scene8">
-  <div>
-    <div class="scene-title">Slab Inventory & Smart Estimating</div>
-    <div class="scene-subtitle">Every piece tracked. Every remnant catalogued. Every estimate precise.</div>
-  </div>
-  <div class="slab-grid">
-    <div class="card">
-      <div class="card-title"><span class="icon">🪨</span> Current Inventory</div>
-      <div class="slab-item">
-        <div class="slab-swatch" style="background:linear-gradient(135deg,#e8e0d4,#c9bfb2);"></div>
-        <div class="slab-info">
-          <div class="slab-name">Calacatta Gold Quartz</div>
-          <div class="slab-dims">Full slab — 120" × 56" · Premium</div>
-          <div class="slab-status" style="color:var(--blue);">Reserved: Morrison Kitchen</div>
-        </div>
-      </div>
-      <div class="slab-item">
-        <div class="slab-swatch" style="background:linear-gradient(135deg,#1a1a1a,#333);"></div>
-        <div class="slab-info">
-          <div class="slab-name">Black Galaxy Granite</div>
-          <div class="slab-dims">Remnant — 36" × 26" · Usable</div>
-          <div class="slab-status" style="color:var(--green);">Available — matches small vanity jobs</div>
-        </div>
-      </div>
-      <div class="slab-item">
-        <div class="slab-swatch" style="background:linear-gradient(135deg,#8B7355,#6B5B45);"></div>
-        <div class="slab-info">
-          <div class="slab-name">Colonial Gold Granite</div>
-          <div class="slab-dims">Remnant — 22" × 48" · From Henderson job</div>
-          <div class="slab-status" style="color:var(--green);">Available — BBQ stations, side tables</div>
-        </div>
-      </div>
-      <div class="slab-item">
-        <div class="slab-swatch" style="background:linear-gradient(135deg,#ddd,#bbb);"></div>
-        <div class="slab-info">
-          <div class="slab-name">Carrara White Marble</div>
-          <div class="slab-dims">Remnant — 26" × 30" · Sample-grade</div>
-          <div class="slab-status" style="color:var(--amber);">Hold: Sarah K. sample cut pending</div>
-        </div>
-      </div>
-      <div class="slab-item">
-        <div class="slab-swatch" style="background:linear-gradient(135deg,#5a4a3a,#4a3a2a);"></div>
-        <div class="slab-info">
-          <div class="slab-name">Tan Brown Granite</div>
-          <div class="slab-dims">Full slab — 110" × 60" · Standard</div>
-          <div class="slab-status" style="color:var(--blue);">Reserved: Airport Terminal Phase 2</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div class="card">
-        <div class="card-title"><span class="icon">📐</span> AI Estimator</div>
-        <div class="estimate-panel">
-          <div class="ep-title">📄 Drawing Uploaded: Morrison Kitchen</div>
-          <div class="estimate-row"><span class="er-label">Counter Length</span><span class="er-value">14.2 linear ft</span></div>
-          <div class="estimate-row"><span class="er-label">Island</span><span class="er-value">4.5' × 3.0'</span></div>
-          <div class="estimate-row"><span class="er-label">Total Sq Ft</span><span class="er-value">49.3 sq ft</span></div>
-          <div class="estimate-row"><span class="er-label">Material (Calacatta)</span><span class="er-value">$4,930</span></div>
-          <div class="estimate-row"><span class="er-label">Fabrication</span><span class="er-value">$2,466</span></div>
-          <div class="estimate-row"><span class="er-label">Install</span><span class="er-value">$985</span></div>
-          <div class="estimate-row" style="border-top:2px solid var(--border);padding-top:10px;margin-top:4px;">
-            <span class="er-label" style="font-weight:600;color:var(--text)">Total Estimate</span>
-            <span class="er-value" style="color:var(--green);font-size:18px;">$8,381</span>
-          </div>
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);">
-          Waste factor: 8% · Estimated remnant: 18" × 32" (resalable)
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title"><span class="icon">📦</span> Remnant Summary</div>
-        <div class="metric-row"><span class="metric-label">Total Remnants</span><span class="metric-value">7 pieces</span></div>
-        <div class="metric-row"><span class="metric-label">Resalable Value</span><span class="metric-value green">$3,240</span></div>
-        <div class="metric-row"><span class="metric-label">Matched to Upcoming</span><span class="metric-value" style="color:var(--blue)">3 pieces</span></div>
-        <div class="metric-row"><span class="metric-label">22" remnants</span><span class="metric-value">2</span></div>
-        <div class="metric-row"><span class="metric-label">26" remnants</span><span class="metric-value">2</span></div>
-        <div class="metric-row"><span class="metric-label">36" remnants</span><span class="metric-value">1</span></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════ SCENE 9: SERVICELANE VISION ═══════════════ -->
-<div class="scene" id="scene9">
-  <div style="display:flex;flex-direction:column;align-items:center;">
-    <div class="vision-title">ServiceLane.com</div>
-    <div class="vision-subtitle">30,000 contractors. Each one with their own AI command center — built automatically from their business profile.</div>
-
-    <div class="contractor-grid">
-      <div class="contractor-tile">Murray Electric</div>
-      <div class="contractor-tile">Dave's Plumbing</div>
-      <div class="contractor-tile">NS Roofing Co.</div>
-      <div class="contractor-tile">Valley HVAC</div>
-      <div class="contractor-tile">East Coast Tile</div>
-      <div class="contractor-tile">Harbour Painting</div>
-      <div class="contractor-tile">Summit Framing</div>
-      <div class="contractor-tile">Atlantic Drywall</div>
-      <div class="contractor-tile">Coastal Decks</div>
-      <div class="contractor-tile">ProBuild Carpentry</div>
-      <div class="contractor-tile">Maritime Masonry</div>
-      <div class="contractor-tile">+ 29,988 more</div>
-    </div>
-
-    <div class="cta-line">
-      Touchstone & Compass <span class="cta-brand">×</span> SolveWorks
-    </div>
-    <div class="cta-sub">Your AI. Only yours.</div>
-  </div>
+  <button class="ctrl-btn" id="mute-btn" title="Mute/Unmute (M)" style="margin-left:12px;">🔊</button>
 </div>
 
 <script>
-const TOTAL_SCENES = 9;
-const sceneDurations = [18, 22, 24, 26, 24, 20, 22, 20, 20]; // approx seconds per scene
+const TOTAL = 10;
+let current = 1;
+let playing = false;
+let muted = false;
+let audio = null;
+let autoTimer = null;
 
-let currentIdx = 0;
-let isPlaying = false;
-let audioEl = null;
-let autoAdvanceTimer = null;
-
-function updateScene(idx) {
-  document.querySelectorAll('.scene').forEach((s, i) => {
-    s.classList.toggle('active', i === idx);
-  });
-  document.querySelectorAll('.dot').forEach((d, i) => {
-    d.classList.toggle('active', i === idx);
-  });
-  document.getElementById('currentScene').textContent = idx + 1;
-  updateProgress(0);
+const scenes = [];
+for (let i = 1; i <= TOTAL; i++) {
+  scenes.push(document.getElementById('scene-' + i));
 }
 
-function updateProgress(pct) {
-  document.getElementById('progressFill').style.width = pct + '%';
+// Build dots
+const dotsWrap = document.getElementById('scene-dots');
+for (let i = 1; i <= TOTAL; i++) {
+  const dot = document.createElement('button');
+  dot.className = 'scene-dot' + (i === 1 ? ' active' : '');
+  dot.dataset.scene = i;
+  dot.addEventListener('click', () => goTo(i));
+  dotsWrap.appendChild(dot);
 }
 
-function playSceneAudio(idx) {
-  if (audioEl) { audioEl.pause(); audioEl = null; }
-  clearTimeout(autoAdvanceTimer);
-
-  const ext = 'opus';
-  audioEl = new Audio('scene' + (idx + 1) + '.' + ext);
-  audioEl.play().catch(() => {});
-
-  audioEl.addEventListener('timeupdate', () => {
-    if (audioEl && audioEl.duration) {
-      updateProgress((audioEl.currentTime / audioEl.duration) * 100);
-    }
+function updateDots() {
+  dotsWrap.querySelectorAll('.scene-dot').forEach((d, idx) => {
+    d.classList.remove('active');
+    if (idx + 1 < current) d.classList.add('completed');
+    if (idx + 1 === current) { d.classList.add('active'); d.classList.remove('completed'); }
   });
+}
 
-  audioEl.addEventListener('ended', () => {
-    if (isPlaying && currentIdx < TOTAL_SCENES - 1) {
-      autoAdvanceTimer = setTimeout(() => {
-        nextScene();
-      }, 1500);
-    } else if (currentIdx === TOTAL_SCENES - 1) {
-      isPlaying = false;
-      updatePlayButton();
+function goTo(n) {
+  if (n < 1 || n > TOTAL || n === current) return;
+  stopAudio();
+  clearTimeout(autoTimer);
+
+  const oldScene = scenes[current - 1];
+  const newScene = scenes[n - 1];
+
+  oldScene.classList.remove('active');
+  oldScene.classList.add(n > current ? 'exit-left' : '');
+  setTimeout(() => oldScene.classList.remove('exit-left'), 600);
+
+  newScene.classList.add('active');
+  current = n;
+
+  document.getElementById('scene-counter').textContent = current + ' / ' + TOTAL;
+  updateDots();
+
+  if (playing) playCurrentAudio();
+}
+
+function playCurrentAudio() {
+  stopAudio();
+  if (muted) return;
+
+  audio = new Audio('scene' + current + '.opus');
+  audio.play().catch(() => {});
+  audio.onended = () => {
+    if (playing && current < TOTAL) {
+      autoTimer = setTimeout(() => goTo(current + 1), 1500);
+    } else if (current === TOTAL) {
+      playing = false;
+      document.getElementById('play-btn').textContent = '▶';
     }
-  });
+  };
+
+  // Update progress
+  audio.ontimeupdate = () => {
+    if (audio && audio.duration) {
+      const sceneProgress = audio.currentTime / audio.duration;
+      const totalProgress = ((current - 1) + sceneProgress) / TOTAL * 100;
+      document.getElementById('progress-bar').style.width = totalProgress + '%';
+    }
+  };
+}
+
+function stopAudio() {
+  if (audio) {
+    audio.pause();
+    audio.src = '';
+    audio = null;
+  }
 }
 
 function togglePlay() {
-  if (isPlaying) {
-    isPlaying = false;
-    if (audioEl) audioEl.pause();
-    clearTimeout(autoAdvanceTimer);
+  playing = !playing;
+  document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
+  if (playing) {
+    playCurrentAudio();
   } else {
-    isPlaying = true;
-    playSceneAudio(currentIdx);
-  }
-  updatePlayButton();
-}
-
-function updatePlayButton() {
-  document.getElementById('playIcon').style.display = isPlaying ? 'none' : 'block';
-  document.getElementById('pauseIcon').style.display = isPlaying ? 'block' : 'none';
-}
-
-function nextScene() {
-  if (currentIdx < TOTAL_SCENES - 1) {
-    currentIdx++;
-    updateScene(currentIdx);
-    if (isPlaying) playSceneAudio(currentIdx);
+    stopAudio();
+    clearTimeout(autoTimer);
   }
 }
 
-function prevScene() {
-  if (currentIdx > 0) {
-    currentIdx--;
-    updateScene(currentIdx);
-    if (isPlaying) playSceneAudio(currentIdx);
-  }
+function toggleMute() {
+  muted = !muted;
+  document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
+  if (muted) stopAudio();
+  else if (playing) playCurrentAudio();
 }
 
-function goToScene(idx) {
-  currentIdx = idx;
-  updateScene(currentIdx);
-  if (isPlaying) playSceneAudio(currentIdx);
-}
+// Controls
+document.getElementById('play-btn').addEventListener('click', togglePlay);
+document.getElementById('prev-btn').addEventListener('click', () => goTo(current - 1));
+document.getElementById('next-btn').addEventListener('click', () => goTo(current + 1));
+document.getElementById('mute-btn').addEventListener('click', toggleMute);
 
-function seekProgress(e) {
-  if (!audioEl || !audioEl.duration) return;
-  const rect = e.target.getBoundingClientRect();
-  const pct = (e.clientX - rect.left) / rect.width;
-  audioEl.currentTime = pct * audioEl.duration;
-}
-
-// Keyboard controls
+// Keyboard
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === ' ') {
-    e.preventDefault();
-    if (e.key === ' ') togglePlay();
-    else nextScene();
-  } else if (e.key === 'ArrowLeft') {
-    prevScene();
-  }
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'ArrowRight') goTo(current + 1);
+  if (e.code === 'ArrowLeft') goTo(current - 1);
+  if (e.code === 'KeyM') toggleMute();
 });
+
+// Set initial progress
+document.getElementById('progress-bar').style.width = '0%';
 </script>
+
 </body>
 </html>
