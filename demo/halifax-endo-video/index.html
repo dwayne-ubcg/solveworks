@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>SolveWorks — Halifax Endodontics AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { touch-action: manipulation; -webkit-touch-callout: none; }
+html, body { width: 1920px; height: 1080px; overflow: visible; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; }
+
+/* ===== SCENES ===== */
+.scene {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+  opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* ===== PLAY BUTTON ===== */
+#playBtn {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+  background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 11000; gap: 32px;
+}
+#playBtn .play-circle {
+  width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+}
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+#playBtn .preview-title { font-size: 18px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ===== GLASS ===== */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 250px; height: 1080px; background: rgba(255,255,255,0.03);
+  border-right: 1px solid rgba(255,255,255,0.08); padding: 28px 0;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-logo { padding: 0 24px 12px; }
+.sidebar-logo-main { font-size: 20px; font-weight: 700; }
+.sidebar-practice { font-size: 11px; color: #64748b; padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-item {
+  padding: 11px 24px; font-size: 14px; color: #64748b;
+  display: flex; align-items: center; gap: 12px;
+  transition: all 0.25s; border-left: 3px solid transparent;
+}
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-item .count { margin-left: auto; background: rgba(14,165,233,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+
+/* ===== CARDS ===== */
+.card {
+  padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px;
+  opacity: 0; transform: translateY(15px);
+  transition: all 0.4s ease;
+}
+.card.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== METRIC CARDS ===== */
+.metric-card { padding: 20px; border-radius: 14px; text-align: center; }
+.metric-number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.metric-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+/* ===== TELEGRAM CHAT ===== */
+.tg-chat { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.tg-msg {
+  max-width: 520px; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5;
+  opacity: 0; transform: translateY(10px); transition: all 0.4s ease;
+}
+.tg-msg.visible { opacity: 1; transform: translateY(0); }
+.tg-msg.agent { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.2); border-radius: 16px 16px 16px 4px; align-self: flex-start; color: #e2e8f0; }
+.tg-msg.user { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2); border-radius: 16px 16px 4px 16px; align-self: flex-end; color: #e2e8f0; }
+.tg-msg .sender { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.tg-msg.agent .sender { color: #0ea5e9; }
+.tg-msg.user .sender { color: #4ade80; }
+.tg-msg .time { font-size: 10px; color: #64748b; margin-top: 4px; text-align: right; }
+
+/* ===== TYPING ===== */
+@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+.typing-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #0ea5e9; margin: 0 2px; animation: blink 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ===== TIMELINE ===== */
+.timeline-item {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  opacity: 0; transform: translateX(-20px); transition: all 0.5s ease;
+}
+.timeline-item.visible { opacity: 1; transform: translateX(0); }
+.timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.timeline-dot.green { background: rgba(34,197,94,0.2); border: 2px solid #4ade80; }
+.timeline-dot.blue { background: rgba(14,165,233,0.2); border: 2px solid #38bdf8; }
+.timeline-dot.red { background: rgba(239,68,68,0.2); border: 2px solid #f87171; }
+.timeline-dot.yellow { background: rgba(234,179,8,0.2); border: 2px solid #facc15; }
+.timeline-dot.purple { background: rgba(168,85,247,0.2); border: 2px solid #c084fc; }
+
+/* ===== STATUS TAGS ===== */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
+.tag-green { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-blue { background: rgba(14,165,233,0.2); color: #38bdf8; }
+.tag-yellow { background: rgba(234,179,8,0.2); color: #facc15; }
+.tag-red { background: rgba(239,68,68,0.2); color: #f87171; }
+.tag-purple { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar { height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.1); }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 1.5s ease; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+.animations-paused, .animations-paused * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+
+/* ===== INSURANCE TABLE ===== */
+.ins-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ins-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.ins-table td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.ins-table tr { opacity: 0; transition: all 0.4s ease; }
+.ins-table tr.visible { opacity: 1; }
+
+/* ===== REFERRAL BAR CHART ===== */
+.ref-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; opacity: 0; transform: translateX(-15px); transition: all 0.5s ease; }
+.ref-bar-row.visible { opacity: 1; transform: translateX(0); }
+.ref-bar-label { width: 140px; font-size: 13px; color: #cbd5e1; text-align: right; }
+.ref-bar { height: 28px; border-radius: 6px; display: flex; align-items: center; padding-left: 10px; font-size: 12px; font-weight: 600; color: #fff; transition: width 1.5s ease; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="preview-title">SolveWorks — Halifax Endodontics</div>
+  <div class="play-circle"><div class="play-triangle"></div></div>
+</div>
+
+<!-- ==================== SCENE 0: HOOK (0s) ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-hook" style="font-size: 38px; font-weight: 300; line-height: 1.7; opacity: 0; max-width: 960px; margin: 0 auto;">
+      Dr. Belliveau, here's what your<br>
+      <span style="color: #0ea5e9; font-weight: 600;">AI agent does for Halifax Endodontics</span><br>
+      <span style="color: #94a3b8; font-size: 30px;">every single day.</span>
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: MORNING DASHBOARD ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Halifax Endodontics</div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Referrals <span class="count">48</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Patients <span class="count">2,340</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedule
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Messages
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+        Insurance
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Morning Dashboard</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Wednesday, March 12 · 6:02 AM</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s1-m1" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">8</div>
+            <div class="metric-label">Procedures Today</div>
+          </div>
+          <div class="glass metric-card" id="s1-m2" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px; -webkit-text-fill-color: #f87171;">2</div>
+            <div class="metric-label">Emergency Referrals</div>
+          </div>
+          <div class="glass metric-card" id="s1-m3" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">48</div>
+            <div class="metric-label">Referrals This Month</div>
+          </div>
+        </div>
+      </div>
+      <div class="glass" style="padding: 0; border-radius: 16px; max-width: 900px; overflow: hidden;">
+        <div style="background: rgba(14,165,233,0.1); padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 16px;">🤖</div>
+          <div>
+            <div style="font-size: 14px; font-weight: 600; color: #38bdf8;">Your AI Agent</div>
+            <div style="font-size: 11px; color: #64748b;">via Telegram · 6:02 AM</div>
+          </div>
+        </div>
+        <div class="tg-chat" id="s1-chat" style="min-height: 500px;">
+          <div class="tg-msg agent" id="s1-msg1">
+            <div class="sender">Your AI Agent</div>
+            <div>☀️ <strong>Good morning, Dr. Belliveau.</strong> Here's your day:</div>
+            <div class="time">6:02 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg2">
+            <div>📋 <strong>8 procedures</strong> on today's schedule<br>
+            🚨 2 emergency referrals overnight — flagged as <span style="color: #f87171;">urgent</span><br>
+            &nbsp;&nbsp;&nbsp;• Acute pulpitis #19 (referred by Dr. Patterson)<br>
+            &nbsp;&nbsp;&nbsp;• Cracked tooth #30 (referred by Dr. Kim)<br>
+            📊 <strong>48 referrals</strong> this month — up 12% vs. last month<br>
+            ✅ All 8 appointments confirmed, insurance pre-verified</div>
+            <div class="time">6:02 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg3">
+            <div>⚡ <strong>Overnight actions:</strong><br>
+            ✅ Emergency referrals triaged — both slotted into today's open blocks<br>
+            ✅ Patient intake forms sent to both emergency patients<br>
+            ✅ Pre-authorizations submitted for tomorrow's retreatment cases<br>
+            ✅ Post-op follow-up texts sent to yesterday's patients</div>
+            <div class="time">6:03 AM</div>
+          </div>
+          <div class="tg-msg user" id="s1-msg4">
+            <div class="sender">Dr. Belliveau</div>
+            <div>Who referred those emergencies?</div>
+            <div class="time">6:15 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg5">
+            <div class="sender">Your AI Agent</div>
+            <div>Dr. Patterson (Quinpool Dental) — his 3rd referral this month. And Dr. Sarah Kim (Spring Garden Family Dentistry) — first referral from her. I've confirmed receipt with both offices and they have patient status updates. 👍</div>
+            <div class="time">6:15 AM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: REFERRAL MANAGEMENT ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Halifax Endodontics</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Referrals <span class="count">48</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Referral Management</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">New referral received — auto-processed in under 3 minutes</p>
+      </div>
+      <div style="display: flex; gap: 32px;">
+        <div style="flex: 1;">
+          <div class="timeline-item" id="s2-t1">
+            <div class="timeline-dot blue">📨</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #38bdf8; font-weight: 600;">2:14 PM — New Referral Received</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(14,165,233,0.2);">
+                <div style="font-size: 14px; font-weight: 600;">Referral from Dr. James Patterson</div>
+                <div style="font-size: 12px; color: #94a3b8;">Quinpool Dental · 902-422-4567</div>
+                <div style="font-size: 13px; color: #cbd5e1; margin-top: 8px;">
+                  <strong>Patient:</strong> Margaret Sullivan, 52<br>
+                  <strong>Reason:</strong> Persistent pain #14, suspected irreversible pulpitis<br>
+                  <strong>Urgency:</strong> <span style="color: #f87171; font-weight: 600;">High — patient in significant pain</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s2-t2">
+            <div class="timeline-dot green">✅</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #4ade80; font-weight: 600;">2:15 PM — Receipt Confirmed</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(34,197,94,0.2);">
+                <div style="font-size: 13px; color: #cbd5e1;">Auto-sent to Dr. Patterson's office:<br><span style="color: #4ade80; font-style: italic;">"Referral received for Margaret Sullivan. We'll have her seen within 24 hours given the urgency. We'll keep you updated."</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s2-t3">
+            <div class="timeline-dot yellow">📋</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #facc15; font-weight: 600;">2:16 PM — Patient Intake Sent</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(234,179,8,0.2);">
+                <div style="font-size: 13px; color: #cbd5e1;">
+                  SMS sent to Margaret Sullivan:<br>
+                  <span style="font-style: italic; color: #94a3b8;">"Hi Margaret, Halifax Endodontics received your referral from Dr. Patterson. Please complete this quick intake form so we can get you in as soon as possible."</span><br>
+                  <span style="color: #38bdf8; margin-top: 4px; display: inline-block;">→ Intake form link sent</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s2-t4">
+            <div class="timeline-dot green">📅</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #4ade80; font-weight: 600;">2:17 PM — Appointment Booked</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(34,197,94,0.2);">
+                <div style="font-size: 14px; font-weight: 600; color: #4ade80;">Margaret Sullivan — Tomorrow 9:00 AM</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Emergency block used · Dr. Belliveau · Est. 60 min<br>Insurance pre-verification initiated (Blue Cross NS)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 24px; border-radius: 14px; border: 1px solid rgba(14,165,233,0.2); margin-bottom: 16px;" id="s2-speed">
+            <div style="font-size: 16px; font-weight: 700; color: #0ea5e9; margin-bottom: 16px;">⚡ Processing Speed</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 800; color: #38bdf8;">2:14</div>
+                <div style="font-size: 11px; color: #94a3b8;">Referral In</div>
+              </div>
+              <div style="font-size: 24px; color: #64748b;">→</div>
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 800; color: #4ade80;">2:17</div>
+                <div style="font-size: 11px; color: #94a3b8;">Booked</div>
+              </div>
+            </div>
+            <div style="text-align: center; padding: 14px; background: rgba(34,197,94,0.1); border-radius: 10px; border: 1px solid rgba(34,197,94,0.2);">
+              <div style="font-size: 24px; font-weight: 800; color: #4ade80;">3 minutes</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Referral to booked appointment</div>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px; text-align: center;" id="s2-quote">
+            <div style="font-size: 15px; color: #cbd5e1; line-height: 1.6; font-style: italic;">
+              "No phone tag. No fax machines.<br>
+              <span style="color: #0ea5e9; font-weight: 600;">The referring doctor is updated automatically."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: PATIENT COMMUNICATION ==================== -->
+<div class="scene" id="scene3">
+  <div style="width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; padding: 40px;">
+    <div style="width: 700px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">Patient Communication</div>
+        <div style="font-size: 14px; color: #94a3b8;">Reassuring anxious patients — before they even walk in</div>
+      </div>
+      <div class="glass" style="border-radius: 20px; overflow: hidden; min-height: 700px;">
+        <div style="background: rgba(14,165,233,0.1); padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 18px;">🤖</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 600; color: #38bdf8;">Halifax Endodontics</div>
+            <div style="font-size: 11px; color: #4ade80;">● Online</div>
+          </div>
+        </div>
+        <div class="tg-chat" id="s3-chat" style="min-height: 600px;">
+          <div class="tg-msg user" id="s3-msg1">
+            <div class="sender">Margaret S.</div>
+            <div>Hi, I have a root canal tomorrow morning and I'm really nervous. I've never had one before. Is it going to be painful? 😰</div>
+            <div class="time">7:42 PM</div>
+          </div>
+          <div class="tg-msg agent" id="s3-msg2">
+            <div class="sender">Halifax Endodontics</div>
+            <div>Hi Margaret! Totally normal to be nervous — most of our patients feel the same way before their first visit. Here's the good news: Dr. Belliveau is an endodontic specialist, and the area will be completely numb before anything starts. Most patients say it's easier than they expected. 😊<br><br>The procedure usually takes about 45-60 minutes, and you'll be comfortable the whole time.</div>
+            <div class="time">7:42 PM</div>
+          </div>
+          <div class="tg-msg user" id="s3-msg3">
+            <div class="sender">Margaret S.</div>
+            <div>Ok that helps. Where do I park?</div>
+            <div class="time">7:44 PM</div>
+          </div>
+          <div class="tg-msg agent" id="s3-msg4">
+            <div class="sender">Halifax Endodontics</div>
+            <div>We're at the Gladstone Professional Centre in Halifax. There's free parking in the lot right out front — just come up to the 3rd floor. Try to arrive 10 minutes early so we can get your paperwork sorted. And take your regular medications as normal — including breakfast! 👍<br><br>You're in great hands tomorrow. See you at 9 AM!</div>
+            <div class="time">7:44 PM</div>
+          </div>
+          <div class="tg-msg user" id="s3-msg5">
+            <div class="sender">Margaret S.</div>
+            <div>Thank you so much! Feeling much better about it now 🙏</div>
+            <div class="time">7:46 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: INSURANCE PRE-AUTHORIZATION ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Halifax Endodontics</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Referrals</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Insurance Pre-Authorization</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Electronic pre-determinations — submitted and tracked automatically</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s4-m1" style="opacity:0; min-width: 110px;">
+            <div class="metric-number" style="font-size: 26px;">6/8</div>
+            <div class="metric-label">Pre-Authorized Today</div>
+          </div>
+          <div class="glass metric-card" id="s4-m2" style="opacity:0; min-width: 110px;">
+            <div class="metric-number" style="font-size: 26px; -webkit-text-fill-color: #4ade80;">94%</div>
+            <div class="metric-label">Approval Rate</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <div style="flex: 1;">
+          <div class="glass" style="border-radius: 14px; overflow: hidden;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <h2 style="font-size: 16px; font-weight: 600;">Pre-Determination Status</h2>
+            </div>
+            <table class="ins-table">
+              <thead><tr style="opacity:1;"><th>Patient</th><th>Procedure</th><th>Insurer</th><th>Coverage</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr id="s4-row1"><td style="font-weight:500;">David Chen</td><td>Retreatment #14</td><td>Manulife</td><td>80% endo</td><td><span class="tag tag-green">✓ Approved</span></td></tr>
+                <tr id="s4-row2"><td style="font-weight:500;">Karen Walsh</td><td>Root Canal #19</td><td>Blue Cross</td><td>80% endo</td><td><span class="tag tag-green">✓ Approved</span></td></tr>
+                <tr id="s4-row3"><td style="font-weight:500;">Robert Park</td><td>Apicoectomy #8</td><td>Sun Life</td><td>50% surgical</td><td><span class="tag tag-yellow">⏳ Pending</span></td></tr>
+                <tr id="s4-row4"><td style="font-weight:500;">Lisa Martin</td><td>Root Canal #30</td><td>Great-West</td><td>80% endo</td><td><span class="tag tag-green">✓ Approved</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="width: 420px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; border: 1px solid rgba(34,197,94,0.2); margin-bottom: 16px;" id="s4-detail">
+            <div style="font-size: 13px; font-weight: 600; color: #4ade80; margin-bottom: 12px;">✅ Pre-Authorization Approved</div>
+            <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">David Chen — Retreatment #14</div>
+            <div style="font-size: 13px; color: #94a3b8; line-height: 1.8;">
+              <strong style="color: #cbd5e1;">Insurer:</strong> Manulife Group Benefits<br>
+              <strong style="color: #cbd5e1;">Procedure:</strong> D3346 — Retreatment, molar<br>
+              <strong style="color: #cbd5e1;">Approved Amount:</strong> $1,180<br>
+              <strong style="color: #cbd5e1;">Patient Copay:</strong> <span style="color: #fbbf24; font-weight: 700;">$295</span><br>
+              <strong style="color: #cbd5e1;">Annual Remaining:</strong> $3,420
+            </div>
+          </div>
+          <div class="glass" style="padding: 16px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.15);" id="s4-notify">
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">📱 Front Desk Notification — Sent</div>
+            <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6; font-style: italic;">
+              "David Chen's retreatment #14 is approved. Manulife covers $1,180. Patient out-of-pocket is $295. He's scheduled for Thursday 10 AM with Dr. Usher."
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: REFERRING DOCTOR UPDATES ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Halifax Endodontics</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Referrals</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Referring Doctor Updates</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automatic treatment summaries sent back to referring GPs</p>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <div style="flex: 1;">
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Today's Post-Procedure Updates</div>
+          <div class="card" id="s5-card1">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #4ade80;">JD</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Jane Donovan</div>
+                  <div style="font-size: 12px; color: #64748b;">Retreatment #14 · Dr. Belliveau</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="tag tag-green">Summary Sent ✓</span>
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">→ Dr. Patterson, Quinpool Dental</div>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="s5-card2">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(14,165,233,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #38bdf8;">MR</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Michael Reeves</div>
+                  <div style="font-size: 12px; color: #64748b;">Root Canal #19 · Dr. Usher</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="tag tag-green">Summary Sent ✓</span>
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">→ Dr. Kim, Spring Garden Family</div>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="s5-card3">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(168,85,247,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #c084fc;">AW</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Amanda Wheeler</div>
+                  <div style="font-size: 12px; color: #64748b;">Cracked Tooth Assessment · Dr. Belliveau</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="tag tag-blue">Sending...</span>
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">→ Dr. Leblanc, Halifax Dental Care</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="width: 440px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; border: 1px solid rgba(34,197,94,0.2);" id="s5-email">
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">📧 Treatment Summary — Sent to Dr. Patterson</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><strong style="color: #cbd5e1;">Re:</strong> Jane Donovan — Treatment Complete</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">To:</strong> Dr. James Patterson, Quinpool Dental</div>
+            <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+              Dr. Patterson,<br><br>
+              Patient Jane Donovan was seen today for retreatment of tooth #14.<br><br>
+              <strong>Findings:</strong> Missed MB2 canal, periapical radiolucency<br>
+              <strong>Treatment:</strong> Retreatment completed successfully — 4 canals located and obturated<br>
+              <strong>Prognosis:</strong> Good<br>
+              <strong>Recommendation:</strong> Crown within 30 days<br><br>
+              Radiographs attached. Please don't hesitate to reach out with questions.<br><br>
+              <span style="color: #64748b;">— Halifax Endodontics<br>Dr. Michelle Belliveau, DDS, MS, Cert. Endo.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: ANALYTICS ==================== -->
+<div class="scene" id="scene6">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Halifax Endodontics</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Referrals</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Referral Analytics</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Which GPs are sending cases — and who's stopped</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s6-m1" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">23</div>
+            <div class="metric-label">Active Referring DDS</div>
+          </div>
+          <div class="glass metric-card" id="s6-m2" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">1.8d</div>
+            <div class="metric-label">Avg. Referral → Tx</div>
+          </div>
+          <div class="glass metric-card" id="s6-m3" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px; -webkit-text-fill-color: #f87171;">4</div>
+            <div class="metric-label">Stopped Referring</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <div style="flex: 1;">
+          <div class="glass" style="padding: 24px; border-radius: 14px; margin-bottom: 16px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 16px;">Top Referring Dentists — Last 90 Days</div>
+            <div class="ref-bar-row" id="s6-bar1">
+              <div class="ref-bar-label">Dr. Patterson</div>
+              <div class="ref-bar" style="width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);" id="s6-barfill1">18 referrals</div>
+              <span class="tag tag-green" style="font-size: 10px;">↑ 28%</span>
+            </div>
+            <div class="ref-bar-row" id="s6-bar2">
+              <div class="ref-bar-label">Dr. Kim</div>
+              <div class="ref-bar" style="width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);" id="s6-barfill2">14 referrals</div>
+              <span class="tag tag-green" style="font-size: 10px;">↑ 12%</span>
+            </div>
+            <div class="ref-bar-row" id="s6-bar3">
+              <div class="ref-bar-label">Dr. Leblanc</div>
+              <div class="ref-bar" style="width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);" id="s6-barfill3">11 referrals</div>
+              <span class="tag tag-blue" style="font-size: 10px;">→ steady</span>
+            </div>
+            <div class="ref-bar-row" id="s6-bar4">
+              <div class="ref-bar-label">Dr. Murphy</div>
+              <div class="ref-bar" style="width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);" id="s6-barfill4">9 referrals</div>
+              <span class="tag tag-green" style="font-size: 10px;">↑ 50%</span>
+            </div>
+            <div class="ref-bar-row" id="s6-bar5">
+              <div class="ref-bar-label">Dr. Chandra</div>
+              <div class="ref-bar" style="width: 0%; background: linear-gradient(90deg, #0ea5e9, #38bdf8);" id="s6-barfill5">7 referrals</div>
+              <span class="tag tag-yellow" style="font-size: 10px;">↓ 15%</span>
+            </div>
+            <div class="ref-bar-row" id="s6-bar6">
+              <div class="ref-bar-label">Dr. MacNeil</div>
+              <div class="ref-bar" style="width: 0%; background: linear-gradient(90deg, rgba(239,68,68,0.6), #f87171);" id="s6-barfill6">0 referrals</div>
+              <span class="tag tag-red" style="font-size: 10px;">⚠️ Stopped</span>
+            </div>
+          </div>
+        </div>
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; border: 1px solid rgba(239,68,68,0.2); margin-bottom: 16px;" id="s6-alert">
+            <div style="font-size: 13px; font-weight: 600; color: #f87171; margin-bottom: 10px;">⚠️ Referral Drop Alert</div>
+            <div style="font-size: 13px; color: #cbd5e1; line-height: 1.7;">
+              <strong>Dr. MacNeil</strong> (Dartmouth Family Dental) hasn't referred in 60 days. Previously averaged 3/month.<br><br>
+              <span style="color: #94a3b8;">Last referral: Jan 8 · Patient Tom Wheeler · Root canal #3</span>
+            </div>
+            <div style="margin-top: 12px; padding: 10px; background: rgba(14,165,233,0.1); border-radius: 8px; border: 1px solid rgba(14,165,233,0.15);">
+              <div style="font-size: 12px; color: #38bdf8; font-weight: 600;">💡 Suggested Action</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Schedule a lunch-and-learn or send a thank-you note with case update on Tom Wheeler.</div>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px;" id="s6-stats">
+            <div style="font-size: 13px; font-weight: 600; color: #0ea5e9; margin-bottom: 12px;">📊 Referral Metrics</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Avg. referral → treatment</span>
+              <span style="color: #4ade80; font-weight: 600;">1.8 days</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Referral-to-appointment rate</span>
+              <span style="color: #4ade80; font-weight: 600;">96%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">GP satisfaction (survey)</span>
+              <span style="color: #fbbf24; font-weight: 600;">4.9 / 5.0</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+              <span class="text-slate-400">New referring DDS (Q1)</span>
+              <span style="color: #38bdf8; font-weight: 700;">+5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 7: CLOSING ==================== -->
+<div class="scene" id="scene7">
+  <div style="width: 1920px; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 120px;">
+    <div id="s7-tagline" style="opacity: 0; margin-bottom: 48px;">
+      <div style="font-size: 42px; font-weight: 300; color: #cbd5e1; text-align: center; line-height: 1.6;">
+        Your AI agent handles the admin.<br>
+        <span style="color: #0ea5e9; font-weight: 700;">You focus on the endodontics.</span>
+      </div>
+    </div>
+    <div id="s7-cta" style="opacity: 0; text-align: center;">
+      <div style="font-size: 72px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 22px; color: #94a3b8; font-weight: 300; margin-bottom: 20px;">Your AI. Only yours.</div>
+      <div style="font-size: 20px; color: #0ea5e9; font-weight: 500; margin-bottom: 24px;">solveworks.io</div>
+      <div style="font-size: 18px; color: #cbd5e1; font-weight: 300;">Ready to see what it does for Halifax Endodontics?</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// AUDIO
+// ================================================================
+var audioFiles = [
+  'scene0.mp3', 'scene1.mp3', 'scene2.mp3', 'scene3.mp3',
+  'scene4.mp3', 'scene5.mp3', 'scene6.mp3', 'scene7.mp3'
+];
+var audios = audioFiles.map(function(f) {
+  var a = new Audio(f);
+  a.preload = 'auto';
+  return a;
+});
+
+// ================================================================
+// SCENE MANAGEMENT
+// ================================================================
+var currentScene = -1;
+
+function showScene(i) {
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
+  var s = document.getElementById('scene' + i);
+  if (s) { s.classList.add('active'); currentScene = i; }
+}
+
+function fadeIn(el, delay) {
+  if (!el) return;
+  setTimeout(function() {
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  }, delay || 0);
+}
+
+// ================================================================
+// CUE SYSTEM
+// ================================================================
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+// ================================================================
+// SEGMENTED AUDIO PLAYBACK
+// ================================================================
+var sceneTimings = [
+  { scene: 0, audioIndex: 0 },
+  { scene: 1, audioIndex: 1 },
+  { scene: 2, audioIndex: 2 },
+  { scene: 3, audioIndex: 3 },
+  { scene: 4, audioIndex: 4 },
+  { scene: 5, audioIndex: 5 },
+  { scene: 6, audioIndex: 6 },
+  { scene: 7, audioIndex: 7 },
+];
+
+var currentSegment = 0;
+
+function playSegment(index) {
+  if (index >= sceneTimings.length) return;
+  currentSegment = index;
+  var seg = sceneTimings[index];
+  
+  showScene(seg.scene);
+  animateScene(seg.scene);
+  
+  if (seg.audioIndex >= 0 && audios[seg.audioIndex]) {
+    var audio = audios[seg.audioIndex];
+    
+    audio.onended = function() {
+      setTimeout(function() { playSegment(index + 1); }, 800);
+    };
+    
+    audio.play().catch(function() {
+      setTimeout(function() { playSegment(index + 1); }, 12000);
+    });
+    
+    runSceneAnimations(seg.scene, audio);
+  }
+}
+
+// ================================================================
+// SCENE 0: HOOK
+// ================================================================
+function tickScene0(t) {
+  if (t >= 0.3) cue('s0-hook', function() {
+    var h = document.getElementById('s0-hook');
+    h.style.transition = 'opacity 1s ease';
+    h.style.opacity = '1';
+  });
+  if (t >= 4.5) cue('s0-hide', function() {
+    document.getElementById('s0-hook').style.opacity = '0';
+  });
+  if (t >= 5.5) cue('s0-logo', function() {
+    var l = document.getElementById('s0-logo');
+    l.style.transition = 'opacity 1s ease';
+    l.style.opacity = '1';
+  });
+}
+
+// ================================================================
+// SCENE ANIMATIONS
+// ================================================================
+function animateScene(sceneNum) {
+  switch(sceneNum) {
+    case 0: break;
+    case 1: animateScene1Init(); break;
+    case 2: break;
+    case 3: break;
+    case 4: animateScene4Init(); break;
+    case 5: break;
+    case 6: animateScene6Init(); break;
+    case 7: break;
+  }
+}
+
+function runSceneAnimations(sceneNum, audio) {
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    if (audio.ended) return;
+    var t = audio.currentTime;
+    
+    switch(sceneNum) {
+      case 0: tickScene0(t); break;
+      case 1: tickScene1(t); break;
+      case 2: tickScene2(t); break;
+      case 3: tickScene3(t); break;
+      case 4: tickScene4(t); break;
+      case 5: tickScene5(t); break;
+      case 6: tickScene6(t); break;
+      case 7: tickScene7(t); break;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// --- Scene 1: Morning Dashboard ---
+function animateScene1Init() {
+  fadeIn(document.getElementById('s1-m1'), 300);
+  fadeIn(document.getElementById('s1-m2'), 600);
+  fadeIn(document.getElementById('s1-m3'), 900);
+}
+
+function tickScene1(t) {
+  if (t >= 0.5) cue('s1-msg1', function() { document.getElementById('s1-msg1').classList.add('visible'); });
+  if (t >= 2.5) cue('s1-msg2', function() { document.getElementById('s1-msg2').classList.add('visible'); });
+  if (t >= 6) cue('s1-msg3', function() { document.getElementById('s1-msg3').classList.add('visible'); });
+  if (t >= 10) cue('s1-msg4', function() { document.getElementById('s1-msg4').classList.add('visible'); });
+  if (t >= 12) cue('s1-msg5', function() { document.getElementById('s1-msg5').classList.add('visible'); });
+}
+
+// --- Scene 2: Referral Management ---
+function tickScene2(t) {
+  if (t >= 0.5) cue('s2-t1', function() { document.getElementById('s2-t1').classList.add('visible'); });
+  if (t >= 3) cue('s2-t2', function() { document.getElementById('s2-t2').classList.add('visible'); });
+  if (t >= 5.5) cue('s2-t3', function() { document.getElementById('s2-t3').classList.add('visible'); });
+  if (t >= 8) cue('s2-t4', function() { 
+    document.getElementById('s2-t4').classList.add('visible');
+    var speed = document.getElementById('s2-speed');
+    if (speed) speed.style.animation = 'pulseGlow 2.5s infinite';
+  });
+}
+
+// --- Scene 3: Patient Communication ---
+function tickScene3(t) {
+  if (t >= 0.5) cue('s3-msg1', function() { document.getElementById('s3-msg1').classList.add('visible'); });
+  if (t >= 3) cue('s3-msg2', function() { document.getElementById('s3-msg2').classList.add('visible'); });
+  if (t >= 7) cue('s3-msg3', function() { document.getElementById('s3-msg3').classList.add('visible'); });
+  if (t >= 8.5) cue('s3-msg4', function() { document.getElementById('s3-msg4').classList.add('visible'); });
+  if (t >= 12) cue('s3-msg5', function() { document.getElementById('s3-msg5').classList.add('visible'); });
+}
+
+// --- Scene 4: Insurance ---
+function animateScene4Init() {
+  fadeIn(document.getElementById('s4-m1'), 300);
+  fadeIn(document.getElementById('s4-m2'), 600);
+}
+
+function tickScene4(t) {
+  if (t >= 0.5) cue('s4-row1', function() { document.getElementById('s4-row1').classList.add('visible'); });
+  if (t >= 1.5) cue('s4-row2', function() { document.getElementById('s4-row2').classList.add('visible'); });
+  if (t >= 2.5) cue('s4-row3', function() { document.getElementById('s4-row3').classList.add('visible'); });
+  if (t >= 3.5) cue('s4-row4', function() { document.getElementById('s4-row4').classList.add('visible'); });
+  if (t >= 5) cue('s4-detail', function() {
+    var el = document.getElementById('s4-detail');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(34,197,94,0.3)';
+  });
+  if (t >= 7) cue('s4-notify', function() {
+    var el = document.getElementById('s4-notify');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 15px rgba(14,165,233,0.2)';
+  });
+}
+
+// --- Scene 5: Referring Doctor Updates ---
+function tickScene5(t) {
+  if (t >= 0.5) cue('s5-card1', function() { document.getElementById('s5-card1').classList.add('visible'); });
+  if (t >= 2) cue('s5-card2', function() { document.getElementById('s5-card2').classList.add('visible'); });
+  if (t >= 3.5) cue('s5-card3', function() { document.getElementById('s5-card3').classList.add('visible'); });
+  if (t >= 5) cue('s5-email', function() {
+    var el = document.getElementById('s5-email');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(34,197,94,0.2)';
+  });
+}
+
+// --- Scene 6: Analytics ---
+function animateScene6Init() {
+  fadeIn(document.getElementById('s6-m1'), 300);
+  fadeIn(document.getElementById('s6-m2'), 600);
+  fadeIn(document.getElementById('s6-m3'), 900);
+}
+
+function tickScene6(t) {
+  if (t >= 0.5) cue('s6-bar1', function() { 
+    document.getElementById('s6-bar1').classList.add('visible');
+    setTimeout(function() { document.getElementById('s6-barfill1').style.width = '90%'; }, 100);
+  });
+  if (t >= 1.5) cue('s6-bar2', function() { 
+    document.getElementById('s6-bar2').classList.add('visible');
+    setTimeout(function() { document.getElementById('s6-barfill2').style.width = '70%'; }, 100);
+  });
+  if (t >= 2.5) cue('s6-bar3', function() { 
+    document.getElementById('s6-bar3').classList.add('visible');
+    setTimeout(function() { document.getElementById('s6-barfill3').style.width = '55%'; }, 100);
+  });
+  if (t >= 3.5) cue('s6-bar4', function() { 
+    document.getElementById('s6-bar4').classList.add('visible');
+    setTimeout(function() { document.getElementById('s6-barfill4').style.width = '45%'; }, 100);
+  });
+  if (t >= 4.5) cue('s6-bar5', function() { 
+    document.getElementById('s6-bar5').classList.add('visible');
+    setTimeout(function() { document.getElementById('s6-barfill5').style.width = '35%'; }, 100);
+  });
+  if (t >= 5.5) cue('s6-bar6', function() { 
+    document.getElementById('s6-bar6').classList.add('visible');
+    setTimeout(function() { document.getElementById('s6-barfill6').style.width = '3%'; }, 100);
+  });
+  if (t >= 7) cue('s6-alert', function() {
+    var el = document.getElementById('s6-alert');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(239,68,68,0.2)';
+  });
+}
+
+// --- Scene 7: Closing ---
+function tickScene7(t) {
+  if (t >= 0.5) cue('s7-tagline', function() {
+    var el = document.getElementById('s7-tagline');
+    el.style.transition = 'opacity 1s ease';
+    el.style.opacity = '1';
+  });
+  if (t >= 4) cue('s7-cta', function() {
+    var el = document.getElementById('s7-cta');
+    el.style.transition = 'opacity 1s ease';
+    el.style.opacity = '1';
+  });
+}
+
+// ================================================================
+// START
+// ================================================================
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  playSegment(0);
+}
+</script>
+
+<!-- Progress bar + tap to pause -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&pb.classList.contains("hidden")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.style.opacity=paused?"1":"0";
+    try{
+      audios.forEach(function(a){ if(paused) a.pause(); else if(a.currentTime>0&&!a.ended) a.play().catch(function(){}); });
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused) document.body.classList.add("animations-paused");
+    else document.body.classList.remove("animations-paused");
+  }
+  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
+  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
+})();
+</script>
+
+</body>
+</html>
