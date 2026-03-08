@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>SolveWorks — Dr. Mark Sutherland Dentistry AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { touch-action: manipulation; -webkit-touch-callout: none; }
+html, body { width: 1920px; height: 1080px; overflow: visible; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; }
+
+/* ===== SCENES ===== */
+.scene {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+  opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* ===== PLAY BUTTON ===== */
+#playBtn {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+  background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 11000; gap: 32px;
+}
+#playBtn .play-circle {
+  width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+}
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+#playBtn .preview-title { font-size: 18px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ===== GLASS ===== */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 250px; height: 1080px; background: rgba(255,255,255,0.03);
+  border-right: 1px solid rgba(255,255,255,0.08); padding: 28px 0;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-logo { padding: 0 24px 12px; }
+.sidebar-logo-main { font-size: 20px; font-weight: 700; }
+.sidebar-practice { font-size: 11px; color: #64748b; padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-item {
+  padding: 11px 24px; font-size: 14px; color: #64748b;
+  display: flex; align-items: center; gap: 12px;
+  transition: all 0.25s; border-left: 3px solid transparent;
+}
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-item .count { margin-left: auto; background: rgba(14,165,233,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+
+/* ===== CARDS ===== */
+.card {
+  padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px;
+  opacity: 0; transform: translateY(15px);
+  transition: all 0.4s ease;
+}
+.card.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== METRIC CARDS ===== */
+.metric-card { padding: 20px; border-radius: 14px; text-align: center; }
+.metric-number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.metric-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+/* ===== TELEGRAM CHAT ===== */
+.tg-chat { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.tg-msg {
+  max-width: 520px; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5;
+  opacity: 0; transform: translateY(10px); transition: all 0.4s ease;
+}
+.tg-msg.visible { opacity: 1; transform: translateY(0); }
+.tg-msg.agent { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.2); border-radius: 16px 16px 16px 4px; align-self: flex-start; color: #e2e8f0; }
+.tg-msg.user { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2); border-radius: 16px 16px 4px 16px; align-self: flex-end; color: #e2e8f0; }
+.tg-msg .sender { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.tg-msg.agent .sender { color: #0ea5e9; }
+.tg-msg.user .sender { color: #4ade80; }
+.tg-msg .time { font-size: 10px; color: #64748b; margin-top: 4px; text-align: right; }
+
+/* ===== TYPING ===== */
+@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+.typing-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #0ea5e9; margin: 0 2px; animation: blink 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ===== TIMELINE ===== */
+.timeline-item {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  opacity: 0; transform: translateX(-20px); transition: all 0.5s ease;
+}
+.timeline-item.visible { opacity: 1; transform: translateX(0); }
+.timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.timeline-dot.green { background: rgba(34,197,94,0.2); border: 2px solid #4ade80; }
+.timeline-dot.blue { background: rgba(14,165,233,0.2); border: 2px solid #38bdf8; }
+.timeline-dot.red { background: rgba(239,68,68,0.2); border: 2px solid #f87171; }
+.timeline-dot.yellow { background: rgba(234,179,8,0.2); border: 2px solid #facc15; }
+
+/* ===== STARS ===== */
+.stars { color: #fbbf24; font-size: 14px; letter-spacing: 1px; }
+.stars-dim { color: #334155; }
+
+/* ===== STATUS TAGS ===== */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
+.tag-green { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-blue { background: rgba(14,165,233,0.2); color: #38bdf8; }
+.tag-yellow { background: rgba(234,179,8,0.2); color: #facc15; }
+.tag-red { background: rgba(239,68,68,0.2); color: #f87171; }
+.tag-purple { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar { height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.1); }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 1.5s ease; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+.animations-paused, .animations-paused * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+
+/* ===== REVIEW STARS ROW ===== */
+.review-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+  opacity: 0; transform: translateY(10px); transition: all 0.4s ease;
+}
+.review-row.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== INSURANCE TABLE ===== */
+.ins-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ins-table th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.ins-table td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.ins-table tr { opacity: 0; transition: all 0.4s ease; }
+.ins-table tr.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="preview-title">SolveWorks — Dr. Mark Sutherland Dentistry</div>
+  <div class="play-circle"><div class="play-triangle"></div></div>
+</div>
+
+<!-- ==================== SCENE 0: HOOK (0-9s) ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-hook" style="font-size: 38px; font-weight: 300; line-height: 1.7; opacity: 0; max-width: 960px; margin: 0 auto;">
+      3 patients left your office yesterday<br>
+      <span style="color: #94a3b8; font-size: 30px;">without scheduling their treatment plans.</span><br>
+      <span style="color: #0ea5e9; font-weight: 600;">That's $8,200 walking out the door.</span>
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: MORNING BRIEFING (9-26s) ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Dr. Mark Sutherland Dentistry</div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Patients <span class="count">1,847</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Treatment Plans <span class="count">12</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Schedule
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Messages
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Reviews <span class="count">127</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+        Insurance
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+    </div>
+    <!-- Main content: Morning Briefing as Telegram message -->
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Morning Briefing</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Wednesday, March 12 · 6:02 AM</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s1-m1" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">14</div>
+            <div class="metric-label">Patients Today</div>
+          </div>
+          <div class="glass metric-card" id="s1-m2" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">$8.2K</div>
+            <div class="metric-label">Unscheduled TX</div>
+          </div>
+          <div class="glass metric-card" id="s1-m3" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">127</div>
+            <div class="metric-label">Google Reviews</div>
+          </div>
+        </div>
+      </div>
+      <!-- Telegram-style briefing -->
+      <div class="glass" style="padding: 0; border-radius: 16px; max-width: 900px; overflow: hidden;">
+        <div style="background: rgba(14,165,233,0.1); padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 16px;">🤖</div>
+          <div>
+            <div style="font-size: 14px; font-weight: 600; color: #38bdf8;">Your AI Agent</div>
+            <div style="font-size: 11px; color: #64748b;">via Telegram · 6:02 AM</div>
+          </div>
+        </div>
+        <div class="tg-chat" id="s1-chat" style="min-height: 500px;">
+          <div class="tg-msg agent" id="s1-msg1">
+            <div class="sender">Your AI Agent</div>
+            <div>☀️ <strong>Good morning, Mark.</strong> Here's your day:</div>
+            <div class="time">6:02 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg2">
+            <div>📋 <strong>14 patients</strong> on today's schedule<br>
+            🪑 2 cancellations already <span style="color: #4ade80;">filled from waitlist</span><br>
+            📊 3 unscheduled treatment plans worth <span style="color: #fbbf24;">$8,200</span><br>
+            🆕 Overnight inquiry from new patient (Sarah Mitchell — referred by Dr. Patel)<br>
+            ⭐ Google reviews up to <span style="color: #4ade80;">127</span> (added 2 this week)</div>
+            <div class="time">6:02 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg3">
+            <div>⚡ <strong>Action items I've handled:</strong><br>
+            ✅ Confirmed all 14 appointments (12 confirmed, 2 pending reply)<br>
+            ✅ Insurance verified for tomorrow's patients<br>
+            ✅ Follow-up #2 sent to Mrs. Chen (crown + veneer, $3,200)</div>
+            <div class="time">6:02 AM</div>
+          </div>
+          <div class="tg-msg user" id="s1-msg4">
+            <div class="sender">Mark</div>
+            <div>Perfect. What about the new patient inquiry?</div>
+            <div class="time">6:15 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg5">
+            <div class="sender">Your AI Agent</div>
+            <div>Sarah Mitchell, 34, needs a cleaning + possible crown on #14. I've sent her a welcome text with your next available — Thursday 2 PM. Waiting for confirmation. 👍</div>
+            <div class="time">6:15 AM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: TREATMENT PLAN FOLLOW-UP (26-42s) ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Dr. Mark Sutherland Dentistry</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Treatment Plans <span class="count">12</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reviews</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Treatment Plan Follow-Up</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated recovery of unscheduled treatment plans</p>
+        </div>
+        <div class="glass" style="padding: 14px 24px; text-align: center;" id="s2-revenue" >
+          <div style="font-size: 28px; font-weight: 800; color: #4ade80;" id="s2-rev-num">$0</div>
+          <div class="text-slate-400" style="font-size: 12px;">Revenue Recovered This Month</div>
+        </div>
+      </div>
+      <!-- Treatment plan cards -->
+      <div style="display: flex; gap: 24px;">
+        <div style="flex: 1;">
+          <div class="card" id="s2-card1">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #4ade80;">LC</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Mrs. Linda Chen</div>
+                  <div style="font-size: 12px; color: #64748b;">Crown + Veneer · #8, #9</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 700; color: #fbbf24;">$3,200</div>
+                <span class="tag tag-green">Booking</span>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
+              Follow-up sequence: <span style="color: #4ade80;">●</span> Sent → <span style="color: #4ade80;">●</span> Opened → <span style="color: #4ade80;">●</span> Replied
+            </div>
+            <div class="glass" style="padding: 12px 16px; border-radius: 10px; margin-top: 8px; border: 1px solid rgba(34,197,94,0.15);" id="s2-reply">
+              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">💬 Patient Reply — 2 hours ago</div>
+              <div style="font-size: 13px; color: #e2e8f0; font-style: italic;">"Hi! Yes, I'd like to go ahead with it. Can I book for next week?"</div>
+            </div>
+          </div>
+          <div class="card" id="s2-card2">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(14,165,233,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #38bdf8;">RP</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Robert Park</div>
+                  <div style="font-size: 12px; color: #64748b;">Root Canal + Crown · #30</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 700; color: #fbbf24;">$2,800</div>
+                <span class="tag tag-blue">Follow-up #1 Sent</span>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+              Follow-up sequence: <span style="color: #4ade80;">●</span> Sent → <span style="color: #fbbf24;">●</span> Opened → <span style="color: #64748b;">○</span> Awaiting
+            </div>
+          </div>
+          <div class="card" id="s2-card3">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(168,85,247,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #c084fc;">DW</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Diana Williams</div>
+                  <div style="font-size: 12px; color: #64748b;">Implant · #19</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 18px; font-weight: 700; color: #fbbf24;">$4,500</div>
+                <span class="tag tag-yellow">Considering</span>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+              Follow-up sequence: <span style="color: #4ade80;">●</span> Sent → <span style="color: #4ade80;">●</span> Opened → <span style="color: #fbbf24;">●</span> "Thinking about it"
+            </div>
+          </div>
+        </div>
+        <!-- Right side: Follow-up message preview -->
+        <div style="width: 420px;">
+          <div class="glass" style="padding: 20px; border-radius: 12px;" id="s2-email">
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">📱 AI-Generated Follow-Up — Sent yesterday</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><strong style="color: #cbd5e1;">To:</strong> Mrs. Chen</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Via:</strong> SMS</div>
+            <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+              Hi Linda — Dr. Sutherland wanted me to check in about the crown and veneer we discussed for teeth 8 and 9. I know it's a decision you want to feel good about.<br><br>
+              If you have any questions about the procedure or want to explore payment options, I'm happy to help. We have a few openings next week that would work well.<br><br>
+              <span style="color: #64748b;">— Dr. Sutherland's Office</span>
+            </div>
+          </div>
+          <div class="glass" style="padding: 16px; border-radius: 12px; margin-top: 12px; border: 1px solid rgba(34,197,94,0.2);" id="s2-stats">
+            <div style="font-size: 13px; font-weight: 600; color: #4ade80; margin-bottom: 10px;">📊 This Month's Recovery</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span class="text-slate-400">Plans followed up</span>
+              <span style="color: #cbd5e1; font-weight: 600;">12</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span class="text-slate-400">Patients booked</span>
+              <span style="color: #4ade80; font-weight: 600;">5</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
+              <span class="text-slate-400">Revenue recovered</span>
+              <span style="color: #4ade80; font-weight: 700; font-size: 15px;">$11,400</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: CANCELLATION RECOVERY (42-58s) ==================== -->
+<div class="scene" id="scene3">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Dr. Mark Sutherland Dentistry</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Treatment Plans</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule <span class="count">14</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reviews</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Cancellation Recovery</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Last night at 8:00 PM — while your office was closed</p>
+      </div>
+      <div style="display: flex; gap: 32px;">
+        <!-- Timeline -->
+        <div style="flex: 1;">
+          <div class="timeline-item" id="s3-t1">
+            <div class="timeline-dot red">❌</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #f87171; font-weight: 600;">8:00 PM — Cancellation Detected</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(239,68,68,0.2);">
+                <div style="font-size: 14px; font-weight: 600;">James Morrison</div>
+                <div style="font-size: 12px; color: #94a3b8;">Crown Prep · Tomorrow 10:00 AM · $1,800 production</div>
+                <div style="font-size: 12px; color: #f87171; margin-top: 6px;">Cancelled via text: "Something came up, need to reschedule"</div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s3-t2">
+            <div class="timeline-dot blue">🤖</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #38bdf8; font-weight: 600;">8:01 PM — Agent Activates Waitlist</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(14,165,233,0.2);">
+                <div style="font-size: 13px; color: #cbd5e1;">Scanning waitlist... <span style="color: #38bdf8;">3 patients</span> available for morning slots</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                  Texting: Karen Walsh, David Liu, Stephanie Park
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s3-t3">
+            <div class="timeline-dot yellow">💬</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #facc15; font-weight: 600;">8:08 PM — Waitlist Responses</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(234,179,8,0.2);">
+                <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 4px;">Karen Walsh: <span style="color: #94a3b8;">"Can't tomorrow, sorry!"</span></div>
+                <div style="font-size: 13px; color: #cbd5e1; margin-bottom: 4px;">David Liu: <span style="color: #4ade80;">"Yes! I can be there at 10."</span></div>
+                <div style="font-size: 13px; color: #94a3b8;">Stephanie Park: No response yet</div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s3-t4">
+            <div class="timeline-dot green">✅</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #4ade80; font-weight: 600;">8:15 PM — Slot Filled</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(34,197,94,0.2);">
+                <div style="font-size: 14px; font-weight: 600; color: #4ade80;">David Liu confirmed for 10:00 AM</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Cleaning + exam · Insurance verified ✓</div>
+                <div style="font-size: 12px; color: #94a3b8;">James Morrison rescheduled to next Thursday 2 PM ✓</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Right side: Impact -->
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 24px; border-radius: 14px; border: 1px solid rgba(14,165,233,0.2); margin-bottom: 16px;" id="s3-impact">
+            <div style="font-size: 16px; font-weight: 700; color: #0ea5e9; margin-bottom: 16px;">⚡ Recovery Timeline</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 800; color: #f87171;">8:00</div>
+                <div style="font-size: 11px; color: #94a3b8;">Cancel Received</div>
+              </div>
+              <div style="font-size: 24px; color: #64748b;">→</div>
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 800; color: #4ade80;">8:15</div>
+                <div style="font-size: 11px; color: #94a3b8;">Slot Filled</div>
+              </div>
+            </div>
+            <div style="text-align: center; padding: 14px; background: rgba(34,197,94,0.1); border-radius: 10px; border: 1px solid rgba(34,197,94,0.2);">
+              <div style="font-size: 24px; font-weight: 800; color: #4ade80;">15 minutes</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Total recovery time</div>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px; text-align: center;" id="s3-quote">
+            <div style="font-size: 40px; margin-bottom: 8px;">🌙</div>
+            <div style="font-size: 15px; color: #cbd5e1; line-height: 1.6; font-style: italic;">
+              "Your front desk won't know until morning.<br>
+              <span style="color: #0ea5e9; font-weight: 600;">Your agent handled it last night."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: PATIENT REACTIVATION (58-72s) ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Dr. Mark Sutherland Dentistry</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients <span class="count">1,847</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Treatment Plans</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reviews</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Patient Reactivation</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Personalized outreach to dormant patients — not generic "we miss you" blasts</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s4-m1" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">347</div>
+            <div class="metric-label">Inactive 6+ Months</div>
+          </div>
+          <div class="glass metric-card" id="s4-m2" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px; color: #4ade80;">28</div>
+            <div class="metric-label">Reactivated (Q1)</div>
+          </div>
+          <div class="glass metric-card" id="s4-m3" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">$14.2K</div>
+            <div class="metric-label">Revenue Recovered</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <!-- Patient list -->
+        <div style="flex: 1;">
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Active Campaign — Batch 3 of 12</div>
+          <div class="card" id="s4-card1">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #4ade80;">MR</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 600;">Michael Reeves</div>
+                  <div style="font-size: 12px; color: #64748b;">Last visit: 8 months ago · Cleaning overdue</div>
+                </div>
+              </div>
+              <span class="tag tag-green">Booked ✓</span>
+            </div>
+          </div>
+          <div class="card" id="s4-card2">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(14,165,233,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #38bdf8;">SA</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 600;">Susan Archer</div>
+                  <div style="font-size: 12px; color: #64748b;">Last visit: 11 months ago · Had incomplete treatment</div>
+                </div>
+              </div>
+              <span class="tag tag-blue">Replied</span>
+            </div>
+          </div>
+          <div class="card" id="s4-card3">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(234,179,8,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #facc15;">TN</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 600;">Tom Nakamura</div>
+                  <div style="font-size: 12px; color: #64748b;">Last visit: 14 months ago · Family of 4</div>
+                </div>
+              </div>
+              <span class="tag tag-yellow">Message Sent</span>
+            </div>
+          </div>
+          <div class="card" id="s4-card4">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(168,85,247,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #c084fc;">JH</div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 600;">Jennifer Hayes</div>
+                  <div style="font-size: 12px; color: #64748b;">Last visit: 9 months ago · Whitening patient</div>
+                </div>
+              </div>
+              <span class="tag tag-green">Booked ✓</span>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Message thread -->
+        <div style="width: 420px;">
+          <div class="glass" style="padding: 0; border-radius: 14px; overflow: hidden;" id="s4-thread">
+            <div style="background: rgba(14,165,233,0.1); padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(14,165,233,0.2); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #38bdf8;">SA</div>
+              <div>
+                <div style="font-size: 13px; font-weight: 600;">Susan Archer — Reactivation</div>
+                <div style="font-size: 11px; color: #64748b;">2 messages · Started 3 days ago</div>
+              </div>
+            </div>
+            <div class="tg-chat" style="min-height: 380px;">
+              <div class="tg-msg agent" id="s4-msg1">
+                <div class="sender">Your AI Agent</div>
+                <div>Hi Susan — it's been a while since we've seen you at Dr. Sutherland's! I noticed you had some treatment we didn't get to finish last time you were in.<br><br>We'd love to get you back on track. I have a few openings next week if you'd like to come in for a quick check-up first. No pressure — just want to make sure everything's looking good. 😊</div>
+                <div class="time">Mon 9:14 AM</div>
+              </div>
+              <div class="tg-msg user" id="s4-msg2">
+                <div class="sender">Susan</div>
+                <div>Oh hi! Yeah I know I've been meaning to come back. Things just got busy. What openings do you have?</div>
+                <div class="time">Mon 2:30 PM</div>
+              </div>
+              <div class="tg-msg agent" id="s4-msg3">
+                <div class="sender">Your AI Agent</div>
+                <div>Totally understand! I have Thursday at 10 AM or Friday at 1 PM — which works better for you?</div>
+                <div class="time">Mon 2:31 PM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: REVIEW GENERATION (72-84s) ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Dr. Mark Sutherland Dentistry</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Treatment Plans</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reviews <span class="count">127</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Review Generation</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated, perfectly-timed review requests after appointments</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s5-m1" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">14</div>
+            <div class="metric-label">New This Month</div>
+          </div>
+          <div class="glass metric-card" id="s5-m2" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">4.8</div>
+            <div class="metric-label">Avg Rating</div>
+          </div>
+          <div class="glass metric-card" id="s5-m3" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 26px;">127</div>
+            <div class="metric-label">Total Reviews</div>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <!-- Reviews list -->
+        <div style="flex: 1;">
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Recent Google Reviews</div>
+          <div class="review-row" id="s5-r1">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(251,191,36,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fbbf24; flex-shrink: 0;">KW</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600;">Karen Walsh</span>
+                <span class="stars">★★★★★</span>
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">"Best dental experience I've had. Dr. Sutherland is amazing!"</div>
+            </div>
+          </div>
+          <div class="review-row" id="s5-r2">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(251,191,36,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fbbf24; flex-shrink: 0;">DL</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600;">David Liu</span>
+                <span class="stars">★★★★★</span>
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">"Very professional. Got me in last-minute. Highly recommend."</div>
+            </div>
+          </div>
+          <div class="review-row" id="s5-r3">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(251,191,36,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fbbf24; flex-shrink: 0;">AP</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600;">Amanda Peters</span>
+                <span class="stars">★★★★<span class="stars-dim">★</span></span>
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">"Great cleaning. Friendly staff. Only reason for 4 stars is the wait time."</div>
+            </div>
+          </div>
+          <div class="review-row" id="s5-r4">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(251,191,36,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #fbbf24; flex-shrink: 0;">BT</div>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 600;">Brian Thompson</span>
+                <span class="stars">★★★★★</span>
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">"My whole family goes here. Wouldn't trust anyone else."</div>
+            </div>
+          </div>
+          <!-- Google Profile Card -->
+          <div class="glass" style="padding: 20px; border-radius: 12px; margin-top: 16px; border: 1px solid rgba(14,165,233,0.15);" id="s5-google">
+            <div style="font-size: 13px; font-weight: 600; color: #0ea5e9; margin-bottom: 12px;">📈 Google Business Profile</div>
+            <div style="display: flex; gap: 24px; align-items: center;">
+              <div style="text-align: center;">
+                <div style="font-size: 40px; font-weight: 800; color: #fbbf24;">4.8</div>
+                <div class="stars" style="font-size: 16px;">★★★★★</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">127 reviews</div>
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 11px; color: #94a3b8; width: 14px;">5★</span>
+                  <div class="progress-bar" style="flex: 1;"><div class="progress-fill" style="width: 78%; background: #fbbf24;" id="s5-bar5"></div></div>
+                  <span style="font-size: 11px; color: #94a3b8; width: 24px;">78%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 11px; color: #94a3b8; width: 14px;">4★</span>
+                  <div class="progress-bar" style="flex: 1;"><div class="progress-fill" style="width: 16%; background: #facc15;" id="s5-bar4"></div></div>
+                  <span style="font-size: 11px; color: #94a3b8; width: 24px;">16%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-size: 11px; color: #94a3b8; width: 14px;">3★</span>
+                  <div class="progress-bar" style="flex: 1;"><div class="progress-fill" style="width: 4%; background: #fb923c;" id="s5-bar3"></div></div>
+                  <span style="font-size: 11px; color: #94a3b8; width: 24px;">4%</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; color: #94a3b8; width: 14px;">2★</span>
+                  <div class="progress-bar" style="flex: 1;"><div class="progress-fill" style="width: 2%; background: #f87171;" id="s5-bar2"></div></div>
+                  <span style="font-size: 11px; color: #94a3b8; width: 24px;">2%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Review request flow -->
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px;" id="s5-flow">
+            <div style="font-size: 13px; font-weight: 600; color: #0ea5e9; margin-bottom: 16px;">📱 Review Request Flow</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 16px;">Sent 2 hours after appointment checkout</div>
+            <div class="glass" style="padding: 14px; border-radius: 10px; margin-bottom: 12px; border: 1px solid rgba(14,165,233,0.15);">
+              <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">💬 SMS to Patient</div>
+              <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                Hi Karen! Thank you for coming in today. Dr. Sutherland really appreciates you as a patient. If you have a moment, a quick Google review would mean a lot to our small practice. 🙏<br>
+                <span style="color: #38bdf8; text-decoration: underline;">→ Leave a review</span>
+              </div>
+            </div>
+            <div style="padding: 12px; background: rgba(34,197,94,0.1); border-radius: 8px; border: 1px solid rgba(34,197,94,0.15);">
+              <div style="font-size: 12px; color: #4ade80; font-weight: 600; margin-bottom: 4px;">✓ This Month's Results</div>
+              <div style="font-size: 12px; color: #94a3b8;">
+                Requests sent: <span style="color: #cbd5e1; font-weight: 600;">38</span><br>
+                Reviews received: <span style="color: #4ade80; font-weight: 600;">14</span> (37% conversion)<br>
+                Average rating: <span style="color: #fbbf24; font-weight: 600;">4.8 ★</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: INSURANCE VERIFICATION (84-96s) ==================== -->
+<div class="scene" id="scene6">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">Dr. Mark Sutherland Dentistry</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Patients</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Treatment Plans</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Schedule</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Reviews</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg> Insurance</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Insurance Verification</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Auto-verified 48 hours before each appointment</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s6-m1" style="opacity:0; min-width: 110px;">
+            <div class="metric-number" style="font-size: 26px;">12/14</div>
+            <div class="metric-label">Verified Today</div>
+          </div>
+          <div class="glass metric-card" id="s6-m2" style="opacity:0; min-width: 110px;">
+            <div class="metric-number" style="font-size: 26px; -webkit-text-fill-color: #f87171;">1</div>
+            <div class="metric-label">⚠️ Issue Flagged</div>
+          </div>
+        </div>
+      </div>
+      <div class="glass" style="border-radius: 14px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+          <h2 style="font-size: 16px; font-weight: 600;">Thursday's Patients — Pre-Verified</h2>
+        </div>
+        <table class="ins-table">
+          <thead><tr style="opacity:1;"><th>Patient</th><th>Appointment</th><th>Insurance</th><th>Coverage</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr id="s6-row1"><td style="font-weight:500;">Sarah Mitchell</td><td>9:00 AM · Cleaning</td><td>Blue Cross</td><td>100% preventive</td><td><span class="tag tag-green">✓ Verified</span></td></tr>
+            <tr id="s6-row2"><td style="font-weight:500;">Kevin O'Brien</td><td>9:30 AM · Crown</td><td>Manulife</td><td>80% major</td><td><span class="tag tag-green">✓ Verified</span></td></tr>
+            <tr id="s6-row3"><td style="font-weight:500;">Patricia Dunn</td><td>10:30 AM · Filling</td><td>Sun Life</td><td>80% basic</td><td><span class="tag tag-green">✓ Verified</span></td></tr>
+            <tr id="s6-row4" style="background: rgba(239,68,68,0.06);"><td style="font-weight:600; color: #f87171;">⚠️ Alan Davis</td><td>11:00 AM · Root Canal</td><td>Great-West Life</td><td style="color: #f87171;">Coverage lapsed</td><td><span class="tag tag-red">⚠️ Issue</span></td></tr>
+            <tr id="s6-row5"><td style="font-weight:500;">Maria Santos</td><td>1:00 PM · Cleaning</td><td>Desjardins</td><td>100% preventive</td><td><span class="tag tag-green">✓ Verified</span></td></tr>
+            <tr id="s6-row6"><td style="font-weight:500;">James Wilson</td><td>2:00 PM · Exam</td><td>Blue Cross</td><td>100% diagnostic</td><td><span class="tag tag-green">✓ Verified</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Alert panel -->
+      <div class="glass" style="padding: 18px; border-radius: 12px; margin-top: 16px; border: 1px solid rgba(239,68,68,0.3);" id="s6-alert">
+        <div style="display: flex; align-items: flex-start; gap: 14px;">
+          <div style="font-size: 24px;">⚠️</div>
+          <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 600; color: #f87171; margin-bottom: 4px;">Insurance Alert — Alan Davis</div>
+            <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+              Great-West Life coverage lapsed as of Feb 28. Patient may not be aware. Agent has sent Alan a heads-up text asking him to verify with his employer before his appointment Thursday.
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px; font-style: italic;">
+              No more staff on hold with insurance companies. Your agent checks everything 48 hours ahead.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 7: TELEGRAM CHAT (96-112s) ==================== -->
+<div class="scene" id="scene7">
+  <div style="width: 1920px; height: 1080px; display: flex; align-items: center; justify-content: center; padding: 40px;">
+    <div style="width: 700px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 24px; font-weight: 700; margin-bottom: 4px;">Your Agent on Telegram</div>
+        <div style="font-size: 14px; color: #94a3b8;">Like texting a team member who knows everything</div>
+      </div>
+      <div class="glass" style="border-radius: 20px; overflow: hidden; min-height: 700px;">
+        <div style="background: rgba(14,165,233,0.1); padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px;">
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 18px;">🤖</div>
+          <div>
+            <div style="font-size: 15px; font-weight: 600; color: #38bdf8;">Your AI Agent</div>
+            <div style="font-size: 11px; color: #4ade80;">● Online</div>
+          </div>
+        </div>
+        <div class="tg-chat" id="s7-chat" style="min-height: 600px;">
+          <div class="tg-msg user" id="s7-msg1">
+            <div class="sender">Mark</div>
+            <div>How many cancellations this week?</div>
+            <div class="time">2:14 PM</div>
+          </div>
+          <div class="tg-msg agent" id="s7-msg2">
+            <div class="sender">Your AI Agent</div>
+            <div>3 cancellations this week. All 3 slots were filled from the waitlist within 20 minutes. Zero lost production. 👊</div>
+            <div class="time">2:14 PM</div>
+          </div>
+          <div class="tg-msg user" id="s7-msg3">
+            <div class="sender">Mark</div>
+            <div>What's my production looking like?</div>
+            <div class="time">2:15 PM</div>
+          </div>
+          <div class="tg-msg agent" id="s7-msg4">
+            <div class="sender">Your AI Agent</div>
+            <div>📊 This week so far:<br>
+            Monday: $11,200<br>
+            Tuesday: $9,800<br>
+            Wednesday: $12,400<br>
+            <strong>Week total: $33,400</strong><br><br>
+            You're tracking 8% above last week. Tomorrow looks strong — 2 crowns and an implant consult.</div>
+            <div class="time">2:15 PM</div>
+          </div>
+          <div class="tg-msg user" id="s7-msg5">
+            <div class="sender">Mark</div>
+            <div>Send recall to overdue patients</div>
+            <div class="time">2:16 PM</div>
+          </div>
+          <div class="tg-msg agent" id="s7-msg6">
+            <div class="sender">Your AI Agent</div>
+            <div>Done. Sent personalized recall messages to 23 patients overdue for their 6-month cleaning. I'll let you know when replies come in. ✅</div>
+            <div class="time">2:16 PM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 8: EVENING WRAP-UP + CTA (112-135s) ==================== -->
+<div class="scene" id="scene8">
+  <div style="width: 1920px; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 120px;">
+    <!-- Evening summary -->
+    <div id="s8-summary" style="opacity: 0; width: 100%; max-width: 1100px; margin-bottom: 32px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 26px; font-weight: 700;">End of Day Summary</div>
+        <div style="font-size: 14px; color: #94a3b8;">Wednesday, March 12 · 5:30 PM</div>
+      </div>
+      <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+        <div class="glass metric-card" style="flex: 1;">
+          <div class="metric-number">$12,400</div>
+          <div class="metric-label">Today's Production</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1;">
+          <div style="font-size: 36px; font-weight: 800; color: #4ade80;">2 / 2</div>
+          <div class="metric-label">No-Shows Rescheduled</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1;">
+          <div class="metric-number">3</div>
+          <div class="metric-label">New Reviews Today</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1;">
+          <div style="font-size: 36px; font-weight: 800; color: #38bdf8;">14</div>
+          <div class="metric-label">Patients Seen</div>
+        </div>
+      </div>
+      <div class="glass" style="padding: 20px; border-radius: 14px; text-align: center;">
+        <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">📋 Tomorrow's Prep</div>
+        <div style="font-size: 14px; color: #cbd5e1; line-height: 1.7;">
+          16 patients scheduled · All insurance verified · 2 crown preps · 1 implant consult<br>
+          <span style="color: #4ade80;">Mrs. Chen confirmed for crown + veneer at 11 AM ✓</span>
+        </div>
+      </div>
+    </div>
+    <!-- Quote -->
+    <div id="s8-tagline" style="opacity: 0; margin-bottom: 32px;">
+      <div class="glass" style="display: inline-block; padding: 16px 48px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.2);">
+        <span style="font-size: 26px; font-weight: 600; color: #cbd5e1; font-style: italic;">"Walk out knowing exactly where things stand."</span>
+      </div>
+    </div>
+    <!-- CTA -->
+    <div id="s8-cta" style="opacity: 0; text-align: center;">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; font-weight: 300; margin-bottom: 16px;">Your AI. Only yours.</div>
+      <div style="font-size: 18px; color: #0ea5e9; font-weight: 500; margin-bottom: 20px;">solveworks.io</div>
+      <div style="font-size: 16px; color: #cbd5e1; font-weight: 300;">Ready to see what it does for your practice?</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// AUDIO
+// ================================================================
+var audioFiles = [
+  'hook.mp3', 'scene1.mp3', 'scene2.mp3', 'scene3.mp3', 'scene4.mp3',
+  'scene5.mp3', 'scene6.mp3', 'scene7.mp3', 'scene8.mp3'
+];
+var audios = audioFiles.map(function(f) {
+  var a = new Audio(f);
+  a.preload = 'auto';
+  return a;
+});
+
+// Fallback: single voiceover
+var voiceover = new Audio('voiceover.mp3');
+voiceover.preload = 'auto';
+
+var useSegmented = true; // Will be set to false if individual files don't load
+
+// ================================================================
+// SCENE MANAGEMENT
+// ================================================================
+var currentScene = -1;
+
+function showScene(i) {
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
+  var s = document.getElementById('scene' + i);
+  if (s) { s.classList.add('active'); currentScene = i; }
+}
+
+function fadeIn(el, delay) {
+  if (!el) return;
+  setTimeout(function() {
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  }, delay || 0);
+}
+
+// ================================================================
+// CUE SYSTEM (audio-driven)
+// ================================================================
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+// ================================================================
+// SEGMENTED AUDIO PLAYBACK
+// ================================================================
+// Scene timings: [sceneIndex, audioDuration] — we chain them
+var sceneTimings = [
+  { scene: 0, duration: 0, audioIndex: 0 },   // hook audio
+  { scene: 1, duration: 0, audioIndex: 1 },   // morning briefing
+  { scene: 2, duration: 0, audioIndex: 2 },   // treatment plans
+  { scene: 3, duration: 0, audioIndex: 3 },   // cancellation recovery
+  { scene: 4, duration: 0, audioIndex: 4 },   // patient reactivation
+  { scene: 5, duration: 0, audioIndex: 5 },   // review generation
+  { scene: 6, duration: 0, audioIndex: 6 },   // insurance verification
+  { scene: 7, duration: 0, audioIndex: 7 },   // telegram chat
+  { scene: 8, duration: 0, audioIndex: 8 },   // evening + CTA
+];
+
+var currentSegment = 0;
+var segmentStartTime = 0;
+
+function playSegment(index) {
+  if (index >= sceneTimings.length) return;
+  currentSegment = index;
+  var seg = sceneTimings[index];
+  
+  showScene(seg.scene);
+  animateScene(seg.scene);
+  
+  if (seg.audioIndex >= 0 && audios[seg.audioIndex]) {
+    var audio = audios[seg.audioIndex];
+    segmentStartTime = performance.now();
+    
+    audio.onended = function() {
+      setTimeout(function() { playSegment(index + 1); }, 800);
+    };
+    
+    audio.play().catch(function() {
+      setTimeout(function() { playSegment(index + 1); }, 15000);
+    });
+    
+    runSceneAnimations(seg.scene, audio);
+  } else {
+    setTimeout(function() { playSegment(index + 1); }, seg.duration);
+  }
+}
+
+// ================================================================
+// HOOK ANIMATION (Scene 0)
+// ================================================================
+function tickScene0(t) {
+  if (t >= 0.3) cue('s0-hook', function() {
+    var h = document.getElementById('s0-hook');
+    h.style.transition = 'opacity 1s ease';
+    h.style.opacity = '1';
+  });
+  if (t >= 5) cue('s0-hide', function() {
+    document.getElementById('s0-hook').style.opacity = '0';
+  });
+  if (t >= 6) cue('s0-logo', function() {
+    var l = document.getElementById('s0-logo');
+    l.style.transition = 'opacity 1s ease';
+    l.style.opacity = '1';
+  });
+}
+
+// ================================================================
+// SCENE ANIMATIONS
+// ================================================================
+function animateScene(sceneNum) {
+  switch(sceneNum) {
+    case 0: break; // hook — driven by tick
+    case 1: animateScene1Init(); break;
+    case 2: animateScene2Init(); break;
+    case 3: animateScene3Init(); break;
+    case 4: animateScene4Init(); break;
+    case 5: animateScene5Init(); break;
+    case 6: animateScene6Init(); break;
+    case 7: animateScene7Init(); break;
+    case 8: animateScene8Init(); break;
+  }
+}
+
+function runSceneAnimations(sceneNum, audio) {
+  // Called with audio reference for time-synced animations within a scene
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    if (audio.ended) return;
+    var t = audio.currentTime;
+    
+    switch(sceneNum) {
+      case 0: tickScene0(t); break;
+      case 1: tickScene1(t); break;
+      case 2: tickScene2(t); break;
+      case 3: tickScene3(t); break;
+      case 4: tickScene4(t); break;
+      case 5: tickScene5(t); break;
+      case 6: tickScene6(t); break;
+      case 7: tickScene7(t); break;
+      case 8: tickScene8(t); break;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// --- Scene 1: Morning Briefing ---
+function animateScene1Init() {
+  fadeIn(document.getElementById('s1-m1'), 300);
+  fadeIn(document.getElementById('s1-m2'), 600);
+  fadeIn(document.getElementById('s1-m3'), 900);
+}
+
+function tickScene1(t) {
+  if (t >= 0.5) cue('s1-msg1', function() { document.getElementById('s1-msg1').classList.add('visible'); });
+  if (t >= 2.5) cue('s1-msg2', function() { document.getElementById('s1-msg2').classList.add('visible'); });
+  if (t >= 6) cue('s1-msg3', function() { document.getElementById('s1-msg3').classList.add('visible'); });
+  if (t >= 10) cue('s1-msg4', function() { document.getElementById('s1-msg4').classList.add('visible'); });
+  if (t >= 12) cue('s1-msg5', function() { document.getElementById('s1-msg5').classList.add('visible'); });
+}
+
+// --- Scene 2: Treatment Plans ---
+function animateScene2Init() {
+  // Revenue counter animation
+  var el = document.getElementById('s2-rev-num');
+  var start = performance.now();
+  (function update(now) {
+    var p = Math.min((now - start) / 2000, 1);
+    var val = Math.round(11400 * (1 - Math.pow(1 - p, 3)));
+    el.textContent = '$' + val.toLocaleString();
+    if (p < 1) requestAnimationFrame(update);
+  })(performance.now());
+}
+
+function tickScene2(t) {
+  if (t >= 0.5) cue('s2-card1', function() { document.getElementById('s2-card1').classList.add('visible'); });
+  if (t >= 2) cue('s2-card2', function() { document.getElementById('s2-card2').classList.add('visible'); });
+  if (t >= 3.5) cue('s2-card3', function() { document.getElementById('s2-card3').classList.add('visible'); });
+  if (t >= 5) cue('s2-reply', function() { 
+    var el = document.getElementById('s2-reply');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(34,197,94,0.3)';
+  });
+}
+
+// --- Scene 3: Cancellation Recovery ---
+function animateScene3Init() {}
+
+function tickScene3(t) {
+  if (t >= 0.5) cue('s3-t1', function() { document.getElementById('s3-t1').classList.add('visible'); });
+  if (t >= 3) cue('s3-t2', function() { document.getElementById('s3-t2').classList.add('visible'); });
+  if (t >= 6) cue('s3-t3', function() { document.getElementById('s3-t3').classList.add('visible'); });
+  if (t >= 9) cue('s3-t4', function() { 
+    document.getElementById('s3-t4').classList.add('visible');
+    var impact = document.getElementById('s3-impact');
+    impact.style.animation = 'pulseGlow 2.5s infinite';
+  });
+  if (t >= 11) cue('s3-quote', function() {
+    var q = document.getElementById('s3-quote');
+    q.style.transition = 'opacity 0.8s ease';
+    q.style.opacity = '1';
+  });
+}
+
+// --- Scene 4: Patient Reactivation ---
+function animateScene4Init() {
+  fadeIn(document.getElementById('s4-m1'), 300);
+  fadeIn(document.getElementById('s4-m2'), 600);
+  fadeIn(document.getElementById('s4-m3'), 900);
+}
+
+function tickScene4(t) {
+  if (t >= 0.5) cue('s4-card1', function() { document.getElementById('s4-card1').classList.add('visible'); });
+  if (t >= 1.5) cue('s4-card2', function() { document.getElementById('s4-card2').classList.add('visible'); });
+  if (t >= 2.5) cue('s4-card3', function() { document.getElementById('s4-card3').classList.add('visible'); });
+  if (t >= 3.5) cue('s4-card4', function() { document.getElementById('s4-card4').classList.add('visible'); });
+  if (t >= 5) cue('s4-msg1', function() { document.getElementById('s4-msg1').classList.add('visible'); });
+  if (t >= 8) cue('s4-msg2', function() { document.getElementById('s4-msg2').classList.add('visible'); });
+  if (t >= 10) cue('s4-msg3', function() { document.getElementById('s4-msg3').classList.add('visible'); });
+}
+
+// --- Scene 5: Review Generation ---
+function animateScene5Init() {
+  fadeIn(document.getElementById('s5-m1'), 300);
+  fadeIn(document.getElementById('s5-m2'), 600);
+  fadeIn(document.getElementById('s5-m3'), 900);
+}
+
+function tickScene5(t) {
+  if (t >= 0.5) cue('s5-r1', function() { document.getElementById('s5-r1').classList.add('visible'); });
+  if (t >= 1.5) cue('s5-r2', function() { document.getElementById('s5-r2').classList.add('visible'); });
+  if (t >= 2.5) cue('s5-r3', function() { document.getElementById('s5-r3').classList.add('visible'); });
+  if (t >= 3.5) cue('s5-r4', function() { document.getElementById('s5-r4').classList.add('visible'); });
+  if (t >= 5) cue('s5-google', function() {
+    var el = document.getElementById('s5-google');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(14,165,233,0.2)';
+  });
+}
+
+// --- Scene 6: Insurance Verification ---
+function animateScene6Init() {
+  fadeIn(document.getElementById('s6-m1'), 300);
+  fadeIn(document.getElementById('s6-m2'), 600);
+}
+
+function tickScene6(t) {
+  if (t >= 0.5) cue('s6-row1', function() { document.getElementById('s6-row1').classList.add('visible'); });
+  if (t >= 1) cue('s6-row2', function() { document.getElementById('s6-row2').classList.add('visible'); });
+  if (t >= 1.5) cue('s6-row3', function() { document.getElementById('s6-row3').classList.add('visible'); });
+  if (t >= 2.5) cue('s6-row4', function() { 
+    document.getElementById('s6-row4').classList.add('visible');
+    document.getElementById('s6-row4').style.transition = 'all 0.4s ease, background 1s ease';
+    document.getElementById('s6-row4').style.background = 'rgba(239,68,68,0.1)';
+  });
+  if (t >= 3) cue('s6-row5', function() { document.getElementById('s6-row5').classList.add('visible'); });
+  if (t >= 3.5) cue('s6-row6', function() { document.getElementById('s6-row6').classList.add('visible'); });
+  if (t >= 5) cue('s6-alert', function() {
+    var el = document.getElementById('s6-alert');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(239,68,68,0.2)';
+  });
+}
+
+// --- Scene 7: Telegram Chat ---
+function animateScene7Init() {}
+
+function tickScene7(t) {
+  if (t >= 0.5) cue('s7-msg1', function() { document.getElementById('s7-msg1').classList.add('visible'); });
+  if (t >= 2) cue('s7-msg2', function() { document.getElementById('s7-msg2').classList.add('visible'); });
+  if (t >= 5) cue('s7-msg3', function() { document.getElementById('s7-msg3').classList.add('visible'); });
+  if (t >= 6.5) cue('s7-msg4', function() { document.getElementById('s7-msg4').classList.add('visible'); });
+  if (t >= 10) cue('s7-msg5', function() { document.getElementById('s7-msg5').classList.add('visible'); });
+  if (t >= 11.5) cue('s7-msg6', function() { document.getElementById('s7-msg6').classList.add('visible'); });
+}
+
+// --- Scene 8: Evening Wrap-Up + CTA ---
+function animateScene8Init() {}
+
+function tickScene8(t) {
+  if (t >= 0.5) cue('s8-summary', function() {
+    var el = document.getElementById('s8-summary');
+    el.style.transition = 'opacity 1s ease';
+    el.style.opacity = '1';
+  });
+  if (t >= 6) cue('s8-tagline', function() {
+    var el = document.getElementById('s8-tagline');
+    el.style.transition = 'opacity 0.8s ease';
+    el.style.opacity = '1';
+  });
+  if (t >= 9) cue('s8-cta', function() {
+    var el = document.getElementById('s8-cta');
+    el.style.transition = 'opacity 1s ease';
+    el.style.opacity = '1';
+  });
+}
+
+// ================================================================
+// START
+// ================================================================
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  playSegment(0);
+}
+</script>
+
+<!-- Progress bar + tap to pause -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&pb.classList.contains("hidden")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.style.opacity=paused?"1":"0";
+    // Pause/resume all audio
+    try{
+      audios.forEach(function(a){ if(paused) a.pause(); else if(a.currentTime>0&&!a.ended) a.play().catch(function(){}); });
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused) document.body.classList.add("animations-paused");
+    else document.body.classList.remove("animations-paused");
+  }
+  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
+  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
+})();
+</script>
+
+</body>
+</html>
