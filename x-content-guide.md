@@ -1,10 +1,10 @@
 # @solveworks_io — X Content Style Guide
 
 ## Brand Identity on X
-SolveWorks is the AI agent consultancy that deploys *real* personal AI assistants for business owners. We use OpenClaw. Our clients have actual agents running 24/7 — not demos, not chatbots, not hype.
+SolveWorks is the Context Engineering + AI Workflow Architecture firm. We engineer intelligent business systems — AI pre-loaded with your business context, running complete workflows where AI handles repetitive work and humans handle judgment calls. Our clients have real systems running 24/7 — not demos, not chatbots, not hype.
 
 **Account:** @solveworks_io  
-**Audience:** Solopreneurs, small business owners, CEOs, people genuinely curious about AI agents
+**Audience:** Solopreneurs, small business owners, CEOs, people genuinely curious about AI systems that actually work
 
 ---
 
@@ -22,7 +22,7 @@ SolveWorks is the AI agent consultancy that deploys *real* personal AI assistant
 - Not corporate ("We're excited to announce...")
 - Not a chatbot (never sound like one)
 
-**THE RULE:** If the post could apply to any AI company, rewrite it. We're SolveWorks. We deploy specific tools for specific problems for real business owners.
+**THE RULE:** If the post could apply to any AI company, rewrite it. We're SolveWorks. We engineer context-aware AI systems for specific business workflows. Not chatbots — intelligent business systems.
 
 ---
 
