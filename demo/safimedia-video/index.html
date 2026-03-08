@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>SolveWorks × Safi Media — AI Agent Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { touch-action: manipulation; -webkit-touch-callout: none; }
+html, body { width: 1920px; height: 1080px; overflow: visible; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; }
+
+/* ===================== PLAY BUTTON ===================== */
+#playBtn { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; flex-direction: column; gap: 24px; }
+#playBtn .play-circle { width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+#playBtn:hover .play-circle { border-color: #d946ef; background: rgba(217,70,239,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+#playBtn .play-label { font-size: 16px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; }
+
+/* ===================== FAKE CURSOR ===================== */
+#fakeCursor { position: fixed; top: 0; left: 0; z-index: 9000; pointer-events: none; transition: top 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); will-change: transform; }
+#fakeCursor svg { width: 28px; height: 28px; filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.5)); }
+
+.click-ripple { position: fixed; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(217,70,239,0.7); pointer-events: none; z-index: 8999; animation: rippleOut 0.6s ease forwards; }
+@keyframes rippleOut {
+  0% { transform: translate(-50%,-50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(2); opacity: 0; }
+}
+
+/* ===================== OVERLAY SCENES ===================== */
+#overlay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 5000; pointer-events: none; display: flex; align-items: center; justify-content: center; }
+#overlay.hidden { display: none; }
+#hookText { font-size: 40px; font-weight: 300; line-height: 1.6; text-align: center; max-width: 1100px; opacity: 0; transition: opacity 1s ease; }
+#hookText .accent { color: #d946ef; font-weight: 600; }
+#logoReveal { position: absolute; opacity: 0; transition: opacity 1s ease; text-align: center; }
+
+/* CTA OVERLAY */
+#ctaOverlay { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; z-index: 5000; background: #0A1628; display: none; align-items: center; justify-content: center; flex-direction: column; padding: 60px 80px; }
+
+/* ===================== APP LAYOUT ===================== */
+#app { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; display: flex; opacity: 0; transition: opacity 0.8s ease; }
+
+/* Sidebar */
+.sidebar { width: 250px; height: 1080px; background: rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.08); padding: 30px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-logo { padding: 0 24px 10px; }
+.sidebar-logo-text { font-size: 20px; font-weight: 700; }
+.sidebar-brand { padding: 0 24px 24px; font-size: 11px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-item { padding: 12px 24px; font-size: 14px; color: #64748b; display: flex; align-items: center; gap: 12px; border-left: 3px solid transparent; transition: all 0.25s ease; position: relative; }
+.sidebar-item:hover, .sidebar-item.hovered { color: #cbd5e1; background: rgba(255,255,255,0.04); }
+.sidebar-item.active { color: #d946ef; background: rgba(217,70,239,0.08); border-left-color: #d946ef; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-count { margin-left: auto; font-size: 11px; background: rgba(217,70,239,0.2); color: #e879f9; padding: 2px 8px; border-radius: 10px; }
+
+/* Content area */
+#content { flex: 1; position: relative; overflow: hidden; }
+.content-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 32px 40px; opacity: 0; transform: translateX(30px); transition: opacity 0.4s ease, transform 0.4s ease; pointer-events: none; overflow: hidden; }
+.content-panel.active { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+/* Glass card */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+/* ===================== BRIEFING PANEL ===================== */
+.briefing-card { padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; transform: translateY(15px); transition: all 0.5s ease; }
+.briefing-card.visible { opacity: 1; transform: translateY(0); }
+.briefing-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 14px; }
+.briefing-item:last-child { border-bottom: none; }
+.briefing-time { color: #d946ef; font-weight: 600; min-width: 70px; font-size: 13px; }
+
+/* ===================== PIPELINE TABLE ===================== */
+.pipeline-row { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.04); transition: all 0.3s ease; opacity: 0; transform: translateX(20px); }
+.pipeline-row.visible { opacity: 1; transform: translateX(0); }
+.pipeline-row.hovered { background: rgba(217,70,239,0.04); }
+
+/* Tags */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.tag-foundation { background: rgba(217,70,239,0.2); color: #e879f9; }
+.tag-accelerator { background: rgba(249,115,22,0.2); color: #fb923c; }
+.tag-vip { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-newsletter { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.tag-podcast { background: rgba(236,72,153,0.2); color: #f472b6; }
+.tag-blog { background: rgba(6,182,212,0.2); color: #22d3ee; }
+
+/* Status badges */
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+/* Tab bar */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #64748b; background: rgba(255,255,255,0.03); border: 1px solid transparent; transition: all 0.25s ease; }
+.tab.active { color: #d946ef; background: rgba(217,70,239,0.1); border-color: rgba(217,70,239,0.3); }
+.tab.hovered { color: #cbd5e1; background: rgba(255,255,255,0.06); }
+
+/* ===================== CONTENT CARDS ===================== */
+.content-card { padding: 18px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); opacity: 0; transform: scale(0.95); transition: all 0.5s ease; }
+.content-card.visible { opacity: 1; transform: scale(1); }
+.content-card.hovered { border-color: rgba(217,70,239,0.3); background: rgba(217,70,239,0.04); transform: scale(1.02); }
+
+/* ===================== STAT CARDS ===================== */
+.stat-card { padding: 24px; border-radius: 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); text-align: center; opacity: 0; transform: translateY(20px); transition: all 0.6s ease; }
+.stat-card.visible { opacity: 1; transform: translateY(0); }
+
+/* Bar chart */
+.bar-col { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1; }
+.bar { width: 40px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #d946ef, rgba(217,70,239,0.3)); transition: height 1.5s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
+/* Sequence steps */
+.seq-step { display: flex; align-items: flex-start; gap: 16px; padding: 14px 0; opacity: 0; transform: translateY(15px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.seq-step.visible { opacity: 1; transform: translateY(0); }
+
+/* Live dot */
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; animation: livePulse 2s infinite; }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); } 70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+
+/* Typing */
+.typing-dots { display: inline-flex; gap: 4px; padding: 8px 14px; }
+.typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: #d946ef; animation: typingBounce 1.4s infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+/* Progress bars */
+.progress-bar { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 1.5s ease; }
+
+/* Funnel */
+.funnel-step { text-align: center; flex: 1; padding: 16px; }
+.funnel-number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #d946ef, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.funnel-arrow { color: #d946ef; font-size: 24px; display: flex; align-items: center; padding: 0 4px; }
+
+/* Cost cards */
+.cost-card { padding: 32px; border-radius: 16px; text-align: center; flex: 1; opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.cost-card.visible { opacity: 1; transform: translateY(0); }
+
+/* Notification toast */
+.toast { position: fixed; top: -80px; right: 40px; z-index: 7000; background: rgba(217,70,239,0.15); border: 1px solid rgba(217,70,239,0.3); backdrop-filter: blur(20px); border-radius: 12px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; transition: top 0.5s cubic-bezier(0.25, 0.1, 0.25, 1); min-width: 360px; }
+.toast.show { top: 24px; }
+
+/* Utility */
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+
+/* Scroll area */
+.scroll-area { overflow: hidden; position: relative; }
+.scroll-inner { transition: transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); }
+
+.animations-paused, .animations-paused * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"><div class="play-triangle"></div></div>
+  <div class="play-label">Safi Media × SolveWorks — Click to Play</div>
+</div>
+
+<!-- FAKE CURSOR -->
+<div id="fakeCursor" style="top: 540px; left: 960px; display: none;">
+  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
+  </svg>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div class="toast" id="toast">
+  <div class="live-dot"></div>
+  <div>
+    <div style="font-size: 13px; font-weight: 600;" id="toastTitle">New Application</div>
+    <div style="font-size: 12px; color: #94a3b8;" id="toastBody">Sarah M. applied for Jewel Business Foundation</div>
+  </div>
+</div>
+
+<!-- OVERLAY (Hook / Logo) -->
+<div id="overlay">
+  <div id="hookText">
+    You're running a podcast with <span class="accent">1.6 million downloads</span>,<br>
+    two coaching programs, a newsletter, a blog, and a team.<br><br>
+    What if <span class="accent">one AI</span> handled the entire back-office?
+  </div>
+  <div id="logoReveal">
+    <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+      <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #d946ef, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+    </div>
+    <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+  </div>
+</div>
+
+<!-- CTA OVERLAY -->
+<div id="ctaOverlay">
+  <div style="text-align: center; margin-bottom: 48px; opacity: 0;" id="ctaFunnel">
+    <span style="font-size: 14px; text-transform: uppercase; letter-spacing: 0.15em; color: #64748b; font-weight: 600;">90-Day Results — Fully Autonomous</span>
+    <div style="display: flex; align-items: center; justify-content: center; margin-top: 24px; gap: 0;">
+      <div class="funnel-step"><div class="funnel-number" id="cta-f1">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Newsletter<br>Subscribers</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="cta-f2">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Resource<br>Downloads</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="cta-f3">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Applications<br>Received</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="cta-f4">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Discovery<br>Calls</div></div>
+      <div class="funnel-arrow">→</div>
+      <div class="funnel-step"><div class="funnel-number" id="cta-f5">0</div><div class="text-slate-400" style="font-size: 12px; margin-top: 4px;">Enrolled<br>Clients</div></div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 40px; align-items: stretch; margin-bottom: 48px; width: 100%; max-width: 1200px;">
+    <div class="cost-card" id="costManual" style="background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);">
+      <div style="font-size: 16px; color: #f87171; margin-bottom: 12px; font-weight: 600;">👤 Manual Operations</div>
+      <div style="font-size: 48px; font-weight: 800; color: #fca5a5;">$8-12K</div>
+      <div class="text-slate-400" style="font-size: 16px; margin-bottom: 24px;">/month in ops overhead</div>
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #94a3b8;">
+        <div>⏰ 20+ hrs/week on admin tasks</div>
+        <div>🐢 Manual application review & scoring</div>
+        <div>📊 Spreadsheet-based client tracking</div>
+        <div>📋 Copy-paste content scheduling</div>
+        <div>🔄 Endless email threads for coordination</div>
+        <div>💸 VA's + tools + lost opportunities</div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; font-size: 32px; color: #475569; font-weight: 300; opacity: 0;" id="ctaVs">vs</div>
+    <div class="cost-card" id="costAI" style="background: rgba(217,70,239,0.08); border: 1px solid rgba(217,70,239,0.3);">
+      <div style="font-size: 16px; color: #d946ef; margin-bottom: 12px; font-weight: 600;">🤖 Your AI Operations Agent</div>
+      <div style="font-size: 48px; font-weight: 800; color: #e879f9;">24/7</div>
+      <div class="text-slate-400" style="font-size: 16px; margin-bottom: 24px;">autonomous operations</div>
+      <div style="text-align: left; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #94a3b8;">
+        <div>⚡ Works 24/7/365 — never stops</div>
+        <div>🚀 Instant application scoring & routing</div>
+        <div>🧠 AI-powered client success tracking</div>
+        <div>✅ Automated content production pipeline</div>
+        <div>🔄 Smart lead nurturing sequences</div>
+        <div>📈 Gets smarter every week</div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align: center; opacity: 0;" id="ctaLogo">
+    <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+      <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #d946ef, #e879f9); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+    </div>
+    <div style="font-size: 20px; color: #94a3b8; font-weight: 300; margin-bottom: 16px;">Your AI. Only yours.</div>
+    <div style="font-size: 22px; color: #d946ef; font-weight: 600; margin-bottom: 20px;">See it live at solveworks.io</div>
+    <div style="font-size: 18px; color: #cbd5e1; font-weight: 300;">When women earn, we all win. Let your AI handle the rest.</div>
+  </div>
+</div>
+
+<!-- ===================== MAIN APP ===================== -->
+<div id="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="sidebar-logo-text"><span style="color:#fff;">Solve</span><span style="color:#d946ef;">Works</span></div></div>
+    <div class="sidebar-brand">SAFI MEDIA — Eleanor Beaton</div>
+    <div class="sidebar-item active" data-section="briefing" id="nav-briefing">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Morning Brief
+      <span class="sidebar-count">5</span>
+    </div>
+    <div class="sidebar-item" data-section="pipeline" id="nav-pipeline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Client Pipeline
+      <span class="sidebar-count">24</span>
+    </div>
+    <div class="sidebar-item" data-section="content" id="nav-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Content Hub
+      <span class="sidebar-count">12</span>
+    </div>
+    <div class="sidebar-item" data-section="podcast" id="nav-podcast">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      Podcast
+      <span class="sidebar-count">3</span>
+    </div>
+    <div class="sidebar-item" data-section="success" id="nav-success">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      Client Success
+    </div>
+    <div class="sidebar-item" data-section="nurture" id="nav-nurture">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Lead Nurture
+      <span class="sidebar-count">847</span>
+    </div>
+    <div class="sidebar-item" data-section="team" id="nav-team">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Team Hub
+    </div>
+    <div style="flex: 1;"></div>
+    <div class="sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </div>
+  </div>
+
+  <!-- CONTENT PANELS -->
+  <div id="content">
+
+    <!-- ==================== MORNING BRIEFING ==================== -->
+    <div class="content-panel active" id="panel-briefing">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Good Morning, Eleanor ☀️</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Here's your day at a glance — Tuesday, March 11</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 32px; font-weight: 800; color: #d946ef;" id="briefingApps">0</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">new apps<br>overnight</span>
+          </div>
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 32px; font-weight: 800; color: #4ade80;">94%</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">client<br>retention</span>
+          </div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <!-- Today's Schedule -->
+        <div class="briefing-card" id="brief-schedule">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 14px;">📅 Today's Schedule</h3>
+          <div class="briefing-item"><div class="briefing-time">9:00 AM</div><div><div style="color: #cbd5e1; font-weight: 500;">Jewel Foundation — Cohort 7 Group Call</div><div class="text-slate-500" style="font-size: 12px;">12 attendees confirmed</div></div></div>
+          <div class="briefing-item"><div class="briefing-time">11:00 AM</div><div><div style="color: #cbd5e1; font-weight: 500;">Discovery Call — Jessica Park (Consulting, $380K)</div><div class="text-slate-500" style="font-size: 12px;">Accelerator candidate • AI brief ready</div></div></div>
+          <div class="briefing-item"><div class="briefing-time">1:30 PM</div><div><div style="color: #cbd5e1; font-weight: 500;">Woman Owned Recording — Guest: Dr. Tara Mohr</div><div class="text-slate-500" style="font-size: 12px;">Prep doc sent • Questions drafted</div></div></div>
+          <div class="briefing-item"><div class="briefing-time">3:00 PM</div><div><div style="color: #cbd5e1; font-weight: 500;">Accelerator 1:1 — Megan Torres (Revenue Review)</div><div class="text-slate-500" style="font-size: 12px;">Hit $1.2M this quarter 🎉</div></div></div>
+        </div>
+        <!-- Action Items -->
+        <div class="briefing-card" id="brief-actions">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 14px;">⚡ Needs Your Attention</h3>
+          <div class="briefing-item"><div style="font-size: 18px;">📝</div><div><div style="color: #cbd5e1; font-weight: 500;">3 Accelerator applications scored & ready for review</div><div class="text-slate-500" style="font-size: 12px;">All scored 85+, strong fits</div></div></div>
+          <div class="briefing-item"><div style="font-size: 18px;">📰</div><div><div style="color: #cbd5e1; font-weight: 500;">Fierce Insights blog post draft waiting for approval</div><div class="text-slate-500" style="font-size: 12px;">"5 Revenue Levers Most Women Founders Miss"</div></div></div>
+          <div class="briefing-item"><div style="font-size: 18px;">📧</div><div><div style="color: #cbd5e1; font-weight: 500;">Newsletter goes out at 10 AM — final preview ready</div><div class="text-slate-500" style="font-size: 12px;">Open rate tracking: last 3 averaged 48%</div></div></div>
+          <div class="briefing-item"><div style="font-size: 18px;">🎙️</div><div><div style="color: #cbd5e1; font-weight: 500;">Podcast guest request from Forbes contributor</div><div class="text-slate-500" style="font-size: 12px;">AI drafted response — needs your sign-off</div></div></div>
+        </div>
+        <!-- Content Going Live -->
+        <div class="briefing-card" id="brief-content">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 14px;">🚀 Content Going Live Today</h3>
+          <div class="briefing-item"><div style="font-size: 18px;">🎧</div><div><div style="color: #cbd5e1; font-weight: 500;">Woman Owned Ep. 247 — "The $2M Mindset Shift"</div><div class="text-slate-500" style="font-size: 12px;">Show notes ✅ • Social clips ✅ • Newsletter teaser ✅</div></div></div>
+          <div class="briefing-item"><div style="font-size: 18px;">📱</div><div><div style="color: #cbd5e1; font-weight: 500;">3 social posts scheduled (LinkedIn, Instagram, X)</div><div class="text-slate-500" style="font-size: 12px;">Client success story + podcast promo + tip carousel</div></div></div>
+        </div>
+        <!-- Quick Metrics -->
+        <div class="briefing-card" id="brief-metrics">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 14px;">📊 This Week's Pulse</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px;">
+            <div style="text-align: center; padding: 16px; background: rgba(217,70,239,0.08); border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #d946ef;">7</div>
+              <div class="text-slate-400" style="font-size: 12px;">New Applications</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: rgba(34,197,94,0.08); border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #4ade80;">4</div>
+              <div class="text-slate-400" style="font-size: 12px;">Calls Booked</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: rgba(249,115,22,0.08); border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #fb923c;">$2.1M</div>
+              <div class="text-slate-400" style="font-size: 12px;">Client Revenue (Cohort)</div>
+            </div>
+            <div style="text-align: center; padding: 16px; background: rgba(59,130,246,0.08); border-radius: 10px;">
+              <div style="font-size: 28px; font-weight: 800; color: #60a5fa;">48%</div>
+              <div class="text-slate-400" style="font-size: 12px;">Newsletter Open Rate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CLIENT PIPELINE ==================== -->
+    <div class="content-panel" id="panel-pipeline">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Client Pipeline <span class="live-dot" style="margin-left: 8px;"></span></h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Applications auto-scored and routed by your AI</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 32px; font-weight: 800; color: #d946ef;" id="pipelineCounter">0</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">active<br>applications</span>
+          </div>
+          <div class="glass" style="padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 32px; font-weight: 800; color: #4ade80;">72%</span>
+            <span class="text-slate-400" style="font-size: 13px; line-height: 1.3;">conversion<br>rate</span>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar" id="pipelineTabs">
+        <div class="tab active" id="tab-all">All Applications</div>
+        <div class="tab" id="tab-new">🆕 New <span style="font-size: 11px; opacity: 0.7;">(7)</span></div>
+        <div class="tab" id="tab-review">📋 In Review <span style="font-size: 11px; opacity: 0.7;">(5)</span></div>
+        <div class="tab" id="tab-call">📅 Call Booked <span style="font-size: 11px; opacity: 0.7;">(4)</span></div>
+        <div class="tab" id="tab-enrolled">✅ Enrolled <span style="font-size: 11px; opacity: 0.7;">(8)</span></div>
+      </div>
+      <div class="scroll-area" style="height: 700px;">
+        <div class="scroll-inner">
+          <div class="glass" style="border-radius: 12px; overflow: hidden;">
+            <div style="display: flex; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">
+              <div style="width: 30px;">#</div>
+              <div style="flex: 2;">Applicant</div>
+              <div style="flex: 1;">Program</div>
+              <div style="width: 100px;">Revenue</div>
+              <div style="width: 80px;">AI Score</div>
+              <div style="width: 120px;">Status</div>
+            </div>
+            <div id="pipelineRows"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CONTENT HUB ==================== -->
+    <div class="content-panel" id="panel-content">
+      <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Content Production Hub <span class="live-dot" style="margin-left: 8px;"></span></h1>
+      <p class="text-slate-400" style="font-size: 14px; margin-bottom: 20px;">Your entire content machine in one dashboard</p>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;" id="contentStats"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div id="contentQueue"></div>
+        <div id="contentCalendar"></div>
+      </div>
+    </div>
+
+    <!-- ==================== PODCAST ==================== -->
+    <div class="content-panel" id="panel-podcast">
+      <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">🎙️ Woman Owned Podcast <span class="live-dot" style="margin-left: 8px;"></span></h1>
+      <p class="text-slate-400" style="font-size: 14px; margin-bottom: 20px;">1.6M+ downloads • Global Top 1% • AI-managed production</p>
+      <div style="display: flex; gap: 20px; height: calc(100% - 80px);">
+        <div style="flex: 1;" id="podcastPipeline"></div>
+        <div style="width: 480px;" id="podcastEpisode"></div>
+      </div>
+    </div>
+
+    <!-- ==================== CLIENT SUCCESS ==================== -->
+    <div class="content-panel" id="panel-success">
+      <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Client Success Tracker 📊</h1>
+      <p class="text-slate-400" style="font-size: 14px; margin-bottom: 20px;">Real-time revenue tracking across all coaching clients</p>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;" id="successStats"></div>
+      <div style="display: flex; gap: 20px;">
+        <div class="glass" style="flex: 1; padding: 24px; border-radius: 16px;" id="revenueChart"></div>
+        <div class="glass" style="width: 400px; padding: 24px; border-radius: 16px;" id="clientFeed"></div>
+      </div>
+    </div>
+
+    <!-- ==================== LEAD NURTURE ==================== -->
+    <div class="content-panel" id="panel-nurture">
+      <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Lead Nurturing Engine 🌱</h1>
+      <p class="text-slate-400" style="font-size: 14px; margin-bottom: 20px;">Automated journey from subscriber to enrolled client</p>
+      <div style="display: flex; gap: 20px; height: calc(100% - 80px);">
+        <div style="flex: 1;" id="nurtureFlow"></div>
+        <div style="width: 420px;" id="nurtureStats"></div>
+      </div>
+    </div>
+
+    <!-- ==================== TEAM HUB ==================== -->
+    <div class="content-panel" id="panel-team">
+      <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 4px;">Team Coordination Hub 🤝</h1>
+      <p class="text-slate-400" style="font-size: 14px; margin-bottom: 20px;">Everyone aligned, no meetings required</p>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;" id="teamCards"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CORE ENGINE
+// ============================================================
+const voiceover = new Audio('voiceover.mp3');
+voiceover.preload = 'auto';
+let startTime = 0;
+
+// ============================================================
+// CURSOR SYSTEM
+// ============================================================
+const cursor = document.getElementById('fakeCursor');
+let cursorX = 960, cursorY = 540;
+
+function moveCursor(x, y, duration = 800) {
+  return new Promise(resolve => {
+    cursor.style.transition = `top ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1), left ${duration}ms cubic-bezier(0.25, 0.1, 0.25, 1)`;
+    cursor.style.left = x + 'px';
+    cursor.style.top = y + 'px';
+    cursorX = x; cursorY = y;
+    setTimeout(resolve, duration);
+  });
+}
+
+function clickAt(x, y) {
+  const ripple = document.createElement('div');
+  ripple.className = 'click-ripple';
+  ripple.style.left = x + 'px';
+  ripple.style.top = y + 'px';
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+}
+
+function clickCursor() { clickAt(cursorX + 4, cursorY + 4); }
+
+async function moveAndClick(x, y, moveDur = 600) {
+  await moveCursor(x, y, moveDur);
+  await delay(100);
+  clickCursor();
+  await delay(150);
+}
+
+window.__demoPaused = false;
+function delay(ms) {
+  return new Promise(resolve => {
+    let remaining = ms;
+    let start = Date.now();
+    function tick() {
+      if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
+      let elapsed = Date.now() - start;
+      remaining -= elapsed;
+      if (remaining <= 0) resolve();
+      else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
+    }
+    setTimeout(tick, Math.min(ms, 50));
+  });
+}
+
+function addHover(el) { if(el) el.classList.add('hovered'); }
+function removeHover(el) { if(el) el.classList.remove('hovered'); }
+
+function navigateTo(section) {
+  document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+  const navItem = document.getElementById('nav-' + section);
+  if (navItem) navItem.classList.add('active');
+  document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-' + section);
+  if (panel) panel.classList.add('active');
+}
+
+function animateCounter(el, target, duration = 2000, prefix = '', suffix = '') {
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = prefix + Math.round(target * eased).toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function showToast(title, body, duration = 3000) {
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ============================================================
+// PIPELINE DATA
+// ============================================================
+const APPLICANTS = [
+  { name: 'Jessica Park', biz: 'Leadership Consulting', program: 'Accelerator', rev: '$380K', score: 92, status: 'Call Booked', statusColor: '#c084fc', statusBg: 'rgba(168,85,247,0.15)' },
+  { name: 'Sarah Mitchell', biz: 'Executive Coaching', program: 'Foundation', rev: '$145K', score: 88, status: 'New', statusColor: '#4ade80', statusBg: 'rgba(34,197,94,0.15)' },
+  { name: 'Rachel Wong', biz: 'Brand Strategy', program: 'Accelerator', rev: '$520K', score: 95, status: 'In Review', statusColor: '#38bdf8', statusBg: 'rgba(14,165,233,0.15)' },
+  { name: 'Amanda Torres', biz: 'HR Consulting', program: 'Foundation', rev: '$95K', score: 78, status: 'New', statusColor: '#4ade80', statusBg: 'rgba(34,197,94,0.15)' },
+  { name: 'Dr. Lisa Chen', biz: 'Health & Wellness', program: 'Accelerator', rev: '$720K', score: 97, status: 'Call Booked', statusColor: '#c084fc', statusBg: 'rgba(168,85,247,0.15)' },
+  { name: 'Megan Foster', biz: 'Digital Marketing', program: 'Foundation', rev: '$210K', score: 85, status: 'Enrolled', statusColor: '#d946ef', statusBg: 'rgba(217,70,239,0.15)' },
+  { name: 'Nicole Adams', biz: 'Financial Advisory', program: 'Accelerator', rev: '$890K', score: 94, status: 'In Review', statusColor: '#38bdf8', statusBg: 'rgba(14,165,233,0.15)' },
+  { name: 'Priya Sharma', biz: 'Tech Consulting', program: 'Foundation', rev: '$175K', score: 82, status: 'New', statusColor: '#4ade80', statusBg: 'rgba(34,197,94,0.15)' },
+  { name: 'Catherine Reid', biz: 'Law Practice', program: 'Accelerator', rev: '$1.1M', score: 91, status: 'Enrolled', statusColor: '#d946ef', statusBg: 'rgba(217,70,239,0.15)' },
+  { name: 'Diana Okafor', biz: 'Education Services', program: 'Foundation', rev: '$65K', score: 74, status: 'New', statusColor: '#4ade80', statusBg: 'rgba(34,197,94,0.15)' },
+];
+
+function buildPipelineRows() {
+  const container = document.getElementById('pipelineRows');
+  container.innerHTML = '';
+  APPLICANTS.forEach((a, i) => {
+    const row = document.createElement('div');
+    row.className = 'pipeline-row';
+    row.id = 'app-' + i;
+    const tagClass = a.program === 'Accelerator' ? 'tag-accelerator' : 'tag-foundation';
+    const scoreColor = a.score >= 90 ? '#4ade80' : a.score >= 80 ? '#facc15' : '#fb923c';
+    row.innerHTML = `
+      <div style="width: 30px; color: #475569; font-size: 12px;">${i + 1}</div>
+      <div style="flex: 2;"><div style="font-weight: 600;">${a.name}</div><div class="text-slate-500" style="font-size: 12px;">${a.biz}</div></div>
+      <div style="flex: 1;"><span class="tag ${tagClass}">${a.program}</span></div>
+      <div style="width: 100px; color: #cbd5e1; font-weight: 500;">${a.rev}</div>
+      <div style="width: 80px;"><span style="color: ${scoreColor}; font-weight: 700;">${a.score}</span></div>
+      <div style="width: 120px;"><span class="status-badge" style="background: ${a.statusBg}; color: ${a.statusColor};">${a.status}</span></div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ============================================================
+// CONTENT HUB DATA
+// ============================================================
+function buildContentHub() {
+  const stats = document.getElementById('contentStats');
+  stats.innerHTML = `
+    <div class="stat-card" id="cstat-0">
+      <div style="font-size: 24px; margin-bottom: 8px;">🎧</div>
+      <div style="font-size: 36px; font-weight: 800; color: #d946ef;">247</div>
+      <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Podcast Episodes</div>
+    </div>
+    <div class="stat-card" id="cstat-1">
+      <div style="font-size: 24px; margin-bottom: 8px;">📝</div>
+      <div style="font-size: 36px; font-weight: 800; color: #fb923c;">84</div>
+      <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Blog Posts (Fierce Insights)</div>
+    </div>
+    <div class="stat-card" id="cstat-2">
+      <div style="font-size: 24px; margin-bottom: 8px;">📧</div>
+      <div style="font-size: 36px; font-weight: 800; color: #38bdf8;">48%</div>
+      <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">Avg Newsletter Open Rate</div>
+    </div>
+  `;
+
+  const queue = document.getElementById('contentQueue');
+  queue.innerHTML = `
+    <div class="glass" style="padding: 24px; border-radius: 16px; height: 100%;">
+      <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">📋 Production Queue</h3>
+      <div style="display: flex; flex-direction: column; gap: 10px;" id="contentItems"></div>
+    </div>
+  `;
+
+  const calendar = document.getElementById('contentCalendar');
+  calendar.innerHTML = `
+    <div class="glass" style="padding: 24px; border-radius: 16px; height: 100%;">
+      <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">📅 This Week's Schedule</h3>
+      <div style="display: flex; flex-direction: column; gap: 8px;" id="calendarItems"></div>
+    </div>
+  `;
+
+  const contentData = [
+    { icon: '🎧', title: 'Ep 248 — Show Notes', status: 'AI Draft Ready', statusColor: '#4ade80', type: 'Podcast' },
+    { icon: '📝', title: '"Pricing Power for Coaches"', status: 'Writing', statusColor: '#38bdf8', type: 'Blog' },
+    { icon: '📧', title: 'Week 11 Newsletter', status: 'Approved', statusColor: '#d946ef', type: 'Email' },
+    { icon: '📱', title: 'Client Win — Megan Torres $1.2M', status: 'Scheduled', statusColor: '#fb923c', type: 'Social' },
+    { icon: '🎧', title: 'Ep 249 — Guest Brief', status: 'Researching', statusColor: '#facc15', type: 'Podcast' },
+    { icon: '📝', title: '"Revenue Levers" Follow-Up', status: 'Queued', statusColor: '#64748b', type: 'Blog' },
+  ];
+
+  const items = document.getElementById('contentItems');
+  contentData.forEach((c, i) => {
+    const item = document.createElement('div');
+    item.id = 'content-item-' + i;
+    item.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.03); opacity: 0; transition: opacity 0.4s ease;';
+    item.innerHTML = `
+      <span style="font-size: 18px;">${c.icon}</span>
+      <div style="flex: 1;">
+        <div style="font-size: 13px; font-weight: 500; color: #cbd5e1;">${c.title}</div>
+        <div style="font-size: 11px; color: #64748b;">${c.type}</div>
+      </div>
+      <span style="padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; color: ${c.statusColor}; background: ${c.statusColor}20;">${c.status}</span>
+    `;
+    items.appendChild(item);
+  });
+
+  const calData = [
+    { day: 'Mon', items: ['📧 Newsletter send', '📱 3 social posts'] },
+    { day: 'Tue', items: ['🎧 Ep 247 goes live', '📝 Blog post publish'] },
+    { day: 'Wed', items: ['🎙️ Recording — Dr. Tara Mohr', '📱 Podcast promo clips'] },
+    { day: 'Thu', items: ['📧 Nurture sequence emails', '📝 Blog draft review'] },
+    { day: 'Fri', items: ['📊 Weekly content report', '📱 Weekend social queue'] },
+  ];
+
+  const calItems = document.getElementById('calendarItems');
+  calData.forEach((d, i) => {
+    const item = document.createElement('div');
+    item.id = 'cal-item-' + i;
+    item.style.cssText = 'padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.03); opacity: 0; transition: opacity 0.4s ease;';
+    item.innerHTML = `
+      <div style="font-size: 12px; font-weight: 600; color: #d946ef; margin-bottom: 6px;">${d.day}</div>
+      ${d.items.map(it => `<div style="font-size: 12px; color: #94a3b8; padding: 2px 0;">${it}</div>`).join('')}
+    `;
+    calItems.appendChild(item);
+  });
+}
+
+// ============================================================
+// PODCAST DATA
+// ============================================================
+function buildPodcast() {
+  const pipeline = document.getElementById('podcastPipeline');
+  pipeline.innerHTML = `
+    <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Guest Pipeline & Production</h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;" id="podSteps"></div>
+  `;
+
+  const guests = [
+    { name: 'Dr. Tara Mohr', topic: 'Playing Big in Business', status: '🎙️ Recording Today', color: '#4ade80' },
+    { name: 'Mel Robbins', topic: 'The Let Them Theory for Founders', status: '📅 Scheduled Mar 18', color: '#38bdf8' },
+    { name: 'Julie Bowen (Forbes)', topic: 'Women in VC', status: '📧 Outreach Sent', color: '#facc15' },
+    { name: 'Lara Hodgson', topic: 'Scaling Past $5M', status: '✅ Confirmed Mar 25', color: '#d946ef' },
+    { name: 'Sara Blakely', topic: 'Spanx & Starting Over', status: '🔍 AI Researching', color: '#fb923c' },
+  ];
+
+  const steps = document.getElementById('podSteps');
+  guests.forEach((g, i) => {
+    const el = document.createElement('div');
+    el.className = 'content-card';
+    el.id = 'pod-guest-' + i;
+    el.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="width: 44px; height: 44px; border-radius: 50%; background: ${g.color}20; display: flex; align-items: center; justify-content: center; font-weight: 700; color: ${g.color}; font-size: 14px;">${g.name.split(' ').map(n=>n[0]).join('')}</div>
+        <div style="flex: 1;">
+          <div style="font-weight: 600; font-size: 14px;">${g.name}</div>
+          <div class="text-slate-400" style="font-size: 12px;">${g.topic}</div>
+        </div>
+        <span style="font-size: 12px; color: ${g.color}; font-weight: 500;">${g.status}</span>
+      </div>
+    `;
+    steps.appendChild(el);
+  });
+
+  const episode = document.getElementById('podcastEpisode');
+  episode.innerHTML = `
+    <div class="glass" style="padding: 24px; border-radius: 16px; height: 100%;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <div style="font-size: 36px;">🎧</div>
+        <div>
+          <div style="font-size: 18px; font-weight: 700;">Ep 247 — Production Status</div>
+          <div class="text-slate-400" style="font-size: 13px;">"The $2M Mindset Shift" — Live today</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;" id="podTasks"></div>
+      <div style="margin-top: 20px; padding: 16px; background: rgba(217,70,239,0.08); border-radius: 10px; border: 1px solid rgba(217,70,239,0.2);">
+        <div style="font-size: 13px; font-weight: 600; color: #d946ef; margin-bottom: 8px;">📊 Episode Stats (Last 30 Days)</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+          <div><span class="text-slate-400">Avg Downloads:</span> <span style="color: #cbd5e1; font-weight: 600;">6,400</span></div>
+          <div><span class="text-slate-400">Avg Listens:</span> <span style="color: #cbd5e1; font-weight: 600;">89%</span></div>
+          <div><span class="text-slate-400">Total Downloads:</span> <span style="color: #cbd5e1; font-weight: 600;">1.6M+</span></div>
+          <div><span class="text-slate-400">Ranking:</span> <span style="color: #4ade80; font-weight: 600;">Top 1% Global</span></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const tasks = [
+    { task: 'Audio editing', status: '✅ Complete', color: '#4ade80' },
+    { task: 'Show notes generated', status: '✅ AI Generated', color: '#4ade80' },
+    { task: 'Social clips (3x)', status: '✅ Cut & Scheduled', color: '#4ade80' },
+    { task: 'Newsletter teaser', status: '✅ Drafted', color: '#4ade80' },
+    { task: 'SEO meta & timestamps', status: '✅ Optimized', color: '#4ade80' },
+    { task: 'Distribution (Apple, Spotify, YouTube)', status: '🔄 Publishing', color: '#38bdf8' },
+  ];
+
+  const taskContainer = document.getElementById('podTasks');
+  tasks.forEach((t, i) => {
+    const el = document.createElement('div');
+    el.id = 'pod-task-' + i;
+    el.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.03); font-size: 13px; opacity: 0; transition: opacity 0.4s ease;';
+    el.innerHTML = `<span class="text-slate-300">${t.task}</span><span style="color: ${t.color}; font-weight: 500;">${t.status}</span>`;
+    taskContainer.appendChild(el);
+  });
+}
+
+// ============================================================
+// CLIENT SUCCESS DATA
+// ============================================================
+function buildSuccess() {
+  const stats = document.getElementById('successStats');
+  const successData = [
+    { icon: '👩‍💼', label: 'Active Clients', value: '47', color: '#d946ef' },
+    { icon: '📈', label: 'Avg YoY Growth', value: '42%', color: '#4ade80' },
+    { icon: '🎯', label: 'Hit $1M+ Target', value: '12', color: '#fb923c' },
+    { icon: '⭐', label: 'NPS Score', value: '78', color: '#38bdf8' },
+  ];
+  stats.innerHTML = '';
+  successData.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.id = 'success-stat-' + i;
+    card.innerHTML = `
+      <div style="font-size: 24px; margin-bottom: 8px;">${s.icon}</div>
+      <div style="font-size: 36px; font-weight: 800; color: ${s.color};">${s.value}</div>
+      <div class="text-slate-400" style="font-size: 13px; margin-top: 4px;">${s.label}</div>
+    `;
+    stats.appendChild(card);
+  });
+
+  const chart = document.getElementById('revenueChart');
+  chart.innerHTML = `
+    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Client Revenue Growth (Cohort Avg)</h3>
+    <div style="display: flex; align-items: flex-end; gap: 12px; height: 200px;" id="revBars"></div>
+  `;
+  const months = [
+    { label: 'Oct', value: 145 }, { label: 'Nov', value: 168 },
+    { label: 'Dec', value: 185 }, { label: 'Jan', value: 210 },
+    { label: 'Feb', value: 248 }, { label: 'Mar', value: 280 },
+  ];
+  const revBars = document.getElementById('revBars');
+  months.forEach(m => {
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    col.innerHTML = `
+      <div style="font-size: 11px; color: #94a3b8;">$${m.value}K</div>
+      <div class="bar" style="height: 0px;" data-target="${(m.value / 280) * 180}"></div>
+      <div style="font-size: 11px; color: #64748b;">${m.label}</div>
+    `;
+    revBars.appendChild(col);
+  });
+
+  const feed = document.getElementById('clientFeed');
+  feed.innerHTML = `
+    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;">🎉 Recent Wins <span class="live-dot" style="margin-left: 6px;"></span></h3>
+    <div style="display: flex; flex-direction: column; gap: 8px;" id="winFeed"></div>
+  `;
+  const wins = [
+    { icon: '🏆', text: 'Megan Torres hit $1.2M this quarter', time: 'Today', color: '#d946ef' },
+    { icon: '📈', text: 'Catherine Reid — 52% YoY revenue growth', time: '2 days ago', color: '#4ade80' },
+    { icon: '🎯', text: 'Jessica Park closed her biggest contract ($85K)', time: '3 days ago', color: '#fb923c' },
+    { icon: '🚀', text: 'Cohort 6 average revenue up 41%', time: '1 week ago', color: '#38bdf8' },
+    { icon: '⭐', text: 'Foundation graduate → Accelerator enrollment', time: '1 week ago', color: '#c084fc' },
+  ];
+  const winFeed = document.getElementById('winFeed');
+  wins.forEach((w, i) => {
+    const item = document.createElement('div');
+    item.id = 'win-' + i;
+    item.style.cssText = 'display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.02); font-size: 12px; opacity: 0; transition: opacity 0.4s ease;';
+    item.innerHTML = `
+      <span style="font-size: 14px;">${w.icon}</span>
+      <div style="flex: 1;"><div style="color: #cbd5e1;">${w.text}</div><div style="color: #475569; margin-top: 2px;">${w.time}</div></div>
+    `;
+    winFeed.appendChild(item);
+  });
+}
+
+// ============================================================
+// LEAD NURTURE DATA
+// ============================================================
+function buildNurture() {
+  const flow = document.getElementById('nurtureFlow');
+  flow.innerHTML = `
+    <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">Automated Nurture Journey</h3>
+    <div style="position: relative; padding-left: 24px;" id="nurtureTimeline">
+      <div style="position: absolute; left: 7px; top: 0; width: 2px; height: 0; background: linear-gradient(180deg, #d946ef, rgba(217,70,239,0.2)); transition: height 4s ease;" id="nurtureLine"></div>
+    </div>
+  `;
+
+  const steps = [
+    { day: 'Day 0', icon: '📧', color: '#d946ef', title: 'Newsletter Subscribe', desc: 'Welcome sequence triggers — 3-email series over 5 days' },
+    { day: 'Day 3', icon: '📥', color: '#38bdf8', title: 'Resource Download', desc: 'AI detects high-intent behavior, moves to engaged segment' },
+    { day: 'Day 7', icon: '🎧', color: '#f472b6', title: 'Podcast Listener Nurture', desc: 'Personalized episode recommendations based on business stage' },
+    { day: 'Day 14', icon: '📋', color: '#4ade80', title: 'Application Invitation', desc: 'AI sends program invite with social proof from similar founders' },
+    { day: 'Day 18', icon: '📅', color: '#fb923c', title: 'Discovery Call Booked', desc: 'Calendar auto-schedules, AI prepares research brief' },
+    { day: 'Day 21', icon: '✅', color: '#c084fc', title: 'Enrollment', desc: 'Onboarding sequence starts, coach assigned, portal setup' },
+  ];
+
+  const timeline = document.getElementById('nurtureTimeline');
+  const line = document.getElementById('nurtureLine');
+  timeline.innerHTML = '';
+  timeline.appendChild(line);
+  steps.forEach((step, i) => {
+    const el = document.createElement('div');
+    el.className = 'seq-step';
+    el.id = 'nurture-step-' + i;
+    el.innerHTML = `
+      <div style="width: 16px; height: 16px; border-radius: 50%; background: ${step.color}; flex-shrink: 0; z-index: 1; margin-top: 4px;"></div>
+      <div class="glass" style="flex: 1; padding: 14px 18px; border-radius: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span style="font-size: 14px;">${step.icon}</span>
+          <span style="font-weight: 700; color: ${step.color}; font-size: 13px;">${step.day}</span>
+          <span style="font-weight: 600; font-size: 13px; margin-left: 8px;">${step.title}</span>
+        </div>
+        <div style="font-size: 12px; color: #94a3b8;">${step.desc}</div>
+      </div>
+    `;
+    timeline.appendChild(el);
+  });
+
+  const nStats = document.getElementById('nurtureStats');
+  nStats.innerHTML = `
+    <div class="glass" style="padding: 24px; border-radius: 16px; margin-bottom: 16px;">
+      <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Funnel Metrics <span class="live-dot" style="margin-left: 6px;"></span></h3>
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;"><span class="text-slate-400">Subscribers → Downloads</span><span style="color: #d946ef; font-weight: 600;">34%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 0%; background: #d946ef;" id="funnel-bar-0"></div></div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;"><span class="text-slate-400">Downloads → Applications</span><span style="color: #38bdf8; font-weight: 600;">22%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 0%; background: #38bdf8;" id="funnel-bar-1"></div></div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;"><span class="text-slate-400">Applications → Calls</span><span style="color: #4ade80; font-weight: 600;">68%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 0%; background: #4ade80;" id="funnel-bar-2"></div></div>
+        </div>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;"><span class="text-slate-400">Calls → Enrolled</span><span style="color: #fb923c; font-weight: 600;">72%</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 0%; background: #fb923c;" id="funnel-bar-3"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="glass" style="padding: 20px; border-radius: 16px;">
+      <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Active Sequences</h3>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">Welcome Series</span><span style="color: #d946ef; font-weight: 600;">847 active</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">Resource Nurture</span><span style="color: #38bdf8; font-weight: 600;">312 active</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">Application Invite</span><span style="color: #4ade80; font-weight: 600;">89 active</span></div>
+        <div style="display: flex; justify-content: space-between;"><span class="text-slate-400">Re-engagement</span><span style="color: #fb923c; font-weight: 600;">156 active</span></div>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// TEAM HUB DATA
+// ============================================================
+function buildTeam() {
+  const cards = document.getElementById('teamCards');
+  const teamData = [
+    {
+      role: '🎓 Coaching Team',
+      members: ['Sarah K. — Foundation Lead', 'Michelle P. — Accelerator Coach', 'Jen B. — 1:1 Coach'],
+      tasks: ['4 group calls this week', '7 client check-ins due', '2 milestone reviews'],
+      color: '#d946ef'
+    },
+    {
+      role: '📢 Marketing',
+      members: ['Alex R. — Content Manager', 'Danielle T. — Social Media', 'Chris M. — Email'],
+      tasks: ['3 blog posts in pipeline', '15 social posts scheduled', 'Newsletter at 48% open'],
+      color: '#38bdf8'
+    },
+    {
+      role: '⚙️ Operations',
+      members: ['Lisa H. — Ops Lead', 'Karen W. — Client Success', 'Raj P. — Tech'],
+      tasks: ['24 applications to process', 'Portal maintenance window', 'Q1 report due Friday'],
+      color: '#4ade80'
+    },
+    {
+      role: '🎙️ Podcast Production',
+      members: ['Mike S. — Audio Editor', 'Samantha L. — Guest Coordinator'],
+      tasks: ['Ep 247 going live today', 'Ep 248 in editing', '3 guest bookings pending'],
+      color: '#fb923c'
+    },
+    {
+      role: '📊 AI Agent Status',
+      members: ['Pipeline scoring: Active ✅', 'Content generation: Active ✅', 'Lead nurture: Active ✅'],
+      tasks: ['847 sequences running', '24 applications scored today', '3 drafts awaiting review'],
+      color: '#c084fc'
+    },
+    {
+      role: '📋 This Week\'s Priorities',
+      members: ['Accelerator applications review', 'Podcast guest confirmations', 'Q1 client success report'],
+      tasks: ['Eleanor: 3 approvals pending', 'Team: 12 tasks on track', 'AI: handling 94% autonomously'],
+      color: '#facc15'
+    },
+  ];
+
+  cards.innerHTML = '';
+  teamData.forEach((t, i) => {
+    const card = document.createElement('div');
+    card.className = 'content-card';
+    card.id = 'team-card-' + i;
+    card.innerHTML = `
+      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px; color: ${t.color};">${t.role}</h3>
+      <div style="margin-bottom: 12px;">
+        ${t.members.map(m => `<div style="font-size: 12px; color: #94a3b8; padding: 3px 0;">• ${m}</div>`).join('')}
+      </div>
+      <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+        ${t.tasks.map(tk => `<div style="font-size: 12px; color: #cbd5e1; padding: 3px 0;">→ ${tk}</div>`).join('')}
+      </div>
+    `;
+    cards.appendChild(card);
+  });
+}
+
+// ============================================================
+// SCENE TIMELINE (audio-synced)
+// ============================================================
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  startTime = performance.now();
+  voiceover.play().catch(function(){});
+
+  buildPipelineRows();
+  buildContentHub();
+  buildPodcast();
+  buildSuccess();
+  buildNurture();
+  buildTeam();
+
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = voiceover.currentTime;
+
+    // TIMING: seg1=0-14.5, seg2=14.5-32.2, seg3=32.2-48.7, seg4=48.7-67.1
+    // seg5=67.1-85.4, seg6=85.4-101.7, seg7=101.7-117.8, seg8=117.8-131.9, seg9=131.9-152.4
+
+    // ============================================================
+    // HOOK (0s–14.5s)
+    // ============================================================
+    if (t >= 0.3) cue('hook-show', function() {
+      document.getElementById('hookText').style.opacity = '1';
+    });
+    if (t >= 12.0) cue('hook-hide', function() {
+      document.getElementById('hookText').style.opacity = '0';
+    });
+    if (t >= 12.5) cue('hook-logo', function() {
+      document.getElementById('logoReveal').style.opacity = '1';
+    });
+    if (t >= 14.0) cue('hook-logo-hide', function() {
+      document.getElementById('logoReveal').style.opacity = '0';
+    });
+
+    // ============================================================
+    // SCENE 1: MORNING BRIEFING (14.5s–32.2s)
+    // ============================================================
+    if (t >= 14.5) cue('s1-start', function() {
+      document.getElementById('overlay').classList.add('hidden');
+      document.getElementById('app').style.opacity = '1';
+      cursor.style.display = 'block';
+      navigateTo('briefing');
+      animateCounter(document.getElementById('briefingApps'), 7, 1500);
+    });
+    if (t >= 16.0) cue('s1-brief1', function() {
+      document.getElementById('brief-schedule').classList.add('visible');
+    });
+    if (t >= 18.0) cue('s1-brief2', function() {
+      document.getElementById('brief-actions').classList.add('visible');
+      moveCursor(800, 400, 600);
+    });
+    if (t >= 21.0) cue('s1-brief3', function() {
+      document.getElementById('brief-content').classList.add('visible');
+    });
+    if (t >= 23.0) cue('s1-brief4', function() {
+      document.getElementById('brief-metrics').classList.add('visible');
+      showToast('📝 New Application', 'Sarah Mitchell — Executive Coaching, $145K revenue');
+    });
+    if (t >= 25.0) cue('s1-cursor1', function() {
+      moveCursor(500, 500, 500);
+    });
+    if (t >= 28.0) cue('s1-cursor2', function() {
+      moveCursor(1200, 400, 500);
+    });
+
+    // ============================================================
+    // SCENE 2: CLIENT PIPELINE (32.2s–48.7s)
+    // ============================================================
+    if (t >= 32.0) cue('s2-start', function() {
+      moveCursor(130, 175, 600);
+      addHover(document.getElementById('nav-pipeline'));
+    });
+    if (t >= 33.0) cue('s2-click', function() {
+      clickAt(130, 175);
+      removeHover(document.getElementById('nav-pipeline'));
+      navigateTo('pipeline');
+      animateCounter(document.getElementById('pipelineCounter'), 24, 1500);
+    });
+    if (t >= 34.0) cue('s2-row0', function() { document.getElementById('app-0').classList.add('visible'); });
+    if (t >= 34.5) cue('s2-row1', function() { document.getElementById('app-1').classList.add('visible'); });
+    if (t >= 35.0) cue('s2-row2', function() { document.getElementById('app-2').classList.add('visible'); });
+    if (t >= 35.5) cue('s2-row3', function() { document.getElementById('app-3').classList.add('visible'); });
+    if (t >= 36.0) cue('s2-row4', function() { document.getElementById('app-4').classList.add('visible'); });
+    if (t >= 38.0) cue('s2-hover', function() {
+      moveCursor(700, 340, 500);
+      addHover(document.getElementById('app-2'));
+    });
+    if (t >= 40.0) cue('s2-unhover', function() {
+      removeHover(document.getElementById('app-2'));
+    });
+    if (t >= 41.0) cue('s2-more', function() {
+      for (var i = 5; i < 10; i++) document.getElementById('app-' + i).classList.add('visible');
+    });
+    if (t >= 43.0) cue('s2-tab', function() {
+      moveCursor(580, 128, 400);
+      clickAt(580, 128);
+    });
+    if (t >= 44.0) cue('s2-toast', function() {
+      showToast('🎯 High-Score Application', 'Dr. Lisa Chen — AI Score: 97, $720K revenue');
+    });
+
+    // ============================================================
+    // SCENE 3: CONTENT HUB (48.7s–67.1s)
+    // ============================================================
+    if (t >= 48.5) cue('s3-start', function() {
+      moveCursor(130, 220, 600);
+      addHover(document.getElementById('nav-content'));
+    });
+    if (t >= 49.5) cue('s3-click', function() {
+      clickAt(130, 220);
+      removeHover(document.getElementById('nav-content'));
+      navigateTo('content');
+    });
+    if (t >= 51.0) cue('s3-stat0', function() { document.getElementById('cstat-0').classList.add('visible'); });
+    if (t >= 52.0) cue('s3-stat1', function() { document.getElementById('cstat-1').classList.add('visible'); });
+    if (t >= 53.0) cue('s3-stat2', function() { document.getElementById('cstat-2').classList.add('visible'); });
+    if (t >= 55.0) cue('s3-items', function() {
+      for (var i = 0; i < 6; i++) {
+        (function(idx) { setTimeout(function() { document.getElementById('content-item-' + idx).style.opacity = '1'; }, idx * 400); })(i);
+      }
+    });
+    if (t >= 58.0) cue('s3-cal', function() {
+      for (var i = 0; i < 5; i++) {
+        (function(idx) { setTimeout(function() { document.getElementById('cal-item-' + idx).style.opacity = '1'; }, idx * 300); })(i);
+      }
+    });
+    if (t >= 62.0) cue('s3-cursor', function() {
+      moveCursor(600, 450, 500);
+    });
+
+    // ============================================================
+    // SCENE 4: PODCAST (67.1s–85.4s)
+    // ============================================================
+    if (t >= 67.0) cue('s4-start', function() {
+      moveCursor(130, 265, 600);
+      addHover(document.getElementById('nav-podcast'));
+    });
+    if (t >= 68.0) cue('s4-click', function() {
+      clickAt(130, 265);
+      removeHover(document.getElementById('nav-podcast'));
+      navigateTo('podcast');
+    });
+    if (t >= 69.5) cue('s4-guest0', function() { document.getElementById('pod-guest-0').classList.add('visible'); });
+    if (t >= 70.5) cue('s4-guest1', function() { document.getElementById('pod-guest-1').classList.add('visible'); });
+    if (t >= 71.5) cue('s4-guest2', function() { document.getElementById('pod-guest-2').classList.add('visible'); });
+    if (t >= 72.5) cue('s4-guest3', function() { document.getElementById('pod-guest-3').classList.add('visible'); });
+    if (t >= 73.5) cue('s4-guest4', function() { document.getElementById('pod-guest-4').classList.add('visible'); });
+    if (t >= 75.0) cue('s4-tasks', function() {
+      for (var i = 0; i < 6; i++) {
+        (function(idx) { setTimeout(function() { document.getElementById('pod-task-' + idx).style.opacity = '1'; }, idx * 400); })(i);
+      }
+    });
+    if (t >= 80.0) cue('s4-cursor', function() {
+      moveCursor(1400, 500, 500);
+    });
+
+    // ============================================================
+    // SCENE 5: CLIENT SUCCESS (85.4s–101.7s)
+    // ============================================================
+    if (t >= 85.0) cue('s5-start', function() {
+      moveCursor(130, 310, 600);
+      addHover(document.getElementById('nav-success'));
+    });
+    if (t >= 86.0) cue('s5-click', function() {
+      clickAt(130, 310);
+      removeHover(document.getElementById('nav-success'));
+      navigateTo('success');
+    });
+    if (t >= 87.0) cue('s5-stat0', function() { document.getElementById('success-stat-0').classList.add('visible'); });
+    if (t >= 87.8) cue('s5-stat1', function() { document.getElementById('success-stat-1').classList.add('visible'); });
+    if (t >= 88.6) cue('s5-stat2', function() { document.getElementById('success-stat-2').classList.add('visible'); });
+    if (t >= 89.4) cue('s5-stat3', function() { document.getElementById('success-stat-3').classList.add('visible'); });
+    if (t >= 91.0) cue('s5-bars', function() {
+      document.querySelectorAll('#revBars .bar').forEach(function(bar, i) {
+        setTimeout(function() { bar.style.height = bar.dataset.target + 'px'; }, i * 300);
+      });
+    });
+    if (t >= 93.0) cue('s5-wins', function() {
+      for (var i = 0; i < 5; i++) {
+        (function(idx) { setTimeout(function() { document.getElementById('win-' + idx).style.opacity = '1'; }, idx * 500); })(i);
+      }
+    });
+    if (t >= 97.0) cue('s5-cursor', function() {
+      moveCursor(800, 500, 500);
+    });
+
+    // ============================================================
+    // SCENE 6: LEAD NURTURE (101.7s–117.8s)
+    // ============================================================
+    if (t >= 101.5) cue('s6-start', function() {
+      moveCursor(130, 355, 600);
+      addHover(document.getElementById('nav-nurture'));
+    });
+    if (t >= 102.5) cue('s6-click', function() {
+      clickAt(130, 355);
+      removeHover(document.getElementById('nav-nurture'));
+      navigateTo('nurture');
+      document.getElementById('nurtureLine').style.height = '100%';
+    });
+    if (t >= 104.0) cue('s6-step0', function() { document.getElementById('nurture-step-0').classList.add('visible'); });
+    if (t >= 105.5) cue('s6-step1', function() { document.getElementById('nurture-step-1').classList.add('visible'); });
+    if (t >= 107.0) cue('s6-step2', function() { document.getElementById('nurture-step-2').classList.add('visible'); });
+    if (t >= 108.5) cue('s6-step3', function() { document.getElementById('nurture-step-3').classList.add('visible'); });
+    if (t >= 110.0) cue('s6-step4', function() { document.getElementById('nurture-step-4').classList.add('visible'); });
+    if (t >= 111.5) cue('s6-step5', function() { document.getElementById('nurture-step-5').classList.add('visible'); });
+    if (t >= 108.0) cue('s6-bars', function() {
+      var bars = [34, 22, 68, 72];
+      bars.forEach(function(v, i) {
+        setTimeout(function() {
+          document.getElementById('funnel-bar-' + i).style.width = v + '%';
+        }, i * 500);
+      });
+    });
+    if (t >= 114.0) cue('s6-cursor', function() {
+      moveCursor(1400, 400, 500);
+    });
+
+    // ============================================================
+    // SCENE 7: TEAM HUB (117.8s–131.9s)
+    // ============================================================
+    if (t >= 117.5) cue('s7-start', function() {
+      moveCursor(130, 400, 600);
+      addHover(document.getElementById('nav-team'));
+    });
+    if (t >= 118.5) cue('s7-click', function() {
+      clickAt(130, 400);
+      removeHover(document.getElementById('nav-team'));
+      navigateTo('team');
+    });
+    if (t >= 119.5) cue('s7-cards', function() {
+      for (var i = 0; i < 6; i++) {
+        (function(idx) { setTimeout(function() { document.getElementById('team-card-' + idx).classList.add('visible'); }, idx * 500); })(i);
+      }
+    });
+    if (t >= 126.0) cue('s7-cursor', function() {
+      moveCursor(800, 400, 500);
+    });
+
+    // ============================================================
+    // SCENE 8: CTA (131.9s–end)
+    // ============================================================
+    if (t >= 131.5) cue('s8-start', function() {
+      cursor.style.display = 'none';
+      document.getElementById('app').style.opacity = '0';
+    });
+    if (t >= 132.5) cue('s8-cta', function() {
+      document.getElementById('ctaOverlay').style.display = 'flex';
+    });
+    if (t >= 133.0) cue('s8-funnel', function() {
+      var funnel = document.getElementById('ctaFunnel');
+      funnel.style.transition = 'opacity 0.8s ease';
+      funnel.style.opacity = '1';
+    });
+    if (t >= 134.0) cue('s8-count', function() {
+      var data = [
+        { id: 'cta-f1', target: 12400 },
+        { id: 'cta-f2', target: 4216 },
+        { id: 'cta-f3', target: 847 },
+        { id: 'cta-f4', target: 576 },
+        { id: 'cta-f5', target: 127 },
+      ];
+      data.forEach(function(f, i) {
+        setTimeout(function() { animateCounter(document.getElementById(f.id), f.target, 2000); }, i * 400);
+      });
+    });
+    if (t >= 137.0) cue('s8-manual', function() {
+      document.getElementById('costManual').classList.add('visible');
+    });
+    if (t >= 139.0) cue('s8-vs', function() {
+      document.getElementById('ctaVs').style.opacity = '1';
+      document.getElementById('ctaVs').style.transition = 'opacity 0.6s ease';
+    });
+    if (t >= 141.0) cue('s8-ai', function() {
+      document.getElementById('costAI').classList.add('visible');
+    });
+    if (t >= 146.0) cue('s8-logo', function() {
+      var logo = document.getElementById('ctaLogo');
+      logo.style.opacity = '1';
+      logo.style.transition = 'opacity 1s ease';
+    });
+
+    if (!voiceover.ended) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+</script>
+
+<!-- Progress bar + tap to pause -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#d946ef; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.style.opacity=paused?"1":"0";
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:null;
+      if(a){if(paused)a.pause();else a.play().catch(function(){});}
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused)document.body.classList.add("animations-paused");
+    else{window.__demoPaused=false; document.body.classList.remove("animations-paused");}
+  }
+  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
+  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
+  function upd(){
+    try{
+      var a=typeof voiceover!=="undefined"?voiceover:null;
+      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
+    }catch(e){}
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
+  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
+})();
+</script>
+
+</body>
+</html>
