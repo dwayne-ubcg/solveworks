@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>SolveWorks — NeonTrain eLearning AI Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+* { touch-action: manipulation; -webkit-touch-callout: none; }
+html, body { width: 1920px; height: 1080px; overflow: visible; background: #0A1628; font-family: 'Inter', sans-serif; color: #fff; cursor: none; }
+
+/* ===== SCENES ===== */
+.scene {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+  opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* ===== PLAY BUTTON ===== */
+#playBtn {
+  position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+  background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 11000; gap: 32px;
+}
+#playBtn .play-circle {
+  width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3);
+  display: flex; align-items: center; justify-content: center; transition: all 0.3s;
+}
+#playBtn:hover .play-circle { border-color: #0ea5e9; background: rgba(14,165,233,0.1); transform: scale(1.1); }
+#playBtn .play-triangle { width: 0; height: 0; border-left: 40px solid #fff; border-top: 24px solid transparent; border-bottom: 24px solid transparent; margin-left: 8px; }
+#playBtn.hidden { display: none; }
+#playBtn .preview-title { font-size: 18px; color: #64748b; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ===== GLASS ===== */
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; }
+
+.text-slate-300 { color: #cbd5e1; }
+.text-slate-400 { color: #94a3b8; }
+.text-slate-500 { color: #64748b; }
+.text-accent { color: #0ea5e9; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 250px; height: 1080px; background: rgba(255,255,255,0.03);
+  border-right: 1px solid rgba(255,255,255,0.08); padding: 28px 0;
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.sidebar-logo { padding: 0 24px 12px; }
+.sidebar-logo-main { font-size: 20px; font-weight: 700; }
+.sidebar-practice { font-size: 11px; color: #64748b; padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px; }
+.sidebar-item {
+  padding: 11px 24px; font-size: 14px; color: #64748b;
+  display: flex; align-items: center; gap: 12px;
+  transition: all 0.25s; border-left: 3px solid transparent;
+}
+.sidebar-item.active { color: #0ea5e9; background: rgba(14,165,233,0.08); border-left-color: #0ea5e9; }
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-item .count { margin-left: auto; background: rgba(14,165,233,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+
+/* ===== CARDS ===== */
+.card {
+  padding: 16px; border-radius: 10px; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06); margin-bottom: 10px;
+  opacity: 0; transform: translateY(15px);
+  transition: all 0.4s ease;
+}
+.card.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== METRIC CARDS ===== */
+.metric-card { padding: 20px; border-radius: 14px; text-align: center; }
+.metric-number { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.metric-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+/* ===== TELEGRAM CHAT ===== */
+.tg-chat { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.tg-msg {
+  max-width: 520px; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5;
+  opacity: 0; transform: translateY(10px); transition: all 0.4s ease;
+}
+.tg-msg.visible { opacity: 1; transform: translateY(0); }
+.tg-msg.agent { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.2); border-radius: 16px 16px 16px 4px; align-self: flex-start; color: #e2e8f0; }
+.tg-msg.user { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.2); border-radius: 16px 16px 4px 16px; align-self: flex-end; color: #e2e8f0; }
+.tg-msg .sender { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.tg-msg.agent .sender { color: #0ea5e9; }
+.tg-msg.user .sender { color: #4ade80; }
+.tg-msg .time { font-size: 10px; color: #64748b; margin-top: 4px; text-align: right; }
+
+/* ===== TYPING ===== */
+@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+.typing-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #0ea5e9; margin: 0 2px; animation: blink 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* ===== TIMELINE ===== */
+.timeline-item {
+  display: flex; gap: 16px; margin-bottom: 16px;
+  opacity: 0; transform: translateX(-20px); transition: all 0.5s ease;
+}
+.timeline-item.visible { opacity: 1; transform: translateX(0); }
+.timeline-dot {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.timeline-dot.green { background: rgba(34,197,94,0.2); border: 2px solid #4ade80; }
+.timeline-dot.blue { background: rgba(14,165,233,0.2); border: 2px solid #38bdf8; }
+.timeline-dot.red { background: rgba(239,68,68,0.2); border: 2px solid #f87171; }
+.timeline-dot.yellow { background: rgba(234,179,8,0.2); border: 2px solid #facc15; }
+.timeline-dot.purple { background: rgba(168,85,247,0.2); border: 2px solid #c084fc; }
+
+/* ===== STATUS TAGS ===== */
+.tag { padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
+.tag-green { background: rgba(34,197,94,0.2); color: #4ade80; }
+.tag-blue { background: rgba(14,165,233,0.2); color: #38bdf8; }
+.tag-yellow { background: rgba(234,179,8,0.2); color: #facc15; }
+.tag-red { background: rgba(239,68,68,0.2); color: #f87171; }
+.tag-purple { background: rgba(168,85,247,0.2); color: #c084fc; }
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar { height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.1); }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 1.5s ease; }
+
+/* ===== KANBAN ===== */
+.kanban-col { flex: 1; min-width: 0; }
+.kanban-header { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 12px; border-radius: 8px 8px 0 0; margin-bottom: 8px; }
+.kanban-card {
+  padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px;
+  opacity: 0; transform: translateY(10px); transition: all 0.4s ease;
+}
+.kanban-card.visible { opacity: 1; transform: translateY(0); }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 20px rgba(14,165,233,0.3); } 50% { box-shadow: 0 0 40px rgba(14,165,233,0.6); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+.animations-paused, .animations-paused * {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+</style>
+</head>
+<body>
+
+<!-- PLAY BUTTON -->
+<div id="playBtn" onclick="startPresentation()">
+  <div class="preview-title">SolveWorks — NeonTrain eLearning</div>
+  <div class="play-circle"><div class="play-triangle"></div></div>
+</div>
+
+<!-- ==================== SCENE 0: HOOK ==================== -->
+<div class="scene" id="scene0">
+  <div style="text-align: center; width: 100%;">
+    <div id="s0-hook" style="font-size: 38px; font-weight: 300; line-height: 1.7; opacity: 0; max-width: 960px; margin: 0 auto;">
+      3 clients owe you training materials.<br>
+      <span style="color: #94a3b8; font-size: 30px;">2 course reviews sitting in inboxes. Leads going cold.</span><br>
+      <span style="color: #0ea5e9; font-weight: 600;">What if none of that was your problem?</span>
+    </div>
+    <div id="s0-logo" style="opacity: 0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; margin-top: 12px; font-weight: 300;">Your AI. Only yours.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 1: MORNING DASHBOARD ==================== -->
+<div class="scene" id="scene1">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">NeonTrain eLearning</div>
+      <div class="sidebar-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Learning Providers <span class="count">24</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Course Builds <span class="count">6</span>
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Deadlines
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Messages
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        Brightspace™
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        Pipeline
+      </div>
+      <div class="sidebar-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        Analytics
+      </div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Morning Briefing</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Wednesday, March 12 · 7:02 AM</p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+          <div class="glass metric-card" id="s1-m1" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">6</div>
+            <div class="metric-label">Active Builds</div>
+          </div>
+          <div class="glass metric-card" id="s1-m2" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">$42K</div>
+            <div class="metric-label">Pipeline Value</div>
+          </div>
+          <div class="glass metric-card" id="s1-m3" style="opacity:0; min-width: 100px;">
+            <div class="metric-number" style="font-size: 28px;">96%</div>
+            <div class="metric-label">Client Satisfaction</div>
+          </div>
+        </div>
+      </div>
+      <div class="glass" style="padding: 0; border-radius: 16px; max-width: 900px; overflow: hidden;">
+        <div style="background: rgba(14,165,233,0.1); padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0ea5e9, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 16px;">🤖</div>
+          <div>
+            <div style="font-size: 14px; font-weight: 600; color: #38bdf8;">Your AI Agent</div>
+            <div style="font-size: 11px; color: #64748b;">via Telegram · 7:02 AM</div>
+          </div>
+        </div>
+        <div class="tg-chat" id="s1-chat" style="min-height: 500px;">
+          <div class="tg-msg agent" id="s1-msg1">
+            <div class="sender">Your AI Agent</div>
+            <div>☀️ <strong>Good morning, Robert.</strong> Here's your day:</div>
+            <div class="time">7:02 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg2">
+            <div>📋 <strong>6 active course builds:</strong><br>
+            🔨 3 in progress (Brightspace builds)<br>
+            👀 1 in client review — <span style="color: #fbbf24;">Maritime Safety Corp</span> awaiting feedback<br>
+            🆕 2 new clients in onboarding<br>
+            📦 Content submission status: <span style="color: #f87171;">2 clients overdue</span><br>
+            ⏰ Next deadline: <span style="color: #4ade80;">Coastal Health training — Friday</span></div>
+            <div class="time">7:02 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg3">
+            <div>⚡ <strong>Overnight actions:</strong><br>
+            ✅ Sent content reminder to Sarah (Atlantic Brewing — 5 days overdue)<br>
+            ✅ New lead from neontrain.com — intake questionnaire sent<br>
+            ✅ Course preview link generated for Maritime Safety review</div>
+            <div class="time">7:02 AM</div>
+          </div>
+          <div class="tg-msg user" id="s1-msg4">
+            <div class="sender">Robert</div>
+            <div>What about the new lead?</div>
+            <div class="time">7:15 AM</div>
+          </div>
+          <div class="tg-msg agent" id="s1-msg5">
+            <div class="sender">Your AI Agent</div>
+            <div>Eastport Logistics — they need onboarding training for 40 new hires. I've sent them the intake questionnaire and created the project. Assigned to Alex. They're responding already. 👍</div>
+            <div class="time">7:15 AM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: CLIENT ONBOARDING ==================== -->
+<div class="scene" id="scene2">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">NeonTrain eLearning</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Learning Providers <span class="count">24</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Course Builds</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Deadlines</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Brightspace™</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Client Onboarding</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">New inquiry → project created in minutes, not days</p>
+      </div>
+      <div style="display: flex; gap: 32px;">
+        <!-- Timeline -->
+        <div style="flex: 1;">
+          <div class="timeline-item" id="s2-t1">
+            <div class="timeline-dot green">📩</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #4ade80; font-weight: 600;">9:14 AM — New Inquiry Received</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(34,197,94,0.2);">
+                <div style="font-size: 14px; font-weight: 600;">Eastport Logistics</div>
+                <div style="font-size: 12px; color: #94a3b8;">Contact form on neontrain.com · "We need onboarding training for 40 new warehouse hires"</div>
+                <div style="font-size: 12px; color: #4ade80; margin-top: 6px;">Contact: James Murray, HR Director</div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s2-t2">
+            <div class="timeline-dot blue">🤖</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #38bdf8; font-weight: 600;">9:15 AM — Agent Auto-Responds</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(14,165,233,0.2);">
+                <div style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                  "Hi James! Thanks for reaching out to NeonTrain. We'd love to help with your onboarding training. I've sent you our intake questionnaire — it takes about 10 minutes and helps us understand your team's learning needs."
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s2-t3">
+            <div class="timeline-dot yellow">📋</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #facc15; font-weight: 600;">9:15 AM — Intake Questionnaire Sent</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(234,179,8,0.2);">
+                <div style="font-size: 13px; color: #cbd5e1;">📝 Training goals, audience size, timeline, existing materials, brand guidelines, LMS preferences</div>
+              </div>
+            </div>
+          </div>
+          <div class="timeline-item" id="s2-t4">
+            <div class="timeline-dot purple">✅</div>
+            <div style="flex:1;">
+              <div style="font-size: 11px; color: #c084fc; font-weight: 600;">9:16 AM — Project Created & Assigned</div>
+              <div class="glass" style="padding: 14px; margin-top: 8px; border: 1px solid rgba(168,85,247,0.2);">
+                <div style="font-size: 14px; font-weight: 600; color: #c084fc;">Project: Eastport Logistics — Warehouse Onboarding</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Status: Onboarding · NeonTrainer assigned: Alex · Pipeline value: $8,500</div>
+                <div style="font-size: 12px; color: #94a3b8;">Discovery call auto-scheduled for Thursday 2 PM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Impact -->
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 24px; border-radius: 14px; border: 1px solid rgba(14,165,233,0.2); margin-bottom: 16px;" id="s2-impact">
+            <div style="font-size: 16px; font-weight: 700; color: #0ea5e9; margin-bottom: 16px;">⚡ Response Time</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 800; color: #f87171;">Before</div>
+                <div style="font-size: 11px; color: #94a3b8;">2-3 hours</div>
+              </div>
+              <div style="font-size: 24px; color: #64748b;">→</div>
+              <div style="text-align: center;">
+                <div style="font-size: 32px; font-weight: 800; color: #4ade80;">Now</div>
+                <div style="font-size: 11px; color: #94a3b8;">Under 1 minute</div>
+              </div>
+            </div>
+            <div style="text-align: center; padding: 14px; background: rgba(34,197,94,0.1); border-radius: 10px; border: 1px solid rgba(34,197,94,0.2);">
+              <div style="font-size: 24px; font-weight: 800; color: #4ade80;">Zero leads lost</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">to slow response times</div>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px; text-align: center;" id="s2-quote">
+            <div style="font-size: 40px; margin-bottom: 8px;">🚂</div>
+            <div style="font-size: 15px; color: #cbd5e1; line-height: 1.6; font-style: italic;">
+              "Every learning journey<br>starts with a great first impression.<br>
+              <span style="color: #0ea5e9; font-weight: 600;">Your agent makes sure it's instant."</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: CONTENT COLLECTION ==================== -->
+<div class="scene" id="scene3">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">NeonTrain eLearning</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Learning Providers</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages <span class="count">3</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Course Builds</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Deadlines</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Brightspace™</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Content Collection Follow-Up</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Automated, friendly nudges to keep course builds on track</p>
+      </div>
+      <div style="display: flex; gap: 32px;">
+        <!-- Content status cards -->
+        <div style="flex: 1;">
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Pending Content Submissions</div>
+          <div class="card" id="s3-card1">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(239,68,68,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #f87171;">AB</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Atlantic Brewing Co.</div>
+                  <div style="font-size: 12px; color: #64748b;">Module 3: Safety Procedures · Contact: Sarah Walsh</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="tag tag-red">5 days overdue</span>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
+              Waiting on: Safety procedures document, equipment photos
+            </div>
+            <div class="glass" style="padding: 12px 16px; border-radius: 10px; margin-top: 8px; border: 1px solid rgba(14,165,233,0.15);" id="s3-nudge">
+              <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">🤖 Auto Follow-Up — Sent this morning</div>
+              <div style="font-size: 13px; color: #e2e8f0; font-style: italic;">"Hey Sarah, just checking in — we're ready to start building Module 3 as soon as we receive the safety procedures document you mentioned. No rush, just want to keep your timeline on track! 😊"</div>
+            </div>
+          </div>
+          <div class="card" id="s3-card2">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(234,179,8,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #facc15;">HP</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Halifax Port Authority</div>
+                  <div style="font-size: 12px; color: #64748b;">Module 5: Crane Operations · Contact: Mike Chen</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="tag tag-yellow">2 days overdue</span>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+              Waiting on: Training video footage, certification requirements
+            </div>
+          </div>
+          <div class="card" id="s3-card3">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #4ade80;">CW</div>
+                <div>
+                  <div style="font-size: 15px; font-weight: 600;">Clearwater Seafoods</div>
+                  <div style="font-size: 12px; color: #64748b;">Module 2: HACCP Compliance · Contact: Lisa Fong</div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="tag tag-green">✓ Received today</span>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+              All materials submitted — moved to Storyboarding
+            </div>
+          </div>
+        </div>
+        <!-- Right: Follow-up stats -->
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; margin-bottom: 16px;" id="s3-stats">
+            <div style="font-size: 13px; font-weight: 600; color: #0ea5e9; margin-bottom: 12px;">📊 Content Collection Stats</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Avg collection time (before)</span>
+              <span style="color: #f87171; font-weight: 600;">12 days</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Avg collection time (now)</span>
+              <span style="color: #4ade80; font-weight: 600;">6 days</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Auto follow-ups sent</span>
+              <span style="color: #cbd5e1; font-weight: 600;">34</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+              <span class="text-slate-400">Response rate</span>
+              <span style="color: #4ade80; font-weight: 700; font-size: 15px;">89%</span>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px; text-align: center;" id="s3-quote">
+            <div style="font-size: 40px; margin-bottom: 8px;">⏰</div>
+            <div style="font-size: 15px; color: #cbd5e1; line-height: 1.6; font-style: italic;">
+              "No more chasing clients for content.<br>
+              <span style="color: #0ea5e9; font-weight: 600;">Your agent handles the follow-up.</span><br>
+              You handle the builds."
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: PROJECT TRACKING (KANBAN) ==================== -->
+<div class="scene" id="scene4">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">NeonTrain eLearning</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Learning Providers</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Course Builds <span class="count">6</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Deadlines</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Brightspace™</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 20px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Course Build Tracker</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Every project, every stage — always current</p>
+      </div>
+      <!-- Kanban Board -->
+      <div style="display: flex; gap: 12px; height: 820px;">
+        <!-- Content Collection -->
+        <div class="kanban-col">
+          <div class="kanban-header" style="background: rgba(234,179,8,0.15); color: #facc15;">📦 Content Collection</div>
+          <div class="kanban-card" id="s4-k1">
+            <div style="font-size: 13px; font-weight: 600;">Atlantic Brewing Co.</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">Safety Training · 5 modules</div>
+            <div class="progress-bar" style="margin: 6px 0;"><div class="progress-fill" style="width: 40%; background: #facc15;" id="s4-p1"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
+              <span>40% complete</span><span>NeonTrainer: Jordan</span>
+            </div>
+          </div>
+          <div class="kanban-card" id="s4-k2">
+            <div style="font-size: 13px; font-weight: 600;">Halifax Port Authority</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">Crane Operations · 3 modules</div>
+            <div class="progress-bar" style="margin: 6px 0;"><div class="progress-fill" style="width: 25%; background: #facc15;" id="s4-p2"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
+              <span>25% complete</span><span>NeonTrainer: Alex</span>
+            </div>
+          </div>
+        </div>
+        <!-- Storyboarding -->
+        <div class="kanban-col">
+          <div class="kanban-header" style="background: rgba(168,85,247,0.15); color: #c084fc;">✏️ Storyboarding</div>
+          <div class="kanban-card" id="s4-k3">
+            <div style="font-size: 13px; font-weight: 600;">Clearwater Seafoods</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">HACCP Compliance · 4 modules</div>
+            <div class="progress-bar" style="margin: 6px 0;"><div class="progress-fill" style="width: 55%; background: #c084fc;" id="s4-p3"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
+              <span>55% complete</span><span>NeonTrainer: Jordan</span>
+            </div>
+          </div>
+        </div>
+        <!-- Building in Brightspace -->
+        <div class="kanban-col">
+          <div class="kanban-header" style="background: rgba(14,165,233,0.15); color: #38bdf8;">🔨 Building in Brightspace</div>
+          <div class="kanban-card" id="s4-k4">
+            <div style="font-size: 13px; font-weight: 600;">Coastal Health Services</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">Staff Onboarding · 6 modules</div>
+            <div class="progress-bar" style="margin: 6px 0;"><div class="progress-fill" style="width: 72%; background: #38bdf8;" id="s4-p4"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
+              <span>72% complete</span><span>NeonTrainer: Alex</span>
+            </div>
+          </div>
+          <div class="kanban-card" id="s4-k5">
+            <div style="font-size: 13px; font-weight: 600;">Nova Scotia Tourism</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">Hospitality Standards · 4 modules</div>
+            <div class="progress-bar" style="margin: 6px 0;"><div class="progress-fill" style="width: 60%; background: #38bdf8;" id="s4-p5"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
+              <span>60% complete</span><span>NeonTrainer: Jordan</span>
+            </div>
+          </div>
+        </div>
+        <!-- Client Review -->
+        <div class="kanban-col">
+          <div class="kanban-header" style="background: rgba(251,191,36,0.15); color: #fbbf24;">👀 Client Review</div>
+          <div class="kanban-card" id="s4-k6">
+            <div style="font-size: 13px; font-weight: 600;">Maritime Safety Corp</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">Workplace Safety · 8 modules</div>
+            <div class="progress-bar" style="margin: 6px 0;"><div class="progress-fill" style="width: 85%; background: #fbbf24;" id="s4-p6"></div></div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #64748b;">
+              <span>85% complete</span><span>NeonTrainer: Alex</span>
+            </div>
+            <div style="font-size: 10px; color: #fbbf24; margin-top: 4px;">⏳ Awaiting client feedback since Monday</div>
+          </div>
+        </div>
+        <!-- Revisions -->
+        <div class="kanban-col">
+          <div class="kanban-header" style="background: rgba(239,68,68,0.15); color: #f87171;">🔄 Revisions</div>
+          <div style="text-align: center; padding: 20px; color: #334155; font-size: 12px;">No courses in revision</div>
+        </div>
+        <!-- Live -->
+        <div class="kanban-col">
+          <div class="kanban-header" style="background: rgba(34,197,94,0.15); color: #4ade80;">🚀 Live</div>
+          <div class="kanban-card" id="s4-k7" style="border: 1px solid rgba(34,197,94,0.2);">
+            <div style="font-size: 13px; font-weight: 600; color: #4ade80;">Irving Shipbuilding</div>
+            <div style="font-size: 11px; color: #94a3b8; margin: 4px 0;">Welder Certification · 6 modules</div>
+            <div style="font-size: 10px; color: #4ade80;">✅ Launched March 1 · 142 enrolled</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 5: CLIENT REVIEW MANAGEMENT ==================== -->
+<div class="scene" id="scene5">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">NeonTrain eLearning</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Learning Providers</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Course Builds</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages <span class="count">1</span></div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Deadlines</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Brightspace™</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Pipeline</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 28px; font-weight: 700;">Client Review Management</h1>
+        <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Feedback parsed, assigned, and tracked — automatically</p>
+      </div>
+      <div style="display: flex; gap: 32px;">
+        <!-- Left: incoming feedback + parsed items -->
+        <div style="flex: 1;">
+          <!-- Client feedback email -->
+          <div class="glass" style="padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(251,191,36,0.2);" id="s5-feedback">
+            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">📧 Client Feedback — Received 2 hours ago</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 4px;"><strong style="color: #cbd5e1;">From:</strong> Dave Richardson, Maritime Safety Corp</div>
+            <div style="font-size: 13px; color: #94a3b8; margin-bottom: 12px;"><strong style="color: #cbd5e1;">Re:</strong> Workplace Safety Course — Preview Review</div>
+            <div style="font-size: 13px; line-height: 1.7; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+              "Looks great overall! A few things:<br>
+              1. The fire extinguisher video in Module 3 needs to be swapped — we use CO2 extinguishers, not foam<br>
+              2. Can you add our company logo to the certificate template?<br>
+              3. The quiz in Module 5 has a typo — question 4 says 'harness' but should say 'harnesses'<br>
+              4. Would be great to add a scenario-based exercise to Module 7"
+            </div>
+          </div>
+          <!-- Parsed revision items -->
+          <div style="font-size: 13px; color: #0ea5e9; font-weight: 600; margin-bottom: 10px;">🤖 Agent Parsed → 4 Revision Items</div>
+          <div class="card" id="s5-rev1">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="color: #f87171; font-weight: 700;">1</span>
+                <div>
+                  <div style="font-size: 13px; font-weight: 500;">Swap fire extinguisher video (Module 3)</div>
+                  <div style="font-size: 11px; color: #64748b;">Replace foam with CO2 extinguisher content</div>
+                </div>
+              </div>
+              <span class="tag tag-blue">Assigned: Alex</span>
+            </div>
+          </div>
+          <div class="card" id="s5-rev2">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="color: #fbbf24; font-weight: 700;">2</span>
+                <div>
+                  <div style="font-size: 13px; font-weight: 500;">Add company logo to certificate template</div>
+                  <div style="font-size: 11px; color: #64748b;">Brand asset update — certificate generator</div>
+                </div>
+              </div>
+              <span class="tag tag-blue">Assigned: Alex</span>
+            </div>
+          </div>
+          <div class="card" id="s5-rev3">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="color: #4ade80; font-weight: 700;">3</span>
+                <div>
+                  <div style="font-size: 13px; font-weight: 500;">Fix typo in Module 5 quiz (Q4)</div>
+                  <div style="font-size: 11px; color: #64748b;">"harness" → "harnesses"</div>
+                </div>
+              </div>
+              <span class="tag tag-green">Auto-fixed ✓</span>
+            </div>
+          </div>
+          <div class="card" id="s5-rev4">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="color: #c084fc; font-weight: 700;">4</span>
+                <div>
+                  <div style="font-size: 13px; font-weight: 500;">Add scenario exercise to Module 7</div>
+                  <div style="font-size: 11px; color: #64748b;">New content — needs storyboarding</div>
+                </div>
+              </div>
+              <span class="tag tag-purple">Assigned: Jordan</span>
+            </div>
+          </div>
+        </div>
+        <!-- Right: Client response -->
+        <div style="width: 400px;">
+          <div class="glass" style="padding: 0; border-radius: 14px; overflow: hidden;" id="s5-response">
+            <div style="background: rgba(14,165,233,0.1); padding: 12px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(14,165,233,0.2); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #38bdf8;">🤖</div>
+              <div>
+                <div style="font-size: 13px; font-weight: 600;">Auto-Response to Client</div>
+                <div style="font-size: 11px; color: #64748b;">Sent 5 minutes after feedback received</div>
+              </div>
+            </div>
+            <div class="tg-chat" style="min-height: 300px;">
+              <div class="tg-msg agent" id="s5-msg1">
+                <div class="sender">Your AI Agent</div>
+                <div>Hi Dave! Got your feedback on the Workplace Safety course — thanks for the thorough review! 🙌<br><br>
+                Here's what we've logged:<br>
+                ✅ <strong>4 revision items</strong> created<br>
+                🔧 1 typo already auto-fixed<br>
+                👨‍💻 3 items assigned to your designer Alex<br>
+                📅 <strong>Estimated completion: Thursday</strong><br><br>
+                We'll send you an updated preview link once everything's done. Sound good?</div>
+                <div class="time">10:35 AM</div>
+              </div>
+              <div class="tg-msg user" id="s5-msg2">
+                <div class="sender">Dave (Maritime Safety)</div>
+                <div>Perfect, that's exactly what I needed. Thanks for the quick turnaround!</div>
+                <div class="time">10:42 AM</div>
+              </div>
+            </div>
+          </div>
+          <div class="glass" style="padding: 16px; border-radius: 12px; margin-top: 12px; border: 1px solid rgba(34,197,94,0.2);" id="s5-stats">
+            <div style="font-size: 13px; font-weight: 600; color: #4ade80; margin-bottom: 10px;">📊 Review Cycle Impact</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span class="text-slate-400">Avg feedback turnaround</span>
+              <span style="color: #4ade80; font-weight: 600;">4 hours</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span class="text-slate-400">Items auto-resolved</span>
+              <span style="color: #38bdf8; font-weight: 600;">22%</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px;">
+              <span class="text-slate-400">Lost feedback items</span>
+              <span style="color: #4ade80; font-weight: 700; font-size: 15px;">Zero</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 6: ANALYTICS ==================== -->
+<div class="scene" id="scene6">
+  <div style="display: flex; width: 1920px; height: 1080px;">
+    <div class="sidebar">
+      <div class="sidebar-logo"><span class="sidebar-logo-main"><span style="color:#fff;">Solve</span><span style="color:#0ea5e9;">Works</span></span></div>
+      <div class="sidebar-practice">NeonTrain eLearning</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Dashboard</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> Learning Providers</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Course Builds</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Deadlines</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> Brightspace™</div>
+      <div class="sidebar-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Pipeline</div>
+      <div class="sidebar-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg> Analytics</div>
+    </div>
+    <div style="flex: 1; padding: 32px 40px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="font-size: 28px; font-weight: 700;">Business Analytics</h1>
+          <p class="text-slate-400" style="font-size: 14px; margin-top: 4px;">Q1 2026 — The numbers that matter</p>
+        </div>
+      </div>
+      <!-- Top metrics row -->
+      <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+        <div class="glass metric-card" style="flex: 1;" id="s6-m1">
+          <div class="metric-number" id="s6-rev">$0</div>
+          <div class="metric-label">Revenue Pipeline</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1;" id="s6-m2">
+          <div style="font-size: 36px; font-weight: 800; color: #4ade80;">18 days</div>
+          <div class="metric-label">Avg Build Time ↓</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1;" id="s6-m3">
+          <div style="font-size: 36px; font-weight: 800; color: #fbbf24;">96%</div>
+          <div class="metric-label">Client Satisfaction</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1;" id="s6-m4">
+          <div class="metric-number">7</div>
+          <div class="metric-label">Courses Launched (Q1)</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px;">
+        <!-- Revenue breakdown -->
+        <div class="glass" style="flex: 1; padding: 24px; border-radius: 14px;" id="s6-pipeline">
+          <div style="font-size: 16px; font-weight: 700; color: #0ea5e9; margin-bottom: 16px;">💰 Revenue Pipeline</div>
+          <div class="card" id="s6-p1">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Full Builds</div>
+                <div style="font-size: 12px; color: #64748b;">4 active projects</div>
+              </div>
+              <div style="font-size: 20px; font-weight: 800; color: #4ade80;">$28,400</div>
+            </div>
+          </div>
+          <div class="card" id="s6-p2">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Guided Builds</div>
+                <div style="font-size: 12px; color: #64748b;">2 active projects</div>
+              </div>
+              <div style="font-size: 20px; font-weight: 800; color: #38bdf8;">$8,200</div>
+            </div>
+          </div>
+          <div class="card" id="s6-p3">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Brightspace Admin</div>
+                <div style="font-size: 12px; color: #64748b;">Monthly retainers × 6 clients</div>
+              </div>
+              <div style="font-size: 20px; font-weight: 800; color: #c084fc;">$5,400/mo</div>
+            </div>
+          </div>
+          <div class="card" id="s6-p4">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">New Leads</div>
+                <div style="font-size: 12px; color: #64748b;">3 in pipeline · Proposal stage</div>
+              </div>
+              <div style="font-size: 20px; font-weight: 800; color: #fbbf24;">$18,500</div>
+            </div>
+          </div>
+        </div>
+        <!-- Right: quarterly stats -->
+        <div style="width: 380px;">
+          <div class="glass" style="padding: 20px; border-radius: 14px; margin-bottom: 16px;" id="s6-quarterly">
+            <div style="font-size: 13px; font-weight: 600; color: #0ea5e9; margin-bottom: 12px;">📈 Q1 Trends</div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Courses launched</span>
+              <span style="color: #4ade80; font-weight: 600;">7 <span style="font-size: 10px; color: #94a3b8;">(+40% vs Q4)</span></span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Avg build time</span>
+              <span style="color: #4ade80; font-weight: 600;">18 days <span style="font-size: 10px; color: #94a3b8;">(was 26)</span></span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Content collection time</span>
+              <span style="color: #4ade80; font-weight: 600;">6 days <span style="font-size: 10px; color: #94a3b8;">(was 12)</span></span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px;">
+              <span class="text-slate-400">Client satisfaction</span>
+              <span style="color: #fbbf24; font-weight: 600;">96% ★</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+              <span class="text-slate-400">Learners trained</span>
+              <span style="color: #38bdf8; font-weight: 700; font-size: 15px;">1,247</span>
+            </div>
+          </div>
+          <div class="glass" style="padding: 20px; border-radius: 14px;" id="s6-insight">
+            <div style="font-size: 13px; font-weight: 600; color: #4ade80; margin-bottom: 10px;">💡 Agent Insight</div>
+            <div style="font-size: 13px; color: #cbd5e1; line-height: 1.7;">
+              "Your average build time dropped 31% this quarter. The biggest factor? Automated content collection reminders cut client delays in half. At this rate, you can take on 2 more Full Builds per quarter without adding staff."
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 7: CLOSING ==================== -->
+<div class="scene" id="scene7">
+  <div style="width: 1920px; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 120px;">
+    <!-- Key benefits -->
+    <div id="s7-benefits" style="opacity: 0; width: 100%; max-width: 1100px; margin-bottom: 40px;">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <div style="font-size: 30px; font-weight: 700;">What Your Agent Handles</div>
+        <div style="font-size: 16px; color: #94a3b8; margin-top: 8px;">So you can focus on building world-class learning experiences</div>
+      </div>
+      <div style="display: flex; gap: 16px;">
+        <div class="glass metric-card" style="flex: 1; padding: 28px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📩</div>
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Client Onboarding</div>
+          <div style="font-size: 13px; color: #94a3b8;">Instant responses, intake forms, project setup</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1; padding: 28px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📦</div>
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Content Follow-Up</div>
+          <div style="font-size: 13px; color: #94a3b8;">Friendly nudges that cut collection time in half</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1; padding: 28px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">🔄</div>
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Revision Tracking</div>
+          <div style="font-size: 13px; color: #94a3b8;">Parse feedback, assign tasks, update clients</div>
+        </div>
+        <div class="glass metric-card" style="flex: 1; padding: 28px;">
+          <div style="font-size: 32px; margin-bottom: 8px;">📊</div>
+          <div style="font-size: 16px; font-weight: 600; margin-bottom: 4px;">Business Intelligence</div>
+          <div style="font-size: 13px; color: #94a3b8;">Pipeline, timelines, satisfaction — always current</div>
+        </div>
+      </div>
+    </div>
+    <!-- Tagline -->
+    <div id="s7-tagline" style="opacity: 0; margin-bottom: 32px;">
+      <div class="glass" style="display: inline-block; padding: 16px 48px; border-radius: 12px; border: 1px solid rgba(14,165,233,0.2);">
+        <span style="font-size: 26px; font-weight: 600; color: #cbd5e1; font-style: italic;">"Your AI agent handles the admin. You build the learning experiences."</span>
+      </div>
+    </div>
+    <!-- CTA -->
+    <div id="s7-cta" style="opacity: 0; text-align: center;">
+      <div style="font-size: 64px; font-weight: 800; letter-spacing: -1px; margin-bottom: 12px;">
+        <span style="color: #fff;">Solve</span><span style="background: linear-gradient(135deg, #0ea5e9, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Works</span>
+      </div>
+      <div style="font-size: 20px; color: #94a3b8; font-weight: 300; margin-bottom: 16px;">Your AI. Only yours.</div>
+      <div style="font-size: 18px; color: #0ea5e9; font-weight: 500; margin-bottom: 20px;">solveworks.io</div>
+      <div style="font-size: 16px; color: #cbd5e1; font-weight: 300;">Ready to see what it does for NeonTrain?</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// AUDIO
+// ================================================================
+var audioFiles = [
+  'scene0.mp3', 'scene1.mp3', 'scene2.mp3', 'scene3.mp3',
+  'scene4.mp3', 'scene5.mp3', 'scene6.mp3', 'scene7.mp3'
+];
+var audios = audioFiles.map(function(f) {
+  var a = new Audio(f);
+  a.preload = 'auto';
+  return a;
+});
+
+// ================================================================
+// SCENE MANAGEMENT
+// ================================================================
+var currentScene = -1;
+
+function showScene(i) {
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
+  var s = document.getElementById('scene' + i);
+  if (s) { s.classList.add('active'); currentScene = i; }
+}
+
+function fadeIn(el, delay) {
+  if (!el) return;
+  setTimeout(function() {
+    el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  }, delay || 0);
+}
+
+// ================================================================
+// CUE SYSTEM
+// ================================================================
+var cuesFired = {};
+function cue(id, fn) {
+  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+}
+
+// ================================================================
+// SEGMENTED AUDIO PLAYBACK
+// ================================================================
+var sceneTimings = [
+  { scene: 0, audioIndex: 0 },
+  { scene: 1, audioIndex: 1 },
+  { scene: 2, audioIndex: 2 },
+  { scene: 3, audioIndex: 3 },
+  { scene: 4, audioIndex: 4 },
+  { scene: 5, audioIndex: 5 },
+  { scene: 6, audioIndex: 6 },
+  { scene: 7, audioIndex: 7 },
+];
+
+var currentSegment = 0;
+
+function playSegment(index) {
+  if (index >= sceneTimings.length) return;
+  currentSegment = index;
+  var seg = sceneTimings[index];
+  
+  showScene(seg.scene);
+  animateScene(seg.scene);
+  
+  var audio = audios[seg.audioIndex];
+  audio.onended = function() {
+    setTimeout(function() { playSegment(index + 1); }, 800);
+  };
+  audio.play().catch(function() {
+    setTimeout(function() { playSegment(index + 1); }, 15000);
+  });
+  runSceneAnimations(seg.scene, audio);
+}
+
+// ================================================================
+// SCENE ANIMATIONS
+// ================================================================
+function animateScene(sceneNum) {
+  switch(sceneNum) {
+    case 0: break;
+    case 1: animateScene1Init(); break;
+    case 2: break;
+    case 3: break;
+    case 4: break;
+    case 5: break;
+    case 6: animateScene6Init(); break;
+    case 7: break;
+  }
+}
+
+function runSceneAnimations(sceneNum, audio) {
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    if (audio.ended) return;
+    var t = audio.currentTime;
+    switch(sceneNum) {
+      case 0: tickScene0(t); break;
+      case 1: tickScene1(t); break;
+      case 2: tickScene2(t); break;
+      case 3: tickScene3(t); break;
+      case 4: tickScene4(t); break;
+      case 5: tickScene5(t); break;
+      case 6: tickScene6(t); break;
+      case 7: tickScene7(t); break;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// --- Scene 0: Hook ---
+function tickScene0(t) {
+  if (t >= 0.3) cue('s0-hook', function() {
+    var h = document.getElementById('s0-hook');
+    h.style.transition = 'opacity 1s ease';
+    h.style.opacity = '1';
+  });
+  if (t >= 8) cue('s0-hide', function() {
+    document.getElementById('s0-hook').style.opacity = '0';
+  });
+  if (t >= 9.5) cue('s0-logo', function() {
+    var l = document.getElementById('s0-logo');
+    l.style.transition = 'opacity 1s ease';
+    l.style.opacity = '1';
+  });
+}
+
+// --- Scene 1: Morning Dashboard ---
+function animateScene1Init() {
+  fadeIn(document.getElementById('s1-m1'), 300);
+  fadeIn(document.getElementById('s1-m2'), 600);
+  fadeIn(document.getElementById('s1-m3'), 900);
+}
+function tickScene1(t) {
+  if (t >= 0.5) cue('s1-msg1', function() { document.getElementById('s1-msg1').classList.add('visible'); });
+  if (t >= 2.5) cue('s1-msg2', function() { document.getElementById('s1-msg2').classList.add('visible'); });
+  if (t >= 7) cue('s1-msg3', function() { document.getElementById('s1-msg3').classList.add('visible'); });
+  if (t >= 12) cue('s1-msg4', function() { document.getElementById('s1-msg4').classList.add('visible'); });
+  if (t >= 14) cue('s1-msg5', function() { document.getElementById('s1-msg5').classList.add('visible'); });
+}
+
+// --- Scene 2: Client Onboarding ---
+function tickScene2(t) {
+  if (t >= 0.5) cue('s2-t1', function() { document.getElementById('s2-t1').classList.add('visible'); });
+  if (t >= 4) cue('s2-t2', function() { document.getElementById('s2-t2').classList.add('visible'); });
+  if (t >= 8) cue('s2-t3', function() { document.getElementById('s2-t3').classList.add('visible'); });
+  if (t >= 11) cue('s2-t4', function() { document.getElementById('s2-t4').classList.add('visible'); });
+  if (t >= 14) cue('s2-impact', function() {
+    var el = document.getElementById('s2-impact');
+    el.style.animation = 'pulseGlow 2.5s infinite';
+  });
+}
+
+// --- Scene 3: Content Collection ---
+function tickScene3(t) {
+  if (t >= 0.5) cue('s3-card1', function() { document.getElementById('s3-card1').classList.add('visible'); });
+  if (t >= 4) cue('s3-card2', function() { document.getElementById('s3-card2').classList.add('visible'); });
+  if (t >= 7) cue('s3-card3', function() { document.getElementById('s3-card3').classList.add('visible'); });
+  if (t >= 10) cue('s3-nudge', function() {
+    var el = document.getElementById('s3-nudge');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(14,165,233,0.3)';
+  });
+  if (t >= 14) cue('s3-stats', function() {
+    var el = document.getElementById('s3-stats');
+    el.style.transition = 'opacity 0.6s ease';
+    el.style.opacity = '1';
+  });
+}
+
+// --- Scene 4: Kanban ---
+function tickScene4(t) {
+  if (t >= 0.5) cue('s4-k1', function() { document.getElementById('s4-k1').classList.add('visible'); });
+  if (t >= 1.5) cue('s4-k2', function() { document.getElementById('s4-k2').classList.add('visible'); });
+  if (t >= 3) cue('s4-k3', function() { document.getElementById('s4-k3').classList.add('visible'); });
+  if (t >= 5) cue('s4-k4', function() { document.getElementById('s4-k4').classList.add('visible'); });
+  if (t >= 6.5) cue('s4-k5', function() { document.getElementById('s4-k5').classList.add('visible'); });
+  if (t >= 8) cue('s4-k6', function() { document.getElementById('s4-k6').classList.add('visible'); });
+  if (t >= 10) cue('s4-k7', function() {
+    var el = document.getElementById('s4-k7');
+    el.classList.add('visible');
+    el.style.boxShadow = '0 0 15px rgba(34,197,94,0.3)';
+  });
+}
+
+// --- Scene 5: Client Review Management ---
+function tickScene5(t) {
+  if (t >= 0.5) cue('s5-feedback', function() {
+    var el = document.getElementById('s5-feedback');
+    el.style.transition = 'opacity 0.6s ease';
+    el.style.opacity = '1';
+  });
+  if (t >= 4) cue('s5-rev1', function() { document.getElementById('s5-rev1').classList.add('visible'); });
+  if (t >= 5.5) cue('s5-rev2', function() { document.getElementById('s5-rev2').classList.add('visible'); });
+  if (t >= 7) cue('s5-rev3', function() { document.getElementById('s5-rev3').classList.add('visible'); });
+  if (t >= 8.5) cue('s5-rev4', function() { document.getElementById('s5-rev4').classList.add('visible'); });
+  if (t >= 12) cue('s5-msg1', function() { document.getElementById('s5-msg1').classList.add('visible'); });
+  if (t >= 17) cue('s5-msg2', function() { document.getElementById('s5-msg2').classList.add('visible'); });
+}
+
+// --- Scene 6: Analytics ---
+function animateScene6Init() {
+  // Revenue counter animation
+  var el = document.getElementById('s6-rev');
+  var start = performance.now();
+  (function update(now) {
+    var p = Math.min((now - start) / 2000, 1);
+    var val = Math.round(42000 * (1 - Math.pow(1 - p, 3)));
+    el.textContent = '$' + val.toLocaleString();
+    if (p < 1) requestAnimationFrame(update);
+  })(performance.now());
+}
+function tickScene6(t) {
+  if (t >= 0.5) cue('s6-m1', function() { fadeIn(document.getElementById('s6-m1'), 0); });
+  if (t >= 1) cue('s6-m2', function() { fadeIn(document.getElementById('s6-m2'), 0); });
+  if (t >= 1.5) cue('s6-m3', function() { fadeIn(document.getElementById('s6-m3'), 0); });
+  if (t >= 2) cue('s6-m4', function() { fadeIn(document.getElementById('s6-m4'), 0); });
+  if (t >= 3) cue('s6-p1', function() { document.getElementById('s6-p1').classList.add('visible'); });
+  if (t >= 4.5) cue('s6-p2', function() { document.getElementById('s6-p2').classList.add('visible'); });
+  if (t >= 6) cue('s6-p3', function() { document.getElementById('s6-p3').classList.add('visible'); });
+  if (t >= 7.5) cue('s6-p4', function() { document.getElementById('s6-p4').classList.add('visible'); });
+  if (t >= 10) cue('s6-insight', function() {
+    var el = document.getElementById('s6-insight');
+    el.style.transition = 'all 0.5s ease';
+    el.style.boxShadow = '0 0 20px rgba(34,197,94,0.2)';
+  });
+}
+
+// --- Scene 7: Closing ---
+function tickScene7(t) {
+  if (t >= 0.5) cue('s7-benefits', function() {
+    var el = document.getElementById('s7-benefits');
+    el.style.transition = 'opacity 1s ease';
+    el.style.opacity = '1';
+  });
+  if (t >= 6) cue('s7-tagline', function() {
+    var el = document.getElementById('s7-tagline');
+    el.style.transition = 'opacity 0.8s ease';
+    el.style.opacity = '1';
+  });
+  if (t >= 10) cue('s7-cta', function() {
+    var el = document.getElementById('s7-cta');
+    el.style.transition = 'opacity 1s ease';
+    el.style.opacity = '1';
+  });
+}
+
+// ================================================================
+// START
+// ================================================================
+function startPresentation() {
+  document.getElementById('playBtn').classList.add('hidden');
+  playSegment(0);
+}
+</script>
+
+<!-- Progress bar + tap to pause -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
+<script>
+(function(){
+  var paused=false, started=false;
+  var flash=document.getElementById("pauseFlash");
+  var prog=document.getElementById("simpleProgress");
+  var fill=document.getElementById("simpleProgressFill");
+  var iv=setInterval(function(){
+    var pb=document.getElementById("playBtn");
+    if(pb&&pb.classList.contains("hidden")){
+      started=true; prog.style.display="block"; clearInterval(iv);
+    }
+  },200);
+  function toggle(){
+    if(!started)return;
+    paused=!paused;
+    flash.style.opacity=paused?"1":"0";
+    try{
+      audios.forEach(function(a){ if(paused) a.pause(); else if(a.currentTime>0&&!a.ended) a.play().catch(function(){}); });
+    }catch(e){}
+    window.__demoPaused=paused;
+    if(paused) document.body.classList.add("animations-paused");
+    else document.body.classList.remove("animations-paused");
+  }
+  document.addEventListener("touchstart",function(e){if(started){e.preventDefault();toggle();}});
+  document.addEventListener("click",function(e){if(started&&!e.target.closest("#playBtn"))toggle();});
+})();
+</script>
+
+</body>
+</html>
