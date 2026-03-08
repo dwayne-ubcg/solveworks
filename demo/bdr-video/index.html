@@ -875,6 +875,31 @@ function cue(id, fn) {
   if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
 }
 
+// ============================================================
+// WHISPER TIMESTAMPS (re-recorded voiceover)
+// ============================================================
+// [0.0s]  "What if you could replace a 20-person BDR team with AI, not offshore VAs?"
+// [5.3s]  "A team that finds prospects, writes personalized outreach, and follows up for months on autopilot."
+// [12.2s] "This is your AI BDR command center. Pipeline on the left."
+// [17.4s] "Everything your AI is doing right now on the right."
+// [21.2s] "Your AI just pulled 847 companies matching your ideal customer profile."
+// [26.3s] "Industry, size, location, tech stack, all filtered."
+// [33.3s] "It's enriching contacts in real time."
+// [36.2s] "VP of sales, CTO, direct emails. No ZoomInfo needed."
+// [41.1s] "Every prospect gets a unique email sequence."
+// [44.2s] "Not mail merged with a name swapped in. Actually personalized."
+// [48.7s] "It read their LinkedIn, found a recent press release, checked their tech stack."
+// [53.9s] "Three touch points over 21 days. It just wrote 200 of these while we've been talking."
+// [58.9s] "Responses flow into your pipeline automatically. Interested? Booked."
+// [63.5s] "Objection? AI handles the follow-up."
+// [66.2s] "You're looking at 47 warm conversations from 500 outbound."
+// [69.6s] "First week, open rates, reply rates, meetings booked, all tracked."
+// [74.2s] "Your AI optimizes subject lines and send times in real time."
+// [78.0s] "This campaign is running a 34% reply rate."
+// [80.8s] "Human BDR teams average 3 to 5%. A 20-person BDR team costs $80,000 to $100,000 a month."
+// [88.1s] "This runs 24-7. No training, no turnover, no missed follow-ups."
+// [92.2s] "Your AI, only yours. See it live at solveworks.io."
+
 function startDemo() {
   document.getElementById('playBtn').classList.add('hidden');
   startTime = performance.now();
@@ -890,62 +915,67 @@ function startDemo() {
     if (window.__demoPaused) { requestAnimationFrame(tick); return; }
     var t = voiceover.currentTime;
 
-    // === HOOK (0–12s) ===
-    // "What if you could replace a 20-person BDR team" 0.0s
-    if (t >= 0.5) cue('hook-show', function() {
+    // ============================================================
+    // HOOK (0s–12.2s)
+    // ============================================================
+    // [0.0s] "What if you could replace a 20-person BDR team"
+    if (t >= 0.3) cue('hook-show', function() {
       document.getElementById('hookText').style.opacity = '1';
     });
-    // "A team that finds prospects" 5.3s
-    if (t >= 5) cue('hook-hide', function() {
+    // [5.3s] "A team that finds prospects..." — hook stays visible through both lines
+    // Fade hook at ~10s to prepare for dashboard reveal
+    if (t >= 10.0) cue('hook-hide', function() {
       document.getElementById('hookText').style.opacity = '0';
     });
-    if (t >= 6) cue('hook-logo', function() {
+    if (t >= 10.5) cue('hook-logo', function() {
       document.getElementById('logoReveal').style.opacity = '1';
     });
-    if (t >= 8) cue('hook-logo-hide', function() {
+    if (t >= 11.8) cue('hook-logo-hide', function() {
       document.getElementById('logoReveal').style.opacity = '0';
     });
 
-    // === SCENE 1: PIPELINE (12–33s) ===
-    // "This is your AI BDR command center" 12.2s
-    if (t >= 12) cue('s1-start', function() {
+    // ============================================================
+    // SCENE 1: PIPELINE (12.2s–33.3s)
+    // ============================================================
+    // [12.2s] "This is your AI BDR command center. Pipeline on the left."
+    if (t >= 12.2) cue('s1-start', function() {
       document.getElementById('overlay').classList.add('hidden');
       document.getElementById('app').style.opacity = '1';
       cursor.style.display = 'block';
       navigateTo('pipeline');
-      animateCounter(document.getElementById('pipelineCounter'), 87, 2000);
+      animateCounter(document.getElementById('pipelineCounter'), 847, 2500);
     });
-    // Company rows appear as narrator describes
-    if (t >= 13) cue('s1-row0', function() { document.getElementById('company-0').classList.add('visible'); });
+    // Company rows cascade in after dashboard appears
+    if (t >= 13.0) cue('s1-row0', function() { document.getElementById('company-0').classList.add('visible'); });
     if (t >= 13.5) cue('s1-row1', function() { document.getElementById('company-1').classList.add('visible'); });
-    if (t >= 14) cue('s1-row2', function() { document.getElementById('company-2').classList.add('visible'); });
+    if (t >= 14.0) cue('s1-row2', function() { document.getElementById('company-2').classList.add('visible'); });
     if (t >= 14.5) cue('s1-row3', function() { document.getElementById('company-3').classList.add('visible'); });
-    if (t >= 15) cue('s1-row4', function() { document.getElementById('company-4').classList.add('visible'); });
-    // "Pipeline on the left" 15.1s
+    if (t >= 15.0) cue('s1-row4', function() { document.getElementById('company-4').classList.add('visible'); });
+    // Toast during "Pipeline on the left" (~15s)
     if (t >= 15.5) cue('s1-toast', function() {
       showToast('🔍 New Company Found', 'TrueNorth Logistics — matches ICP criteria');
     });
-    // "Everything your AI is doing" 17.4s
-    if (t >= 17) cue('s1-cursor1', function() { moveCursor(750, 340, 500); });
-    if (t >= 18) cue('s1-hover', function() { addHover(document.getElementById('company-1')); });
-    // "Your AI just pulled 847 companies" 21.2s
-    if (t >= 21) cue('s1-expand', function() {
+    // [17.4s] "Everything your AI is doing right now on the right."
+    if (t >= 17.4) cue('s1-cursor1', function() { moveCursor(750, 340, 500); });
+    if (t >= 18.5) cue('s1-hover', function() { addHover(document.getElementById('company-1')); });
+    // [21.2s] "Your AI just pulled 847 companies matching your ideal customer profile."
+    if (t >= 21.2) cue('s1-expand', function() {
       clickCursor();
       document.getElementById('company-details-1').classList.add('open');
       document.getElementById('company-1').classList.add('expanded');
       removeHover(document.getElementById('company-1'));
     });
-    // "Industry, size, location" 26.3s
-    if (t >= 23) cue('s1-more1', function() {
+    // More rows appear as narrator describes the volume
+    if (t >= 23.0) cue('s1-more1', function() {
       for (var i = 5; i < 8; i++) document.getElementById('company-' + i).classList.add('visible');
     });
-    // "tech stack, all filtered" 31.1s
-    if (t >= 25) cue('s1-tab-new', function() {
+    // [26.3s] "Industry, size, location, tech stack, all filtered."
+    if (t >= 26.3) cue('s1-tab-new', function() {
       moveCursor(480, 188, 500);
       var newTab = document.getElementById('tab-new');
       addHover(newTab);
     });
-    if (t >= 26) cue('s1-click-new', function() {
+    if (t >= 27.5) cue('s1-click-new', function() {
       clickAt(480, 188);
       var newTab = document.getElementById('tab-new');
       document.querySelectorAll('#pipelineTabs .tab').forEach(function(t) { t.classList.remove('active'); });
@@ -956,8 +986,8 @@ function startDemo() {
         if (row && c.status !== 'New') row.style.opacity = '0.2';
       });
     });
-    // "It's enriching contacts in real time" 33.3s
-    if (t >= 28) cue('s1-tab-all', function() {
+    // Switch back to All tab before leaving scene
+    if (t >= 29.5) cue('s1-tab-all', function() {
       moveCursor(350, 188, 400);
       setTimeout(function() {
         clickAt(350, 188);
@@ -970,21 +1000,23 @@ function startDemo() {
         });
       }, 500);
     });
-    if (t >= 30) cue('s1-more2', function() {
+    if (t >= 31.0) cue('s1-more2', function() {
       for (var i = 8; i < 10; i++) document.getElementById('company-' + i).classList.add('visible');
       document.querySelector('.scroll-inner').style.transform = 'translateY(-40px)';
     });
-    if (t >= 32) cue('s1-scroll-back', function() {
+    if (t >= 32.5) cue('s1-scroll-back', function() {
       document.querySelector('.scroll-inner').style.transform = 'translateY(0)';
     });
 
-    // === SCENE 2: CONTACTS (33–41s) ===
-    // "It's enriching contacts in real time" 33.3s
-    if (t >= 33) cue('s2-start', function() {
+    // ============================================================
+    // SCENE 2: CONTACTS (33.3s–41.1s)
+    // ============================================================
+    // [33.3s] "It's enriching contacts in real time."
+    if (t >= 33.3) cue('s2-start', function() {
       moveCursor(130, 195, 600);
       addHover(document.getElementById('nav-contacts'));
     });
-    if (t >= 34) cue('s2-click', function() {
+    if (t >= 34.3) cue('s2-click', function() {
       clickAt(130, 195);
       removeHover(document.getElementById('nav-contacts'));
       navigateTo('contacts');
@@ -993,43 +1025,45 @@ function startDemo() {
       document.getElementById('validGauge').style.strokeDashoffset = String(377 - 377 * 0.965);
       document.getElementById('validPct').textContent = '96.5%';
     });
-    // "VP of sales, CTO, direct emails" 36.2s
-    if (t >= 35) cue('s2-card0', function() {
+    // [36.2s] "VP of sales, CTO, direct emails. No ZoomInfo needed."
+    if (t >= 36.2) cue('s2-card0', function() {
       document.getElementById('contact-0').classList.add('visible');
       moveCursor(500, 380, 400);
     });
-    if (t >= 36) cue('s2-card1', function() {
+    if (t >= 37.0) cue('s2-card1', function() {
       document.getElementById('contact-1').classList.add('visible');
       moveCursor(900, 380, 400);
     });
-    if (t >= 37) cue('s2-card2', function() {
+    if (t >= 37.8) cue('s2-card2', function() {
       document.getElementById('contact-2').classList.add('visible');
       moveCursor(500, 560, 400);
     });
-    if (t >= 38) cue('s2-card3', function() {
+    if (t >= 38.6) cue('s2-card3', function() {
       document.getElementById('contact-3').classList.add('visible');
       moveCursor(900, 560, 400);
     });
-    // "No Zoom info needed" 39.1s
-    if (t >= 39) cue('s2-hover', function() {
+    // Hover and interact with contact card
+    if (t >= 39.5) cue('s2-hover', function() {
       moveCursor(500, 350, 400);
       addHover(document.getElementById('contact-0'));
     });
-    if (t >= 40) cue('s2-click-card', function() {
+    if (t >= 40.2) cue('s2-click-card', function() {
       clickAt(500, 350);
       removeHover(document.getElementById('contact-0'));
     });
-    if (t >= 40.5) cue('s2-validate', function() {
+    if (t >= 40.7) cue('s2-validate', function() {
       moveCursor(1500, 400, 500);
     });
 
-    // === SCENE 3: SEQUENCES (41–58s) ===
-    // "Every prospect gets a unique email sequence" 41.1s
-    if (t >= 41) cue('s3-start', function() {
+    // ============================================================
+    // SCENE 3: SEQUENCES (41.1s–58.9s)
+    // ============================================================
+    // [41.1s] "Every prospect gets a unique email sequence."
+    if (t >= 41.1) cue('s3-start', function() {
       moveCursor(130, 238, 600);
       addHover(document.getElementById('nav-sequences'));
     });
-    if (t >= 42) cue('s3-click', function() {
+    if (t >= 42.0) cue('s3-click', function() {
       clickAt(130, 238);
       removeHover(document.getElementById('nav-sequences'));
       navigateTo('sequences');
@@ -1037,55 +1071,52 @@ function startDemo() {
       typeText(document.getElementById('emailPreview'), EMAIL_TEXT_1, 25);
       document.getElementById('seqLine').style.height = '100%';
     });
-    // "Not mail merged" 44.2s — sequence steps appear
-    if (t >= 43) cue('s3-step0', function() {
+    // [44.2s] "Not mail merged with a name swapped in. Actually personalized."
+    if (t >= 43.5) cue('s3-step0', function() {
       document.getElementById('seq-step-0').classList.add('visible');
       moveCursor(500, 300, 400);
     });
-    if (t >= 44) cue('s3-step1', function() {
+    if (t >= 44.5) cue('s3-step1', function() {
       document.getElementById('seq-step-1').classList.add('visible');
       moveCursor(500, 370, 400);
     });
-    if (t >= 45) cue('s3-step2', function() {
+    if (t >= 45.5) cue('s3-step2', function() {
       document.getElementById('seq-step-2').classList.add('visible');
       moveCursor(500, 440, 400);
     });
-    // "Actually personalized" 46.6s
     if (t >= 46.5) cue('s3-step3', function() {
       document.getElementById('seq-step-3').classList.add('visible');
       moveCursor(500, 510, 400);
     });
-    // "It read their LinkedIn" 48.7s
-    if (t >= 48) cue('s3-step4', function() {
+    // [48.7s] "It read their LinkedIn, found a recent press release, checked their tech stack."
+    if (t >= 48.7) cue('s3-step4', function() {
       document.getElementById('seq-step-4').classList.add('visible');
       moveCursor(500, 580, 400);
     });
-    if (t >= 49) cue('s3-hover-step', function() {
+    if (t >= 49.8) cue('s3-hover-step', function() {
       addHover(document.getElementById('seq-step-0'));
     });
-    if (t >= 50) cue('s3-unhover', function() {
+    if (t >= 51.0) cue('s3-unhover', function() {
       removeHover(document.getElementById('seq-step-0'));
       document.getElementById('seq-step-5').classList.add('visible');
       document.getElementById('seq-step-6').classList.add('visible');
     });
-    // "checked their tech stack" 52.2s
-    if (t >= 52) cue('s3-email-area', function() {
+    if (t >= 52.5) cue('s3-email-area', function() {
       moveCursor(1300, 500, 500);
     });
-    // "Three touch points over 21 days" 53.9s
-    if (t >= 54) cue('s3-slide', function() {
+    // [53.9s] "Three touch points over 21 days. It just wrote 200 of these..."
+    if (t >= 53.9) cue('s3-slide', function() {
       clickAt(1300, 350);
       document.getElementById('emailSlidePanel').classList.add('open');
       typeText(document.getElementById('emailSlideBody'), EMAIL_TEXT_2, 25, 300);
     });
-    // "It just wrote 200 of these" 56.3s
-    if (t >= 56) cue('s3-browse', function() {
+    if (t >= 56.5) cue('s3-browse', function() {
       moveCursor(1550, 500, 400);
     });
     if (t >= 57.5) cue('s3-close', function() {
       document.getElementById('emailSlidePanel').classList.remove('open');
     });
-    if (t >= 58) cue('s3-stats', function() {
+    if (t >= 58.0) cue('s3-stats', function() {
       ['seqStat1', 'seqStat2', 'seqStat3'].forEach(function(id, i) {
         setTimeout(function() {
           document.getElementById(id).style.transition = 'opacity 0.5s ease';
@@ -1094,65 +1125,70 @@ function startDemo() {
       });
     });
 
-    // === SCENE 4: ANALYTICS (59–80s) ===
-    // "Responses flow into your pipeline automatically" 58.9s
-    if (t >= 59) cue('s4-start', function() {
+    // ============================================================
+    // SCENE 4: ANALYTICS (58.9s–80.8s)
+    // ============================================================
+    // [58.9s] "Responses flow into your pipeline automatically. Interested? Booked."
+    if (t >= 58.9) cue('s4-start', function() {
       moveCursor(130, 282, 600);
       addHover(document.getElementById('nav-analytics'));
     });
-    if (t >= 60) cue('s4-click', function() {
+    if (t >= 59.8) cue('s4-click', function() {
       clickAt(130, 282);
       removeHover(document.getElementById('nav-analytics'));
       navigateTo('analytics');
       buildAnalytics();
     });
-    // "Interested? Booked." 61.5s — stat cards appear
-    if (t >= 61) cue('s4-stat0', function() { document.getElementById('stat-0').classList.add('visible'); });
-    if (t >= 62) cue('s4-stat1', function() { document.getElementById('stat-1').classList.add('visible'); });
-    if (t >= 63) cue('s4-stat2', function() { document.getElementById('stat-2').classList.add('visible'); });
-    if (t >= 64) cue('s4-stat3', function() { document.getElementById('stat-3').classList.add('visible'); });
-    if (t >= 62) cue('s4-counters', function() {
+    // Stat cards appear as narrator describes pipeline results
+    if (t >= 60.5) cue('s4-stat0', function() { document.getElementById('stat-0').classList.add('visible'); });
+    if (t >= 61.5) cue('s4-stat1', function() { document.getElementById('stat-1').classList.add('visible'); });
+    if (t >= 62.5) cue('s4-stat2', function() { document.getElementById('stat-2').classList.add('visible'); });
+    // [63.5s] "Objection? AI handles the follow-up."
+    if (t >= 63.5) cue('s4-stat3', function() { document.getElementById('stat-3').classList.add('visible'); });
+    if (t >= 62.0) cue('s4-counters', function() {
       animateCounter(document.getElementById('stat-val-0'), 847, 2000);
       animateCounter(document.getElementById('stat-val-3'), 23, 2000);
     });
-    // "You're looking at 47 warm conversations" 66.2s
-    if (t >= 66) cue('s4-cursor1', function() { moveCursor(600, 200, 500); });
-    if (t >= 67) cue('s4-cursor2', function() { moveCursor(1100, 200, 500); });
-    // "First week, open rates, reply rates" 69.6s
-    if (t >= 69) cue('s4-bars', function() {
+    // [66.2s] "You're looking at 47 warm conversations from 500 outbound."
+    if (t >= 66.2) cue('s4-cursor1', function() { moveCursor(600, 200, 500); });
+    if (t >= 67.5) cue('s4-cursor2', function() { moveCursor(1100, 200, 500); });
+    // [69.6s] "First week, open rates, reply rates, meetings booked, all tracked."
+    if (t >= 69.6) cue('s4-bars', function() {
       document.querySelectorAll('.bar').forEach(function(bar, i) {
         setTimeout(function() { bar.style.height = bar.dataset.target + 'px'; }, i * 200);
       });
     });
-    if (t >= 70) cue('s4-cursor3', function() { moveCursor(700, 550, 500); });
-    // "Your AI optimizes subject lines" 74.2s
-    if (t >= 72) cue('s4-feed0', function() { document.getElementById('activity-0').style.opacity = '1'; });
-    if (t >= 73) cue('s4-feed1', function() { document.getElementById('activity-1').style.opacity = '1'; });
-    if (t >= 74) cue('s4-feed2', function() { document.getElementById('activity-2').style.opacity = '1'; });
-    if (t >= 75) cue('s4-feed3', function() { document.getElementById('activity-3').style.opacity = '1'; });
-    if (t >= 76) cue('s4-feed4', function() { document.getElementById('activity-4').style.opacity = '1'; });
-    // "This campaign is running a 34% reply rate" 78.0s
-    if (t >= 77) cue('s4-cursor4', function() { moveCursor(1400, 500, 500); });
-    if (t >= 78) cue('s4-feed5', function() { document.getElementById('activity-5').style.opacity = '1'; });
-    if (t >= 79) cue('s4-feed6', function() { document.getElementById('activity-6').style.opacity = '1'; });
+    if (t >= 71.0) cue('s4-cursor3', function() { moveCursor(700, 550, 500); });
+    // Activity feed items appear during metrics discussion
+    if (t >= 72.0) cue('s4-feed0', function() { document.getElementById('activity-0').style.opacity = '1'; });
+    if (t >= 73.0) cue('s4-feed1', function() { document.getElementById('activity-1').style.opacity = '1'; });
+    // [74.2s] "Your AI optimizes subject lines and send times in real time."
+    if (t >= 74.2) cue('s4-feed2', function() { document.getElementById('activity-2').style.opacity = '1'; });
+    if (t >= 75.5) cue('s4-feed3', function() { document.getElementById('activity-3').style.opacity = '1'; });
+    if (t >= 76.5) cue('s4-feed4', function() { document.getElementById('activity-4').style.opacity = '1'; });
+    // [78.0s] "This campaign is running a 34% reply rate."
+    if (t >= 78.0) cue('s4-cursor4', function() { moveCursor(1400, 500, 500); });
+    if (t >= 79.0) cue('s4-feed5', function() { document.getElementById('activity-5').style.opacity = '1'; });
+    if (t >= 80.0) cue('s4-feed6', function() { document.getElementById('activity-6').style.opacity = '1'; });
 
-    // === SCENE 5: COST + CTA (80–96s) ===
-    // "Human BDR teams average 3 to 5%" 80.8s
-    if (t >= 80.5) cue('s5-start', function() {
+    // ============================================================
+    // SCENE 5: COST COMPARISON + CTA (80.8s–end)
+    // ============================================================
+    // [80.8s] "Human BDR teams average 3 to 5%. A 20-person BDR team costs $80,000 to $100,000 a month."
+    if (t >= 80.8) cue('s5-start', function() {
       cursor.style.display = 'none';
       document.getElementById('app').style.opacity = '0';
     });
-    if (t >= 81.5) cue('s5-cta', function() {
+    if (t >= 81.8) cue('s5-cta', function() {
       var cta = document.getElementById('ctaOverlay');
       cta.style.display = 'flex';
     });
-    if (t >= 82) cue('s5-funnel', function() {
+    if (t >= 82.5) cue('s5-funnel', function() {
       var funnel = document.getElementById('ctaFunnel');
       funnel.style.transition = 'opacity 0.8s ease';
       funnel.style.opacity = '1';
     });
-    // "A 20-person BDR team costs $80,000" 83.7s
-    if (t >= 83) cue('s5-funnel-count', function() {
+    if (t >= 83.5) cue('s5-funnel-count', function() {
       var funnelData = [
         { id: 'cta-f1', target: 2847 },
         { id: 'cta-f2', target: 8541 },
@@ -1164,29 +1200,25 @@ function startDemo() {
         setTimeout(function() { animateCounter(document.getElementById(f.id), f.target, 2000); }, i * 400);
       });
     });
-    if (t >= 85) cue('s5-human', function() {
+    // Human cost card appears during "$80,000 to $100,000" (~85s)
+    if (t >= 85.0) cue('s5-human', function() {
       document.getElementById('costHuman').classList.add('visible');
     });
-    if (t >= 86) cue('s5-vs', function() {
+    if (t >= 86.5) cue('s5-vs', function() {
       document.getElementById('ctaVs').style.opacity = '1';
       document.getElementById('ctaVs').style.transition = 'opacity 0.6s ease';
     });
-    // "This runs 24-7" 88.1s
-    if (t >= 87) cue('s5-ai', function() {
+    // [88.1s] "This runs 24-7. No training, no turnover, no missed follow-ups."
+    if (t >= 88.1) cue('s5-ai', function() {
       var aiCard = document.getElementById('costAI');
       aiCard.style.opacity = '1';
       aiCard.style.transform = 'translateY(0)';
     });
-    // "Your AI, only yours" 92.2s
-    if (t >= 92) cue('s5-logo', function() {
+    // [92.2s] "Your AI, only yours. See it live at solveworks.io."
+    if (t >= 92.2) cue('s5-logo', function() {
       var logo = document.getElementById('ctaLogo');
       logo.style.opacity = '1';
       logo.style.transition = 'opacity 1s ease';
-    });
-    // "See it live at solveworks.io" 94.1s
-    if (t >= 95) cue('s5-fade', function() {
-      document.getElementById('ctaOverlay').style.transition = 'opacity 2s ease';
-      document.getElementById('ctaOverlay').style.opacity = '0.9';
     });
 
     if (!voiceover.ended) requestAnimationFrame(tick);
