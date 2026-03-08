@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, user-scalable=no">
+<title>Nova Tile & Marble — AI Command Center Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; }
+body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
+.animations-paused * { animation-play-state:paused!important; }
+@keyframes rippleOut { 0% { transform:translate(-50%,-50%) scale(0.3); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
+@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulseGlow { 0%,100% { box-shadow:0 0 20px rgba(14,165,233,0.2); } 50% { box-shadow:0 0 40px rgba(14,165,233,0.4); } }
+@keyframes slideInRight { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInLeft { from { opacity:0; transform:translateX(-30px); } to { opacity:1; transform:translateX(0); } }
+
+/* Play button */
+#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
+.play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; box-shadow:0 0 60px rgba(14,165,233,0.4); transition:transform 0.3s; }
+.play-circle:hover { transform:scale(1.1); }
+.play-circle::after { content:''; width:0; height:0; border-top:24px solid transparent; border-bottom:24px solid transparent; border-left:40px solid white; margin-left:8px; }
+#playBtn h2 { margin-top:24px; font-size:28px; font-weight:600; color:#94a3b8; }
+#playBtn .play-sub { font-size:16px; color:#64748b; margin-top:8px; }
+#playBtn.hidden { display:none; }
+
+#app { position:absolute; top:0; left:0; width:1920px; height:1032px; opacity:0; transition:opacity 0.5s; }
+
+/* Sidebar */
+.sidebar { position:absolute; left:0; top:0; width:260px; height:1032px; background:#0F1D32; border-right:1px solid rgba(255,255,255,0.06); padding:24px 0; z-index:10; }
+.sidebar-logo { padding:0 24px 28px; font-size:19px; font-weight:800; color:#fff; line-height:1.3; }
+.sidebar-logo span { color:#0ea5e9; }
+.sidebar-logo .logo-sub { font-size:11px; font-weight:400; color:#64748b; margin-top:2px; display:block; }
+.sidebar-item { padding:12px 24px; font-size:14px; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s; }
+.sidebar-item:hover, .sidebar-item.active { color:#fff; background:rgba(14,165,233,0.1); border-right:3px solid #0ea5e9; }
+.sidebar-item .icon { font-size:18px; }
+.sidebar-badge { background:#ef4444; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:auto; }
+.sidebar-divider { height:1px; background:rgba(255,255,255,0.06); margin:16px 24px; }
+
+/* Main area */
+.main { position:absolute; left:260px; top:0; width:1660px; height:1032px; overflow:hidden; }
+.scene { position:absolute; top:0; left:0; width:1660px; height:1032px; opacity:0; transition:opacity 0.8s ease; padding:32px; pointer-events:none; }
+.scene.active { opacity:1; pointer-events:auto; }
+.scene-header { font-size:28px; font-weight:700; margin-bottom:8px; }
+.scene-sub { font-size:16px; color:#64748b; margin-bottom:24px; }
+
+/* Cards */
+.card { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); }
+.card-sm { background:#1E293B; border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.06); }
+
+/* Stat cards */
+.stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:24px; }
+.stat-card { text-align:center; }
+.stat-card .num { font-size:36px; font-weight:800; color:#0ea5e9; }
+.stat-card .label { font-size:12px; color:#94a3b8; margin-top:4px; }
+
+/* ============================================ */
+/* SCENE 1: Morning Briefing                    */
+/* ============================================ */
+.briefing-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.briefing-time { font-size:72px; font-weight:800; color:#0ea5e9; margin-bottom:4px; }
+.briefing-date { font-size:18px; color:#64748b; margin-bottom:24px; }
+.brief-item { display:flex; align-items:center; gap:16px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateX(-20px); transition:all 0.5s; }
+.brief-item.show { opacity:1; transform:translateX(0); }
+.brief-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.brief-icon.install { background:rgba(34,197,94,0.15); }
+.brief-icon.template { background:rgba(14,165,233,0.15); }
+.brief-icon.fab { background:rgba(168,85,247,0.15); }
+.brief-icon.alert { background:rgba(239,68,68,0.15); }
+.brief-text { font-size:14px; }
+.brief-text strong { color:#fff; }
+.brief-text span { color:#94a3b8; }
+.weather-bar { background:rgba(14,165,233,0.1); border-radius:10px; padding:16px; margin-top:16px; display:flex; align-items:center; gap:12px; font-size:14px; color:#94a3b8; }
+
+/* ============================================ */
+/* SCENE 2: Quote Pipeline                      */
+/* ============================================ */
+.pipeline-cols { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.pipeline-col { background:#0F1D32; border-radius:12px; padding:16px; min-height:500px; }
+.pipeline-col-header { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid; display:flex; align-items:center; justify-content:space-between; }
+.col-new { border-color:#0ea5e9; color:#0ea5e9; }
+.col-measure { border-color:#f59e0b; color:#f59e0b; }
+.col-quoted { border-color:#a855f7; color:#a855f7; }
+.col-won { border-color:#22c55e; color:#22c55e; }
+.pipeline-card { background:#1E293B; border-radius:10px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateY(15px); transition:all 0.5s; }
+.pipeline-card.show { opacity:1; transform:translateY(0); }
+.pipeline-card .name { font-size:14px; font-weight:600; }
+.pipeline-card .detail { font-size:12px; color:#94a3b8; margin-top:4px; }
+.pipeline-card .value { font-size:16px; font-weight:700; color:#22c55e; margin-top:8px; }
+.pipeline-tag { display:inline-block; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; margin-top:6px; }
+.tag-residential { background:rgba(14,165,233,0.15); color:#38bdf8; }
+.tag-commercial { background:rgba(168,85,247,0.15); color:#a855f7; }
+.tag-contractor { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.tag-urgent { background:rgba(239,68,68,0.15); color:#ef4444; }
+
+/* ============================================ */
+/* SCENE 3: Slab Inventory                      */
+/* ============================================ */
+.inventory-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+.slab-card { background:#1E293B; border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:scale(0.95); transition:all 0.5s; }
+.slab-card.show { opacity:1; transform:scale(1); }
+.slab-color { width:100%; height:80px; border-radius:8px; margin-bottom:12px; }
+.slab-name { font-size:15px; font-weight:600; }
+.slab-type { font-size:12px; color:#94a3b8; margin-top:2px; }
+.slab-dims { font-size:12px; color:#64748b; margin-top:8px; }
+.slab-status { display:inline-block; padding:3px 10px; border-radius:6px; font-size:11px; font-weight:600; margin-top:8px; }
+.status-available { background:rgba(34,197,94,0.15); color:#22c55e; }
+.status-reserved { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.status-remnant { background:rgba(14,165,233,0.15); color:#38bdf8; }
+.remnant-section { margin-top:16px; }
+.remnant-row { display:flex; align-items:center; gap:16px; padding:12px 16px; background:#1E293B; border-radius:10px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateX(-20px); transition:all 0.5s; }
+.remnant-row.show { opacity:1; transform:translateX(0); }
+.remnant-size { font-size:13px; font-weight:600; color:#0ea5e9; min-width:120px; }
+.remnant-match { font-size:12px; color:#22c55e; margin-left:auto; }
+
+/* ============================================ */
+/* SCENE 4: Job Scheduling                      */
+/* ============================================ */
+.schedule-grid { display:grid; grid-template-columns:200px 1fr; gap:24px; }
+.crew-list { display:flex; flex-direction:column; gap:12px; }
+.crew-card { background:#1E293B; border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateX(-20px); transition:all 0.5s; }
+.crew-card.show { opacity:1; transform:translateX(0); }
+.crew-card .crew-name { font-size:14px; font-weight:600; }
+.crew-card .crew-role { font-size:11px; color:#94a3b8; margin-top:2px; }
+.crew-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+.dot-green { background:#22c55e; }
+.dot-blue { background:#0ea5e9; }
+.dot-purple { background:#a855f7; }
+.timeline { background:#0F1D32; border-radius:12px; padding:20px; position:relative; }
+.time-header { display:flex; gap:0; margin-bottom:16px; padding-left:100px; }
+.time-slot { flex:1; font-size:11px; color:#64748b; text-align:center; }
+.timeline-row { display:flex; align-items:center; margin-bottom:12px; height:44px; }
+.timeline-label { width:100px; font-size:12px; color:#94a3b8; flex-shrink:0; }
+.timeline-bar { height:36px; border-radius:8px; display:flex; align-items:center; padding:0 12px; font-size:11px; font-weight:600; color:#fff; opacity:0; transition:all 0.6s; position:relative; }
+.timeline-bar.show { opacity:1; }
+.bar-install { background:linear-gradient(135deg,#22c55e,#16a34a); }
+.bar-template { background:linear-gradient(135deg,#0ea5e9,#0284c7); }
+.bar-fabricate { background:linear-gradient(135deg,#a855f7,#7c3aed); }
+.bar-delivery { background:linear-gradient(135deg,#f59e0b,#d97706); }
+
+/* ============================================ */
+/* SCENE 5: Contractor CRM                      */
+/* ============================================ */
+.contractor-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.contractor-card { background:#1E293B; border-radius:12px; padding:24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateY(15px); transition:all 0.5s; }
+.contractor-card.show { opacity:1; transform:translateY(0); }
+.contractor-header { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+.contractor-avatar { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+.contractor-name { font-size:18px; font-weight:700; }
+.contractor-tier { font-size:12px; font-weight:600; padding:3px 10px; border-radius:6px; }
+.tier-platinum { background:rgba(14,165,233,0.15); color:#38bdf8; }
+.tier-gold { background:rgba(245,158,11,0.15); color:#f59e0b; }
+.contractor-stat { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:13px; }
+.contractor-stat:last-child { border:none; }
+.contractor-stat .val { font-weight:600; color:#0ea5e9; }
+.alert-row { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:14px 16px; margin-top:12px; font-size:13px; color:#fca5a5; display:flex; align-items:center; gap:10px; opacity:0; transition:opacity 0.5s; }
+.alert-row.show { opacity:1; }
+
+/* ============================================ */
+/* SCENE 6: Fabrication Queue                   */
+/* ============================================ */
+.fab-lanes { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.fab-lane { background:#0F1D32; border-radius:12px; padding:16px; }
+.fab-lane-header { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding-bottom:12px; margin-bottom:12px; border-bottom:2px solid; }
+.lane-queue { border-color:#64748b; color:#64748b; }
+.lane-cutting { border-color:#0ea5e9; color:#0ea5e9; }
+.lane-polish { border-color:#a855f7; color:#a855f7; }
+.lane-ready { border-color:#22c55e; color:#22c55e; }
+.fab-job { background:#1E293B; border-radius:10px; padding:14px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateY(10px); transition:all 0.5s; }
+.fab-job.show { opacity:1; transform:translateY(0); }
+.fab-job .job-name { font-size:13px; font-weight:600; }
+.fab-job .job-detail { font-size:11px; color:#94a3b8; margin-top:3px; }
+.fab-job .job-edge { font-size:11px; color:#a855f7; margin-top:4px; }
+.fab-job .job-time { font-size:12px; color:#0ea5e9; margin-top:6px; font-weight:600; }
+.cnc-status { background:rgba(14,165,233,0.1); border:1px solid rgba(14,165,233,0.2); border-radius:12px; padding:20px; margin-top:20px; display:flex; align-items:center; gap:20px; }
+.cnc-dot { width:12px; height:12px; border-radius:50%; background:#22c55e; animation:pulseGlow 2s infinite; }
+.cnc-label { font-size:14px; font-weight:600; }
+.cnc-detail { font-size:12px; color:#94a3b8; }
+
+/* ============================================ */
+/* SCENE 7: Analytics                           */
+/* ============================================ */
+.analytics-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.chart-card { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); }
+.chart-title { font-size:14px; font-weight:600; margin-bottom:16px; }
+.bar-chart { display:flex; align-items:flex-end; gap:12px; height:200px; padding-top:20px; }
+.bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bar { width:100%; border-radius:6px 6px 0 0; transition:height 1s ease; }
+.bar-label { font-size:10px; color:#64748b; }
+.bar-value { font-size:11px; font-weight:600; color:#0ea5e9; }
+.donut-container { display:flex; align-items:center; justify-content:center; gap:32px; }
+.donut-legend { display:flex; flex-direction:column; gap:8px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:13px; }
+.legend-dot { width:12px; height:12px; border-radius:3px; }
+.metric-row { display:flex; justify-content:space-between; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:14px; }
+.metric-row:last-child { border:none; }
+.metric-row .val { font-weight:700; }
+.metric-up { color:#22c55e; }
+.metric-neutral { color:#0ea5e9; }
+
+/* ============================================ */
+/* SCENE 8: Close                               */
+/* ============================================ */
+.close-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
+.close-company { font-size:32px; color:#94a3b8; font-weight:300; margin-bottom:8px; opacity:0; transition:opacity 0.8s; }
+.close-company.show { opacity:1; }
+.close-meets { font-size:20px; color:#64748b; margin-bottom:16px; opacity:0; transition:opacity 0.8s; }
+.close-meets.show { opacity:1; }
+.close-logo { font-size:64px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; opacity:0; transition:opacity 0.8s; }
+.close-logo.show { opacity:1; }
+.close-tagline { font-size:22px; color:#94a3b8; margin-top:16px; font-weight:300; opacity:0; transition:opacity 0.8s; }
+.close-tagline.show { opacity:1; }
+.close-url { font-size:18px; color:#0ea5e9; margin-top:24px; opacity:0; transition:opacity 0.8s; }
+.close-url.show { opacity:1; }
+.close-phone { font-size:16px; color:#64748b; margin-top:12px; opacity:0; transition:opacity 0.8s; }
+.close-phone.show { opacity:1; }
+
+/* Cursor */
+#fakeCursor { position:absolute; top:540px; left:960px; z-index:9000; pointer-events:none; display:none; transition:top 0.8s cubic-bezier(0.25,0.1,0.25,1), left 0.8s cubic-bezier(0.25,0.1,0.25,1); }
+</style>
+</head>
+<body>
+
+<div id="playBtn" onclick="startDemo()">
+  <div class="play-circle"></div>
+  <h2>Nova Tile & Marble — AI Command Center</h2>
+  <div class="play-sub">Personalized demo · 92 Thornhill Dr, Burnside</div>
+</div>
+
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">Nova Tile &<br><span>Marble</span><span class="logo-sub">AI Command Center</span></div>
+    <div class="sidebar-item active" id="nav-brief"><span class="icon">☀️</span> Morning Brief</div>
+    <div class="sidebar-item" id="nav-quotes"><span class="icon">📋</span> Quotes <span class="sidebar-badge">7</span></div>
+    <div class="sidebar-item" id="nav-slabs"><span class="icon">🪨</span> Slab Inventory</div>
+    <div class="sidebar-item" id="nav-schedule"><span class="icon">📅</span> Scheduling</div>
+    <div class="sidebar-item" id="nav-contractors"><span class="icon">🏗️</span> Contractors</div>
+    <div class="sidebar-item" id="nav-fab"><span class="icon">⚙️</span> Fabrication</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-item" id="nav-analytics"><span class="icon">📊</span> Analytics</div>
+    <div class="sidebar-item" id="nav-settings"><span class="icon">⚙️</span> Settings</div>
+  </div>
+
+  <div class="main">
+
+    <!-- ========== SCENE 1: Morning Briefing ========== -->
+    <div class="scene" id="scene1">
+      <div class="scene-header">Good Morning ☀️</div>
+      <div class="scene-sub">Tuesday — here's your day at a glance</div>
+      <div class="briefing-grid">
+        <div>
+          <div class="briefing-time">6:00 AM</div>
+          <div class="briefing-date">Tuesday, March 10, 2026</div>
+          <div class="card" style="padding:20px;">
+            <div class="brief-item" id="b1"><div class="brief-icon install">🚛</div><div class="brief-text"><strong>3 installs going out</strong><br><span>Cole Harbour · Clayton Park · Bedford</span></div></div>
+            <div class="brief-item" id="b2"><div class="brief-icon template">📐</div><div class="brief-text"><strong>2 template visits booked</strong><br><span>Halifax South · Timberlea</span></div></div>
+            <div class="brief-item" id="b3"><div class="brief-icon fab">⚙️</div><div class="brief-text"><strong>CNC queue loaded</strong><br><span>Cambria Ella island + Black Pearl vanity</span></div></div>
+            <div class="brief-item" id="b4"><div class="brief-icon alert">⚡</div><div class="brief-text"><strong>Rush order flagged</strong><br><span>Armco Homes — Caesarstone Empira White</span></div></div>
+          </div>
+          <div class="weather-bar" id="weatherBar" style="opacity:0;transition:opacity 0.5s;">
+            🌤️ Dartmouth: 4°C, partly cloudy — roads clear for install crews
+          </div>
+        </div>
+        <div>
+          <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:20px;">
+            <div class="card-sm stat-card"><div class="num" id="statJobs">0</div><div class="label">Active Jobs</div></div>
+            <div class="card-sm stat-card"><div class="num" id="statPipeline">$0</div><div class="label">Pipeline Value</div></div>
+            <div class="card-sm stat-card"><div class="num" id="statSlabs">0</div><div class="label">Slabs In Stock</div></div>
+            <div class="card-sm stat-card"><div class="num" id="statRemnants">0</div><div class="label">Sellable Remnants</div></div>
+          </div>
+          <div class="card" style="padding:20px;">
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">📌 This Week's Priorities</div>
+            <div class="brief-item" id="b5"><div class="brief-icon" style="background:rgba(34,197,94,0.15);">✅</div><div class="brief-text"><strong>Armco Homes condo project</strong><br><span>12 units — template 6 done, 6 remaining</span></div></div>
+            <div class="brief-item" id="b6"><div class="brief-icon" style="background:rgba(245,158,11,0.15);">⏳</div><div class="brief-text"><strong>Slab order arriving Thursday</strong><br><span>4 Cambria slabs + 2 Bianco Romano</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 2: Quote Pipeline ========== -->
+    <div class="scene" id="scene2">
+      <div class="scene-header">Quote Pipeline</div>
+      <div class="scene-sub">Every request tracked from inquiry to invoice</div>
+      <div class="pipeline-cols">
+        <div class="pipeline-col">
+          <div class="pipeline-col-header col-new">New Requests <span>3</span></div>
+          <div class="pipeline-card" id="q1"><div class="name">Bedford Kitchen Reno</div><div class="detail">Sarah Mitchell — Caesarstone Empira White</div><div class="detail">L-shape + island · 62 sqft</div><div class="value">~$5,800</div><div class="pipeline-tag tag-residential">Residential</div></div>
+          <div class="pipeline-card" id="q2"><div class="name">Lakeside Dental Office</div><div class="detail">Dr. Patel — Quartz reception desk</div><div class="detail">Custom curved · 48 sqft</div><div class="value">~$4,200</div><div class="pipeline-tag tag-commercial">Commercial</div></div>
+          <div class="pipeline-card" id="q3"><div class="name">Portland Hills Bath</div><div class="detail">James Chen — Marble vanity top</div><div class="detail">Double sink · 22 sqft</div><div class="value">~$2,100</div><div class="pipeline-tag tag-residential">Residential</div></div>
+        </div>
+        <div class="pipeline-col">
+          <div class="pipeline-col-header col-measure">Measuring <span>2</span></div>
+          <div class="pipeline-card" id="q4"><div class="name">Armco Homes — Unit 7-12</div><div class="detail">6 kitchens · Caesarstone · digital template Wed</div><div class="value">~$34,800</div><div class="pipeline-tag tag-contractor">Contractor</div><div class="pipeline-tag tag-urgent" style="margin-left:4px;">Rush</div></div>
+          <div class="pipeline-card" id="q5"><div class="name">Fall River Custom Home</div><div class="detail">Kitchen + 2 baths · Cambria Brittanicca</div><div class="value">~$12,400</div><div class="pipeline-tag tag-residential">Residential</div></div>
+        </div>
+        <div class="pipeline-col">
+          <div class="pipeline-col-header col-quoted">Quoted <span>4</span></div>
+          <div class="pipeline-card" id="q6"><div class="name">Brunello Developments</div><div class="detail">3 townhouse kitchens · Black Pearl granite</div><div class="value">$18,600</div><div class="pipeline-tag tag-contractor">Contractor</div></div>
+          <div class="pipeline-card" id="q7"><div class="name">Timberlea Reno</div><div class="detail">Kitchen + laundry · Calacatta Gold quartz</div><div class="value">$7,800</div><div class="pipeline-tag tag-residential">Residential</div></div>
+        </div>
+        <div class="pipeline-col">
+          <div class="pipeline-col-header col-won">Won This Week <span>3</span></div>
+          <div class="pipeline-card" id="q8"><div class="name">Clayton Park Condo</div><div class="detail">Kitchen counters · Cambria Ella</div><div class="value">$4,200</div><div class="pipeline-tag tag-residential">Residential</div></div>
+          <div class="pipeline-card" id="q9"><div class="name">Harbourview Restaurant</div><div class="detail">Bar top · Absolute Black granite · 86 sqft</div><div class="value">$9,400</div><div class="pipeline-tag tag-commercial">Commercial</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 3: Slab Inventory ========== -->
+    <div class="scene" id="scene3">
+      <div class="scene-header">Slab Inventory</div>
+      <div class="scene-sub">Atlantic Canada's largest inventory — tracked in real time</div>
+      <div class="stat-grid">
+        <div class="card-sm stat-card"><div class="num" style="color:#22c55e;" id="invTotal">0</div><div class="label">Total Slabs</div></div>
+        <div class="card-sm stat-card"><div class="num" style="color:#0ea5e9;" id="invAvail">0</div><div class="label">Available</div></div>
+        <div class="card-sm stat-card"><div class="num" style="color:#f59e0b;" id="invReserved">0</div><div class="label">Reserved</div></div>
+        <div class="card-sm stat-card"><div class="num" style="color:#a855f7;" id="invRemnants">0</div><div class="label">Remnants</div></div>
+      </div>
+      <div class="inventory-grid">
+        <div class="slab-card" id="slab1"><div class="slab-color" style="background:linear-gradient(135deg,#c4b5a0,#8b7355);"></div><div class="slab-name">Cambria Ella</div><div class="slab-type">Quartz</div><div class="slab-dims">126" × 63" · Polished</div><div class="slab-status status-available">● Available (4)</div></div>
+        <div class="slab-card" id="slab2"><div class="slab-color" style="background:linear-gradient(135deg,#e8e0d4,#b8a88a);"></div><div class="slab-name">Caesarstone Empira White</div><div class="slab-type">Quartz</div><div class="slab-dims">120" × 56" · Polished</div><div class="slab-status status-reserved">● Reserved — Armco (6)</div></div>
+        <div class="slab-card" id="slab3"><div class="slab-color" style="background:linear-gradient(135deg,#1a1a1a,#333);"></div><div class="slab-name">Absolute Black</div><div class="slab-type">Granite</div><div class="slab-dims">118" × 60" · Polished</div><div class="slab-status status-available">● Available (3)</div></div>
+        <div class="slab-card" id="slab4"><div class="slab-color" style="background:linear-gradient(135deg,#f5f0e8,#d4c5a9);"></div><div class="slab-name">Calacatta Gold</div><div class="slab-type">Quartz</div><div class="slab-dims">126" × 63" · Polished</div><div class="slab-status status-available">● Available (2)</div></div>
+        <div class="slab-card" id="slab5"><div class="slab-color" style="background:linear-gradient(135deg,#2a2a2a,#0a0a0a);"></div><div class="slab-name">Black Pearl</div><div class="slab-type">Granite</div><div class="slab-dims">120" × 58" · Polished</div><div class="slab-status status-available">● Available (5)</div></div>
+        <div class="slab-card" id="slab6"><div class="slab-color" style="background:linear-gradient(135deg,#f0ece4,#c8bfab);"></div><div class="slab-name">Bianco Romano</div><div class="slab-type">Granite</div><div class="slab-dims">115" × 60" · Polished</div><div class="slab-status status-remnant">● Remnant — 26" × 48"</div></div>
+      </div>
+      <div class="remnant-section">
+        <div style="font-size:14px;font-weight:600;margin-bottom:12px;">♻️ Sellable Remnants — Auto-matched</div>
+        <div class="remnant-row" id="rem1"><div class="remnant-size">26" × 48"</div><div style="font-size:13px;">Bianco Romano Granite</div><div class="remnant-match">✓ Matches: Portland Hills vanity job</div></div>
+        <div class="remnant-row" id="rem2"><div class="remnant-size">32" × 36"</div><div style="font-size:13px;">Cambria Brittanicca</div><div class="remnant-match">✓ Matches: bar-top inquiry</div></div>
+        <div class="remnant-row" id="rem3"><div class="remnant-size">24" × 52"</div><div style="font-size:13px;">Caesarstone Statuario</div><div class="remnant-match">💰 $420 — list on website</div></div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 4: Scheduling & Dispatch ========== -->
+    <div class="scene" id="scene4">
+      <div class="scene-header">Job Scheduling & Crew Dispatch</div>
+      <div class="scene-sub">Everyone in sync — templaters, fabricators, installers</div>
+      <div class="schedule-grid">
+        <div class="crew-list">
+          <div class="crew-card" id="crew1"><span class="crew-dot dot-green"></span><div class="crew-name">Install Crew A</div><div class="crew-role">Mike & Dave</div></div>
+          <div class="crew-card" id="crew2"><span class="crew-dot dot-green"></span><div class="crew-name">Install Crew B</div><div class="crew-role">Jason & Tyler</div></div>
+          <div class="crew-card" id="crew3"><span class="crew-dot dot-blue"></span><div class="crew-name">Template Team</div><div class="crew-role">Chris</div></div>
+          <div class="crew-card" id="crew4"><span class="crew-dot dot-purple"></span><div class="crew-name">CNC Operator</div><div class="crew-role">Rob</div></div>
+          <div class="crew-card" id="crew5"><span class="crew-dot dot-purple"></span><div class="crew-name">Polish & QC</div><div class="crew-role">Mark</div></div>
+        </div>
+        <div class="timeline">
+          <div class="time-header">
+            <div class="time-slot">7 AM</div><div class="time-slot">8 AM</div><div class="time-slot">9 AM</div><div class="time-slot">10 AM</div><div class="time-slot">11 AM</div><div class="time-slot">12 PM</div><div class="time-slot">1 PM</div><div class="time-slot">2 PM</div><div class="time-slot">3 PM</div><div class="time-slot">4 PM</div>
+          </div>
+          <div class="timeline-row"><div class="timeline-label">Crew A</div><div class="timeline-bar bar-install" id="t1" style="width:35%;margin-left:5%;">Cole Harbour Install</div><div class="timeline-bar bar-install" id="t2" style="width:30%;margin-left:5%;">Clayton Park Install</div></div>
+          <div class="timeline-row"><div class="timeline-label">Crew B</div><div class="timeline-bar bar-install" id="t3" style="width:25%;margin-left:15%;">Bedford Install</div><div class="timeline-bar bar-delivery" id="t4" style="width:20%;margin-left:10%;">Slab Delivery</div></div>
+          <div class="timeline-row"><div class="timeline-label">Template</div><div class="timeline-bar bar-template" id="t5" style="width:20%;margin-left:10%;">Halifax South</div><div class="timeline-bar bar-template" id="t6" style="width:20%;margin-left:15%;">Timberlea</div></div>
+          <div class="timeline-row"><div class="timeline-label">CNC</div><div class="timeline-bar bar-fabricate" id="t7" style="width:70%;margin-left:0%;">Cambria Ella island → Black Pearl vanity → Empira White kitchen</div></div>
+          <div class="timeline-row"><div class="timeline-label">Polish</div><div class="timeline-bar bar-fabricate" id="t8" style="width:30%;margin-left:0%;">Yesterday's cuts</div><div class="timeline-bar bar-fabricate" id="t9" style="width:25%;margin-left:10%;">Ella island QC</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 5: Contractor CRM ========== -->
+    <div class="scene" id="scene5">
+      <div class="scene-header">Contractor Relationships</div>
+      <div class="scene-sub">Your top builders get priority treatment — automatically</div>
+      <div class="stat-grid">
+        <div class="card-sm stat-card"><div class="num" id="crmTotal">0</div><div class="label">Active Contractors</div></div>
+        <div class="card-sm stat-card"><div class="num" id="crmRevenue">$0</div><div class="label">Contractor Revenue YTD</div></div>
+        <div class="card-sm stat-card"><div class="num" id="crmJobs">0</div><div class="label">Jobs This Quarter</div></div>
+        <div class="card-sm stat-card"><div class="num" id="crmAvg">$0</div><div class="label">Avg Job Value</div></div>
+      </div>
+      <div class="contractor-grid">
+        <div class="contractor-card" id="con1">
+          <div class="contractor-header"><div class="contractor-avatar" style="background:rgba(14,165,233,0.15);">🏗️</div><div><div class="contractor-name">Armco Homes</div><div class="contractor-tier tier-platinum">⭐ Platinum</div></div></div>
+          <div class="contractor-stat"><span>Projects this year</span><span class="val">14</span></div>
+          <div class="contractor-stat"><span>Revenue YTD</span><span class="val">$187,400</span></div>
+          <div class="contractor-stat"><span>Avg turnaround</span><span class="val">6 days</span></div>
+          <div class="contractor-stat"><span>Payment terms</span><span class="val">Net 30</span></div>
+          <div class="contractor-stat"><span>Current pipeline</span><span class="val">$34,800</span></div>
+        </div>
+        <div class="contractor-card" id="con2">
+          <div class="contractor-header"><div class="contractor-avatar" style="background:rgba(245,158,11,0.15);">🔨</div><div><div class="contractor-name">Brendon Chicken Burger Construction</div><div class="contractor-tier tier-gold">⭐ Gold</div></div></div>
+          <div class="contractor-stat"><span>Projects this year</span><span class="val">8</span></div>
+          <div class="contractor-stat"><span>Revenue YTD</span><span class="val">$94,200</span></div>
+          <div class="contractor-stat"><span>Avg turnaround</span><span class="val">8 days</span></div>
+          <div class="contractor-stat"><span>Last order</span><span class="val">12 days ago</span></div>
+          <div class="alert-row" id="conAlert">⚠️ No orders in 12 days — usually orders every 8. Follow up?</div>
+        </div>
+        <div class="contractor-card" id="con3">
+          <div class="contractor-header"><div class="contractor-avatar" style="background:rgba(34,197,94,0.15);">🏠</div><div><div class="contractor-name">Brunello Developments</div><div class="contractor-tier tier-gold">⭐ Gold</div></div></div>
+          <div class="contractor-stat"><span>Projects this year</span><span class="val">6</span></div>
+          <div class="contractor-stat"><span>Revenue YTD</span><span class="val">$72,600</span></div>
+          <div class="contractor-stat"><span>Pending quotes</span><span class="val">$18,600</span></div>
+        </div>
+        <div class="contractor-card" id="con4">
+          <div class="contractor-header"><div class="contractor-avatar" style="background:rgba(168,85,247,0.15);">🏢</div><div><div class="contractor-name">Kent Building Supplies (Contractor Desk)</div><div class="contractor-tier tier-gold">⭐ Gold</div></div></div>
+          <div class="contractor-stat"><span>Referrals this year</span><span class="val">11</span></div>
+          <div class="contractor-stat"><span>Revenue from referrals</span><span class="val">$48,300</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 6: Fabrication Queue ========== -->
+    <div class="scene" id="scene6">
+      <div class="scene-header">Fabrication Queue</div>
+      <div class="scene-sub">Template → CNC → Polish → Ready — every job tracked</div>
+      <div class="fab-lanes">
+        <div class="fab-lane">
+          <div class="fab-lane-header lane-queue">In Queue <span style="float:right;">4</span></div>
+          <div class="fab-job" id="fab1"><div class="job-name">Armco Unit 7 Kitchen</div><div class="job-detail">Caesarstone Empira White · 42 sqft</div><div class="job-edge">Edge: Eased · Sink cutout × 1</div><div class="job-time">Template: ✓ Complete</div></div>
+          <div class="fab-job" id="fab2"><div class="job-name">Bedford Kitchen Reno</div><div class="job-detail">Caesarstone Empira White · 62 sqft</div><div class="job-edge">Edge: Waterfall · Island seam</div><div class="job-time">Template: Wed 10 AM</div></div>
+          <div class="fab-job" id="fab3"><div class="job-name">Portland Hills Vanity</div><div class="job-detail">Bianco Romano Granite · 22 sqft</div><div class="job-edge">Edge: Bullnose · Double sink</div><div class="job-time">Template: ✓ Complete</div></div>
+        </div>
+        <div class="fab-lane">
+          <div class="fab-lane-header lane-cutting">On CNC <span style="float:right;">2</span></div>
+          <div class="fab-job" id="fab4"><div class="job-name">Cambria Ella Island</div><div class="job-detail">Clayton Park Condo · 38 sqft</div><div class="job-edge">Edge: Mitered · Cooktop cutout</div><div class="job-time">⏱️ 2h 15m remaining</div></div>
+          <div class="fab-job" id="fab5"><div class="job-name">Black Pearl Vanity</div><div class="job-detail">Custom bath · 18 sqft</div><div class="job-edge">Edge: Ogee · Undermount sink</div><div class="job-time">⏱️ Queued next</div></div>
+        </div>
+        <div class="fab-lane">
+          <div class="fab-lane-header lane-polish">Polish & QC <span style="float:right;">2</span></div>
+          <div class="fab-job" id="fab6"><div class="job-name">Harbourview Bar Top</div><div class="job-detail">Absolute Black Granite · 86 sqft</div><div class="job-edge">Edge: Flat polished · 3 seams</div><div class="job-time">Polish: 80% complete</div></div>
+          <div class="fab-job" id="fab7"><div class="job-name">Timberlea Laundry</div><div class="job-detail">Calacatta Gold Quartz · 16 sqft</div><div class="job-edge">Edge: Eased</div><div class="job-time">QC inspection pending</div></div>
+        </div>
+        <div class="fab-lane">
+          <div class="fab-lane-header lane-ready">Ready to Install <span style="float:right;">3</span></div>
+          <div class="fab-job" id="fab8"><div class="job-name">Cole Harbour Kitchen</div><div class="job-detail">Caesarstone · L-shape + peninsula</div><div class="job-edge">✅ QC passed</div><div class="job-time">🚛 Install: Today 8 AM</div></div>
+          <div class="fab-job" id="fab9"><div class="job-name">Clayton Park Bath</div><div class="job-detail">Cambria · Double vanity</div><div class="job-edge">✅ QC passed</div><div class="job-time">🚛 Install: Today 1 PM</div></div>
+          <div class="fab-job" id="fab10"><div class="job-name">Bedford Ensuite</div><div class="job-detail">Marble · Single vanity</div><div class="job-edge">✅ QC passed</div><div class="job-time">🚛 Install: Today 2 PM</div></div>
+        </div>
+      </div>
+      <div class="cnc-status">
+        <div class="cnc-dot"></div>
+        <div><div class="cnc-label">CNC Machine Status: Running</div><div class="cnc-detail">Cambria Ella island cut — 2h 15m remaining · Next: Black Pearl vanity</div></div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 7: Analytics ========== -->
+    <div class="scene" id="scene7">
+      <div class="scene-header">Business Analytics</div>
+      <div class="scene-sub">50+ years of stone expertise — now backed by data</div>
+      <div class="analytics-grid">
+        <div class="chart-card">
+          <div class="chart-title">Monthly Revenue</div>
+          <div class="bar-chart">
+            <div class="bar-col"><div class="bar-value">$82K</div><div class="bar" id="bar1" style="height:0;background:linear-gradient(to top,#0ea5e9,#38bdf8);"></div><div class="bar-label">Oct</div></div>
+            <div class="bar-col"><div class="bar-value">$91K</div><div class="bar" id="bar2" style="height:0;background:linear-gradient(to top,#0ea5e9,#38bdf8);"></div><div class="bar-label">Nov</div></div>
+            <div class="bar-col"><div class="bar-value">$74K</div><div class="bar" id="bar3" style="height:0;background:linear-gradient(to top,#0ea5e9,#38bdf8);"></div><div class="bar-label">Dec</div></div>
+            <div class="bar-col"><div class="bar-value">$88K</div><div class="bar" id="bar4" style="height:0;background:linear-gradient(to top,#0ea5e9,#38bdf8);"></div><div class="bar-label">Jan</div></div>
+            <div class="bar-col"><div class="bar-value">$104K</div><div class="bar" id="bar5" style="height:0;background:linear-gradient(to top,#22c55e,#16a34a);"></div><div class="bar-label">Feb</div></div>
+            <div class="bar-col"><div class="bar-value">$118K</div><div class="bar" id="bar6" style="height:0;background:linear-gradient(to top,#22c55e,#16a34a);"></div><div class="bar-label">Mar*</div></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Revenue Split</div>
+          <div class="donut-container" style="height:200px;">
+            <svg viewBox="0 0 120 120" width="180" height="180">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#1E293B" stroke-width="20"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#0ea5e9" stroke-width="20" stroke-dasharray="188 126" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#a855f7" stroke-width="20" stroke-dasharray="63 251" stroke-dashoffset="-188" transform="rotate(-90 60 60)"/>
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#f59e0b" stroke-width="20" stroke-dasharray="63 251" stroke-dashoffset="-251" transform="rotate(-90 60 60)"/>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#0ea5e9;"></div>Residential — 60%</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#a855f7;"></div>Commercial — 20%</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Contractor — 20%</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Key Metrics</div>
+          <div class="metric-row"><span>Avg job value</span><span class="val metric-up">$6,840 ↑ 12%</span></div>
+          <div class="metric-row"><span>Quote-to-close rate</span><span class="val metric-up">68% ↑ 8%</span></div>
+          <div class="metric-row"><span>Avg turnaround (template → install)</span><span class="val metric-neutral">7.2 days</span></div>
+          <div class="metric-row"><span>Fabrication throughput</span><span class="val metric-up">14 jobs/week ↑ 3</span></div>
+          <div class="metric-row"><span>Remnant recovery rate</span><span class="val metric-up">73% ↑ 18%</span></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Top Stone Types (by revenue)</div>
+          <div class="metric-row"><span>🥇 Caesarstone Quartz</span><span class="val">$142K</span></div>
+          <div class="metric-row"><span>🥈 Cambria Quartz</span><span class="val">$118K</span></div>
+          <div class="metric-row"><span>🥉 Granite (various)</span><span class="val">$94K</span></div>
+          <div class="metric-row"><span>4. Marble</span><span class="val">$38K</span></div>
+          <div class="metric-row"><span>5. Quartzite</span><span class="val">$22K</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== SCENE 8: Close ========== -->
+    <div class="scene" id="scene8">
+      <div class="close-screen">
+        <div class="close-company" id="closeCompany">Nova Tile & Marble</div>
+        <div class="close-meets" id="closeMeets">×</div>
+        <div class="close-logo" id="closeLogo">SolveWorks</div>
+        <div class="close-tagline" id="closeTag">Your AI. Only yours.</div>
+        <div class="close-url" id="closeUrl">solveworks.io</div>
+        <div class="close-phone" id="closePhone">Built for craftsmen in Burnside — not Silicon Valley</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="fakeCursor">
+  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" style="width:28px;height:28px;filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.5));">
+    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
+  </svg>
+</div>
+
+<!-- Progress bar -->
+<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
+  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+</div>
+<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">
+  <div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div>
+</div>
+
+<script>
+// Audio files per scene
+var sceneAudios = [
+  new Audio('scene1.mp3'),
+  new Audio('scene2.mp3'),
+  new Audio('scene3.mp3'),
+  new Audio('scene4.mp3'),
+  new Audio('scene5.mp3'),
+  new Audio('scene6.mp3'),
+  new Audio('scene7.mp3'),
+  new Audio('scene8.mp3')
+];
+var currentScene = 0;
+var totalDuration = 0;
+var sceneDurations = [];
+var cursor = document.getElementById('fakeCursor');
+window.__demoPaused = false;
+
+// Pre-calculate durations
+var loadedCount = 0;
+sceneAudios.forEach(function(a, i) {
+  a.addEventListener('loadedmetadata', function() {
+    sceneDurations[i] = a.duration;
+    loadedCount++;
+    if (loadedCount === 8) {
+      totalDuration = sceneDurations.reduce(function(s,d){return s+d;},0);
+    }
+  });
+  a.addEventListener('ended', function() {
+    if (i < 7) playScene(i + 1);
+  });
+});
+
+function moveCursor(x, y) { cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
+function clickEffect(x, y) {
+  var r = document.createElement('div');
+  r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid rgba(14,165,233,0.7);pointer-events:none;z-index:8999;animation:rippleOut 0.6s ease forwards;top:'+y+'px;left:'+x+'px;transform:translate(-50%,-50%);';
+  document.body.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 600);
+}
+
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function setNavActive(id) {
+  document.querySelectorAll('.sidebar-item').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+function animateValue(el, start, end, duration, prefix, suffix) {
+  prefix = prefix || '';
+  suffix = suffix || '';
+  var startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    var progress = Math.min((ts - startTime) / duration, 1);
+    var val = Math.floor(start + (end - start) * progress);
+    el.textContent = prefix + val.toLocaleString() + suffix;
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// Cue system per scene
+var cuesFired = {};
+function cue(id, fn) { if (!cuesFired[id]) { cuesFired[id] = true; fn(); } }
+
+function runSceneAnimations(sceneIndex) {
+  var audio = sceneAudios[sceneIndex];
+
+  function tick() {
+    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
+    var t = audio.currentTime;
+
+    switch(sceneIndex) {
+      case 0: // Morning Briefing
+        if (t>=0.5) cue('b1',function(){ document.getElementById('b1').classList.add('show'); moveCursor(500,350); });
+        if (t>=3) cue('b2',function(){ document.getElementById('b2').classList.add('show'); moveCursor(500,420); });
+        if (t>=5) cue('stats',function(){
+          animateValue(document.getElementById('statJobs'),0,24,1000);
+          animateValue(document.getElementById('statPipeline'),0,142,1000,'$','K');
+          animateValue(document.getElementById('statSlabs'),0,187,1000);
+          animateValue(document.getElementById('statRemnants'),0,34,1000);
+          moveCursor(1200,250);
+        });
+        if (t>=8) cue('b3',function(){ document.getElementById('b3').classList.add('show'); moveCursor(500,490); });
+        if (t>=11) cue('b4',function(){ document.getElementById('b4').classList.add('show'); moveCursor(500,560); });
+        if (t>=14) cue('b5',function(){ document.getElementById('b5').classList.add('show'); moveCursor(1200,450); });
+        if (t>=17) cue('b6',function(){ document.getElementById('b6').classList.add('show'); moveCursor(1200,520); });
+        if (t>=20) cue('weather',function(){ document.getElementById('weatherBar').style.opacity='1'; moveCursor(500,650); });
+        break;
+
+      case 1: // Quote Pipeline
+        if (t>=1) cue('q1',function(){ document.getElementById('q1').classList.add('show'); moveCursor(450,300); });
+        if (t>=3) cue('q2',function(){ document.getElementById('q2').classList.add('show'); moveCursor(450,450); });
+        if (t>=5) cue('q3',function(){ document.getElementById('q3').classList.add('show'); });
+        if (t>=7) cue('q4',function(){ document.getElementById('q4').classList.add('show'); moveCursor(750,300); clickEffect(750,300); });
+        if (t>=10) cue('q5',function(){ document.getElementById('q5').classList.add('show'); moveCursor(750,480); });
+        if (t>=13) cue('q6',function(){ document.getElementById('q6').classList.add('show'); moveCursor(1050,300); });
+        if (t>=15) cue('q7',function(){ document.getElementById('q7').classList.add('show'); moveCursor(1050,430); });
+        if (t>=18) cue('q8',function(){ document.getElementById('q8').classList.add('show'); moveCursor(1350,300); clickEffect(1350,300); });
+        if (t>=20) cue('q9',function(){ document.getElementById('q9').classList.add('show'); moveCursor(1350,430); });
+        break;
+
+      case 2: // Slab Inventory
+        if (t>=0.5) cue('inv-stats',function(){
+          animateValue(document.getElementById('invTotal'),0,187,1000);
+          animateValue(document.getElementById('invAvail'),0,142,1000);
+          animateValue(document.getElementById('invReserved'),0,11,1000);
+          animateValue(document.getElementById('invRemnants'),0,34,1000);
+        });
+        if (t>=2) cue('slab1',function(){ document.getElementById('slab1').classList.add('show'); moveCursor(500,380); });
+        if (t>=4) cue('slab2',function(){ document.getElementById('slab2').classList.add('show'); moveCursor(830,380); });
+        if (t>=6) cue('slab3',function(){ document.getElementById('slab3').classList.add('show'); moveCursor(1160,380); });
+        if (t>=8) cue('slab4',function(){ document.getElementById('slab4').classList.add('show'); moveCursor(500,540); });
+        if (t>=10) cue('slab5',function(){ document.getElementById('slab5').classList.add('show'); moveCursor(830,540); });
+        if (t>=12) cue('slab6',function(){ document.getElementById('slab6').classList.add('show'); moveCursor(1160,540); clickEffect(1160,540); });
+        if (t>=16) cue('rem1',function(){ document.getElementById('rem1').classList.add('show'); moveCursor(800,720); });
+        if (t>=19) cue('rem2',function(){ document.getElementById('rem2').classList.add('show'); moveCursor(800,770); });
+        if (t>=22) cue('rem3',function(){ document.getElementById('rem3').classList.add('show'); moveCursor(1200,810); clickEffect(1200,810); });
+        break;
+
+      case 3: // Scheduling
+        if (t>=1) cue('crew1',function(){ document.getElementById('crew1').classList.add('show'); moveCursor(380,250); });
+        if (t>=2) cue('crew2',function(){ document.getElementById('crew2').classList.add('show'); });
+        if (t>=3) cue('crew3',function(){ document.getElementById('crew3').classList.add('show'); moveCursor(380,400); });
+        if (t>=4) cue('crew4',function(){ document.getElementById('crew4').classList.add('show'); });
+        if (t>=5) cue('crew5',function(){ document.getElementById('crew5').classList.add('show'); });
+        if (t>=6) cue('t1',function(){ document.getElementById('t1').classList.add('show'); moveCursor(700,280); });
+        if (t>=8) cue('t2',function(){ document.getElementById('t2').classList.add('show'); moveCursor(1050,280); });
+        if (t>=10) cue('t3',function(){ document.getElementById('t3').classList.add('show'); moveCursor(850,330); });
+        if (t>=12) cue('t4',function(){ document.getElementById('t4').classList.add('show'); moveCursor(1150,330); });
+        if (t>=14) cue('t5',function(){ document.getElementById('t5').classList.add('show'); moveCursor(780,380); clickEffect(780,380); });
+        if (t>=16) cue('t6',function(){ document.getElementById('t6').classList.add('show'); moveCursor(1100,380); });
+        if (t>=18) cue('t7',function(){ document.getElementById('t7').classList.add('show'); moveCursor(900,430); });
+        if (t>=21) cue('t8',function(){ document.getElementById('t8').classList.add('show'); moveCursor(650,480); });
+        if (t>=23) cue('t9',function(){ document.getElementById('t9').classList.add('show'); moveCursor(1000,480); });
+        break;
+
+      case 4: // Contractor CRM
+        if (t>=0.5) cue('crm-stats',function(){
+          animateValue(document.getElementById('crmTotal'),0,47,1000);
+          animateValue(document.getElementById('crmRevenue'),0,482,1000,'$','K');
+          animateValue(document.getElementById('crmJobs'),0,38,1000);
+          animateValue(document.getElementById('crmAvg'),0,6840,1000,'$','');
+        });
+        if (t>=3) cue('con1',function(){ document.getElementById('con1').classList.add('show'); moveCursor(600,400); clickEffect(600,400); });
+        if (t>=8) cue('con2',function(){ document.getElementById('con2').classList.add('show'); moveCursor(1200,400); });
+        if (t>=14) cue('conAlert',function(){ document.getElementById('conAlert').classList.add('show'); moveCursor(1200,650); clickEffect(1200,650); });
+        if (t>=17) cue('con3',function(){ document.getElementById('con3').classList.add('show'); moveCursor(600,700); });
+        if (t>=20) cue('con4',function(){ document.getElementById('con4').classList.add('show'); moveCursor(1200,750); });
+        break;
+
+      case 5: // Fabrication Queue
+        if (t>=1) cue('fab1',function(){ document.getElementById('fab1').classList.add('show'); moveCursor(480,300); });
+        if (t>=3) cue('fab2',function(){ document.getElementById('fab2').classList.add('show'); moveCursor(480,420); });
+        if (t>=5) cue('fab3',function(){ document.getElementById('fab3').classList.add('show'); });
+        if (t>=7) cue('fab4',function(){ document.getElementById('fab4').classList.add('show'); moveCursor(790,300); clickEffect(790,300); });
+        if (t>=9) cue('fab5',function(){ document.getElementById('fab5').classList.add('show'); moveCursor(790,420); });
+        if (t>=11) cue('fab6',function(){ document.getElementById('fab6').classList.add('show'); moveCursor(1100,300); });
+        if (t>=13) cue('fab7',function(){ document.getElementById('fab7').classList.add('show'); moveCursor(1100,420); });
+        if (t>=15) cue('fab8',function(){ document.getElementById('fab8').classList.add('show'); moveCursor(1410,300); clickEffect(1410,300); });
+        if (t>=17) cue('fab9',function(){ document.getElementById('fab9').classList.add('show'); moveCursor(1410,420); });
+        if (t>=19) cue('fab10',function(){ document.getElementById('fab10').classList.add('show'); moveCursor(1410,530); });
+        break;
+
+      case 6: // Analytics
+        if (t>=1) cue('bar1',function(){ document.getElementById('bar1').style.height='140px'; moveCursor(500,400); });
+        if (t>=2) cue('bar2',function(){ document.getElementById('bar2').style.height='155px'; });
+        if (t>=3) cue('bar3',function(){ document.getElementById('bar3').style.height='126px'; });
+        if (t>=4) cue('bar4',function(){ document.getElementById('bar4').style.height='150px'; moveCursor(700,350); });
+        if (t>=5) cue('bar5',function(){ document.getElementById('bar5').style.height='177px'; clickEffect(750,350); });
+        if (t>=6) cue('bar6',function(){ document.getElementById('bar6').style.height='200px'; moveCursor(800,300); });
+        if (t>=10) cue('an-right',function(){ moveCursor(1200,400); });
+        if (t>=15) cue('an-bottom',function(){ moveCursor(600,700); });
+        if (t>=18) cue('an-stones',function(){ moveCursor(1200,700); clickEffect(1200,700); });
+        break;
+
+      case 7: // Close
+        cursor.style.display = 'none';
+        if (t>=1) cue('cc',function(){ document.getElementById('closeCompany').classList.add('show'); });
+        if (t>=3) cue('cm',function(){ document.getElementById('closeMeets').classList.add('show'); });
+        if (t>=4) cue('cl',function(){ document.getElementById('closeLogo').classList.add('show'); });
+        if (t>=8) cue('ct',function(){ document.getElementById('closeTag').classList.add('show'); });
+        if (t>=12) cue('cu',function(){ document.getElementById('closeUrl').classList.add('show'); });
+        if (t>=15) cue('cp',function(){ document.getElementById('closePhone').classList.add('show'); });
+        break;
+    }
+
+    if (!audio.ended && !audio.paused) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function playScene(index) {
+  currentScene = index;
+  var sceneIds = ['scene1','scene2','scene3','scene4','scene5','scene6','scene7','scene8'];
+  var navIds = ['nav-brief','nav-quotes','nav-slabs','nav-schedule','nav-contractors','nav-fab','nav-analytics','nav-analytics'];
+
+  showScene(sceneIds[index]);
+  setNavActive(navIds[index]);
+  if (index < 7) {
+    cursor.style.display = 'block';
+    moveCursor(960, 540);
+  }
+  sceneAudios[index].play().catch(function(){});
+  runSceneAnimations(index);
+}
+
+function startDemo() {
+  document.getElementById('playBtn').classList.add('hidden');
+  document.getElementById('app').style.opacity = '1';
+  document.getElementById('simpleProgress').style.display = 'block';
+  cursor.style.display = 'block';
+  playScene(0);
+}
+
+// Progress bar
+(function(){
+  var fill = document.getElementById('simpleProgressFill');
+  function upd(){
+    if (totalDuration > 0) {
+      var elapsed = 0;
+      for (var i = 0; i < currentScene; i++) elapsed += sceneDurations[i] || 0;
+      if (sceneAudios[currentScene]) elapsed += sceneAudios[currentScene].currentTime;
+      fill.style.width = (elapsed / totalDuration * 100) + '%';
+    }
+    requestAnimationFrame(upd);
+  }
+  requestAnimationFrame(upd);
+})();
+
+// Pause/resume
+(function(){
+  var paused = false, started = false;
+  var flash = document.getElementById('pauseFlash');
+  var iv = setInterval(function(){
+    var pb = document.getElementById('playBtn');
+    if (pb && pb.classList.contains('hidden')) { started = true; clearInterval(iv); }
+  }, 200);
+
+  function toggle() {
+    if (!started) return;
+    paused = !paused;
+    flash.style.opacity = paused ? '1' : '0';
+    window.__demoPaused = paused;
+    if (paused) {
+      document.body.classList.add('animations-paused');
+      sceneAudios[currentScene].pause();
+    } else {
+      document.body.classList.remove('animations-paused');
+      sceneAudios[currentScene].play().catch(function(){});
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!started || e.target.closest('#playBtn')) return;
+    // Check if ended
+    if (currentScene === 7 && sceneAudios[7].ended) { location.reload(); return; }
+    toggle();
+  });
+  document.addEventListener('touchstart', function(e) {
+    if (!started) return;
+    e.preventDefault();
+    if (currentScene === 7 && sceneAudios[7].ended) { location.reload(); return; }
+    toggle();
+  });
+
+  window.addEventListener('pagehide', function(){ try { sceneAudios[currentScene].pause(); } catch(e){} });
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) try { sceneAudios[currentScene].pause(); } catch(e){} });
+})();
+</script>
+</body>
+</html>
