@@ -3,548 +3,714 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920, user-scalable=no">
-<title>Summit Building Group — AI Estimating Demo</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Summit Building Group — AI Construction Management Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; }
-body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
-.animations-paused * { animation-play-state:paused!important; transition:none!important; }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{width:1920px;height:1080px;background:#0F172A;font-family:'Inter',sans-serif;color:#E2E8F0;overflow:hidden;position:relative}
+#playBtn{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+#playBtn .pc{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;box-shadow:0 0 80px rgba(245,158,11,0.3);transition:transform 0.3s}
+#playBtn .pc:hover{transform:scale(1.1)}
+#playBtn .pc::after{content:'';border-top:24px solid transparent;border-bottom:24px solid transparent;border-left:40px solid white;margin-left:8px}
+#playBtn h2{margin-top:24px;font-size:24px;font-weight:600;color:#94A3B8}
+#playBtn p{font-size:14px;color:#64748B;margin-top:8px}
+#playBtn.hidden{display:none}
+#sceneCounter{position:absolute;top:24px;right:32px;z-index:100;font-size:13px;color:#64748B;font-weight:500;letter-spacing:1px}
+#pauseInd{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;font-size:18px;color:#F59E0B;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;background:rgba(15,23,42,0.8);padding:12px 24px;border-radius:8px}
+#pauseInd.show{opacity:1}
+.scene{position:absolute;top:0;left:0;width:1920px;height:1080px;opacity:0;transition:opacity 0.8s ease;pointer-events:none;display:flex}
+.scene.active{opacity:1}
+.anim{opacity:0;transform:translateY(12px);transition:all 0.5s ease}
+.anim.show{opacity:1;transform:translateY(0)}
+.anim-x{opacity:0;transform:translateX(-20px);transition:all 0.4s ease}
+.anim-x.show{opacity:1;transform:translateX(0)}
+.anim-s{opacity:0;transform:scale(0.5);transition:all 0.6s cubic-bezier(0.34,1.56,0.64,1)}
+.anim-s.show{opacity:1;transform:scale(1)}
+.anim-f{opacity:0;transition:opacity 0.5s}
+.anim-f.show{opacity:1}
 
-#fakeCursor { position: absolute; top: 540px; left: 960px; z-index: 9000; pointer-events: none; transition: top 0.8s cubic-bezier(0.25, 0.1, 0.25, 1), left 0.8s cubic-bezier(0.25, 0.1, 0.25, 1); display: none; }
-#fakeCursor svg { width: 28px; height: 28px; filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.5)); }
+/* Shared */
+.card{background:#1E293B;border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.04)}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.hdr h2{font-size:26px;font-weight:800}
+.hdr h2 span{color:#F59E0B}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;margin-left:8px;text-transform:uppercase}
+.stat-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.stat-row:last-child{border-bottom:none}
 
-.click-ripple { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(14,165,233,0.7); pointer-events: none; z-index: 8999; animation: rippleOut 0.6s ease forwards; }
-.cursor-click .click-ripple { position: absolute; width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(14,165,233,0.7); pointer-events: none; z-index: 8999; animation: rippleOut 0.6s ease forwards; }
-@keyframes rippleOut { 0% { transform: translate(-50%,-50%) scale(0.3); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } }
+/* S1: Hook */
+#scene1{align-items:center;justify-content:center;flex-direction:column;text-align:center;background:radial-gradient(ellipse at center,#1E293B 0%,#0F172A 70%)}
+#scene1 .big{font-size:80px;font-weight:900;color:#F59E0B}
+#scene1 .lbl{font-size:28px;color:#94A3B8;margin-top:8px}
+#scene1 .sub{font-size:20px;color:#64748B;margin-top:24px;max-width:800px;line-height:1.6}
+#scene1 .cta-box{margin-top:40px;font-size:22px;font-weight:700;color:#F59E0B;border:2px solid #F59E0B;padding:16px 40px;border-radius:12px}
 
-#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
-#playBtn .play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; box-shadow:0 0 60px rgba(14,165,233,0.4); transition:transform 0.3s; }
-#playBtn .play-circle:hover { transform:scale(1.1); }
-#playBtn .play-circle::after { content:''; width:0; height:0; border-top:24px solid transparent; border-bottom:24px solid transparent; border-left:40px solid white; margin-left:8px; }
-#playBtn h2 { margin-top:24px; font-size:28px; font-weight:600; color:#94a3b8; }
-#playBtn.hidden { display:none; }
+/* S2: Text Intel */
+#scene2{padding:32px 48px;flex-direction:column}
+.tabs{display:flex;gap:4px;background:#1E293B;border-radius:10px;padding:4px}
+.tab{padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;color:#64748B;transition:all 0.3s}
+.tab.on{background:#F59E0B;color:#0F172A}
+.mfeed{flex:1;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.mi{background:#1E293B;border-radius:12px;padding:14px 18px;display:flex;gap:14px;border-left:4px solid transparent;flex-shrink:0}
+.mi.urg{border-left-color:#EF4444}
+.mi.tod{border-left-color:#F59E0B}
+.mi.wk{border-left-color:#22C55E}
+.mi.whn{border-left-color:#64748B}
+.mi-av{width:42px;height:42px;border-radius:50%;background:#0F172A;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#F59E0B;flex-shrink:0}
+.mi-c{flex:1}
+.mi-s{font-size:14px;font-weight:700;color:#E2E8F0}
+.mi-t{font-size:13px;color:#94A3B8;margin-top:4px;line-height:1.4}
+.mi-a{margin-top:6px;font-size:12px;color:#F59E0B;font-weight:600}
+.mi-tm{font-size:11px;color:#475569;margin-top:3px}
+.msb{width:350px;display:flex;flex-direction:column;gap:12px}
+.msb-card{background:#1E293B;border-radius:12px;padding:16px}
+.msb-card h3{font-size:13px;font-weight:700;color:#F59E0B;margin-bottom:10px}
+.ctag{display:inline-block;background:rgba(245,158,11,0.15);color:#F59E0B;font-size:11px;font-weight:600;padding:3px 10px;border-radius:6px;margin-top:6px}
 
-.scene { position:absolute; top:0; left:0; width:1920px; height:1080px; opacity:0; transition:opacity 0.8s ease; pointer-events:none; }
-.scene.active { opacity:1; }
+/* S3: Briefing */
+#scene3{padding:32px 48px;flex-direction:column}
+.br-wrap{display:flex;gap:24px;flex:1;min-height:0}
+.br-chat{flex:1;background:#1E293B;border-radius:16px;padding:24px;display:flex;flex-direction:column}
+.br-ch{display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:16px}
+.bav{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;font-size:20px}
+.bbl{max-width:88%;padding:14px 18px;border-radius:16px 16px 16px 4px;font-size:14px;line-height:1.5;background:#0F172A;align-self:flex-start;color:#E2E8F0}
+.bbl .gr{font-size:16px;font-weight:700;color:#F59E0B;display:block;margin-bottom:8px}
+.bbl .bi{display:flex;align-items:flex-start;gap:8px;margin:5px 0}
+.br-cards{width:380px;display:flex;flex-direction:column;gap:12px}
+.bsc{background:#1E293B;border-radius:14px;padding:18px}
+.bsc .bv{font-size:30px;font-weight:800;color:#F59E0B}
+.bsc .bl{font-size:13px;color:#94A3B8;margin-top:4px}
+.bsc .bd{font-size:12px;color:#64748B;margin-top:6px}
 
-/* Scene 1 - Pain */
-#scene1 { display:flex; align-items:center; justify-content:center; flex-direction:column; }
-#scene1 .pain-text { font-size:40px; font-weight:300; line-height:1.6; text-align:center; max-width:1300px; color:#94a3b8; opacity:0; }
-#scene1 .pain-icon { font-size:80px; margin-bottom:30px; opacity:0; }
+/* S4: Pipeline */
+#scene4{padding:32px 48px;flex-direction:column}
+.kanban{display:flex;gap:12px;flex:1;min-height:0}
+.kcol{flex:1;display:flex;flex-direction:column}
+.kch{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#64748B;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between}
+.kch .n{background:#0F172A;padding:2px 8px;border-radius:6px;font-size:11px}
+.kc{background:#1E293B;border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.04)}
+.kc .kn{font-size:13px;font-weight:700;color:#E2E8F0;margin-bottom:4px}
+.kc .kv{font-size:17px;font-weight:800;color:#F59E0B;margin-bottom:6px}
+.kc .km{display:flex;justify-content:space-between;font-size:11px;color:#64748B}
+.kc .kp{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:#94A3B8}
+.kp-d{width:7px;height:7px;border-radius:50%;background:#22C55E}
+.kt{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:6px}
+.kt.r{background:rgba(34,197,94,0.15);color:#22C55E}
+.kt.c{background:rgba(59,130,246,0.15);color:#3B82F6}
 
-/* Shared layout */
-.topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 0; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:24px; }
-.topbar .logo { font-size:22px; font-weight:700; color:#0ea5e9; }
-.topbar .logo span { color:#64748b; font-weight:400; }
-.topbar .user { display:flex; align-items:center; gap:12px; color:#94a3b8; font-size:14px; }
-.topbar .avatar { width:36px; height:36px; border-radius:50%; background:#1e3a5f; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; color:#0ea5e9; }
-.section-header { margin-bottom:12px; }
-.section-header h2 { font-size:24px; font-weight:700; color:#e2e8f0; }
-.section-header p { font-size:13px; color:#64748b; margin-top:4px; }
+/* S5: Invoices */
+#scene5{padding:32px 48px;flex-direction:column}
+.inv-b{display:flex;gap:20px;flex:1;min-height:0}
+.inv-tbl{flex:1;background:#1E293B;border-radius:14px;padding:20px}
+.inv-th{display:grid;grid-template-columns:200px 120px 100px 130px 1fr;padding:10px 0;font-size:11px;text-transform:uppercase;color:#64748B;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.inv-r{display:grid;grid-template-columns:200px 120px 100px 130px 1fr;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;font-size:14px}
+.inv-r .cl{color:#E2E8F0;font-weight:600}
+.inv-r .am{color:#F59E0B;font-weight:700}
+.inv-r .ag{color:#94A3B8}
+.inv-r .ag.od{color:#EF4444;font-weight:600}
+.ist{font-size:12px;font-weight:600;padding:4px 10px;border-radius:6px;display:inline-block}
+.ist.pd{background:rgba(34,197,94,0.15);color:#22C55E}
+.ist.pn{background:rgba(245,158,11,0.15);color:#F59E0B}
+.ist.od{background:rgba(239,68,68,0.15);color:#EF4444}
+.inv-sd{width:370px;display:flex;flex-direction:column;gap:14px}
+.inv-ai{background:#1E293B;border-radius:14px;padding:18px;border:1px solid rgba(245,158,11,0.2)}
+.inv-ai h3{font-size:14px;font-weight:700;color:#F59E0B;margin-bottom:10px}
+.inv-ai p{font-size:13px;color:#94A3B8;line-height:1.5;margin-bottom:10px}
+.inv-dft{background:#0F172A;border-radius:10px;padding:14px;font-size:13px;color:#CBD5E1;line-height:1.5;font-style:italic}
+.inv-cf{background:#1E293B;border-radius:14px;padding:18px}
+.inv-cf h3{font-size:14px;font-weight:700;color:#E2E8F0;margin-bottom:12px}
+.cfb{display:flex;align-items:flex-end;gap:4px;height:90px}
+.cfb>div{flex:1;text-align:center}
+.cfb .bar{margin:0 auto;width:75%;border-radius:4px 4px 0 0}
+.cfb .bar.i{background:linear-gradient(to top,#22C55E,#16A34A)}
+.cfb .bar.e{background:linear-gradient(to top,#EF4444,#DC2626)}
+.cfl{font-size:10px;color:#64748B;margin-top:4px}
 
-/* Scene 2 - Plan Intake */
-#scene2 { padding:40px 60px; }
-.project-card { background:#0f2847; border-radius:16px; padding:32px; border:1px solid rgba(255,255,255,0.06); margin-top:16px; opacity:0; transition:opacity 0.6s; }
-.project-card.show { opacity:1; }
-.project-card h2 { font-size:24px; font-weight:700; margin-bottom:20px; }
-.proj-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; }
-.proj-item { background:#0A1628; border-radius:10px; padding:14px 18px; }
-.proj-item .label { font-size:11px; text-transform:uppercase; color:#64748b; letter-spacing:1px; margin-bottom:4px; }
-.proj-item .value { font-size:16px; font-weight:600; color:#e2e8f0; }
-.blueprint-box { margin-top:20px; background:#0A1628; border-radius:12px; height:200px; border:2px dashed rgba(14,165,233,0.3); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
-.blueprint-box .bp-label { font-size:14px; color:#0ea5e9; opacity:0.6; }
-.bp-scanning { position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(14,165,233,0.1),transparent); animation:scanAnim 2s ease-in-out infinite; }
-@keyframes scanAnim { 0%{left:-100%} 100%{left:100%} }
+/* S6: Estimating */
+#scene6{padding:32px 48px;flex-direction:column}
+.est-b{display:flex;gap:20px;flex:1;min-height:0}
+.est-g{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
+.et{background:#1E293B;border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center}
+.et-l{display:flex;align-items:center;gap:10px}
+.et-i{width:40px;height:40px;border-radius:10px;background:#0F172A;display:flex;align-items:center;justify-content:center;font-size:18px}
+.et-n{font-size:13px;font-weight:700;color:#E2E8F0}
+.et-d{font-size:11px;color:#64748B;margin-top:2px}
+.et-r{text-align:right}
+.et-r .m{font-size:12px;color:#94A3B8}
+.et-r .t{font-size:15px;font-weight:800;color:#F59E0B}
+.est-s{width:340px;display:flex;flex-direction:column;gap:12px}
+.est-sc{background:#1E293B;border-radius:14px;padding:18px}
+.est-sc h3{font-size:13px;font-weight:700;margin-bottom:10px}
+.er{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.er .el{color:#94A3B8}
+.er .ev{color:#E2E8F0;font-weight:600}
+.er.tot{border-top:2px solid rgba(245,158,11,0.3);border-bottom:none;padding-top:10px;margin-top:4px}
+.er.tot .el{color:#F59E0B;font-weight:700}
+.er.tot .ev{color:#F59E0B;font-size:18px;font-weight:800}
+.eimp{background:#0F172A;border-radius:10px;padding:12px;margin-top:10px}
+.eimp h4{font-size:11px;color:#F59E0B;font-weight:700;margin-bottom:6px}
+.ir{display:flex;justify-content:space-between;font-size:12px;padding:3px 0}
+.ir .il{color:#64748B}
+.ir .iv{color:#94A3B8;font-weight:500}
 
-/* Scene 3 - Trade Takeoff */
-#scene3 { padding:40px 60px; }
-.trade-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
-.trade-card { background:#0f2847; border-radius:12px; padding:16px 20px; border:1px solid rgba(255,255,255,0.06); display:flex; justify-content:space-between; align-items:center; opacity:0; transition:opacity 0.4s, transform 0.4s; transform:translateY(10px); }
-.trade-card.show { opacity:1; transform:translateY(0); }
-.trade-left { display:flex; align-items:center; gap:12px; }
-.trade-icon { width:40px; height:40px; border-radius:10px; background:#0A1628; display:flex; align-items:center; justify-content:center; font-size:20px; }
-.trade-name { font-size:15px; font-weight:600; color:#e2e8f0; }
-.trade-sub { font-size:12px; color:#64748b; margin-top:2px; }
-.trade-right { text-align:right; }
-.trade-mat { font-size:14px; color:#94a3b8; }
-.trade-labor { font-size:12px; color:#64748b; }
-.trade-cost { font-size:16px; font-weight:700; color:#0ea5e9; margin-top:2px; }
+/* S7: Scheduling */
+#scene7{padding:32px 48px;flex-direction:column}
+.sg{flex:1;display:grid;grid-template-columns:130px repeat(5,1fr);gap:2px;background:#0F172A;border-radius:14px;overflow:hidden;align-content:start}
+.sg-c{background:#1E293B;padding:12px;font-size:11px;font-weight:700;color:#64748B}
+.sg-d{background:#1E293B;padding:12px;font-size:12px;font-weight:700;color:#94A3B8;text-align:center}
+.sg-d.tod{color:#F59E0B}
+.sg-cr{background:#1E293B;padding:12px;font-size:12px;font-weight:600;color:#E2E8F0}
+.sg-cl{background:#1E293B;padding:6px;min-height:72px}
+.sb{border-radius:6px;padding:6px 8px;font-size:10px;font-weight:600;line-height:1.3;margin-bottom:3px}
+.sb.ov{background:rgba(59,130,246,0.2);color:#60A5FA;border-left:3px solid #3B82F6}
+.sb.pg{background:rgba(34,197,94,0.2);color:#4ADE80;border-left:3px solid #22C55E}
+.sb.hp{background:rgba(168,85,247,0.2);color:#C084FC;border-left:3px solid #A855F7}
+.sb.cb{background:rgba(245,158,11,0.2);color:#FCD34D;border-left:3px solid #F59E0B}
+.sa{margin-top:14px;display:flex;gap:14px}
+.sa-c{border-radius:10px;padding:12px 16px;font-size:13px;display:flex;align-items:center;gap:8px;flex:1}
+.sa-c.conf{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#FCA5A5}
+.sa-c.wx{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:#93C5FD}
 
-/* Scene 4 - Sub Bid Tracking */
-#scene4 { padding:40px 60px; }
-.bid-table { background:#0f2847; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); margin-top:12px; }
-.bid-header { display:grid; grid-template-columns:200px 160px 120px 120px 1fr 120px; padding:8px 0 12px; font-size:11px; text-transform:uppercase; color:#64748b; letter-spacing:1px; border-bottom:1px solid rgba(255,255,255,0.06); }
-.bid-row { display:grid; grid-template-columns:200px 160px 120px 120px 1fr 120px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.04); align-items:center; font-size:14px; }
-.bid-trade { color:#e2e8f0; font-weight:500; }
-.bid-sub { color:#94a3b8; }
-.bid-amount { color:#e2e8f0; font-weight:600; }
-.bid-hist { color:#64748b; }
-.bid-diff { font-weight:600; font-size:13px; }
-.bid-diff.over { color:#ef4444; }
-.bid-diff.under { color:#22c55e; }
-.bid-diff.at { color:#94a3b8; }
-.bid-status { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; display:inline-block; }
-.bid-status.received { background:rgba(34,197,94,0.15); color:#22c55e; }
-.bid-status.pending { background:rgba(234,179,8,0.15); color:#eab308; }
-.bid-status.flagged { background:rgba(239,68,68,0.15); color:#ef4444; }
+/* S8: Meeting Intel */
+#scene8{padding:32px 48px;flex-direction:column}
+.mt-b{display:flex;gap:24px;flex:1;min-height:0}
+.mt-dev{width:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.plaud{width:180px;height:300px;background:linear-gradient(145deg,#1E293B,#334155);border-radius:24px;border:2px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.plaud .rec{width:56px;height:56px;border-radius:50%;background:#EF4444;display:flex;align-items:center;justify-content:center;animation:prec 1.5s ease infinite}
+@keyframes prec{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)}50%{box-shadow:0 0 0 14px rgba(239,68,68,0)}}
+.plaud .rec::after{content:'';width:18px;height:18px;border-radius:3px;background:white}
+.plaud .plbl{font-size:13px;color:#94A3B8;font-weight:600}
+.plaud .ptm{font-size:22px;font-weight:700;color:#E2E8F0;font-variant-numeric:tabular-nums}
+.mt-flow{font-size:12px;color:#64748B;text-align:center;margin-top:8px}
+.mt-flow .arrow{color:#F59E0B;font-size:16px;display:block;margin:4px 0}
+.mt-tr{flex:1;background:#1E293B;border-radius:16px;padding:22px;display:flex;flex-direction:column}
+.mt-trh{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
+.mt-trh h3{font-size:15px;font-weight:700}
+.mt-trh .api-badge{background:rgba(34,197,94,0.15);color:#22C55E;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px}
+.tl{font-size:13px;line-height:1.5;color:#94A3B8;margin:4px 0}
+.tl .sp{color:#F59E0B;font-weight:700;margin-right:6px}
+.tl .hl{color:#E2E8F0;font-weight:600}
+.mt-acts{width:320px;display:flex;flex-direction:column;gap:10px}
+.ma{background:#1E293B;border-radius:12px;padding:14px;border-left:3px solid #F59E0B}
+.ma h4{font-size:11px;font-weight:700;color:#F59E0B;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.ma p{font-size:13px;color:#E2E8F0;line-height:1.4}
+.ma .mm{font-size:11px;color:#64748B;margin-top:4px}
 
-/* Scene 5 - Cost Assembly */
-#scene5 { padding:40px 60px; }
-.cost-grid { display:grid; grid-template-columns:1.3fr 0.7fr; gap:24px; margin-top:12px; }
-.cost-panel { background:#0f2847; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); }
-.cost-line { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:14px; }
-.cost-line .cl-label { color:#94a3b8; }
-.cost-line .cl-value { color:#e2e8f0; font-weight:600; }
-.cost-line.subtotal { border-top:1px solid rgba(255,255,255,0.1); margin-top:4px; padding-top:14px; font-size:16px; }
-.cost-line.subtotal .cl-value { color:#0ea5e9; }
-.cost-total { display:flex; justify-content:space-between; padding:16px 0; margin-top:8px; border-top:2px solid #0ea5e9; font-size:22px; font-weight:700; }
-.cost-total .cl-value { color:#22c55e; }
-.margin-panel { background:#0A1628; border-radius:12px; padding:20px; text-align:center; }
-.margin-panel .big { font-size:48px; font-weight:800; color:#22c55e; }
-.margin-panel .label { font-size:13px; color:#64748b; margin-top:4px; }
-.margin-panel .client-price { font-size:28px; font-weight:700; color:#e2e8f0; margin-top:16px; }
+/* S9: AI Chat */
+#scene9{padding:32px 48px;flex-direction:column}
+.aic{flex:1;max-width:1100px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.aim{display:flex;gap:12px;max-width:85%}
+.aim.u{align-self:flex-end;flex-direction:row-reverse}
+.aim-av{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+.aim.u .aim-av{background:#F59E0B;color:#0F172A}
+.aim.ai .aim-av{background:linear-gradient(135deg,#3B82F6,#1D4ED8);color:white}
+.aim-bbl{padding:14px 18px;border-radius:16px;font-size:14px;line-height:1.6}
+.aim.u .aim-bbl{background:#F59E0B;color:#0F172A;border-radius:16px 16px 4px 16px;font-weight:500}
+.aim.ai .aim-bbl{background:#1E293B;border-radius:16px 16px 16px 4px;color:#E2E8F0}
+.aim.ai .aim-bbl strong{color:#F59E0B}
 
-/* Scene 6 - Import/Logistics */
-#scene6 { padding:40px 60px; }
-.logistics-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:16px; }
-.logistic-card { background:#0f2847; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); }
-.logistic-card h3 { font-size:16px; font-weight:700; color:#0ea5e9; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-.log-row { display:flex; justify-content:space-between; padding:8px 0; font-size:14px; border-bottom:1px solid rgba(255,255,255,0.04); }
-.log-row:last-child { border-bottom:none; }
-.log-label { color:#94a3b8; }
-.log-value { color:#e2e8f0; font-weight:600; }
-.timeline-bar { margin-top:16px; }
-.tl-item { display:flex; align-items:center; gap:12px; padding:8px 0; }
-.tl-dot { width:12px; height:12px; border-radius:50%; background:#0ea5e9; flex-shrink:0; }
-.tl-dot.pending { background:#eab308; }
-.tl-dot.done { background:#22c55e; }
-.tl-text { font-size:13px; color:#94a3b8; }
-.tl-date { font-size:13px; color:#e2e8f0; font-weight:600; margin-left:auto; }
-
-/* Scene 7 - Close */
-#scene7 { display:flex; align-items:center; justify-content:center; flex-direction:column; }
-.close-logo { font-size:64px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; opacity:0; }
-.close-url { font-size:28px; color:#64748b; margin-top:12px; font-weight:400; opacity:0; }
-.close-tagline { font-size:22px; color:#94a3b8; margin-top:24px; font-weight:300; opacity:0; }
+/* S10: CTA */
+#scene10{align-items:center;justify-content:center;flex-direction:column;text-align:center;background:radial-gradient(ellipse at center,#1E293B 0%,#0F172A 70%)}
+.cta-logo{font-size:18px;font-weight:600;color:#64748B;letter-spacing:4px;text-transform:uppercase;margin-bottom:16px}
+.cta-t{font-size:52px;font-weight:900;color:#E2E8F0;margin-bottom:12px}
+.cta-t span{color:#F59E0B}
+.cta-st{font-size:22px;color:#94A3B8;margin-bottom:36px}
+.cta-f{display:flex;gap:32px;margin-bottom:44px}
+.cta-fi{display:flex;align-items:center;gap:10px;font-size:16px;color:#CBD5E1}
+.cta-fi .ck{color:#F59E0B;font-size:20px;font-weight:700}
+.cta-tl{font-size:18px;color:#F59E0B;font-weight:600;margin-top:8px}
+.cta-pw{font-size:14px;color:#475569;margin-top:28px}
+.cta-pw span{color:#F59E0B;font-weight:600}
 </style>
 </head>
 <body>
 
-<div id="fakeCursor" style="top: 540px; left: 960px; display: none;">
-  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5">
-    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
-  </svg>
-</div></div>
-
-<div id="playBtn" onclick="startDemo()">
-  <div class="play-circle"></div>
-  <h2>Summit Building Group — AI Estimating Demo</h2>
+<div id="playBtn">
+  <div class="pc"></div>
+  <h2>Summit Building Group — AI Demo</h2>
+  <p>Click to start • 10 scenes • ~3 minutes</p>
 </div>
+<div id="sceneCounter">1 / 10</div>
 
-<!-- Scene 1: Pain -->
+<!-- SCENE 1: Hook -->
 <div class="scene" id="scene1">
-  <div class="pain-icon">🏗️</div>
-  <div class="pain-text">A full build estimate takes days.<br>Electrical, plumbing, framing, concrete, finishing —<br>you're coordinating 8 trades and chasing sub bids.<br><span style="color:#ef4444;font-weight:600;">One missed line item and you're eating the cost.</span></div>
+  <div class="anim-s" id="s1icon" style="font-size:72px;margin-bottom:32px">📱</div>
+  <div class="anim" id="s1stat" style="font-size:80px;font-weight:900;color:#F59E0B">600+</div>
+  <div class="anim" id="s1lbl" style="font-size:28px;color:#94A3B8;margin-top:8px">texts per week across your team</div>
+  <div class="anim" id="s1sub" style="font-size:20px;color:#64748B;margin-top:24px;max-width:800px;line-height:1.6">$6,000+ invoices lost in threads. Schedule confirmations buried. Quote requests forgotten. How many fell through the cracks last week?</div>
+  <div class="anim" id="s1cta" style="margin-top:40px;font-size:22px;font-weight:700;color:#F59E0B;border:2px solid #F59E0B;padding:16px 40px;border-radius:12px">One Mac Mini. Your whole team's messages. Nothing gets missed.</div>
 </div>
 
-<!-- Scene 2: Plan Intake -->
+<!-- SCENE 2: Text Intelligence -->
 <div class="scene" id="scene2">
-  <div class="topbar">
-    <div class="logo">Summit Building <span>Group</span></div>
-    <div class="user"><span>Ryan Torres, PM</span><div class="avatar">RT</div></div>
-  </div>
-  <div class="section-header"><h2>📁 New Project Upload</h2><p>AI is processing plans...</p></div>
-  <div class="project-card" id="projCard">
-    <h2>🏠 Oceanview Residence — 3,500 sq ft</h2>
-    <div class="proj-grid">
-      <div class="proj-item"><div class="label">Client</div><div class="value">Harmon Dev Corp</div></div>
-      <div class="proj-item"><div class="label">Type</div><div class="value">Residential Build</div></div>
-      <div class="proj-item"><div class="label">Size</div><div class="value">3,500 sq ft</div></div>
-      <div class="proj-item"><div class="label">Levels</div><div class="value">2 Stories</div></div>
-      <div class="proj-item"><div class="label">Bedrooms</div><div class="value">4 BR / 3.5 BA</div></div>
-      <div class="proj-item"><div class="label">Location</div><div class="value">Seven Mile Beach</div></div>
-      <div class="proj-item"><div class="label">Target Start</div><div class="value">April 2026</div></div>
-      <div class="proj-item"><div class="label">Status</div><div class="value" style="color:#0ea5e9;">Estimating</div></div>
+  <div class="hdr">
+    <h2>📱 Text <span>Intelligence</span></h2>
+    <div class="tabs">
+      <div class="tab on">💬 iMessage</div>
+      <div class="tab">📲 WhatsApp</div>
     </div>
-    <div class="blueprint-box">
-      <div class="bp-scanning"></div>
-      <span class="bp-label">📐 AI reading floor plans — extracting rooms, specs, quantities...</span>
+  </div>
+  <div style="display:flex;gap:20px;flex:1;min-height:0">
+    <div class="mfeed" id="s2feed">
+      <div class="mi urg anim-x">
+        <div class="mi-av">AG</div>
+        <div class="mi-c">
+          <div class="mi-s">Anderson Group <span class="badge" style="background:rgba(239,68,68,0.2);color:#EF4444">🔴 URGENT</span></div>
+          <div class="mi-t">"Need the updated quote for the kitchen reno by end of day — client meeting tomorrow at 9"</div>
+          <div class="mi-a">⚡ Action: Quote requested — assign to Marcus (Estimator)</div>
+          <div class="mi-tm">Today 7:42 AM • iMessage</div>
+        </div>
+      </div>
+      <div class="mi urg anim-x">
+        <div class="mi-av">JC</div>
+        <div class="mi-c">
+          <div class="mi-s">James Chen — Electrician <span class="badge" style="background:rgba(239,68,68,0.2);color:#EF4444">🔴 URGENT</span></div>
+          <div class="mi-t">"Panel at Oceanview isn't up to code. Inspector flagged it. Need to discuss before I can proceed"</div>
+          <div class="mi-a">⚡ Action: Inspection issue — escalate to Site Supervisor</div>
+          <div class="mi-tm">Today 7:38 AM • WhatsApp</div>
+        </div>
+      </div>
+      <div class="mi tod anim-x">
+        <div class="mi-av">RR</div>
+        <div class="mi-c">
+          <div class="mi-s">Robbie Roberts <span class="badge" style="background:rgba(245,158,11,0.2);color:#F59E0B">🟡 TODAY</span></div>
+          <div class="mi-t">"Hey, just checking on that invoice. Can you send it again? Can't find the last one"</div>
+          <div class="mi-a">📄 Action: Resend Invoice #1847 — $6,200</div>
+          <div class="mi-tm">Today 6:55 AM • iMessage</div>
+        </div>
+      </div>
+      <div class="mi tod anim-x">
+        <div class="mi-av">MP</div>
+        <div class="mi-c">
+          <div class="mi-s">Maria Perez — Tile Supplier <span class="badge" style="background:rgba(245,158,11,0.2);color:#F59E0B">🟡 TODAY</span></div>
+          <div class="mi-t">"Porcelain tiles for Harbor Point ready for pickup. 42 boxes. Duty paid. Need before Thursday"</div>
+          <div class="mi-a">📦 Action: Schedule pickup — notify Tyler (Crew Lead)</div>
+          <div class="mi-tm">Yesterday 4:12 PM • WhatsApp</div>
+        </div>
+      </div>
+      <div class="mi wk anim-x">
+        <div class="mi-av">DW</div>
+        <div class="mi-c">
+          <div class="mi-s">David Williams <span class="badge" style="background:rgba(34,197,94,0.2);color:#22C55E">🟢 THIS WEEK</span></div>
+          <div class="mi-t">"Thinking about starting that deck extension we discussed. What's the timeline look like?"</div>
+          <div class="mi-a">📋 Action: New lead — add to Estimating pipeline</div>
+          <div class="mi-tm">Yesterday 2:30 PM • iMessage</div>
+        </div>
+      </div>
+      <div class="mi whn anim-x">
+        <div class="mi-av">KL</div>
+        <div class="mi-c">
+          <div class="mi-s">Kevin Lee — Lumber Co <span class="badge" style="background:rgba(100,116,139,0.2);color:#94A3B8">⚪ WHENEVER</span></div>
+          <div class="mi-t">"New price list for Q2 attached. Some good deals on pressure-treated if you're buying bulk"</div>
+          <div class="mi-a">📎 Action: Forward price list to Marcus</div>
+          <div class="mi-tm">Friday 11:45 AM • WhatsApp</div>
+        </div>
+      </div>
+    </div>
+    <div class="msb" id="s2sb">
+      <div class="msb-card anim-f">
+        <h3>📊 Today's Message Triage</h3>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">🔴 Urgent</span><span class="value" style="color:#EF4444;font-weight:600">2 messages</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">🟡 Today</span><span class="value" style="color:#F59E0B;font-weight:600">2 messages</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">🟢 This Week</span><span class="value" style="color:#22C55E;font-weight:600">1 message</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">⚪ Whenever</span><span class="value" style="color:#94A3B8;font-weight:600">1 message</span></div>
+        <div class="stat-row" style="border-top:1px solid rgba(255,255,255,0.08);margin-top:4px;padding-top:8px"><span class="label" style="color:#94A3B8">Team Members Active</span><span class="value" style="color:#E2E8F0;font-weight:600">5 of 6</span></div>
+      </div>
+      <div class="msb-card anim-f">
+        <h3>👤 Client Recognition</h3>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Anderson Group</span><span class="value" style="color:#E2E8F0;font-weight:600">Returning</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Past Projects</span><span class="value" style="color:#E2E8F0;font-weight:600">4 completed</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Total Revenue</span><span class="value" style="color:#F59E0B;font-weight:600">$340,000</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Avg Project</span><span class="value" style="color:#E2E8F0;font-weight:600">$85,000</span></div>
+        <div class="ctag">⭐ VIP Client — Priority Response</div>
+      </div>
+      <div class="msb-card anim-f">
+        <h3>⚡ Auto-Extracted Actions</h3>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Quotes Requested</span><span class="value" style="color:#E2E8F0;font-weight:600">1</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Schedule Items</span><span class="value" style="color:#E2E8F0;font-weight:600">2</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Invoice Issues</span><span class="value" style="color:#E2E8F0;font-weight:600">1</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">Material Orders</span><span class="value" style="color:#E2E8F0;font-weight:600">1</span></div>
+        <div class="stat-row"><span class="label" style="color:#94A3B8">New Leads</span><span class="value" style="color:#22C55E;font-weight:600">1</span></div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Scene 3: Multi-Trade Takeoff -->
+<!-- SCENE 3: Morning Briefing -->
 <div class="scene" id="scene3">
-  <div class="topbar">
-    <div class="logo">Summit Building <span>Group</span></div>
-    <div class="user"><span>Ryan Torres, PM</span><div class="avatar">RT</div></div>
+  <div class="hdr">
+    <h2>☀️ Morning <span>Briefing</span></h2>
+    <span style="font-size:14px;color:#64748B">Monday, March 10, 2026 • 6:15 AM</span>
   </div>
-  <div class="section-header"><h2>🔨 Multi-Trade Takeoff — Oceanview Residence</h2><p>Material quantities and labor estimates per trade</p></div>
-  <div class="trade-grid">
-    <div class="trade-card" id="t1"><div class="trade-left"><div class="trade-icon">🧱</div><div><div class="trade-name">Concrete / Foundation</div><div class="trade-sub">Slab, footings, grade beams</div></div></div><div class="trade-right"><div class="trade-mat">142 cu yd concrete</div><div class="trade-labor">320 labor hrs</div><div class="trade-cost">$48,200</div></div></div>
-    <div class="trade-card" id="t2"><div class="trade-left"><div class="trade-icon">🪵</div><div><div class="trade-name">Framing</div><div class="trade-sub">Walls, roof, trusses</div></div></div><div class="trade-right"><div class="trade-mat">18,400 BF lumber</div><div class="trade-labor">480 labor hrs</div><div class="trade-cost">$62,300</div></div></div>
-    <div class="trade-card" id="t3"><div class="trade-left"><div class="trade-icon">⚡</div><div><div class="trade-name">Electrical</div><div class="trade-sub">Panel, wiring, fixtures</div></div></div><div class="trade-right"><div class="trade-mat">86 circuits</div><div class="trade-labor">240 labor hrs</div><div class="trade-cost">$34,500</div></div></div>
-    <div class="trade-card" id="t4"><div class="trade-left"><div class="trade-icon">🔧</div><div><div class="trade-name">Plumbing</div><div class="trade-sub">Supply, waste, fixtures</div></div></div><div class="trade-right"><div class="trade-mat">14 fixtures, 380 ft pipe</div><div class="trade-labor">200 labor hrs</div><div class="trade-cost">$28,700</div></div></div>
-    <div class="trade-card" id="t5"><div class="trade-left"><div class="trade-icon">❄️</div><div><div class="trade-name">HVAC</div><div class="trade-sub">Split systems, ductwork</div></div></div><div class="trade-right"><div class="trade-mat">3 units, 420 ft duct</div><div class="trade-labor">160 labor hrs</div><div class="trade-cost">$31,400</div></div></div>
-    <div class="trade-card" id="t6"><div class="trade-left"><div class="trade-icon">🧶</div><div><div class="trade-name">Insulation</div><div class="trade-sub">Walls, ceiling, spray foam</div></div></div><div class="trade-right"><div class="trade-mat">3,200 sq ft</div><div class="trade-labor">80 labor hrs</div><div class="trade-cost">$12,800</div></div></div>
-    <div class="trade-card" id="t7"><div class="trade-left"><div class="trade-icon">🪟</div><div><div class="trade-name">Drywall</div><div class="trade-sub">Board, tape, finish</div></div></div><div class="trade-right"><div class="trade-mat">9,600 sq ft</div><div class="trade-labor">280 labor hrs</div><div class="trade-cost">$22,100</div></div></div>
-    <div class="trade-card" id="t8"><div class="trade-left"><div class="trade-icon">🎨</div><div><div class="trade-name">Finishing</div><div class="trade-sub">Paint, trim, flooring, fixtures</div></div></div><div class="trade-right"><div class="trade-mat">3,500 sq ft finish</div><div class="trade-labor">360 labor hrs</div><div class="trade-cost">$41,800</div></div></div>
+  <div class="br-wrap">
+    <div class="br-chat">
+      <div class="br-ch">
+        <div class="bav">🤖</div>
+        <div><div style="font-size:16px;font-weight:700">Summit AI</div><div style="font-size:12px;color:#22C55E">● Online</div></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:12px;overflow:hidden" id="s3msgs">
+        <div class="bbl anim">
+          <span class="gr">Good morning! Here's your Monday: ☀️</span>
+          <div class="bi">🏗️ <span><strong style="color:#E2E8F0">3 active job sites today</strong> — Oceanview, Palm Grove, Harbor Point</span></div>
+          <div class="bi">🔍 <span><strong style="color:#E2E8F0">2 inspections scheduled</strong> — Electrical @ Oceanview 9AM, Foundation @ Coral Bay 2PM</span></div>
+        </div>
+        <div class="bbl anim">
+          <div class="bi">📱 <span><strong style="color:#EF4444">7 texts from Friday</strong> need responses — 2 urgent, 3 today, 2 this week</span></div>
+          <div class="bi">💰 <span><strong style="color:#F59E0B">2 invoices overdue</strong> — $14,200 outstanding (Roberts $6,200 + Chen $8,000)</span></div>
+        </div>
+        <div class="bbl anim">
+          <div class="bi">🌤️ <span><strong style="color:#E2E8F0">Weather: 29°C, partly cloudy</strong> — good for the pour today</span></div>
+          <div class="bi">⚡ <span><strong style="color:#E2E8F0">Sub arriving:</strong> James Chen (electrician) @ Oceanview, 8:00 AM</span></div>
+          <div class="bi">📦 <span><strong style="color:#E2E8F0">Material pickup:</strong> 42 boxes porcelain tile ready at Perez Supply</span></div>
+        </div>
+        <div class="bbl anim">
+          <div class="bi">⚠️ <span><strong style="color:#F59E0B">Action needed:</strong> Anderson Group quote due today — Marcus has takeoff ready</span></div>
+          <div class="bi">📞 <span><strong style="color:#E2E8F0">Suggested:</strong> Call Robbie Roberts RE: overdue $6,200 — last contact 12 days ago</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="br-cards" id="s3cards">
+      <div class="bsc anim"><div style="font-size:26px;margin-bottom:6px">🏗️</div><div class="bv">3</div><div class="bl">Active Sites Today</div><div class="bd">Oceanview • Palm Grove • Harbor Point</div></div>
+      <div class="bsc anim"><div style="font-size:26px;margin-bottom:6px">📱</div><div class="bv">7</div><div class="bl">Unread Texts from Friday</div><div class="bd">2 urgent • 3 today • 2 this week</div></div>
+      <div class="bsc anim"><div style="font-size:26px;margin-bottom:6px">💰</div><div class="bv">$14,200</div><div class="bl">Outstanding Overdue</div><div class="bd">Roberts $6,200 (34d) • Chen $8,000 (21d)</div></div>
+      <div class="bsc anim"><div style="font-size:26px;margin-bottom:6px">🌤️</div><div class="bv">29°C</div><div class="bl">Grand Cayman Weather</div><div class="bd">Partly cloudy — good for exterior work</div></div>
+    </div>
   </div>
 </div>
 
-<!-- Scene 4: Sub Bid Tracking -->
+<!-- SCENE 4: Job Pipeline -->
 <div class="scene" id="scene4">
-  <div class="topbar">
-    <div class="logo">Summit Building <span>Group</span></div>
-    <div class="user"><span>Ryan Torres, PM</span><div class="avatar">RT</div></div>
+  <div class="hdr">
+    <h2>📋 Job <span>Pipeline</span></h2>
+    <div style="font-size:14px;color:#94A3B8">Total Pipeline: <strong style="color:#F59E0B;font-size:18px">$3.28M</strong></div>
   </div>
-  <div class="section-header"><h2>📋 Subcontractor Bid Tracking</h2><p>Live bid status with historical comparison</p></div>
-  <div class="bid-table">
-    <div class="bid-header"><span>Trade</span><span>Subcontractor</span><span>Bid</span><span>Historical Avg</span><span>Variance</span><span>Status</span></div>
-    <div class="bid-row"><span class="bid-trade">Concrete</span><span class="bid-sub">Island Foundations Ltd</span><span class="bid-amount">$47,500</span><span class="bid-hist">$48,200</span><span class="bid-diff under">▼ 1.5% under</span><span><span class="bid-status received">Received</span></span></div>
-    <div class="bid-row"><span class="bid-trade">Framing</span><span class="bid-sub">Caribbean Framers</span><span class="bid-amount">$61,800</span><span class="bid-hist">$62,300</span><span class="bid-diff under">▼ 0.8% under</span><span><span class="bid-status received">Received</span></span></div>
-    <div class="bid-row"><span class="bid-trade">Electrical</span><span class="bid-sub">Cayman Electric Co</span><span class="bid-amount">$38,600</span><span class="bid-hist">$34,500</span><span class="bid-diff over">▲ 12% above ⚠️</span><span><span class="bid-status flagged">Flagged</span></span></div>
-    <div class="bid-row"><span class="bid-trade">Plumbing</span><span class="bid-sub">AquaFlow Systems</span><span class="bid-amount">$28,200</span><span class="bid-hist">$28,700</span><span class="bid-diff under">▼ 1.7% under</span><span><span class="bid-status received">Received</span></span></div>
-    <div class="bid-row"><span class="bid-trade">HVAC</span><span class="bid-sub">—</span><span class="bid-amount">—</span><span class="bid-hist">$31,400</span><span class="bid-diff at">Awaiting</span><span><span class="bid-status pending">Pending</span></span></div>
-    <div class="bid-row"><span class="bid-trade">Insulation</span><span class="bid-sub">TropSeal Insulation</span><span class="bid-amount">$13,100</span><span class="bid-hist">$12,800</span><span class="bid-diff over">▲ 2.3% above</span><span><span class="bid-status received">Received</span></span></div>
-    <div class="bid-row"><span class="bid-trade">Drywall</span><span class="bid-sub">—</span><span class="bid-amount">—</span><span class="bid-hist">$22,100</span><span class="bid-diff at">Awaiting</span><span><span class="bid-status pending">Pending</span></span></div>
-    <div class="bid-row"><span class="bid-trade">Finishing</span><span class="bid-sub">Premier Finish GC</span><span class="bid-amount">$40,900</span><span class="bid-hist">$41,800</span><span class="bid-diff under">▼ 2.2% under</span><span><span class="bid-status received">Received</span></span></div>
+  <div class="kanban" id="s4kanban">
+    <div class="kcol">
+      <div class="kch">Estimating <span class="n">2</span></div>
+      <div class="kc anim"><div class="kt r">Residential</div><div class="kn">Palm Grove Villa</div><div class="kv">$320,000</div><div class="km"><span>Est. 4 months</span><span>Due Mar 20</span></div><div class="kp"><span class="kp-d"></span>Marcus — Estimator</div></div>
+      <div class="kc anim"><div class="kt r">Residential</div><div class="kn">Williams Deck Extension</div><div class="kv">$45,000</div><div class="km"><span>Est. 3 weeks</span><span>New Lead</span></div><div class="kp"><span class="kp-d"></span>Marcus — Estimator</div></div>
+    </div>
+    <div class="kcol">
+      <div class="kch">Bid Submitted <span class="n">1</span></div>
+      <div class="kc anim"><div class="kt c">Commercial</div><div class="kn">Coral Bay Office Complex</div><div class="kv">$890,000</div><div class="km"><span>Est. 8 months</span><span>Bid sent Mar 1</span></div><div class="kp"><span class="kp-d"></span>Sarah — PM</div></div>
+    </div>
+    <div class="kcol">
+      <div class="kch">In Progress <span class="n">2</span></div>
+      <div class="kc anim" style="border-left:3px solid #3B82F6"><div class="kt c">Commercial</div><div class="kn">Oceanview Residences</div><div class="kv">$1,200,000</div><div class="km"><span>67% complete</span><span>Due Jun 15</span></div><div class="kp"><span class="kp-d"></span>Sarah — PM</div></div>
+      <div class="kc anim" style="border-left:3px solid #22C55E"><div class="kt r">Residential</div><div class="kn">Anderson Kitchen Reno</div><div class="kv">$95,000</div><div class="km"><span>40% complete</span><span>Due Apr 8</span></div><div class="kp"><span class="kp-d"></span>Dave — Supervisor</div></div>
+    </div>
+    <div class="kcol">
+      <div class="kch">Punch List <span class="n">1</span></div>
+      <div class="kc anim"><div class="kt r">Residential</div><div class="kn">Harbor Point Townhomes</div><div class="kv">$480,000</div><div class="km"><span>12 items left</span><span>Due Mar 14</span></div><div class="kp"><span class="kp-d"></span>Dave — Supervisor</div></div>
+    </div>
+    <div class="kcol">
+      <div class="kch">Complete <span class="n">2</span></div>
+      <div class="kc anim" style="opacity:0.7"><div class="kt r">Residential</div><div class="kn">Sunset Cove Remodel</div><div class="kv">$185,000</div><div class="km"><span>✅ Delivered</span><span>Feb 28</span></div><div class="kp"><span class="kp-d" style="background:#64748B"></span>Final payment received</div></div>
+      <div class="kc anim" style="opacity:0.7"><div class="kt c">Commercial</div><div class="kn">Bay Street Retail</div><div class="kv">$67,000</div><div class="km"><span>✅ Delivered</span><span>Feb 14</span></div><div class="kp"><span class="kp-d" style="background:#64748B"></span>Final payment received</div></div>
+    </div>
   </div>
 </div>
 
-<!-- Scene 5: Cost Assembly -->
+<!-- SCENE 5: Invoice Tracker -->
 <div class="scene" id="scene5">
-  <div class="topbar">
-    <div class="logo">Summit Building <span>Group</span></div>
-    <div class="user"><span>Ryan Torres, PM</span><div class="avatar">RT</div></div>
+  <div class="hdr">
+    <h2>💰 Invoice & Payment <span>Tracker</span></h2>
   </div>
-  <div class="section-header"><h2>💰 Full Estimate — Oceanview Residence</h2><p>All costs assembled with margin</p></div>
-  <div class="cost-grid">
-    <div class="cost-panel">
-      <h3 style="font-size:16px;font-weight:700;margin-bottom:14px;">Cost Breakdown</h3>
-      <div class="cost-line"><span class="cl-label">Materials (all trades)</span><span class="cl-value">$187,000</span></div>
-      <div class="cost-line"><span class="cl-label">Labor (2,120 hrs)</span><span class="cl-value">$94,000</span></div>
-      <div class="cost-line"><span class="cl-label">Subcontractor Bids</span><span class="cl-value">$156,000</span></div>
-      <div class="cost-line"><span class="cl-label">Permits & Fees</span><span class="cl-value">$8,500</span></div>
-      <div class="cost-line"><span class="cl-label">Import Duties (22%)</span><span class="cl-value">$18,200</span></div>
-      <div class="cost-line"><span class="cl-label">Shipping & Freight</span><span class="cl-value">$12,600</span></div>
-      <div class="cost-line subtotal"><span class="cl-label">Subtotal</span><span class="cl-value">$476,300</span></div>
-      <div class="cost-line"><span class="cl-label">Contingency (5%)</span><span class="cl-value">$23,815</span></div>
-      <div class="cost-total"><span class="cl-label">Project Cost</span><span class="cl-value">$500,115</span></div>
+  <div class="inv-b">
+    <div class="inv-tbl">
+      <div class="inv-th"><span>Client</span><span>Amount</span><span>Age</span><span>Status</span><span>Last Contact</span></div>
+      <div class="inv-r anim" id="s5r1"><span class="cl">Robbie Roberts</span><span class="am">$6,200</span><span class="ag od">34 days</span><span><span class="ist od">Overdue</span></span><span style="color:#64748B;font-size:13px">12 days ago (text)</span></div>
+      <div class="inv-r anim"><span class="cl">James Chen</span><span class="am">$8,000</span><span class="ag od">21 days</span><span><span class="ist od">Overdue</span></span><span style="color:#64748B;font-size:13px">5 days ago (WhatsApp)</span></div>
+      <div class="inv-r anim"><span class="cl">Anderson Group</span><span class="am">$23,500</span><span class="ag">7 days</span><span><span class="ist pn">Pending</span></span><span style="color:#64748B;font-size:13px">Today (iMessage)</span></div>
+      <div class="inv-r anim"><span class="cl">David Williams</span><span class="am">$5,100</span><span class="ag">3 days</span><span><span class="ist pn">Pending</span></span><span style="color:#64748B;font-size:13px">Yesterday (text)</span></div>
+      <div class="inv-r anim"><span class="cl">Coral Bay Development</span><span class="am">$45,000</span><span class="ag">Net 30</span><span><span class="ist pn">Pending</span></span><span style="color:#64748B;font-size:13px">3 days ago (email)</span></div>
+      <div class="inv-r anim"><span class="cl">Sunset Cove — Final</span><span class="am">$18,500</span><span class="ag" style="color:#22C55E">Received</span><span><span class="ist pd">Paid</span></span><span style="color:#64748B;font-size:13px">Mar 1 (bank transfer)</span></div>
     </div>
-    <div class="cost-panel" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-      <div class="margin-panel" style="width:100%;">
-        <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Markup</div>
-        <div class="big">18%</div>
-        <div class="label">Profit Margin</div>
-        <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Client Price</div>
-          <div class="client-price">$590,136</div>
+    <div class="inv-sd">
+      <div class="inv-ai anim-f" id="s5ai">
+        <h3>🤖 AI Suggestion</h3>
+        <p>Send follow-up to <strong style="color:#E2E8F0">Robbie Roberts</strong>? Last contact 12 days ago via text. He's $6,200 overdue at 34 days.</p>
+        <div class="inv-dft">"Hey Robbie — just circling back on Invoice #1847 for $6,200 from the Harbor Point work. Want me to resend it? Happy to sort out a payment plan if that helps. Let me know 👍"</div>
+      </div>
+      <div class="inv-cf anim-f" id="s5cf">
+        <h3>📊 30-Day Cash Flow Projection</h3>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span style="color:#22C55E">▲ In: <strong>$106,300</strong></span>
+          <span style="color:#EF4444">▼ Out: <strong>$72,800</strong></span>
         </div>
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:13px;color:#64748b;margin-bottom:8px;">Your Profit</div>
-          <div style="font-size:24px;font-weight:700;color:#22c55e;">$90,021</div>
+        <div class="cfb">
+          <div><div class="bar i" style="height:85px"></div><div class="cfl">Wk1 In</div></div>
+          <div><div class="bar e" style="height:50px"></div><div class="cfl">Wk1 Out</div></div>
+          <div><div class="bar i" style="height:65px"></div><div class="cfl">Wk2 In</div></div>
+          <div><div class="bar e" style="height:55px"></div><div class="cfl">Wk2 Out</div></div>
+          <div><div class="bar i" style="height:45px"></div><div class="cfl">Wk3 In</div></div>
+          <div><div class="bar e" style="height:40px"></div><div class="cfl">Wk3 Out</div></div>
+          <div><div class="bar i" style="height:75px"></div><div class="cfl">Wk4 In</div></div>
+          <div><div class="bar e" style="height:35px"></div><div class="cfl">Wk4 Out</div></div>
         </div>
+        <div style="text-align:center;margin-top:10px;font-size:14px;color:#22C55E;font-weight:700">Net: +$33,500 projected</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Scene 6: Import / Logistics -->
+<!-- SCENE 6: Estimating Engine -->
 <div class="scene" id="scene6">
-  <div class="topbar">
-    <div class="logo">Summit Building <span>Group</span></div>
-    <div class="user"><span>Ryan Torres, PM</span><div class="avatar">RT</div></div>
+  <div class="hdr">
+    <h2>📊 Estimating <span>Engine</span></h2>
+    <span style="font-size:14px;color:#64748B">Palm Grove Villa — 3,200 sq ft Residential</span>
   </div>
-  <div class="section-header"><h2>🚢 Import & Logistics — Cayman Islands</h2><p>Duty calculations and shipping timeline</p></div>
-  <div class="logistics-grid">
-    <div class="logistic-card">
-      <h3>🏷️ Import Duties</h3>
-      <div class="log-row"><span class="log-label">Lumber & Framing</span><span class="log-value">22% — $8,400</span></div>
-      <div class="log-row"><span class="log-label">Electrical Supplies</span><span class="log-value">22% — $3,200</span></div>
-      <div class="log-row"><span class="log-label">Plumbing & HVAC</span><span class="log-value">22% — $4,100</span></div>
-      <div class="log-row"><span class="log-label">Finishing Materials</span><span class="log-value">22% — $2,500</span></div>
-      <div class="log-row" style="font-weight:600;color:#0ea5e9;"><span class="log-label">Total Duties</span><span class="log-value">$18,200</span></div>
+  <div class="est-b">
+    <div class="est-g" id="s6trades">
+      <div class="et anim"><div class="et-l"><div class="et-i">🏗️</div><div><div class="et-n">Concrete & Foundation</div><div class="et-d">Slab-on-grade, 3,200 sq ft</div></div></div><div class="et-r"><div class="m">Materials + Labor</div><div class="t">$42,800</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">🪵</div><div><div class="et-n">Framing & Structural</div><div class="et-d">Hurricane-rated, 150mph wind</div></div></div><div class="et-r"><div class="m">Materials + Labor</div><div class="t">$58,400</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">⚡</div><div><div class="et-n">Electrical</div><div class="et-d">200A service, smart panel</div></div></div><div class="et-r"><div class="m">Sub: Chen Electric</div><div class="t">$34,200</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">🔧</div><div><div class="et-n">Plumbing</div><div class="et-d">3 bath, kitchen, laundry, pool</div></div></div><div class="et-r"><div class="m">Sub: Island Plumbing</div><div class="t">$28,600</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">❄️</div><div><div class="et-n">HVAC</div><div class="et-d">Multi-zone split, 4 ton</div></div></div><div class="et-r"><div class="m">Sub: CoolAir CI</div><div class="t">$22,100</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">🏠</div><div><div class="et-n">Roofing</div><div class="et-d">Standing seam, hurricane clips</div></div></div><div class="et-r"><div class="m">Materials + Labor</div><div class="t">$31,500</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">🪟</div><div><div class="et-n">Windows & Doors</div><div class="et-d">Impact-rated, 18 units</div></div></div><div class="et-r"><div class="m">Import + Install</div><div class="t">$38,900</div></div></div>
+      <div class="et anim"><div class="et-l"><div class="et-i">✨</div><div><div class="et-n">Finishes & Fixtures</div><div class="et-d">Tile, paint, cabinets, counters</div></div></div><div class="et-r"><div class="m">Materials + Labor</div><div class="t">$46,200</div></div></div>
     </div>
-    <div class="logistic-card">
-      <h3>📦 Shipping Containers</h3>
-      <div class="log-row"><span class="log-label">Container 1 (Lumber)</span><span class="log-value">40ft HC</span></div>
-      <div class="log-row"><span class="log-label">Container 2 (MEP)</span><span class="log-value">20ft STD</span></div>
-      <div class="log-row"><span class="log-label">Container 3 (Finish)</span><span class="log-value">20ft STD</span></div>
-      <div class="log-row"><span class="log-label">Freight Cost</span><span class="log-value">$12,600</span></div>
-      <div class="log-row"><span class="log-label">Origin</span><span class="log-value">Miami, FL</span></div>
-    </div>
-    <div class="logistic-card">
-      <h3>📅 Delivery Timeline</h3>
-      <div class="timeline-bar">
-        <div class="tl-item"><div class="tl-dot done"></div><span class="tl-text">Order Placed</span><span class="tl-date">Mar 10</span></div>
-        <div class="tl-item"><div class="tl-dot done"></div><span class="tl-text">Container Loaded</span><span class="tl-date">Mar 18</span></div>
-        <div class="tl-item"><div class="tl-dot pending"></div><span class="tl-text">In Transit (5 days)</span><span class="tl-date">Mar 23</span></div>
-        <div class="tl-item"><div class="tl-dot"></div><span class="tl-text">Customs Clearance</span><span class="tl-date">Mar 25</span></div>
-        <div class="tl-item"><div class="tl-dot"></div><span class="tl-text">On Site</span><span class="tl-date">Mar 27</span></div>
+    <div class="est-s" id="s6sum">
+      <div class="est-sc anim-f">
+        <h3 style="color:#E2E8F0">📋 Estimate Summary</h3>
+        <div class="er"><span class="el">Subtotal (all trades)</span><span class="ev">$302,700</span></div>
+        <div class="er"><span class="el">General Conditions (5%)</span><span class="ev">$15,135</span></div>
+        <div class="er"><span class="el">Contingency (3%)</span><span class="ev">$9,081</span></div>
+        <div class="er"><span class="el">Overhead & Profit (15%)</span><span class="ev">$45,405</span></div>
+        <div class="er tot"><span class="el">Client Price</span><span class="ev">$372,321</span></div>
+        <div class="eimp">
+          <h4>🚢 Cayman Import Logistics</h4>
+          <div class="ir"><span class="il">Import Duty (22%)</span><span class="iv">$38,610</span></div>
+          <div class="ir"><span class="il">Shipping (Miami → GC)</span><span class="iv">$4,800</span></div>
+          <div class="ir"><span class="il">Customs Brokerage</span><span class="iv">$1,200</span></div>
+          <div class="ir"><span class="il">Est. Transit Time</span><span class="iv">8–12 days</span></div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Scene 7: Close -->
+<!-- SCENE 7: Crew Scheduling -->
 <div class="scene" id="scene7">
-  <div class="close-logo">SolveWorks</div>
-  <div class="close-url">solveworks.io</div>
-  <div class="close-tagline">Your AI. Only yours.</div>
+  <div class="hdr">
+    <h2>👷 Crew <span>Scheduling</span></h2>
+    <span style="font-size:14px;color:#64748B">Week of March 10–14, 2026</span>
+  </div>
+  <div class="sg" id="s7grid">
+    <div class="sg-c">CREW</div>
+    <div class="sg-d tod">Mon 10</div><div class="sg-d">Tue 11</div><div class="sg-d">Wed 12</div><div class="sg-d">Thu 13</div><div class="sg-d">Fri 14</div>
+
+    <div class="sg-cr">🟦 Tyler (Lead)</div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Framing 2F</div></div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Framing 2F</div><div class="sb pg anim-f" style="border:2px solid #EF4444">Palm Grove<br>⚠️ CONFLICT</div></div>
+    <div class="sg-cl"><div class="sb pg anim-f">Palm Grove<br>Foundation</div></div>
+    <div class="sg-cl"><div class="sb pg anim-f">Palm Grove<br>Foundation</div></div>
+    <div class="sg-cl"><div class="sb hp anim-f">Harbor Point<br>Punch List</div></div>
+
+    <div class="sg-cr">🟩 Marcus (Est.)</div>
+    <div class="sg-cl"><div class="sb cb anim-f">Office<br>Anderson Quote</div></div>
+    <div class="sg-cl"><div class="sb pg anim-f">Palm Grove<br>Site Measure</div></div>
+    <div class="sg-cl"><div class="sb cb anim-f">Office<br>Coral Bay Bid</div></div>
+    <div class="sg-cl"><div class="sb cb anim-f">Office<br>Coral Bay Bid</div></div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Progress Review</div></div>
+
+    <div class="sg-cr">🟪 Dave (Super)</div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Inspection 9AM</div></div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Electrical</div></div>
+    <div class="sg-cl"><div class="sb hp anim-f">Harbor Point<br>Punch List</div></div>
+    <div class="sg-cl"><div class="sb hp anim-f">Harbor Point<br>Final Walk</div></div>
+    <div class="sg-cl"><div class="sb cb anim-f">Coral Bay<br>Foundation Insp.</div></div>
+
+    <div class="sg-cr">🟨 Sarah (PM)</div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Client Meeting</div></div>
+    <div class="sg-cl"><div class="sb cb anim-f">Office<br>Billing & Invoices</div></div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Sub Coordination</div></div>
+    <div class="sg-cl"><div class="sb pg anim-f">Palm Grove<br>Permit Follow-up</div></div>
+    <div class="sg-cl"><div class="sb hp anim-f">Harbor Point<br>Client Walkthrough</div></div>
+
+    <div class="sg-cr">🟧 Crew 2</div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Concrete Pour</div></div>
+    <div class="sg-cl"><div class="sb ov anim-f">Oceanview<br>Concrete Cure</div></div>
+    <div class="sg-cl"><div class="sb pg anim-f">Palm Grove<br>Site Prep</div></div>
+    <div class="sg-cl"><div class="sb pg anim-f" style="opacity:0.5;border:1px dashed #93C5FD">Palm Grove<br>🌧️ Rain — Move?</div></div>
+    <div class="sg-cl"><div class="sb hp anim-f">Harbor Point<br>Touch-ups</div></div>
+  </div>
+  <div class="sa anim-f" id="s7alerts">
+    <div class="sa-c conf">⚠️ Tyler double-booked Tuesday — Oceanview and Palm Grove. Reassign Palm Grove to Crew 2?</div>
+    <div class="sa-c wx">🌧️ Rain forecast Thursday — move Palm Grove exterior work to Friday? Crew 2 available.</div>
+  </div>
 </div>
 
-<!-- Progress bar & mobile controls -->
-<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
-  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
+<!-- SCENE 8: Meeting Intelligence (Plaud API Integration) -->
+<div class="scene" id="scene8">
+  <div class="hdr">
+    <h2>🎙️ Meeting <span>Intelligence</span></h2>
+    <span style="font-size:14px;color:#64748B">Plaud API → Auto-Transcribe → Extract Actions</span>
+  </div>
+  <div class="mt-b">
+    <div class="mt-dev" id="s8dev">
+      <div class="plaud anim-f">
+        <div class="rec"></div>
+        <div class="plbl">Recording...</div>
+        <div class="ptm">00:23:47</div>
+      </div>
+      <div class="mt-flow anim-f" style="margin-top:12px">
+        <div style="font-size:13px;color:#94A3B8;font-weight:600">📱 Plaud Device</div>
+        <div class="arrow">⬇️</div>
+        <div style="font-size:13px;color:#94A3B8;font-weight:600">☁️ Plaud Cloud API</div>
+        <div class="arrow">⬇️</div>
+        <div style="font-size:13px;color:#F59E0B;font-weight:700">🤖 Your AI Agent</div>
+        <div class="arrow">⬇️</div>
+        <div style="font-size:13px;color:#22C55E;font-weight:600">✅ Tasks Created</div>
+      </div>
+    </div>
+    <div class="mt-tr">
+      <div class="mt-trh">
+        <h3>📝 Auto-Transcription</h3>
+        <span class="mt-trh" style="margin-left:auto"><span class="api-badge" style="background:rgba(34,197,94,0.15);color:#22C55E;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px">PLAUD API ✓</span></span>
+      </div>
+      <div style="font-size:12px;color:#64748B;margin-bottom:12px">Anderson Group — Site Meeting • Mar 8, 2026 • Oceanview Residences</div>
+      <div id="s8lines" style="flex:1;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <div class="tl anim"><span class="sp">Owner:</span> "Thanks for coming out. So the kitchen — we definitely want to upgrade the countertops. <span class="hl">Thinking quartz instead of granite.</span>"</div>
+        <div class="tl anim"><span class="sp">You:</span> "Quartz is about 15% more on material but <span class="hl">lower maintenance long-term</span>. I can get you a revised number by Wednesday."</div>
+        <div class="tl anim"><span class="sp">Owner:</span> "Perfect. And the <span class="hl">start date — can we lock in March 24th</span>? We need to be in by June."</div>
+        <div class="tl anim"><span class="sp">You:</span> "March 24th works. That gives us <span class="hl">12 weeks to completion</span>, which is tight but doable if materials arrive on schedule."</div>
+        <div class="tl anim"><span class="sp">Owner:</span> "One more thing — <span class="hl">budget cap is $450K</span>. If the quartz pushes us over, let's discuss alternatives."</div>
+        <div class="tl anim"><span class="sp">You:</span> "Understood. I'll flag it in the estimate. Should have the <span class="hl">full updated proposal to you by Friday</span>."</div>
+      </div>
+    </div>
+    <div class="mt-acts" id="s8acts">
+      <div style="font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:1px;padding:0 0 8px">🤖 Auto-Extracted Actions</div>
+      <div class="ma anim">
+        <h4>📋 Task Created</h4>
+        <p>Revised countertop quote (quartz vs granite) — send to Anderson Group</p>
+        <div class="mm">Assigned: Marcus • Due: Wednesday Mar 12</div>
+      </div>
+      <div class="ma anim">
+        <h4>📅 Date Confirmed</h4>
+        <p>Anderson Kitchen Reno start date locked: March 24, 2026</p>
+        <div class="mm">Updated: Project timeline in pipeline</div>
+      </div>
+      <div class="ma anim">
+        <h4>💰 Budget Alert</h4>
+        <p>Client budget cap: $450,000 — current estimate $423,500 (93.6% of cap)</p>
+        <div class="mm">Flag: Quartz upgrade may push over cap</div>
+      </div>
+      <div class="ma anim">
+        <h4>📄 Deliverable</h4>
+        <p>Full updated proposal with quartz pricing to Anderson Group</p>
+        <div class="mm">Assigned: You • Due: Friday Mar 14</div>
+      </div>
+    </div>
+  </div>
 </div>
-<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;"><div style="text-align:center;"><div style="font-size:120px; color:white;">⏸</div><div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div></div></div>
+
+<!-- SCENE 9: AI Chat -->
+<div class="scene" id="scene9">
+  <div class="hdr">
+    <h2>💬 Just <span>Ask</span></h2>
+    <span style="font-size:14px;color:#64748B">Natural language — no menus, no clicks</span>
+  </div>
+  <div class="aic" id="s9chat">
+    <div class="aim u anim"><div class="aim-av">👷</div><div class="aim-bbl">What's Tyler working on today?</div></div>
+    <div class="aim ai anim"><div class="aim-av">🤖</div><div class="aim-bbl"><strong>Tyler</strong> is at <strong>Oceanview Residences</strong> today — second floor framing. He's been on-site since 7:15 AM. Note: he's double-booked tomorrow (Oceanview + Palm Grove). Want me to reassign?</div></div>
+    <div class="aim u anim"><div class="aim-av">👷</div><div class="aim-bbl">How much do we have outstanding?</div></div>
+    <div class="aim ai anim"><div class="aim-av">🤖</div><div class="aim-bbl"><strong>$42,800</strong> across 5 invoices. Two are overdue: <strong>Robbie Roberts — $6,200</strong> (34 days) and <strong>James Chen — $8,000</strong> (21 days). Three more pending totaling $73,600. Want me to send follow-ups?</div></div>
+    <div class="aim u anim"><div class="aim-av">👷</div><div class="aim-bbl">Draft a follow-up to Robbie Roberts about his overdue invoice</div></div>
+    <div class="aim ai anim"><div class="aim-av">🤖</div><div class="aim-bbl">Done. Here's the draft:<br><br><em>"Hey Robbie — circling back on Invoice #1847 for $6,200 from the Harbor Point work. Want me to resend it? Happy to sort out a payment schedule if that helps. Let me know 👍"</em><br><br>Send via <strong>iMessage</strong> or <strong>WhatsApp</strong>?</div></div>
+    <div class="aim u anim"><div class="aim-av">👷</div><div class="aim-bbl">iMessage. And what did we agree on in the Anderson meeting?</div></div>
+    <div class="aim ai anim"><div class="aim-av">🤖</div><div class="aim-bbl">✅ Sent to Robbie via iMessage.<br><br>From today's <strong>Anderson Group</strong> meeting: Start date locked <strong>March 24</strong>. They want <strong>quartz countertops</strong> (upgrading from granite). Budget cap <strong>$450K</strong>. Marcus is running the revised quote — due Wednesday. Full proposal due to them by Friday.</div></div>
+  </div>
+</div>
+
+<!-- SCENE 10: CTA -->
+<div class="scene" id="scene10">
+  <div class="cta-logo anim-f" id="s10logo">Summit Building Group × SolveWorks</div>
+  <div class="cta-t anim" id="s10title">Your AI. <span>Only Yours.</span></div>
+  <div class="cta-st anim-f" id="s10sub">Built for builders in the Caribbean — not Silicon Valley.</div>
+  <div class="cta-f" id="s10features">
+    <div class="cta-fi anim"><span class="ck">✓</span> Every text captured</div>
+    <div class="cta-fi anim"><span class="ck">✓</span> Every invoice tracked</div>
+    <div class="cta-fi anim"><span class="ck">✓</span> Every project managed</div>
+  </div>
+  <div class="cta-tl anim-f" id="s10tag">One Mac Mini. Zero things missed.</div>
+  <div class="cta-pw anim-f" id="s10pw">Powered by <span>SolveWorks</span> — solveworks.io</div>
+</div>
 
 <script>
-var voiceover = new Audio('voiceover.mp3');
-var cursor = document.getElementById('fakeCursor');
-var cursorRing = null; // removed
+const SCENE_COUNT = 10;
+const audioFiles = [];
+for(let i=1;i<=SCENE_COUNT;i++) audioFiles.push(`scene${i}.mp3`);
 
-window.__demoPaused = false;
-function delay(ms) {
-  return new Promise(resolve => {
-    let remaining = ms;
-    let start = Date.now();
-    function tick() {
-      if (window.__demoPaused) { setTimeout(tick, 100); start = Date.now(); return; }
-      let elapsed = Date.now() - start;
-      remaining -= elapsed;
-      if (remaining <= 0) { resolve(); }
-      else { start = Date.now(); setTimeout(tick, Math.min(remaining, 50)); }
-    }
-    setTimeout(tick, Math.min(ms, 50));
-  });
-}
+let currentScene = 0;
+let playing = false;
+let paused = false;
+let currentAudio = null;
 
-function moveCursor(x, y) {
-  cursor.style.left = x + 'px';
-  cursor.style.top = y + 'px';
-}
+const playBtn = document.getElementById('playBtn');
+const counter = document.getElementById('sceneCounter');
+const pauseInd = document.getElementById('pauseInd');
 
-function clickAt(x, y) {
-  moveCursor(x, y);
-  return delay(300).then(function() {
-    /* click ripple */ (function(){ var r=document.createElement("div"); r.className="click-ripple"; r.style.position="absolute"; r.style.top=cursor.style.top; r.style.left=cursor.style.left; document.body.appendChild(r); setTimeout(function(){r.remove();},600); })();
-    // removed
-    // removed
-    // removed
-    /* click ripple */ (function(){ var r=document.createElement("div"); r.className="click-ripple"; r.style.position="absolute"; r.style.top=cursor.style.top; r.style.left=cursor.style.left; document.body.appendChild(r); setTimeout(function(){r.remove();},600); })();
-    return delay(400);
-  }).then(function() {
-    /* ripple auto-removes */
-  });
-}
+playBtn.addEventListener('click', () => {
+  playBtn.classList.add('hidden');
+  startDemo();
+});
 
-function showScene(id) {
-  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-}
-
-function animateTradeCards() {
-  var cards = document.querySelectorAll('.trade-card');
-  cards.forEach(function(card, i) {
-    setTimeout(function() { card.classList.add('show'); }, i * 250);
-  });
-}
-
-// Audio-driven cue system
-var cuesFired = {};
-function cue(id, fn) {
-  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
-}
+document.body.addEventListener('click', (e) => {
+  if(!playBtn.classList.contains('hidden')) return;
+  if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
+});
 
 function startDemo() {
-  document.getElementById('playBtn').classList.add('hidden');
-  cursor.style.display = 'block';
-  moveCursor(960, 540);
-  voiceover.play().catch(function(){});
-
-  function tick() {
-    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
-    var t = voiceover.currentTime;
-
-    // === Scene 1: Pain (0-11s) ===
-    // "A full build estimate takes days" 0.0s
-    if (t >= 0.3) cue('s1-show', function() {
-      showScene('scene1');
-    });
-    if (t >= 0.8) cue('s1-icon', function() {
-      var painIcon = document.querySelector('#scene1 .pain-icon');
-      if (painIcon) { painIcon.style.transition = 'opacity 0.8s'; painIcon.style.opacity = '1'; }
-    });
-    // "Electrical, plumbing" 2.82s
-    if (t >= 1.5) cue('s1-text', function() {
-      var painText = document.querySelector('#scene1 .pain-text');
-      if (painText) { painText.style.transition = 'opacity 1s'; painText.style.opacity = '1'; }
-      moveCursor(700, 400);
-    });
-    // "You\'re coordinating eight trades" 5.6s
-    if (t >= 4.5) cue('s1-scan1', function() {
-      moveCursor(1100, 500);
-    });
-    // "One missed line item" 8.34s
-    if (t >= 7.5) cue('s1-scan2', function() {
-      moveCursor(900, 600);
-    });
-
-    // === Scene 2: Plan Intake (11-22s) ===
-    // "New project uploaded" 11.22s
-    if (t >= 11) cue('s2-show', function() {
-      showScene('scene2');
-    });
-    // "3,500 square foot residential build" 12.38s
-    if (t >= 12) cue('s2-card', function() {
-      document.getElementById('projCard').classList.add('show');
-      moveCursor(500, 300);
-    });
-    // "Your AI reads the plans" 14.48s
-    if (t >= 14.5) cue('s2-scan1', function() {
-      moveCursor(900, 400);
-    });
-    // "and starts the takeoff" 16.2s
-    if (t >= 16.5) cue('s2-click', function() {
-      clickAt(960, 600);
-    });
-    // "Every trade broken down" 17.44s
-    if (t >= 18) cue('s2-scan2', function() {
-      moveCursor(600, 700);
-    });
-
-    // === Scene 3: Multi-Trade Takeoff (22-42s) ===
-    // "Concrete, framing, electrical, plumbing" 19.7s - but scene says 22s
-    // Let's use ~21s based on "Material quantities" at 24s
-    if (t >= 21.5) cue('s3-show', function() {
-      showScene('scene3');
-      animateTradeCards();
-    });
-    // "Material quantities and labor estimates" 24.0s
-    if (t >= 23) cue('s3-scan1', function() { moveCursor(400, 300); });
-    if (t >= 25) cue('s3-scan2', function() { moveCursor(1200, 300); });
-    // "What used to take" 26.34s
-    if (t >= 27) cue('s3-scan3', function() { moveCursor(400, 500); });
-    if (t >= 29) cue('s3-scan4', function() { moveCursor(1200, 500); });
-    // "Subcontractor bids tracked" 30.5s
-    if (t >= 31) cue('s3-scan5', function() { moveCursor(400, 700); });
-    if (t >= 33) cue('s3-scan6', function() { moveCursor(1200, 700); });
-    if (t >= 35) cue('s3-scan7', function() { moveCursor(800, 800); });
-    if (t >= 37) cue('s3-scan8', function() { moveCursor(960, 540); });
-
-    // === Scene 4: Sub Bid Tracking (38.5-55s) ===
-    // "No more overpaying" 38.56s
-    if (t >= 38.5) cue('s4-show', function() {
-      showScene('scene4');
-    });
-    if (t >= 39.5) cue('s4-scan1', function() { moveCursor(400, 350); });
-    // "Full estimate assembled" 41.04s
-    if (t >= 41) cue('s4-scan2', function() { moveCursor(800, 400); });
-    // "Materials, labor, subs" 42.92s
-    if (t >= 43) cue('s4-scan3', function() { moveCursor(1200, 450); });
-    // "Line items per trade" 45.6s
-    if (t >= 45) cue('s4-click', function() { clickAt(1100, 430); });
-    if (t >= 47) cue('s4-scan4', function() { moveCursor(600, 550); });
-    if (t >= 49) cue('s4-scan5', function() { moveCursor(960, 600); });
-
-    // === Scene 5: Cost Assembly (52-62s) ===
-    // "Import costs, duty calculations" 52.16s
-    if (t >= 52) cue('s5-show', function() {
-      showScene('scene5');
-    });
-    if (t >= 53) cue('s5-scan1', function() { moveCursor(400, 300); });
-    // "and shipping timelines" 54.22s
-    if (t >= 54.5) cue('s5-scan2', function() { moveCursor(400, 380); });
-    // "No spreadsheet" 57.04s
-    if (t >= 56) cue('s5-scan3', function() { moveCursor(400, 450); });
-    if (t >= 57.5) cue('s5-scan4', function() { moveCursor(400, 520); });
-    // "A detailed estimate" 59.22s
-    if (t >= 59) cue('s5-scan5', function() { moveCursor(400, 590); });
-    if (t >= 60) cue('s5-scan6', function() { moveCursor(400, 700); });
-    // "Your AI does the first pass" 62.76s
-    if (t >= 61) cue('s5-margin1', function() { moveCursor(1400, 400); });
-    if (t >= 63) cue('s5-margin2', function() { moveCursor(1400, 550); });
-    if (t >= 64.5) cue('s5-center', function() { moveCursor(960, 540); });
-
-    // === Scene 6: Import/Logistics (65-72s) ===
-    // "You review, adjust, and send" 65.48s
-    if (t >= 65) cue('s6-show', function() {
-      showScene('scene6');
-    });
-    if (t >= 65.5) cue('s6-scan1', function() { moveCursor(300, 400); });
-    // "More bids, better accuracy" 67.92s
-    if (t >= 67.5) cue('s6-scan2', function() { moveCursor(960, 400); });
-    if (t >= 69) cue('s6-scan3', function() { moveCursor(1500, 400); });
-    if (t >= 70) cue('s6-scan4', function() { moveCursor(1500, 600); });
-    // "Your AI, only yours" 71.22s
-    if (t >= 71) cue('s6-scan5', function() { moveCursor(960, 540); });
-
-    // === Scene 7: Close (72.8-75.5s) ===
-    // "See it live" 73.36s
-    if (t >= 72.5) cue('s7-show', function() {
-      showScene('scene7');
-      cursor.style.display = 'none';
-    });
-    if (t >= 73) cue('s7-logo', function() {
-      var cl = document.querySelector('.close-logo');
-      if (cl) { cl.style.transition = 'opacity 1s'; cl.style.opacity = '1'; }
-    });
-    if (t >= 73.7) cue('s7-url', function() {
-      var cu = document.querySelector('.close-url');
-      if (cu) { cu.style.transition = 'opacity 0.8s'; cu.style.opacity = '1'; }
-    });
-    if (t >= 74.4) cue('s7-tag', function() {
-      var ct = document.querySelector('.close-tagline');
-      if (ct) { ct.style.transition = 'opacity 0.8s'; ct.style.opacity = '1'; }
-    });
-
-    if (!voiceover.ended) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
+  playing = true;
+  currentScene = 0;
+  showScene(0);
 }
-</script>
 
-<script>
-(function(){
-  var paused=false, started=false;
-  var flash=document.getElementById("pauseFlash");
-  var prog=document.getElementById("simpleProgress");
-  var fill=document.getElementById("simpleProgressFill");
-  var iv=setInterval(function(){
-    var pb=document.getElementById("playBtn");
-    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
-      started=true; prog.style.display="block"; clearInterval(iv);
-    }
-  },200);
-  function toggle(){
-    if(!started)return;
-    paused=!paused;
-    flash.textContent=paused?"▶":"⏸";
-    flash.style.opacity="1";
-    setTimeout(function(){if(!paused)flash.style.opacity="0";},600);
-    try{
-      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
-      if(a){if(paused)a.pause();else a.play().catch(function(){});}
-    }catch(e){}
-    window.__demoPaused=paused;
-    if(paused)document.body.classList.add("animations-paused");
-    else{window.__demoPaused=false;document.body.classList.remove("animations-paused");}
-  }
-  document.addEventListener("touchstart",function(e){if(!started)return;e.preventDefault();try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
-  document.addEventListener("click",function(e){if(!started||e.target.closest("#playBtn"))return;try{var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;if(a&&a.ended){location.reload();return;}}catch(ex){}toggle();});
-  function upd(){
-    try{
-      var a=typeof voiceover!=="undefined"?voiceover:typeof audio!=="undefined"?audio:null;
-      if(a&&a.duration&&!isNaN(a.duration))fill.style.width=(a.currentTime/a.duration*100)+"%";
-    }catch(e){}
-    requestAnimationFrame(upd);
-  }
-  requestAnimationFrame(upd);
-  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
-  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
-})();
+function pauseDemo() {
+  paused = true;
+  if(currentAudio) currentAudio.pause();
+  pauseInd.classList.add('show');
+}
+
+function resumeDemo() {
+  paused = false;
+  pauseInd.classList.remove('show');
+  if(currentAudio) currentAudio.play();
+}
+
+function showScene(idx) {
+  if(idx >= SCENE_COUNT) { playing = false; return; }
+  currentScene = idx;
+  counter.textContent = `${idx+1} / ${SCENE_COUNT}`;
+
+  // Hide all scenes
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  // Reset animations in target scene
+  const scene = document.getElementById(`scene${idx+1}`);
+  scene.querySelectorAll('.anim,.anim-x,.anim-s,.anim-f').forEach(el => el.classList.remove('show'));
+  scene.classList.add('active');
+
+  // Animate elements with stagger
+  animateScene(idx+1);
+
+  // Play audio
+  if(currentAudio) { currentAudio.pause(); currentAudio = null; }
+  currentAudio = new Audio(audioFiles[idx]);
+  currentAudio.addEventListener('ended', () => {
+    setTimeout(() => showScene(idx+1), 800);
+  });
+  currentAudio.play().catch(()=>{});
+}
+
+function animateScene(num) {
+  const scene = document.getElementById(`scene${num}`);
+  const els = scene.querySelectorAll('.anim,.anim-x,.anim-s,.anim-f');
+  els.forEach((el, i) => {
+    setTimeout(() => el.classList.add('show'), 300 + i * 250);
+  });
+}
 </script>
 </body>
 </html>
