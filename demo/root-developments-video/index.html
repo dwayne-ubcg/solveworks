@@ -554,26 +554,28 @@ body{width:1920px;height:1080px;background:#0A1628;font-family:'Inter',sans-seri
 const SCENE_COUNT = 9;
 // Scene durations in ms (from audio file lengths)
 const sceneDurations = [9660,8638,12678,11610,11981,13421,13282,10356,7245];
+const SCENE_GAP = 800;
 
-let currentScene = 0;
+// Build cumulative scene start times (in seconds) for audio sync
+const sceneStartTimes = [];
+let cumulative = 0;
+for(let i = 0; i < SCENE_COUNT; i++) {
+  sceneStartTimes.push(cumulative / 1000);
+  cumulative += sceneDurations[i] + SCENE_GAP;
+}
+
+let currentScene = -1;
 let playing = false;
 let paused = false;
 let voiceover = null;
-let sceneTimer = null;
-let pauseTime = 0;
-let remainingMs = 0;
+let started = false;
+let pauseEnabled = false;
 
 const playBtn = document.getElementById('playBtn');
 const counter = document.getElementById('sceneCounter');
 const pauseInd = document.getElementById('pauseInd');
 const sidebar = document.getElementById('sidebar');
 const progressFill = document.getElementById('progressFill');
-
-// Total duration for progress bar
-const totalDuration = sceneDurations.reduce((a,b)=>a+b,0) + (SCENE_COUNT-1)*800;
-
-let started = false;
-let pauseEnabled = false;
 
 function handlePlay() {
   if(started) return;
@@ -597,15 +599,28 @@ document.body.addEventListener('touchstart', (e) => {
 function startDemo() {
   playing = true;
   voiceover = new Audio('voiceover.mp3');
+  voiceover.addEventListener('timeupdate', syncSceneToAudio);
+  voiceover.addEventListener('ended', () => { playing = false; });
   voiceover.play().catch(()=>{});
   showScene(0);
   updateProgress();
 }
 
+function syncSceneToAudio() {
+  if(!voiceover || paused) return;
+  const t = voiceover.currentTime;
+  let targetScene = 0;
+  for(let i = SCENE_COUNT - 1; i >= 0; i--) {
+    if(t >= sceneStartTimes[i]) { targetScene = i; break; }
+  }
+  if(targetScene !== currentScene) {
+    showScene(targetScene);
+  }
+}
+
 function pauseDemo() {
   paused = true;
   if(voiceover) voiceover.pause();
-  if(sceneTimer) { clearTimeout(sceneTimer); remainingMs = remainingMs - (Date.now() - pauseTime); }
   pauseInd.classList.add('show');
 }
 
@@ -613,13 +628,6 @@ function resumeDemo() {
   paused = false;
   pauseInd.classList.remove('show');
   if(voiceover) voiceover.play().catch(()=>{});
-  pauseTime = Date.now();
-  if(remainingMs > 0) sceneTimer = setTimeout(() => advanceScene(), remainingMs);
-}
-
-function advanceScene() {
-  if(currentScene + 1 >= SCENE_COUNT) { playing = false; return; }
-  showScene(currentScene + 1);
 }
 
 function setNavActive(id) {
@@ -629,7 +637,7 @@ function setNavActive(id) {
 }
 
 function showScene(idx) {
-  if(idx >= SCENE_COUNT) { playing = false; return; }
+  if(idx >= SCENE_COUNT || idx === currentScene) return;
   currentScene = idx;
   counter.textContent = `${idx+1} / ${SCENE_COUNT}`;
 
@@ -648,12 +656,6 @@ function showScene(idx) {
 
   // Run scene-specific animations
   animateScene(idx+1);
-
-  // Schedule next scene
-  if(sceneTimer) clearTimeout(sceneTimer);
-  remainingMs = sceneDurations[idx] + 800;
-  pauseTime = Date.now();
-  sceneTimer = setTimeout(() => advanceScene(), remainingMs);
 }
 
 function animateScene(num) {
@@ -665,7 +667,6 @@ function animateScene(num) {
 
   // Scene-specific extras
   if(num === 4) {
-    // Animate progress bars
     setTimeout(() => { document.getElementById('prog1').style.width = '73%'; }, 800);
     setTimeout(() => { document.getElementById('prog2').style.width = '89%'; }, 1200);
     setTimeout(() => { document.getElementById('prog3').style.width = '41%'; }, 1600);
