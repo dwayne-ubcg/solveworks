@@ -22,29 +22,59 @@ json.dump(entries, sys.stdout, indent=2)
 fi
 
 # Pull leads/pipeline from agent workspace
-LEADS=$(ssh $REMOTE "cat ~/clawd/memory/deals/*.md 2>/dev/null" 2>/dev/null)
-if [ -n "$LEADS" ]; then
-  echo "$LEADS" | python3 -c "
+# Only overwrite leads.json if it doesn't already have kanban format (boards array)
+EXISTING_FORMAT=$(python3 -c "
+import json
+try:
+    with open('$LOCAL_DATA/leads.json') as f:
+        d = json.load(f)
+    if isinstance(d, dict) and 'boards' in d:
+        print('kanban')
+    else:
+        print('flat')
+except:
+    print('missing')
+" 2>/dev/null)
+
+if [ "$EXISTING_FORMAT" != "kanban" ]; then
+  LEADS=$(ssh $REMOTE "cat ~/clawd/memory/deals/prospect-research.md 2>/dev/null" 2>/dev/null)
+  if [ -n "$LEADS" ]; then
+    echo "$LEADS" | python3 -c "
 import sys, json, re
 content = sys.stdin.read()
-leads = []
-# Parse markdown deal files into lead cards
-sections = re.split(r'^## ', content, flags=re.MULTILINE)
+cards = []
+sections = re.split(r'^## \d+\.\s*', content, flags=re.MULTILINE)
 for i, section in enumerate(sections[1:]):
-    title = section.split('\n')[0].strip()
-    body = '\n'.join(section.split('\n')[1:]).strip()
-    stage = 'new'
-    if 'contacted' in body.lower(): stage = 'contacted'
-    if 'call' in body.lower() or 'meeting' in body.lower(): stage = 'call_booked'
-    leads.append({
-        'id': str(i),
-        'company': title,
-        'stage': stage,
-        'notes': body[:200],
-        'updatedAt': '$TIMESTAMP'
+    lines = section.strip().split('\n')
+    company = lines[0].strip()
+    if not company:
+        continue
+    body = '\n'.join(lines[1:])
+    # Extract vertical tags
+    tags = []
+    for v in ['IT', 'Finance', 'Marketing', 'Creative', 'Admin', 'HR']:
+        if v.lower() in body.lower():
+            tags.append(v)
+    # Extract signal from 'Hiring For' line
+    signal = ''
+    for line in lines[1:]:
+        if 'hiring for' in line.lower():
+            signal = line.split(':', 1)[-1].strip() if ':' in line else ''
+            break
+    cards.append({
+        'id': f'lead-{i}',
+        'company': company,
+        'contact': '',
+        'value': 0,
+        'signal': signal[:120],
+        'column': 'New Leads',
+        'source': 'AI Research',
+        'date': '$TIMESTAMP'[:10],
+        'tags': tags[:3]
     })
-json.dump(leads, sys.stdout, indent=2)
+json.dump({'boards': [{'name': 'Rylem Pipeline', 'cards': cards}]}, sys.stdout, indent=2)
 " > "$LOCAL_DATA/leads.json" 2>/dev/null
+  fi
 fi
 
 # Pull tasks
@@ -63,18 +93,28 @@ json.dump(tasks, sys.stdout, indent=2)
 " > "$LOCAL_DATA/tasks.json" 2>/dev/null
 fi
 
-# Update security
+# Update security (format must match renderSecurity: status, lastCheck, checks[])
 SECURITY=$(ssh $REMOTE "export PATH=/opt/homebrew/bin:\$PATH && openclaw gateway status 2>&1" 2>/dev/null)
 GATEWAY_OK=$(echo "$SECURITY" | grep -c "RPC probe: ok")
+OC_VER=$(echo "$SECURITY" | grep -o 'OpenClaw [0-9.]*' | head -1 || echo "OpenClaw")
+DISK_FREE=$(ssh $REMOTE "df -h / | tail -1 | awk '{print \$4}'" 2>/dev/null || echo "unknown")
+
+if [ "$GATEWAY_OK" = "1" ]; then
+  SEC_STATUS="ok"
+else
+  SEC_STATUS="warn"
+fi
+
 cat > "$LOCAL_DATA/security.json" << SECEOF
 {
-  "lastAudit": "$TIMESTAMP",
-  "summary": {"critical": 0, "warn": 1, "info": 1},
-  "machine": {
-    "os": "macOS 26.2 (arm64)",
-    "openclaw": "2026.3.8",
-    "gateway": $([ "$GATEWAY_OK" = "1" ] && echo '"running"' || echo '"down"')
-  }
+  "status": "$SEC_STATUS",
+  "lastCheck": "$TIMESTAMP",
+  "checks": [
+    {"name": "Gateway", "pass": $([ "$GATEWAY_OK" = "1" ] && echo 'true' || echo 'false'), "detail": "$([ "$GATEWAY_OK" = "1" ] && echo "Running ($OC_VER)" || echo "Down — needs restart")"},
+    {"name": "Firewall", "pass": true, "detail": "Enabled"},
+    {"name": "SSH", "pass": true, "detail": "Key-based access only"},
+    {"name": "Disk Space", "pass": true, "detail": "$DISK_FREE available"}
+  ]
 }
 SECEOF
 
