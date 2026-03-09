@@ -640,16 +640,22 @@ body{width:1920px;height:1080px;background:#0F172A;font-family:'Inter',sans-seri
 
 <script>
 const SCENE_COUNT = 10;
-// Scene durations in ms (from per-scene audio lengths)
+// Scene durations in ms — used to build cumulative timestamps for audio-driven sync
 const sceneDurations = [21650,29550,24950,29850,24300,21150,23050,30000,21300,18900];
+const SCENE_GAP = 800; // pause between scenes
 
-let currentScene = 0;
+// Build cumulative scene start times (in seconds) for audio sync
+const sceneStartTimes = [];
+let cumulative = 0;
+for(let i = 0; i < SCENE_COUNT; i++) {
+  sceneStartTimes.push(cumulative / 1000);
+  cumulative += sceneDurations[i] + SCENE_GAP;
+}
+
+let currentScene = -1;
 let playing = false;
 let paused = false;
 let voiceover = null;
-let sceneTimer = null;
-let pauseTime = 0;
-let remainingMs = 0;
 let started = false;
 let pauseEnabled = false;
 
@@ -658,11 +664,10 @@ const counter = document.getElementById('sceneCounter');
 const pauseInd = document.getElementById('pauseInd');
 
 function handlePlay() {
-  if(started) return; // prevent double-fire from touchstart+click
+  if(started) return;
   started = true;
   playBtn.classList.add('hidden');
   startDemo();
-  // delay enabling pause so accidental touches right after play don't pause
   setTimeout(() => { pauseEnabled = true; }, 1500);
 }
 playBtn.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); handlePlay(); });
@@ -680,14 +685,29 @@ document.body.addEventListener('touchstart', (e) => {
 function startDemo() {
   playing = true;
   voiceover = new Audio('voiceover.mp3');
+  // Drive scene changes from audio position — no timers needed
+  voiceover.addEventListener('timeupdate', syncSceneToAudio);
+  voiceover.addEventListener('ended', () => { playing = false; });
   voiceover.play().catch(()=>{});
   showScene(0);
+}
+
+function syncSceneToAudio() {
+  if(!voiceover || paused) return;
+  const t = voiceover.currentTime;
+  // Find which scene we should be on based on audio position
+  let targetScene = 0;
+  for(let i = SCENE_COUNT - 1; i >= 0; i--) {
+    if(t >= sceneStartTimes[i]) { targetScene = i; break; }
+  }
+  if(targetScene !== currentScene) {
+    showScene(targetScene);
+  }
 }
 
 function pauseDemo() {
   paused = true;
   if(voiceover) voiceover.pause();
-  if(sceneTimer) { clearTimeout(sceneTimer); remainingMs = remainingMs - (Date.now() - pauseTime); }
   pauseInd.classList.add('show');
 }
 
@@ -695,17 +715,10 @@ function resumeDemo() {
   paused = false;
   pauseInd.classList.remove('show');
   if(voiceover) voiceover.play().catch(()=>{});
-  pauseTime = Date.now();
-  if(remainingMs > 0) sceneTimer = setTimeout(() => advanceScene(), remainingMs);
-}
-
-function advanceScene() {
-  if(currentScene + 1 >= SCENE_COUNT) { playing = false; return; }
-  showScene(currentScene + 1);
 }
 
 function showScene(idx) {
-  if(idx >= SCENE_COUNT) { playing = false; return; }
+  if(idx >= SCENE_COUNT || idx === currentScene) return;
   currentScene = idx;
   counter.textContent = `${idx+1} / ${SCENE_COUNT}`;
 
@@ -714,12 +727,6 @@ function showScene(idx) {
   scene.querySelectorAll('.anim,.anim-x,.anim-s,.anim-f').forEach(el => el.classList.remove('show'));
   scene.classList.add('active');
   animateScene(idx+1);
-
-  // Schedule next scene based on duration
-  if(sceneTimer) clearTimeout(sceneTimer);
-  remainingMs = sceneDurations[idx] + 800; // +800ms pause between scenes
-  pauseTime = Date.now();
-  sceneTimer = setTimeout(() => advanceScene(), remainingMs);
 }
 
 function animateScene(num) {
