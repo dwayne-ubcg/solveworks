@@ -172,6 +172,42 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
 .close-tagline.show { opacity:1; }
 .close-url { font-size:18px; color:#0ea5e9; margin-top:20px; opacity:0; transition:all 0.8s; }
 .close-url.show { opacity:1; }
+
+/* === Message Tracking === */
+.msg-tabs { display:flex; gap:0; margin-bottom:20px; }
+.msg-tab { padding:10px 24px; font-size:14px; font-weight:600; color:#64748b; background:#0F1D32; border:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:all 0.2s; }
+.msg-tab:first-child { border-radius:10px 0 0 10px; }
+.msg-tab:last-child { border-radius:0 10px 10px 0; }
+.msg-tab.active { background:rgba(14,165,233,0.15); color:#0ea5e9; border-color:rgba(14,165,233,0.3); }
+.msg-feed { display:flex; flex-direction:column; gap:8px; max-height:420px; overflow:hidden; }
+.msg-row { display:flex; align-items:flex-start; gap:14px; background:#1E293B; border-radius:12px; padding:14px 18px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateX(-20px); transition:all 0.5s ease; }
+.msg-row.show { opacity:1; transform:translateX(0); }
+.msg-row.urgent { border-color:rgba(239,68,68,0.3); }
+.msg-avatar { width:40px; height:40px; border-radius:10px; background:#0F1D32; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#94a3b8; flex-shrink:0; }
+.msg-content { flex:1; }
+.msg-sender { font-size:14px; font-weight:600; color:#e2e8f0; display:flex; align-items:center; gap:8px; }
+.msg-badge { font-size:10px; padding:2px 8px; border-radius:6px; font-weight:600; }
+.msg-badge.imsg { background:rgba(14,165,233,0.15); color:#38bdf8; }
+.msg-badge.wapp { background:rgba(34,197,94,0.15); color:#22c55e; }
+.msg-badge.urg { background:rgba(239,68,68,0.15); color:#ef4444; }
+.msg-text { font-size:13px; color:#94a3b8; margin-top:4px; line-height:1.5; }
+.msg-action { font-size:12px; color:#0ea5e9; margin-top:6px; font-weight:500; }
+.msg-time { font-size:11px; color:#64748b; margin-top:4px; }
+.msg-ai-draft { background:#0F1D32; border-radius:12px; padding:20px; border:1px solid rgba(14,165,233,0.2); margin-top:16px; }
+.msg-ai-draft h4 { font-size:14px; font-weight:700; color:#0ea5e9; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.msg-draft-bubble { background:rgba(14,165,233,0.1); border-radius:10px; padding:14px 18px; font-size:13px; color:#e2e8f0; line-height:1.6; font-style:italic; }
+.msg-send-opts { display:flex; gap:12px; margin-top:12px; }
+.msg-send-btn { padding:8px 20px; border-radius:8px; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all 0.2s; }
+.msg-send-btn.imsg-btn { background:rgba(14,165,233,0.2); color:#38bdf8; }
+.msg-send-btn.wapp-btn { background:rgba(34,197,94,0.2); color:#22c55e; }
+.msg-sent-confirm { font-size:13px; color:#22c55e; margin-top:10px; opacity:0; transition:all 0.4s; }
+.msg-sent-confirm.show { opacity:1; }
+.msg-sidebar { display:flex; flex-direction:column; gap:16px; }
+.msg-stat-card { background:#0F1D32; border-radius:12px; padding:16px 20px; border:1px solid rgba(255,255,255,0.06); }
+.msg-stat-card h4 { font-size:13px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+.msg-stat-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
+.msg-stat-row .label { color:#94a3b8; }
+.msg-stat-row .value { font-weight:600; color:#e2e8f0; }
 </style>
 </head>
 <body>
@@ -191,6 +227,7 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
     <div class="sidebar-item" id="nav-projects"><span class="icon">🏗️</span> Projects</div>
     <div class="sidebar-item" id="nav-subs"><span class="icon">👷</span> Subcontractors</div>
     <div class="sidebar-item" id="nav-clients"><span class="icon">👥</span> Clients</div>
+    <div class="sidebar-item" id="nav-messages"><span class="icon">💬</span> Messages <span class="sidebar-badge" style="background:#22c55e;">8</span></div>
     <div class="sidebar-divider"></div>
     <div class="sidebar-item" id="nav-ai"><span class="icon">🤖</span> AI Activity <span class="sidebar-badge" style="background:#0ea5e9;">12</span></div>
     <div class="sidebar-item" id="nav-schedule"><span class="icon">📅</span> Schedule</div>
@@ -488,8 +525,108 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
       </div>
     </div>
 
-    <!-- Scene 7: Morning Briefing (87.5-98.7s) -->
+    <!-- Scene 7: iMessage/WhatsApp Tracking (87.5-101s) -->
     <div class="scene" id="scene7">
+      <div class="scene-header" style="font-size:24px;font-weight:700;">Unified Message Tracking</div>
+      <div style="font-size:14px;color:#64748b;margin-bottom:20px;">Every client and sub conversation — iMessage & WhatsApp — one inbox</div>
+
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
+        <div>
+          <div class="msg-tabs">
+            <div class="msg-tab active">💬 iMessage</div>
+            <div class="msg-tab">📲 WhatsApp</div>
+          </div>
+
+          <div class="msg-feed" id="msgFeed">
+            <div class="msg-row urgent" id="msg1">
+              <div class="msg-avatar">JH</div>
+              <div class="msg-content">
+                <div class="msg-sender">James Hartley <span class="msg-badge urg">🔴 URGENT</span></div>
+                <div class="msg-text">"Quick question — are we still on track for insulation next week? The bank needs a progress update for the next draw."</div>
+                <div class="msg-action">⚡ Action: Client needs timeline confirmation for bank financing</div>
+                <div class="msg-time">Today 7:48 AM • iMessage</div>
+              </div>
+            </div>
+            <div class="msg-row" id="msg2">
+              <div class="msg-avatar">TC</div>
+              <div class="msg-content">
+                <div class="msg-sender">Tony — Apex Electric <span class="msg-badge wapp">WhatsApp</span></div>
+                <div class="msg-text">"Panel's wired up at Hartley. Inspector can come Thursday. Need you to confirm the time slot."</div>
+                <div class="msg-action">📋 Action: Confirm inspection slot — Thursday AM</div>
+                <div class="msg-time">Today 7:15 AM • WhatsApp</div>
+              </div>
+            </div>
+            <div class="msg-row" id="msg3">
+              <div class="msg-avatar">SM</div>
+              <div class="msg-content">
+                <div class="msg-sender">Sullivan Family <span class="msg-badge imsg">iMessage</span></div>
+                <div class="msg-text">"We reviewed the estimate — looks great. Can we add a covered patio? What's the ballpark on that?"</div>
+                <div class="msg-action">📝 Action: Change order request — update Sullivan estimate</div>
+                <div class="msg-time">Today 6:55 AM • iMessage</div>
+              </div>
+            </div>
+            <div class="msg-row" id="msg4">
+              <div class="msg-avatar">DP</div>
+              <div class="msg-content">
+                <div class="msg-sender">Dave — Maritime Plumbing <span class="msg-badge wapp">WhatsApp</span></div>
+                <div class="msg-text">"Running 2 hours behind on Westwood. Got held up at the supply house — fixtures were backordered."</div>
+                <div class="msg-action">⚠️ Action: Schedule delay — notify site supervisor</div>
+                <div class="msg-time">Yesterday 4:30 PM • WhatsApp</div>
+              </div>
+            </div>
+            <div class="msg-row" id="msg5">
+              <div class="msg-avatar">KM</div>
+              <div class="msg-content">
+                <div class="msg-sender">Karen Morrison <span class="msg-badge imsg">iMessage</span></div>
+                <div class="msg-text">"Excited about the consultation Tuesday! Do we need to bring anything specific?"</div>
+                <div class="msg-action">✅ Action: Auto-reply sent with meeting details</div>
+                <div class="msg-time">Yesterday 2:10 PM • iMessage</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Draft -->
+          <div class="msg-ai-draft" id="msgAiDraft" style="opacity:0;transition:all 0.5s;">
+            <h4>🤖 AI Draft Response — James Hartley</h4>
+            <div class="msg-draft-bubble">"Hi James — yes, we're on track. Electrical rough-in wraps this week, insulation starts Monday. I'll send you an updated progress report with photos for the bank draw. Everything's looking good. 👍"</div>
+            <div class="msg-send-opts">
+              <div class="msg-send-btn imsg-btn">💬 Send via iMessage</div>
+              <div class="msg-send-btn wapp-btn">📲 Send via WhatsApp</div>
+            </div>
+            <div class="msg-sent-confirm" id="msgSentConfirm">✅ Sent to James Hartley via iMessage</div>
+          </div>
+        </div>
+
+        <div class="msg-sidebar">
+          <div class="msg-stat-card">
+            <h4>📊 Today's Messages</h4>
+            <div class="msg-stat-row"><span class="label">🔴 Urgent</span><span class="value" style="color:#ef4444;">1</span></div>
+            <div class="msg-stat-row"><span class="label">💬 iMessage</span><span class="value" style="color:#38bdf8;">3</span></div>
+            <div class="msg-stat-row"><span class="label">📲 WhatsApp</span><span class="value" style="color:#22c55e;">2</span></div>
+            <div class="msg-stat-row"><span class="label">✅ Auto-replied</span><span class="value" style="color:#22c55e;">2</span></div>
+            <div class="msg-stat-row"><span class="label">⏳ Needs your input</span><span class="value" style="color:#f59e0b;">3</span></div>
+          </div>
+          <div class="msg-stat-card">
+            <h4>👤 James Hartley</h4>
+            <div class="msg-stat-row"><span class="label">Project</span><span class="value">Hartley Estate</span></div>
+            <div class="msg-stat-row"><span class="label">Contract</span><span class="value" style="color:#0ea5e9;">$1.6M</span></div>
+            <div class="msg-stat-row"><span class="label">Preferred</span><span class="value" style="color:#38bdf8;">iMessage</span></div>
+            <div class="msg-stat-row"><span class="label">Last contact</span><span class="value">Today 7:48 AM</span></div>
+            <div class="msg-stat-row"><span class="label">Response time</span><span class="value" style="color:#22c55e;">< 2 min avg</span></div>
+          </div>
+          <div class="msg-stat-card">
+            <h4>📈 This Week</h4>
+            <div class="msg-stat-row"><span class="label">Total messages</span><span class="value">34</span></div>
+            <div class="msg-stat-row"><span class="label">AI auto-handled</span><span class="value" style="color:#22c55e;">22</span></div>
+            <div class="msg-stat-row"><span class="label">Avg response</span><span class="value" style="color:#0ea5e9;">< 3 min</span></div>
+            <div class="msg-stat-row"><span class="label">Nothing missed</span><span class="value" style="color:#22c55e;">✅</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 8: Morning Briefing (101-112.2s) -->
+    <div class="scene" id="scene8">
       <div class="morning-card" id="morningCard">
         <div class="morning-greeting">☀️ Good Morning</div>
         <div style="font-size:14px;color:#64748b;margin-bottom:24px;">Thursday, March 7 — Here's your day</div>
@@ -502,8 +639,8 @@ body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans
       </div>
     </div>
 
-    <!-- Scene 8: Close (98.7-105s) -->
-    <div class="scene" id="scene8">
+    <!-- Scene 9: Close (112.2-118.5s) -->
+    <div class="scene" id="scene9">
       <div class="close-screen">
         <div class="close-headline" id="closeHeadline">You build <strong>premium homes</strong>. Your operations should match.</div>
         <div class="close-brand" id="closeBrand">ROOT DEVELOPMENTS</div>
@@ -813,60 +950,106 @@ function startDemo() {
       moveCursor(1300, 600);
     });
 
-    // === SCENE 7: Morning Briefing (87.5-98.7s) ===
-    // [87.5s] "Every morning, your priorities."
+    // === SCENE 7: iMessage/WhatsApp Tracking (87.5-101s) ===
+    // [87.5s] "Every message across iMessage and WhatsApp — one unified inbox."
     if (t >= 87.5) cue('s7-start', function() {
       showScene('scene7');
+      setNavActive('nav-messages');
+      moveCursor(500, 300);
+      clickEffect(500, 300);
+    });
+    // Messages appear one by one
+    if (t >= 88.2) cue('s7-msg1', function() {
+      document.getElementById('msg1').classList.add('show');
+      moveCursor(700, 280);
+    });
+    if (t >= 89.5) cue('s7-msg2', function() {
+      document.getElementById('msg2').classList.add('show');
+      moveCursor(700, 370);
+    });
+    if (t >= 90.8) cue('s7-msg3', function() {
+      document.getElementById('msg3').classList.add('show');
+      moveCursor(700, 460);
+    });
+    if (t >= 92) cue('s7-msg4', function() {
+      document.getElementById('msg4').classList.add('show');
+    });
+    if (t >= 93) cue('s7-msg5', function() {
+      document.getElementById('msg5').classList.add('show');
+      moveCursor(700, 550);
+    });
+    // [94.5s] AI draft appears
+    if (t >= 94.5) cue('s7-ai-draft', function() {
+      document.getElementById('msgAiDraft').style.opacity = '1';
+      moveCursor(600, 720);
+      clickEffect(600, 720);
+    });
+    // [96s] Click send via iMessage
+    if (t >= 96) cue('s7-send', function() {
+      moveCursor(550, 800);
+      clickEffect(550, 800);
+    });
+    // [97s] Sent confirmation
+    if (t >= 97) cue('s7-sent', function() {
+      document.getElementById('msgSentConfirm').classList.add('show');
+    });
+    // Highlight first message as handled
+    if (t >= 98) cue('s7-handled', function() {
+      document.getElementById('msg1').style.borderColor = 'rgba(34,197,94,0.3)';
+      document.getElementById('msg1').querySelector('.msg-badge.urg').textContent = '✅ REPLIED';
+      document.getElementById('msg1').querySelector('.msg-badge.urg').style.background = 'rgba(34,197,94,0.15)';
+      document.getElementById('msg1').querySelector('.msg-badge.urg').style.color = '#22c55e';
+    });
+
+    // === SCENE 8: Morning Briefing (101-112.2s) ===
+    // [101s] "Every morning, your priorities."
+    if (t >= 101) cue('s8-start', function() {
+      showScene('scene8');
       setNavActive('nav-schedule');
       cursor.style.display = 'none';
     });
-    // [89.2s] "Two site visits, one consultation..."
-    if (t >= 89) cue('s7-mi1', function() {
+    if (t >= 102.5) cue('s8-mi1', function() {
       document.getElementById('mi1').classList.add('show');
     });
-    if (t >= 90) cue('s7-mi2', function() {
+    if (t >= 103.5) cue('s8-mi2', function() {
       document.getElementById('mi2').classList.add('show');
     });
-    // [93.6s] "and the Sullivan estimate is due tomorrow."
-    if (t >= 91.5) cue('s7-mi3', function() {
+    if (t >= 105) cue('s8-mi3', function() {
       document.getElementById('mi3').classList.add('show');
     });
-    if (t >= 93) cue('s7-mi4', function() {
+    if (t >= 106.5) cue('s8-mi4', function() {
       document.getElementById('mi4').classList.add('show');
     });
-    if (t >= 94.5) cue('s7-mi5', function() {
+    if (t >= 108) cue('s8-mi5', function() {
       document.getElementById('mi5').classList.add('show');
     });
-    // [96.4s] "Your entire day organized before you leave the house."
-    if (t >= 96.4) cue('s7-footer', function() {
+    // [109.5s] "Your entire day organized before you leave the house."
+    if (t >= 109.5) cue('s8-footer', function() {
       document.getElementById('morningFooter').classList.add('show');
     });
 
-    // === SCENE 8: Close (98.7-105s) ===
-    // [98.7s] "You build premium homes."
-    if (t >= 98.7) cue('s8-start', function() {
-      showScene('scene8');
+    // === SCENE 9: Close (112.2-118.5s) ===
+    // [112.2s] "You build premium homes."
+    if (t >= 112.2) cue('s9-start', function() {
+      showScene('scene9');
     });
-    if (t >= 99) cue('s8-headline', function() {
+    if (t >= 112.5) cue('s9-headline', function() {
       document.getElementById('closeHeadline').classList.add('show');
     });
-    // [99.8s] "Your operations should match."
-    if (t >= 100.5) cue('s8-brand', function() {
+    if (t >= 114) cue('s9-brand', function() {
       document.getElementById('closeBrand').classList.add('show');
       document.getElementById('closeBrandSub').classList.add('show');
     });
-    // [101.3s] "Your AI, only yours."
-    if (t >= 101.3) cue('s8-x', function() {
+    if (t >= 114.8) cue('s9-x', function() {
       document.getElementById('closeX').classList.add('show');
     });
-    if (t >= 101.8) cue('s8-logo', function() {
+    if (t >= 115.3) cue('s9-logo', function() {
       document.getElementById('closeLogo').classList.add('show');
     });
-    if (t >= 102.5) cue('s8-tag', function() {
+    if (t >= 116) cue('s9-tag', function() {
       document.getElementById('closeTag').classList.add('show');
     });
-    // [103.1s] "See it live at solveworks.io."
-    if (t >= 103.1) cue('s8-url', function() {
+    if (t >= 116.6) cue('s9-url', function() {
       document.getElementById('closeUrl').classList.add('show');
     });
 
