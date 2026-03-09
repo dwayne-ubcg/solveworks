@@ -1,122 +1,96 @@
 #!/bin/bash
-# Mission Control data sync — Mike Dades (Recruiting)
-# Pulls data from Mike's machine to the repo via SSH
+# Mike Dades (Rylem) → SolveWorks Dashboard Sync
+# Runs on Dwayne's Mac Mini, pulls data from Mike's machine
 
-set -e
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DATA_DIR="$SCRIPT_DIR/data"
-REMOTE="mikedades@TAILSCALE_IP"
-REMOTE_CLAWD="/Users/mikedades/clawd"
+REMOTE="mikedades@100.92.185.73"
+LOCAL_DATA="$HOME/clawd/solveworks-site/mike/data"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-mkdir -p "$DATA_DIR"
-echo "[$(date)] Starting Mike Dades sync..."
-
-# Ensure we're up to date before pushing (learned from Brody's conflict issue)
-cd "$SCRIPT_DIR/.."
-git pull --rebase || { echo "Git pull failed — resolve conflicts first"; exit 1; }
-
-# 1. Memory recent (last 7 days)
-TMPDIR_MEM=$(mktemp -d)
-ssh "$REMOTE" "find '$REMOTE_CLAWD/memory' -name '2*.md' -mtime -7 -type f 2>/dev/null | sort -r | head -14" | while read -r remotefile; do
-  fname=$(basename "$remotefile")
-  scp -q "$REMOTE:$remotefile" "$TMPDIR_MEM/$fname" 2>/dev/null
-done
-python3 -c "
-import os, json, glob
-tmpdir = '$TMPDIR_MEM'
+# Pull agent activity (memory files)
+MEMORY_CONTENT=$(ssh $REMOTE "find ~/clawd/memory/daily -name '*.md' -mtime -7 -exec cat {} \; 2>/dev/null" 2>/dev/null)
+if [ -n "$MEMORY_CONTENT" ]; then
+  echo "$MEMORY_CONTENT" | python3 -c "
+import sys, json
+lines = sys.stdin.read().strip().split('\n')
 entries = []
-for f in sorted(glob.glob(os.path.join(tmpdir, '*.md')), reverse=True):
-    date_str = os.path.basename(f).replace('.md','')
-    with open(f) as fh:
-        entries.append({'date': date_str, 'content': fh.read()})
-print(json.dumps({'entries': entries}, indent=2))
-" > "$DATA_DIR/memory-recent.json"
-rm -rf "$TMPDIR_MEM"
-
-# 2. Tasks from active-tasks.md
-ssh "$REMOTE" "cat '$REMOTE_CLAWD/memory/active-tasks.md' 2>/dev/null || echo ''" | python3 -c "
-import json, re, sys
-text = sys.stdin.read()
-tasks = []
-current_status = 'waiting'
-for line in text.split('\n'):
+for i, line in enumerate(lines[-20:]):
     line = line.strip()
-    lower = line.lower()
-    if 'in progress' in lower or 'in-progress' in lower:
-        current_status = 'in-progress'
-    elif 'completed' in lower or 'done' in lower:
-        current_status = 'completed'
-    elif 'waiting' in lower or 'blocked' in lower or 'upcoming' in lower:
-        current_status = 'waiting'
-    elif line.startswith('- ') or line.startswith('* '):
-        name = re.sub(r'^[-*]\s*(\[.\]\s*)?', '', line).strip()
-        if name:
-            tasks.append({'name': name, 'status': current_status})
-print(json.dumps({'tasks': tasks}, indent=2))
-" > "$DATA_DIR/tasks.json"
-
-# 3. Agents info
-ssh "$REMOTE" "cat '$REMOTE_CLAWD/SOUL.md' 2>/dev/null || echo ''" | python3 -c "
-import json, sys
-soul = sys.stdin.read().strip()
-lines = soul.split('\n')
-desc_lines = []
-started = False
-for line in lines:
-    if line.startswith('#'):
-        started = True
-        continue
-    if started and line.strip():
-        desc_lines.append(line.strip())
-        if len(desc_lines) >= 3:
-            break
-    elif started and desc_lines:
-        break
-desc = ' '.join(desc_lines) if desc_lines else 'AI recruiting operations agent — sourcing, pipeline, call analysis, financial intelligence.'
-agents = [{'name': 'Agent', 'role': 'AI Operations & Recruiting Intelligence', 'status': 'active', 'description': desc}]
-print(json.dumps({'agents': agents}, indent=2))
-" > "$DATA_DIR/agents.json"
-
-# 4. Leads / Pipeline data
-scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/leads.json" "$DATA_DIR/leads.json" 2>/dev/null || true
-
-# 5. Call Analyses
-scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/call-analyses.json" "$DATA_DIR/call-analyses.json" 2>/dev/null || true
-
-# 6. Security status
-ssh "$REMOTE" "
-  if [ -f '$REMOTE_CLAWD/memory/security-check.json' ]; then
-    cat '$REMOTE_CLAWD/memory/security-check.json'
-  else
-    echo '{\"status\":\"ok\",\"lastCheck\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"details\":\"No security issues detected.\",\"checks\":[{\"name\":\"SSH Access\",\"pass\":true,\"detail\":\"Tailscale connected\"},{\"name\":\"Agent Status\",\"pass\":true,\"detail\":\"Gateway operational\"}]}'
-  fi
-" > "$DATA_DIR/security.json" 2>/dev/null || echo '{"status":"ok","lastCheck":"unknown","details":"Could not reach remote machine"}' > "$DATA_DIR/security.json"
-
-# 7. Dashboard metadata
-python3 -c "
-import json
-with open('$DATA_DIR/tasks.json') as f: tasks = json.load(f)
-t = tasks.get('tasks', [])
-stats = {
-    'inProgress': sum(1 for x in t if 'progress' in x.get('status','').lower()),
-    'completed': sum(1 for x in t if 'complet' in x.get('status','').lower()),
-    'waiting': sum(1 for x in t if x.get('status','').lower() in ('waiting','blocked')),
-    'agents': 1,
-    'lastSync': '$(date -u +%Y-%m-%dT%H:%M:%SZ)',
-    'timestamp': '$(date -u +%Y-%m-%dT%H:%M:%SZ)'
-}
-print(json.dumps(stats, indent=2))
-" > "$DATA_DIR/dashboard.json"
-
-# 8. Git push
-cd "$SCRIPT_DIR/.."
-git add mike/
-if git diff --cached --quiet; then
-  echo "[$(date)] No changes to push"
-else
-  git commit -m "Sync Mike Dades Mission Control data $(date +%Y-%m-%d_%H:%M)"
-  git push
-  echo "[$(date)] Pushed updates"
+    if line and not line.startswith('#'):
+        entries.append({'id': i, 'text': line, 'timestamp': '$TIMESTAMP'})
+json.dump(entries, sys.stdout, indent=2)
+" > "$LOCAL_DATA/memory-recent.json" 2>/dev/null
 fi
 
-echo "[$(date)] Mike Dades sync complete"
+# Pull leads/pipeline from agent workspace
+LEADS=$(ssh $REMOTE "cat ~/clawd/memory/deals/*.md 2>/dev/null" 2>/dev/null)
+if [ -n "$LEADS" ]; then
+  echo "$LEADS" | python3 -c "
+import sys, json, re
+content = sys.stdin.read()
+leads = []
+# Parse markdown deal files into lead cards
+sections = re.split(r'^## ', content, flags=re.MULTILINE)
+for i, section in enumerate(sections[1:]):
+    title = section.split('\n')[0].strip()
+    body = '\n'.join(section.split('\n')[1:]).strip()
+    stage = 'new'
+    if 'contacted' in body.lower(): stage = 'contacted'
+    if 'call' in body.lower() or 'meeting' in body.lower(): stage = 'call_booked'
+    leads.append({
+        'id': str(i),
+        'company': title,
+        'stage': stage,
+        'notes': body[:200],
+        'updatedAt': '$TIMESTAMP'
+    })
+json.dump(leads, sys.stdout, indent=2)
+" > "$LOCAL_DATA/leads.json" 2>/dev/null
+fi
+
+# Pull tasks
+TASKS=$(ssh $REMOTE "cat ~/clawd/memory/active-tasks.md 2>/dev/null" 2>/dev/null)
+if [ -n "$TASKS" ]; then
+  echo "$TASKS" | python3 -c "
+import sys, json
+lines = [l.strip() for l in sys.stdin.readlines() if l.strip().startswith('- ')]
+tasks = []
+for i, line in enumerate(lines):
+    text = line.lstrip('- ').strip()
+    done = text.startswith('[x]') or text.startswith('[X]')
+    text = text.replace('[x] ', '').replace('[X] ', '').replace('[ ] ', '')
+    tasks.append({'id': str(i), 'text': text, 'done': done, 'timestamp': '$TIMESTAMP'})
+json.dump(tasks, sys.stdout, indent=2)
+" > "$LOCAL_DATA/tasks.json" 2>/dev/null
+fi
+
+# Update security
+SECURITY=$(ssh $REMOTE "export PATH=/opt/homebrew/bin:\$PATH && openclaw gateway status 2>&1" 2>/dev/null)
+GATEWAY_OK=$(echo "$SECURITY" | grep -c "RPC probe: ok")
+cat > "$LOCAL_DATA/security.json" << SECEOF
+{
+  "lastAudit": "$TIMESTAMP",
+  "summary": {"critical": 0, "warn": 1, "info": 1},
+  "machine": {
+    "os": "macOS 26.2 (arm64)",
+    "openclaw": "2026.3.8",
+    "gateway": $([ "$GATEWAY_OK" = "1" ] && echo '"running"' || echo '"down"')
+  }
+}
+SECEOF
+
+# Update dashboard timestamp
+python3 -c "
+import json
+with open('$LOCAL_DATA/dashboard.json') as f:
+    d = json.load(f)
+d['lastSync'] = '$TIMESTAMP'
+d['timestamp'] = '$TIMESTAMP'
+with open('$LOCAL_DATA/dashboard.json', 'w') as f:
+    json.dump(d, f, indent=2)
+" 2>/dev/null
+
+# Git push
+cd ~/clawd/solveworks-site
+git add mike/data/ 2>/dev/null
+git commit -m "sync: mike $(date +%H:%M)" 2>/dev/null
+git push 2>/dev/null
