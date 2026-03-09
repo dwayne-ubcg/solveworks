@@ -19,6 +19,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
+        // === Referral & UTM Tracking ===
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            const ref = params.get('ref');
+            const utmSource = params.get('utm_source');
+            const utmMedium = params.get('utm_medium');
+            const utmCampaign = params.get('utm_campaign');
+
+            // Store in localStorage (persists if they leave and come back)
+            if (ref) localStorage.setItem('sw_ref', ref);
+            if (utmSource) localStorage.setItem('sw_utm_source', utmSource);
+            if (utmMedium) localStorage.setItem('sw_utm_medium', utmMedium);
+            if (utmCampaign) localStorage.setItem('sw_utm_campaign', utmCampaign);
+
+            // Expose globally for form submission
+            window.__swTracking = {
+                ref: ref || localStorage.getItem('sw_ref') || '',
+                utm_source: utmSource || localStorage.getItem('sw_utm_source') || '',
+                utm_medium: utmMedium || localStorage.getItem('sw_utm_medium') || '',
+                utm_campaign: utmCampaign || localStorage.getItem('sw_utm_campaign') || ''
+            };
+        })();
+    </script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -481,12 +505,22 @@
 
         // Send lead data via FormSubmit (fire and forget)
         const formData = new FormData();
+        // Referral & UTM tracking
+        const tracking = window.__swTracking || {};
+        const refTag = tracking.ref ? ' (ref: ' + tracking.ref + ')' : '';
+
         formData.append('name', name);
         formData.append('email', email);
         formData.append('business', business);
-        formData.append('_subject', 'New AI Audit Lead: ' + name);
+        formData.append('_subject', 'New AI Audit Lead' + refTag + ': ' + name);
         formData.append('_captcha', 'false');
         formData.append('_template', 'table');
+
+        // Include referral source
+        if (tracking.ref) formData.append('referral_source', tracking.ref);
+        if (tracking.utm_source) formData.append('utm_source', tracking.utm_source);
+        if (tracking.utm_medium) formData.append('utm_medium', tracking.utm_medium);
+        if (tracking.utm_campaign) formData.append('utm_campaign', tracking.utm_campaign);
 
         // Calculate scores for email
         const { rawScore, normalizedScore, hours, categoryScores } = calculateScores();
@@ -497,7 +531,7 @@
 
         // Include all answers
         questions.forEach((q, i) => {
-            formData.append('Q' + (i+1) + ' (' + q.cat + '): ' + q.q, q.options[answers[i]].text);
+            formData.append('Q' + (i+1) + ' (' + q.cat + '): ' + q.text, q.options[answers[i]].text);
         });
 
         fetch('https://formsubmit.co/ajax/dwayne@solveworks.io', {

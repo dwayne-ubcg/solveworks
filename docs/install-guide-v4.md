@@ -383,6 +383,30 @@ ssh [username]@[tailscale-ip] 'ls -la ~/clawd/*.md'
 ```
 Should show all 6 files: AGENTS.md, SOUL.md, USER.md, TOOLS.md, HEARTBEAT.md, onboarding-flow.md
 
+### Step 2.9b: 🔧 Dashboard Lockdown Rules (MANDATORY)
+
+Every client agent MUST have dashboard schemas and lockdown rules installed. This prevents agents from building their own dashboards instead of populating the centralized SolveWorks Mission Control.
+
+```bash
+# Copy dashboard schemas to client machine
+scp ~/clawd/solveworks/dashboard-schemas.md [username]@[tailscale-ip]:~/clawd/dashboard-schemas.md
+
+# Create dashboard data directory
+ssh [username]@[tailscale-ip] "mkdir -p ~/clawd/dashboard/data"
+
+# Inject dashboard lockdown rules into AGENTS.md
+# Open ~/clawd/solveworks/agent-dashboard-rules.md, copy the block between --- markers,
+# replace [name] with the client's name (lowercase), and append to the client's AGENTS.md
+```
+
+**✓ Verify:**
+```bash
+ssh [username]@[tailscale-ip] 'ls ~/clawd/dashboard-schemas.md && ls -d ~/clawd/dashboard/data/ && grep -c "Dashboard Rules" ~/clawd/AGENTS.md'
+```
+Should show: file exists, directory exists, and at least 1 match in AGENTS.md.
+
+Ask the agent: "What JSON files do you write for the dashboard?" — it should reference dashboard-schemas.md.
+
 ---
 
 ### Step 2.10: 🔧 Configure Telegram Bot

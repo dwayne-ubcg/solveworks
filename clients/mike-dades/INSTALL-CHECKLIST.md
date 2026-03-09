@@ -13,26 +13,19 @@
 - [ ] Mac Mini procured and shipped to Mike
 - [ ] Mike's email and phone confirmed
 - [ ] Billing confirmed ($2,500 setup + $250/mo)
-- [ ] Claude Max subscription active
+- [ ] Anthropic API key (Mike provides his own)
 - [ ] Tailscale invite link prepared
 
-### Mike-Specific API Credentials — MUST HAVE ALL BEFORE INSTALL
-- [ ] **CEIPAL API keys** — Mike to provide from CEIPAL admin panel
-  - API Key / Secret
-  - Tenant URL (e.g., `company.ceipal.com`)
-  - Confirm API access tier (need candidate search, req management, submittal endpoints)
-- [ ] **QuickBooks Online OAuth** — Mike to authorize via OAuth flow
-  - Client ID and Client Secret from QBO developer app
-  - Realm ID (company ID)
-  - Refresh token
-- [ ] **ZoomInfo API credentials**
-  - API username and password or API key
-  - Confirm Professional tier (need intent data access)
-- [ ] **RingCentral API**
-  - App Key and App Secret from RingCentral Developer Portal
-  - Confirm call recording + transcription access
-  - JWT credential for server-to-server auth
+### Pre-Install Minimum (just enough to get started)
 - [ ] **Telegram bot created** — Mike has token and has messaged the bot
+- [ ] Mac Mini on network with internet
+
+### API Credentials — Agent Walks Mike Through These Post-Install
+The agent's onboarding flow (Phase 2) will conversationally guide Mike through connecting each integration via Telegram. No need to collect these upfront:
+- CEIPAL API keys (ATS)
+- QuickBooks Online OAuth (accounting)
+- ZoomInfo API credentials (prospect data)
+- RingCentral API (call recording/transcription)
 
 ---
 
@@ -45,7 +38,7 @@ Follow v4 guide Steps 1.1–1.6 exactly. Mike-specific notes:
 - [ ] Step 1.3: Sleep disabled
 - [ ] Step 1.4: Tailscale installed, IP sent to us → `100.___.___.___`
 - [ ] Step 1.5: Telegram bot created, token sent → `___:___`
-- [ ] Step 1.6: Claude setup token generated and sent
+- [ ] Step 1.6: Anthropic API key received from Mike
 
 **⚠️ Record ALL values immediately in .env — before proceeding to Phase 2.**
 
@@ -62,7 +55,7 @@ Follow v4 guide Steps 1.1–1.6 exactly. Mike-specific notes:
 - [ ] OpenClaw installed
 - [ ] GitHub CLI installed
 - [ ] SSH keys added (Sunday + Mika)
-- [ ] Claude auth configured
+- [ ] Anthropic API key configured (`openclaw models auth api-key`)
 - [ ] Workspace created (`~/clawd/`)
 
 ### Deploy Mike's Templates
@@ -77,6 +70,23 @@ scp ~/clawd/agents/templates/TOOLS.md mikedades@TAILSCALE_IP:~/clawd/
 scp ~/clawd/agents/templates/HEARTBEAT.md mikedades@TAILSCALE_IP:~/clawd/
 scp ~/clawd/agents/templates/onboarding-flow.md mikedades@TAILSCALE_IP:~/clawd/
 ```
+
+### ⚠️ Dashboard Lockdown Rules (MANDATORY — DO NOT SKIP)
+```bash
+# Copy dashboard schemas to client machine
+scp ~/clawd/solveworks/dashboard-schemas.md mikedades@TAILSCALE_IP:~/clawd/dashboard-schemas.md
+
+# Create dashboard data directory
+ssh mikedades@TAILSCALE_IP "mkdir -p ~/clawd/dashboard/data"
+
+# Inject dashboard lockdown rules into AGENTS.md
+# (Copy the block from ~/clawd/solveworks/agent-dashboard-rules.md into the client's AGENTS.md)
+# Replace [name] with "mike" in the pasted block
+```
+- [ ] `dashboard-schemas.md` copied to client machine ✅
+- [ ] `~/clawd/dashboard/data/` directory created ✅
+- [ ] Dashboard lockdown rules added to AGENTS.md (from `agent-dashboard-rules.md`, [name] → "mike") ✅
+- [ ] Verify agent knows schemas: ask "What JSON files do you write for the dashboard?" ✅
 
 ### Configure Telegram
 - [ ] Bot token set
