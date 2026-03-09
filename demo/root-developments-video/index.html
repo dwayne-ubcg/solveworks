@@ -6,1095 +6,674 @@
 <title>Root Developments — AI Operations Demo</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; touch-action:manipulation; -webkit-touch-callout:none; -webkit-user-select:none; }
-body { width:1920px; height:1080px; background:#0A1628; font-family:'Inter',sans-serif; color:#E2E8F0; overflow:hidden; position:relative; }
-.animations-paused * { animation-play-state:paused!important; }
-@keyframes rippleOut { 0% { transform:translate(-50%,-50%) scale(0.3); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
-@keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-@keyframes pulseGlow { 0%,100% { box-shadow:0 0 20px rgba(14,165,233,0.2); } 50% { box-shadow:0 0 40px rgba(14,165,233,0.4); } }
-@keyframes slideInRight { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
-@keyframes slideInLeft { from { opacity:0; transform:translateX(-40px); } to { opacity:1; transform:translateX(0); } }
-@keyframes typewriter { from { width:0; } to { width:100%; } }
-@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+body{width:1920px;height:1080px;background:#0A1628;font-family:'Inter',sans-serif;color:#E2E8F0;overflow:hidden;position:relative}
 
-/* Play button */
-#playBtn { position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(10,22,40,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
-.play-circle { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,#0ea5e9,#0284c7); display:flex; align-items:center; justify-content:center; box-shadow:0 0 60px rgba(14,165,233,0.4); transition:transform 0.3s; }
-.play-circle:hover { transform:scale(1.1); }
-.play-circle::after { content:''; width:0; height:0; border-top:24px solid transparent; border-bottom:24px solid transparent; border-left:40px solid white; margin-left:8px; }
-#playBtn h2 { margin-top:24px; font-size:28px; font-weight:600; color:#94a3b8; letter-spacing:-0.5px; }
-#playBtn .play-sub { font-size:16px; color:#64748b; margin-top:8px; }
-#playBtn.hidden { display:none; }
+/* Play Button */
+#playBtn{position:absolute;top:0;left:0;width:1920px;height:1080px;background:rgba(10,22,40,0.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#playBtn .pc{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#0284c7);display:flex;align-items:center;justify-content:center;box-shadow:0 0 80px rgba(14,165,233,0.3);transition:transform 0.3s}
+#playBtn .pc:hover{transform:scale(1.1)}
+#playBtn .pc::after{content:'';border-top:24px solid transparent;border-bottom:24px solid transparent;border-left:40px solid white;margin-left:8px}
+#playBtn h2{margin-top:24px;font-size:28px;font-weight:600;color:#94A3B8}
+#playBtn p{font-size:16px;color:#64748B;margin-top:8px}
+#playBtn.hidden{display:none}
 
-#app { position:absolute; top:0; left:0; width:1920px; height:1032px; opacity:0; transition:opacity 0.5s; }
+#sceneCounter{position:absolute;top:24px;right:32px;z-index:100;font-size:13px;color:#64748B;font-weight:500;letter-spacing:1px}
+#pauseInd{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;font-size:18px;color:#0ea5e9;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;background:rgba(10,22,40,0.8);padding:12px 24px;border-radius:8px}
+#pauseInd.show{opacity:1}
 
-/* Sidebar */
-.sidebar { position:absolute; left:0; top:0; width:260px; height:1032px; background:#0F1D32; border-right:1px solid rgba(255,255,255,0.06); padding:24px 0; }
-.sidebar-logo { padding:0 24px 28px; font-size:18px; font-weight:800; color:#fff; letter-spacing:2px; text-transform:uppercase; }
-.sidebar-logo span { color:#0ea5e9; font-weight:400; font-size:12px; display:block; letter-spacing:1px; margin-top:2px; text-transform:none; }
-.sidebar-item { padding:12px 24px; font-size:14px; color:#64748b; cursor:pointer; display:flex; align-items:center; gap:12px; transition:all 0.2s; }
-.sidebar-item:hover, .sidebar-item.active { color:#fff; background:rgba(14,165,233,0.1); border-right:3px solid #0ea5e9; }
-.sidebar-item .icon { font-size:18px; }
-.sidebar-badge { background:#ef4444; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; margin-left:auto; }
-.sidebar-divider { height:1px; background:rgba(255,255,255,0.06); margin:16px 24px; }
-
-/* Main area */
-.main { position:absolute; left:260px; top:0; width:1660px; height:1032px; overflow:hidden; }
+/* Progress Bar */
+#progressBar{position:absolute;bottom:0;left:0;width:1920px;height:6px;background:rgba(255,255,255,0.08);z-index:100}
+#progressFill{height:100%;width:0%;background:#0ea5e9;border-radius:0 3px 3px 0;transition:width 0.3s linear}
 
 /* Scenes */
-.scene { position:absolute; top:0; left:0; width:1660px; height:1032px; opacity:0; transition:opacity 0.8s ease; padding:32px; }
-.scene.active { opacity:1; }
+.scene{position:absolute;top:0;left:0;width:1920px;height:1080px;opacity:0;transition:opacity 0.8s ease;pointer-events:none}
+.scene.active{opacity:1}
+
+/* Animations */
+.anim{opacity:0;transform:translateY(12px);transition:all 0.5s ease}
+.anim.show{opacity:1;transform:translateY(0)}
+.anim-x{opacity:0;transform:translateX(-20px);transition:all 0.4s ease}
+.anim-x.show{opacity:1;transform:translateX(0)}
+.anim-s{opacity:0;transform:scale(0.5);transition:all 0.6s cubic-bezier(0.34,1.56,0.64,1)}
+.anim-s.show{opacity:1;transform:scale(1)}
+.anim-f{opacity:0;transition:opacity 0.5s}
+.anim-f.show{opacity:1}
+
+/* Shared */
+.card{background:#1E293B;border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.04)}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:32px 48px 0}
+.hdr h2{font-size:26px;font-weight:800}
+.hdr h2 span{color:#0ea5e9}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;margin-left:8px;text-transform:uppercase}
+
+/* Sidebar */
+.sidebar{position:absolute;left:0;top:0;width:260px;height:1080px;background:#0F1D32;border-right:1px solid rgba(255,255,255,0.06);padding:24px 0;z-index:50}
+.sidebar-logo{padding:0 24px 28px;font-size:18px;font-weight:800;color:#fff;letter-spacing:2px;text-transform:uppercase}
+.sidebar-logo span{color:#0ea5e9;font-weight:400;font-size:12px;display:block;letter-spacing:1px;margin-top:2px;text-transform:none}
+.sidebar-item{padding:12px 24px;font-size:14px;color:#64748b;display:flex;align-items:center;gap:12px;transition:all 0.2s}
+.sidebar-item.active{color:#fff;background:rgba(14,165,233,0.1);border-right:3px solid #0ea5e9}
+.sidebar-badge{background:#ef4444;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;margin-left:auto}
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.06);margin:16px 24px}
+
+/* Main content offset */
+.main-content{margin-left:260px;padding:32px 48px;height:1080px;position:relative}
 
 /* === SCENE 1: Pain Hook === */
-.pain-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
-.pain-headline { font-size:48px; font-weight:800; letter-spacing:-1px; opacity:0; transition:all 1s ease; }
-.pain-headline.show { opacity:1; }
-.pain-items { display:flex; gap:40px; margin-top:48px; }
-.pain-item { background:#1E293B; border-radius:16px; padding:32px 40px; border:1px solid rgba(239,68,68,0.3); opacity:0; transform:translateY(30px); transition:all 0.6s ease; }
-.pain-item.show { opacity:1; transform:translateY(0); }
-.pain-item .pain-icon { font-size:48px; margin-bottom:12px; }
-.pain-item .pain-label { font-size:16px; color:#ef4444; font-weight:600; }
-.pain-familiar { font-size:40px; font-weight:700; color:#0ea5e9; opacity:0; margin-top:48px; transition:all 0.5s ease; }
-.pain-familiar.show { opacity:1; }
+#scene1{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;background:radial-gradient(ellipse at center,#1E293B 0%,#0A1628 70%)}
+.pain-big{font-size:48px;font-weight:800;letter-spacing:-1px;color:#E2E8F0}
+.pain-items{display:flex;gap:40px;margin-top:48px}
+.pain-item{background:#1E293B;border-radius:16px;padding:32px 40px;border:1px solid rgba(239,68,68,0.3)}
+.pain-item .pi-icon{font-size:48px;margin-bottom:12px}
+.pain-item .pi-label{font-size:16px;color:#ef4444;font-weight:600}
+.pain-familiar{font-size:40px;font-weight:700;color:#0ea5e9;margin-top:48px}
 
-/* === Dashboard Stats === */
-.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-bottom:24px; }
-.stat-card { background:#1E293B; border-radius:12px; padding:20px 24px; border:1px solid rgba(255,255,255,0.06); }
-.stat-card .stat-value { font-size:32px; font-weight:800; color:#0ea5e9; }
-.stat-card .stat-label { font-size:12px; color:#64748b; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
+/* === SCENE 2: Dashboard === */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:24px}
+.stat-card{background:#1E293B;border-radius:12px;padding:20px 24px;border:1px solid rgba(255,255,255,0.06)}
+.stat-card .sv{font-size:32px;font-weight:800;color:#0ea5e9}
+.stat-card .sl{font-size:12px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dash-panel{background:#1E293B;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06)}
+.dash-panel h3{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dash-row{font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between}
+.dash-row:last-child{border:none}
 
-/* === Notification toast === */
-.notification-toast { position:absolute; top:20px; right:20px; background:#1E293B; border:1px solid rgba(14,165,233,0.3); border-radius:12px; padding:16px 24px; display:flex; align-items:center; gap:12px; opacity:0; transform:translateX(100px); transition:all 0.5s ease; z-index:100; }
-.notification-toast.show { opacity:1; transform:translateX(0); }
-.notification-dot { width:10px; height:10px; border-radius:50%; background:#0ea5e9; animation:pulseGlow 2s infinite; }
+/* === SCENE 3: Lead Pipeline === */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kcol{background:#0F1D32;border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06)}
+.kch{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#64748b;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px}
+.kch .n{background:rgba(14,165,233,0.2);color:#0ea5e9;padding:2px 8px;border-radius:8px;font-size:10px}
+.kc{background:#1E293B;border-radius:10px;padding:14px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.06)}
+.kc .kn{font-size:13px;font-weight:600;color:#E2E8F0}
+.kc .kv{font-size:12px;color:#0ea5e9;margin-top:4px}
+.kc .kd{font-size:11px;color:#64748b;margin-top:4px}
+.kc.highlight{border-color:rgba(14,165,233,0.4);box-shadow:0 0 20px rgba(14,165,233,0.15)}
+.ai-chat{background:#0F1D32;border-radius:16px;padding:20px;border:1px solid rgba(255,255,255,0.06);margin-top:16px}
+.ai-chat h3{font-size:14px;font-weight:700;color:#0ea5e9;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.chat-bbl{padding:10px 16px;border-radius:12px;margin-bottom:8px;font-size:13px;line-height:1.5}
+.chat-bbl.visitor{background:#1E293B;color:#94a3b8;border-bottom-left-radius:4px}
+.chat-bbl.ai{background:rgba(14,165,233,0.15);color:#e2e8f0;border-bottom-right-radius:4px}
+.chat-bbl .ab{font-size:10px;color:#0ea5e9;font-weight:700;margin-bottom:4px;display:block}
+.notif-toast{position:absolute;top:80px;right:48px;background:#1E293B;border:1px solid rgba(14,165,233,0.3);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:90}
+.notif-dot{width:10px;height:10px;border-radius:50%;background:#0ea5e9;box-shadow:0 0 10px rgba(14,165,233,0.5)}
 
-/* === AI Chat === */
-.ai-chat { background:#0F1D32; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); max-width:600px; }
-.chat-msg { padding:10px 16px; border-radius:12px; margin-bottom:8px; font-size:14px; line-height:1.5; opacity:0; transform:translateY(10px); transition:all 0.4s ease; }
-.chat-msg.show { opacity:1; transform:translateY(0); }
-.chat-msg.visitor { background:#1E293B; color:#94a3b8; align-self:flex-start; border-bottom-left-radius:4px; }
-.chat-msg.ai { background:rgba(14,165,233,0.15); color:#e2e8f0; border-bottom-right-radius:4px; }
-.chat-msg .ai-badge { font-size:10px; color:#0ea5e9; font-weight:700; margin-bottom:4px; display:block; }
+/* === SCENE 4: Projects === */
+.proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px}
+.proj-card{background:#1E293B;border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.06)}
+.proj-card.highlight{border-color:rgba(14,165,233,0.4);box-shadow:0 0 20px rgba(14,165,233,0.15)}
+.proj-name{font-size:18px;font-weight:700;margin-bottom:4px}
+.proj-pct{font-size:14px;color:#0ea5e9;font-weight:600}
+.prog-bar{height:8px;background:#0F1D32;border-radius:4px;margin-top:12px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width 1.5s ease}
+.fill-g{background:linear-gradient(90deg,#22c55e,#4ade80)}
+.fill-b{background:linear-gradient(90deg,#0ea5e9,#38bdf8)}
+.fill-a{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.proj-ms{font-size:13px;color:#94a3b8;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)}
+.proj-ms strong{color:#e2e8f0}
+.ai-flags{background:#0F1D32;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06)}
+.ai-flags h3{font-size:14px;font-weight:700;color:#f59e0b;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.flag-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:10px}
+.flag-item:last-child{border:none}
+.flag-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.flag-dot.red{background:#ef4444}
+.flag-dot.amber{background:#f59e0b}
+.flag-dot.green{background:#22c55e}
 
-/* === Kanban Pipeline === */
-.kanban { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; }
-.kanban-col { background:#0F1D32; border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.06); }
-.kanban-col-header { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:#64748b; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid rgba(255,255,255,0.06); display:flex; align-items:center; gap:8px; }
-.kanban-col-header .col-count { background:rgba(14,165,233,0.2); color:#0ea5e9; padding:2px 8px; border-radius:8px; font-size:10px; }
-.kanban-card { background:#1E293B; border-radius:10px; padding:14px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:all 0.5s; }
-.kanban-card.show { opacity:1; }
-.kanban-card .card-name { font-size:13px; font-weight:600; }
-.kanban-card .card-value { font-size:12px; color:#0ea5e9; margin-top:4px; }
-.kanban-card .card-detail { font-size:11px; color:#64748b; margin-top:4px; }
-.kanban-card.highlight { border-color:rgba(14,165,233,0.4); box-shadow:0 0 20px rgba(14,165,233,0.15); }
+/* === SCENE 5: Subs === */
+.sub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px}
+.sub-card{background:#1E293B;border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.06)}
+.sub-status{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px}
+.sub-ok{background:rgba(34,197,94,0.15);color:#22c55e}
+.sub-rem{background:rgba(14,165,233,0.15);color:#38bdf8}
+.sub-no{background:rgba(239,68,68,0.15);color:#ef4444}
+.ai-thread{background:#0F1D32;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06)}
+.ai-thread h3{font-size:14px;font-weight:700;color:#0ea5e9;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.thr-item{padding:10px 16px;background:#1E293B;border-radius:10px;margin-bottom:8px;font-size:13px}
+.thr-time{font-size:11px;color:#64748b;margin-bottom:4px}
+.thr-act{color:#94a3b8}
+.thr-act strong{color:#e2e8f0}
 
-/* === Project Cards === */
-.project-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:24px; }
-.project-card { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:all 0.6s; }
-.project-card.show { opacity:1; }
-.project-card.highlight { border-color:rgba(14,165,233,0.4); box-shadow:0 0 20px rgba(14,165,233,0.15); }
-.project-name { font-size:18px; font-weight:700; margin-bottom:4px; }
-.project-pct { font-size:14px; color:#0ea5e9; font-weight:600; }
-.progress-bar { height:8px; background:#0F1D32; border-radius:4px; margin-top:12px; overflow:hidden; }
-.progress-fill { height:100%; border-radius:4px; transition:width 1.5s ease; }
-.fill-green { background:linear-gradient(90deg,#22c55e,#4ade80); }
-.fill-blue { background:linear-gradient(90deg,#0ea5e9,#38bdf8); }
-.fill-amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
-.project-milestone { font-size:13px; color:#94a3b8; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); }
-.project-milestone strong { color:#e2e8f0; }
+/* === SCENE 6: Client Comms === */
+.client-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.client-portal{background:#1E293B;border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.06)}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.photo-ph{background:#0F1D32;border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:13px;border:1px solid rgba(255,255,255,0.04)}
+.milestone-notif{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;font-size:14px;margin-bottom:12px}
+.client-msg{background:#0F1D32;border-radius:12px;padding:16px 20px;font-size:14px;color:#94a3b8;border:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
+.client-msg .mn{font-weight:600;color:#e2e8f0;margin-bottom:4px}
+.zero-effort{display:inline-flex;align-items:center;gap:6px;background:rgba(14,165,233,0.1);color:#0ea5e9;padding:6px 16px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px}
 
-/* AI Flags Panel */
-.ai-flags { background:#0F1D32; border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.06); }
-.ai-flags h3 { font-size:14px; font-weight:700; color:#f59e0b; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
-.flag-item { padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:13px; color:#94a3b8; display:flex; align-items:center; gap:10px; opacity:0; transition:all 0.4s; }
-.flag-item.show { opacity:1; }
-.flag-item:last-child { border:none; }
-.flag-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.flag-dot.red { background:#ef4444; }
-.flag-dot.amber { background:#f59e0b; }
-.flag-dot.green { background:#22c55e; }
+/* === SCENE 7: Messages === */
+.msg-tabs{display:flex;gap:0;margin-bottom:20px}
+.msg-tab{padding:10px 24px;font-size:14px;font-weight:600;color:#64748b;background:#0F1D32;border:1px solid rgba(255,255,255,0.06)}
+.msg-tab:first-child{border-radius:10px 0 0 10px}
+.msg-tab:last-child{border-radius:0 10px 10px 0}
+.msg-tab.on{background:rgba(14,165,233,0.15);color:#0ea5e9;border-color:rgba(14,165,233,0.3)}
+.msg-feed{display:flex;flex-direction:column;gap:8px}
+.msg-row{display:flex;align-items:flex-start;gap:14px;background:#1E293B;border-radius:12px;padding:14px 18px;border:1px solid rgba(255,255,255,0.06)}
+.msg-row.urg{border-color:rgba(239,68,68,0.3)}
+.msg-av{width:40px;height:40px;border-radius:10px;background:#0F1D32;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#94a3b8;flex-shrink:0}
+.msg-c{flex:1}
+.msg-snd{font-size:14px;font-weight:600;color:#e2e8f0;display:flex;align-items:center;gap:8px}
+.msg-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:600}
+.msg-badge.im{background:rgba(14,165,233,0.15);color:#38bdf8}
+.msg-badge.wa{background:rgba(34,197,94,0.15);color:#22c55e}
+.msg-badge.ur{background:rgba(239,68,68,0.15);color:#ef4444}
+.msg-txt{font-size:13px;color:#94a3b8;margin-top:4px;line-height:1.5}
+.msg-act{font-size:12px;color:#0ea5e9;margin-top:6px;font-weight:500}
+.msg-tm{font-size:11px;color:#64748b;margin-top:4px}
+.msg-draft{background:#0F1D32;border-radius:12px;padding:20px;border:1px solid rgba(14,165,233,0.2);margin-top:16px}
+.msg-draft h4{font-size:14px;font-weight:700;color:#0ea5e9;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.msg-draft-bbl{background:rgba(14,165,233,0.1);border-radius:10px;padding:14px 18px;font-size:13px;color:#e2e8f0;line-height:1.6;font-style:italic}
+.msg-send-opts{display:flex;gap:12px;margin-top:12px}
+.msg-send-btn{padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer}
+.msg-send-btn.ib{background:rgba(14,165,233,0.2);color:#38bdf8}
+.msg-send-btn.wb{background:rgba(34,197,94,0.2);color:#22c55e}
+.msg-sidebar{display:flex;flex-direction:column;gap:16px}
+.msg-stat{background:#0F1D32;border-radius:12px;padding:16px 20px;border:1px solid rgba(255,255,255,0.06)}
+.msg-stat h4{font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.msg-sr{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.msg-sr .l{color:#94a3b8}
+.msg-sr .v{font-weight:600;color:#e2e8f0}
 
-/* === Sub Cards === */
-.sub-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:24px; }
-.sub-card { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:all 0.5s; }
-.sub-card.show { opacity:1; }
-.sub-status { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:8px; font-size:12px; font-weight:600; margin-top:8px; }
-.sub-confirmed { background:rgba(34,197,94,0.15); color:#22c55e; }
-.sub-reminded { background:rgba(14,165,233,0.15); color:#38bdf8; }
-.sub-noresponse { background:rgba(239,68,68,0.15); color:#ef4444; }
+/* === SCENE 8: Morning Briefing === */
+#scene8{display:flex;align-items:center;justify-content:center}
+.morning-card{background:#1E293B;border-radius:20px;padding:40px;border:1px solid rgba(255,255,255,0.06);max-width:700px;width:100%}
+.morning-greeting{font-size:36px;font-weight:700;margin-bottom:24px}
+.morning-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:16px;color:#94a3b8}
+.morning-item:last-child{border:none}
+.morning-item .mi{font-size:20px}
+.morning-item strong{color:#e2e8f0}
+.morning-footer{text-align:center;margin-top:32px;font-size:18px;color:#0ea5e9;font-weight:600}
 
-/* AI Thread */
-.ai-thread { background:#0F1D32; border-radius:12px; padding:20px; border:1px solid rgba(255,255,255,0.06); }
-.ai-thread h3 { font-size:14px; font-weight:700; color:#0ea5e9; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-.thread-item { padding:10px 16px; background:#1E293B; border-radius:10px; margin-bottom:8px; font-size:13px; opacity:0; transform:translateX(-20px); transition:all 0.5s; }
-.thread-item.show { opacity:1; transform:translateX(0); }
-.thread-time { font-size:11px; color:#64748b; margin-bottom:4px; }
-.thread-action { color:#94a3b8; }
-.thread-action strong { color:#e2e8f0; }
-
-/* === Client Update === */
-.client-portal { background:#1E293B; border-radius:16px; padding:24px; border:1px solid rgba(255,255,255,0.06); }
-.photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:16px 0; }
-.photo-placeholder { background:#0F1D32; border-radius:8px; height:120px; display:flex; align-items:center; justify-content:center; color:#64748b; font-size:13px; border:1px solid rgba(255,255,255,0.04); }
-.milestone-notif { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:12px; font-size:14px; opacity:0; transition:all 0.5s; }
-.milestone-notif.show { opacity:1; }
-.client-msg { background:#0F1D32; border-radius:12px; padding:16px 20px; margin-top:12px; font-size:14px; color:#94a3b8; border:1px solid rgba(255,255,255,0.06); opacity:0; transition:all 0.5s; }
-.client-msg.show { opacity:1; }
-.client-msg .msg-name { font-weight:600; color:#e2e8f0; margin-bottom:4px; }
-.zero-effort { display:inline-flex; align-items:center; gap:6px; background:rgba(14,165,233,0.1); color:#0ea5e9; padding:6px 16px; border-radius:8px; font-size:12px; font-weight:600; margin-top:16px; opacity:0; transition:all 0.5s; }
-.zero-effort.show { opacity:1; }
-
-/* === Morning Briefing === */
-.morning-card { background:#1E293B; border-radius:20px; padding:40px; border:1px solid rgba(255,255,255,0.06); max-width:700px; margin:0 auto; margin-top:60px; }
-.morning-greeting { font-size:36px; font-weight:700; margin-bottom:24px; }
-.morning-item { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:16px; color:#94a3b8; opacity:0; transform:translateX(-20px); transition:all 0.5s; }
-.morning-item.show { opacity:1; transform:translateX(0); }
-.morning-item:last-child { border:none; }
-.morning-item .mi-icon { font-size:20px; }
-.morning-item strong { color:#e2e8f0; }
-.morning-footer { text-align:center; margin-top:32px; font-size:18px; color:#0ea5e9; font-weight:600; opacity:0; transition:all 0.5s; }
-.morning-footer.show { opacity:1; }
-
-/* === Close Screen === */
-.close-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
-.close-headline { font-size:36px; font-weight:300; color:#94a3b8; letter-spacing:-0.5px; opacity:0; transition:all 1s; }
-.close-headline.show { opacity:1; }
-.close-headline strong { color:#fff; font-weight:700; }
-.close-brand { font-size:48px; font-weight:800; letter-spacing:6px; color:#fff; margin-top:32px; font-family:'Inter',serif; opacity:0; transition:all 1s; }
-.close-brand.show { opacity:1; }
-.close-brand-sub { font-size:14px; letter-spacing:4px; color:#64748b; margin-top:4px; opacity:0; transition:all 1s; }
-.close-brand-sub.show { opacity:1; }
-.close-x { font-size:24px; color:#334155; margin:24px 0; opacity:0; transition:all 0.5s; }
-.close-x.show { opacity:1; }
-.close-logo { font-size:40px; font-weight:800; background:linear-gradient(135deg,#0ea5e9,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; opacity:0; transition:all 1s; }
-.close-logo.show { opacity:1; }
-.close-tagline { font-size:22px; color:#94a3b8; margin-top:12px; font-weight:300; opacity:0; transition:all 0.8s; }
-.close-tagline.show { opacity:1; }
-.close-url { font-size:18px; color:#0ea5e9; margin-top:20px; opacity:0; transition:all 0.8s; }
-.close-url.show { opacity:1; }
-
-/* === Message Tracking === */
-.msg-tabs { display:flex; gap:0; margin-bottom:20px; }
-.msg-tab { padding:10px 24px; font-size:14px; font-weight:600; color:#64748b; background:#0F1D32; border:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:all 0.2s; }
-.msg-tab:first-child { border-radius:10px 0 0 10px; }
-.msg-tab:last-child { border-radius:0 10px 10px 0; }
-.msg-tab.active { background:rgba(14,165,233,0.15); color:#0ea5e9; border-color:rgba(14,165,233,0.3); }
-.msg-feed { display:flex; flex-direction:column; gap:8px; max-height:420px; overflow:hidden; }
-.msg-row { display:flex; align-items:flex-start; gap:14px; background:#1E293B; border-radius:12px; padding:14px 18px; border:1px solid rgba(255,255,255,0.06); opacity:0; transform:translateX(-20px); transition:all 0.5s ease; }
-.msg-row.show { opacity:1; transform:translateX(0); }
-.msg-row.urgent { border-color:rgba(239,68,68,0.3); }
-.msg-avatar { width:40px; height:40px; border-radius:10px; background:#0F1D32; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:#94a3b8; flex-shrink:0; }
-.msg-content { flex:1; }
-.msg-sender { font-size:14px; font-weight:600; color:#e2e8f0; display:flex; align-items:center; gap:8px; }
-.msg-badge { font-size:10px; padding:2px 8px; border-radius:6px; font-weight:600; }
-.msg-badge.imsg { background:rgba(14,165,233,0.15); color:#38bdf8; }
-.msg-badge.wapp { background:rgba(34,197,94,0.15); color:#22c55e; }
-.msg-badge.urg { background:rgba(239,68,68,0.15); color:#ef4444; }
-.msg-text { font-size:13px; color:#94a3b8; margin-top:4px; line-height:1.5; }
-.msg-action { font-size:12px; color:#0ea5e9; margin-top:6px; font-weight:500; }
-.msg-time { font-size:11px; color:#64748b; margin-top:4px; }
-.msg-ai-draft { background:#0F1D32; border-radius:12px; padding:20px; border:1px solid rgba(14,165,233,0.2); margin-top:16px; }
-.msg-ai-draft h4 { font-size:14px; font-weight:700; color:#0ea5e9; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
-.msg-draft-bubble { background:rgba(14,165,233,0.1); border-radius:10px; padding:14px 18px; font-size:13px; color:#e2e8f0; line-height:1.6; font-style:italic; }
-.msg-send-opts { display:flex; gap:12px; margin-top:12px; }
-.msg-send-btn { padding:8px 20px; border-radius:8px; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all 0.2s; }
-.msg-send-btn.imsg-btn { background:rgba(14,165,233,0.2); color:#38bdf8; }
-.msg-send-btn.wapp-btn { background:rgba(34,197,94,0.2); color:#22c55e; }
-.msg-sent-confirm { font-size:13px; color:#22c55e; margin-top:10px; opacity:0; transition:all 0.4s; }
-.msg-sent-confirm.show { opacity:1; }
-.msg-sidebar { display:flex; flex-direction:column; gap:16px; }
-.msg-stat-card { background:#0F1D32; border-radius:12px; padding:16px 20px; border:1px solid rgba(255,255,255,0.06); }
-.msg-stat-card h4 { font-size:13px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
-.msg-stat-row { display:flex; justify-content:space-between; padding:6px 0; font-size:13px; }
-.msg-stat-row .label { color:#94a3b8; }
-.msg-stat-row .value { font-weight:600; color:#e2e8f0; }
+/* === SCENE 9: Close/CTA === */
+#scene9{display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;background:radial-gradient(ellipse at center,#1E293B 0%,#0A1628 70%)}
+.close-hl{font-size:36px;font-weight:300;color:#94a3b8;letter-spacing:-0.5px}
+.close-hl strong{color:#fff;font-weight:700}
+.close-brand{font-size:48px;font-weight:800;letter-spacing:6px;color:#fff;margin-top:32px}
+.close-brand-sub{font-size:14px;letter-spacing:4px;color:#64748b;margin-top:4px}
+.close-x{font-size:24px;color:#334155;margin:24px 0}
+.close-logo{font-size:40px;font-weight:800;background:linear-gradient(135deg,#0ea5e9,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.close-tag{font-size:22px;color:#94a3b8;margin-top:12px;font-weight:300}
+.close-url{font-size:18px;color:#0ea5e9;margin-top:20px}
 </style>
 </head>
 <body>
 
-<div id="playBtn" onclick="startDemo()">
-  <div class="play-circle"></div>
+<div id="playBtn">
+  <div class="pc"></div>
   <h2>Root Developments — AI Operations Demo</h2>
-  <div class="play-sub">Halifax's Premium Home Builder</div>
+  <p>Click to start • 9 scenes • ~2 minutes</p>
+</div>
+<div id="sceneCounter">1 / 9</div>
+<div id="pauseInd">⏸ PAUSED — tap to resume</div>
+<div id="progressBar"><div id="progressFill"></div></div>
+
+<!-- Persistent Sidebar (visible scenes 2-8) -->
+<div class="sidebar" id="sidebar" style="display:none">
+  <div class="sidebar-logo">ROOT DEV<span>Mission Control</span></div>
+  <div class="sidebar-item active" id="nav-overview"><span>📊</span> Overview</div>
+  <div class="sidebar-item" id="nav-pipeline"><span>🔄</span> Pipeline <span class="sidebar-badge">3</span></div>
+  <div class="sidebar-item" id="nav-projects"><span>🏗️</span> Projects</div>
+  <div class="sidebar-item" id="nav-subs"><span>👷</span> Subcontractors</div>
+  <div class="sidebar-item" id="nav-clients"><span>👥</span> Clients</div>
+  <div class="sidebar-item" id="nav-messages"><span>💬</span> Messages <span class="sidebar-badge" style="background:#22c55e">8</span></div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-item" id="nav-ai"><span>🤖</span> AI Activity <span class="sidebar-badge" style="background:#0ea5e9">12</span></div>
+  <div class="sidebar-item" id="nav-schedule"><span>📅</span> Schedule</div>
 </div>
 
-<div id="app">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-logo">ROOT DEV<span>Mission Control</span></div>
-    <div class="sidebar-item active" id="nav-overview"><span class="icon">📊</span> Overview</div>
-    <div class="sidebar-item" id="nav-pipeline"><span class="icon">🔄</span> Pipeline <span class="sidebar-badge">3</span></div>
-    <div class="sidebar-item" id="nav-projects"><span class="icon">🏗️</span> Projects</div>
-    <div class="sidebar-item" id="nav-subs"><span class="icon">👷</span> Subcontractors</div>
-    <div class="sidebar-item" id="nav-clients"><span class="icon">👥</span> Clients</div>
-    <div class="sidebar-item" id="nav-messages"><span class="icon">💬</span> Messages <span class="sidebar-badge" style="background:#22c55e;">8</span></div>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-item" id="nav-ai"><span class="icon">🤖</span> AI Activity <span class="sidebar-badge" style="background:#0ea5e9;">12</span></div>
-    <div class="sidebar-item" id="nav-schedule"><span class="icon">📅</span> Schedule</div>
+<!-- SCENE 1: Pain Hook -->
+<div class="scene" id="scene1">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center">
+    <div class="anim" id="s1head" style="font-size:48px;font-weight:800;letter-spacing:-1px">Million-dollar build in progress</div>
+    <div class="pain-items" style="margin-top:48px">
+      <div class="pain-item anim" id="s1p1"><div class="pi-icon">👷</div><div class="pi-label">3 subs unconfirmed</div></div>
+      <div class="pain-item anim" id="s1p2"><div class="pi-icon">🌐</div><div class="pi-label">1 website inquiry unanswered</div></div>
+      <div class="pain-item anim" id="s1p3"><div class="pi-icon">📱</div><div class="pi-label">Yesterday's messages unsorted</div></div>
+    </div>
+    <div class="anim" id="s1fam" style="font-size:40px;font-weight:700;color:#0ea5e9;margin-top:48px">Sound familiar?</div>
   </div>
+</div>
 
-  <div class="main">
-    <!-- Scene 1: Pain Hook (0-11.9s) -->
-    <div class="scene" id="scene1">
-      <div class="pain-screen">
-        <div class="pain-headline" id="painHeadline">Million-dollar build in progress</div>
-        <div class="pain-items">
-          <div class="pain-item" id="painItem1">
-            <div class="pain-icon">👷</div>
-            <div class="pain-label">3 subs unconfirmed</div>
-          </div>
-          <div class="pain-item" id="painItem2">
-            <div class="pain-icon">🌐</div>
-            <div class="pain-label">1 website inquiry unanswered</div>
-          </div>
-        </div>
-        <div class="pain-familiar" id="painFamiliar">Sound familiar?</div>
+<!-- SCENE 2: Dashboard Overview -->
+<div class="scene" id="scene2">
+  <div class="main-content">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div class="anim" style="font-size:28px;font-weight:700">Root Developments — Mission Control</div>
+        <div class="anim" style="font-size:14px;color:#64748b;margin-top:4px">Thursday, March 7 • Bedford, Nova Scotia</div>
       </div>
+      <div class="anim-f" style="font-size:13px;color:#22c55e;background:rgba(34,197,94,0.1);padding:8px 16px;border-radius:8px">● All Systems Online</div>
     </div>
-
-    <!-- Scene 2: Dashboard Overview (11.9-21s) -->
-    <div class="scene" id="scene2">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
-        <div>
-          <div class="scene-header" style="font-size:28px;font-weight:700;">Root Developments — Mission Control</div>
-          <div style="font-size:14px;color:#64748b;margin-top:4px;">Thursday, March 7 • Bedford, Nova Scotia</div>
-        </div>
-        <div style="font-size:13px;color:#22c55e;background:rgba(34,197,94,0.1);padding:8px 16px;border-radius:8px;">● All Systems Online</div>
-      </div>
-      <div class="stats-row">
-        <div class="stat-card"><div class="stat-value" id="stat1">4</div><div class="stat-label">Active Projects</div></div>
-        <div class="stat-card"><div class="stat-value" id="stat2">7</div><div class="stat-label">Pending Estimates</div></div>
-        <div class="stat-card"><div class="stat-value" id="stat3">$847K</div><div class="stat-label">Monthly Revenue</div></div>
-        <div class="stat-card"><div class="stat-value" id="stat4">94%</div><div class="stat-label">Sub Compliance</div></div>
-      </div>
-      <!-- Quick preview panels -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-        <div style="background:#1E293B;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;">🏗️ Active Builds</div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;">
-            <span>Hartley Estate</span><span style="color:#0ea5e9;">73%</span>
-          </div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;">
-            <span>Bedford Commons</span><span style="color:#22c55e;">89%</span>
-          </div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;">
-            <span>Westwood Drive</span><span style="color:#f59e0b;">41%</span>
-          </div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;display:flex;justify-content:space-between;">
-            <span>Harbour View Estates</span><span style="color:#0ea5e9;">18%</span>
-          </div>
-        </div>
-        <div style="background:#1E293B;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.06);">
-          <div style="font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;">🤖 Today's AI Activity</div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">✅ Confirmed 2 subcontractors for Tuesday</div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">📧 Sent 3 client progress updates</div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">🔔 Website inquiry captured & responded</div>
-          <div style="font-size:13px;color:#94a3b8;padding:8px 0;">⚠️ 1 sub requires follow-up</div>
-        </div>
-      </div>
+    <div class="stats-row">
+      <div class="stat-card anim"><div class="sv">4</div><div class="sl">Active Projects</div></div>
+      <div class="stat-card anim"><div class="sv">7</div><div class="sl">Pending Estimates</div></div>
+      <div class="stat-card anim"><div class="sv">$847K</div><div class="sl">Monthly Revenue</div></div>
+      <div class="stat-card anim"><div class="sv">94%</div><div class="sl">Sub Compliance</div></div>
     </div>
-
-    <!-- Scene 3: Lead Pipeline (21-42.7s) -->
-    <div class="scene" id="scene3">
-      <div class="scene-header" style="font-size:24px;font-weight:700;">Lead Pipeline</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:20px;">Every inquiry tracked from first touch to contract signed</div>
-
-      <!-- Notification toast -->
-      <div class="notification-toast" id="notifToast">
-        <div class="notification-dot"></div>
-        <div>
-          <div style="font-size:13px;font-weight:600;">New Website Inquiry</div>
-          <div style="font-size:12px;color:#64748b;">Custom home build — Bedford area</div>
-        </div>
+    <div class="dash-grid">
+      <div class="dash-panel anim">
+        <h3>🏗️ Active Builds</h3>
+        <div class="dash-row"><span>Hartley Estate</span><span style="color:#0ea5e9">73%</span></div>
+        <div class="dash-row"><span>Bedford Commons</span><span style="color:#22c55e">89%</span></div>
+        <div class="dash-row"><span>Westwood Drive</span><span style="color:#f59e0b">41%</span></div>
+        <div class="dash-row"><span>Harbour View Estates</span><span style="color:#0ea5e9">18%</span></div>
       </div>
-
-      <!-- Top section: AI Chat + Pipeline -->
-      <div style="display:grid;grid-template-columns:500px 1fr;gap:20px;">
-        <div class="ai-chat" id="aiChatPanel">
-          <div style="font-size:14px;font-weight:700;margin-bottom:16px;color:#0ea5e9;display:flex;align-items:center;gap:8px;">🤖 AI Instant Response</div>
-          <div class="chat-msg visitor" id="chatMsg1">
-            <div>Hi, we're looking to build a custom home in the Bedford area. Around 3,500 sqft. Can we get more info?</div>
-          </div>
-          <div class="chat-msg ai" id="chatMsg2">
-            <span class="ai-badge">ROOT DEVELOPMENTS AI</span>
-            <div>Thanks for reaching out! We'd love to learn more about your project. Could you share your ideal timeline and budget range? Our builds typically start at $800K.</div>
-          </div>
-          <div class="chat-msg visitor" id="chatMsg3">
-            <div>Looking at $1.2-1.5M range, hoping to break ground by summer.</div>
-          </div>
-          <div class="chat-msg ai" id="chatMsg4">
-            <span class="ai-badge">ROOT DEVELOPMENTS AI</span>
-            <div>Perfect — that aligns well with our portfolio. I've booked you a consultation with our team for Tuesday at 2 PM. ✅</div>
-          </div>
-        </div>
-
-        <div class="kanban" id="kanbanPanel">
-          <div class="kanban-col">
-            <div class="kanban-col-header">Inquiry <span class="col-count">2</span></div>
-            <div class="kanban-card show" id="kc1">
-              <div class="card-name">Parker Residence</div>
-              <div class="card-value">$900K est.</div>
-              <div class="card-detail">Bedford • 2,800 sqft</div>
-            </div>
-            <div class="kanban-card" id="kc-new">
-              <div class="card-name">New Web Inquiry</div>
-              <div class="card-value">$1.2-1.5M</div>
-              <div class="card-detail">Bedford • 3,500 sqft</div>
-            </div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">Consultation <span class="col-count">1</span></div>
-            <div class="kanban-card show">
-              <div class="card-name">Morrison Residence</div>
-              <div class="card-value">$1.2M</div>
-              <div class="card-detail">Hammonds Plains • 3,200 sqft</div>
-            </div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">Estimate Sent <span class="col-count">2</span></div>
-            <div class="kanban-card show">
-              <div class="card-name">Sullivan Lakefront</div>
-              <div class="card-value">$1.8M</div>
-              <div class="card-detail">Fall River • 4,200 sqft</div>
-            </div>
-            <div class="kanban-card show">
-              <div class="card-name">Chen Townhomes</div>
-              <div class="card-value">$2.1M</div>
-              <div class="card-detail">Clayton Park • 6 units</div>
-            </div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">Contract Signed <span class="col-count">1</span></div>
-            <div class="kanban-card show">
-              <div class="card-name">Westwood Drive</div>
-              <div class="card-value">$1.4M</div>
-              <div class="card-detail">Bedford • Breaking ground</div>
-            </div>
-          </div>
-          <div class="kanban-col">
-            <div class="kanban-col-header">In Progress <span class="col-count">3</span></div>
-            <div class="kanban-card show">
-              <div class="card-name">Hartley Estate</div>
-              <div class="card-value">$1.6M</div>
-              <div class="card-detail">73% complete</div>
-            </div>
-            <div class="kanban-card show">
-              <div class="card-name">Bedford Commons</div>
-              <div class="card-value">$1.1M</div>
-              <div class="card-detail">89% complete</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scene 4: Project Tracker (42.7-58.8s) -->
-    <div class="scene" id="scene4">
-      <div class="scene-header" style="font-size:24px;font-weight:700;">Active Projects</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:20px;">Every build at a glance — milestones, progress, and AI-flagged items</div>
-
-      <div class="project-grid">
-        <div class="project-card" id="proj1">
-          <div class="project-name">Hartley Estate</div>
-          <div class="project-pct">73% Complete</div>
-          <div class="progress-bar"><div class="progress-fill fill-blue" id="prog1" style="width:0%;"></div></div>
-          <div class="project-milestone">📍 <strong>Electrical rough-in</strong> — this week</div>
-          <div style="font-size:12px;color:#64748b;margin-top:8px;">Bedford • $1.6M • 4,100 sqft</div>
-        </div>
-        <div class="project-card" id="proj2">
-          <div class="project-name">Bedford Commons</div>
-          <div class="project-pct">89% Complete</div>
-          <div class="progress-bar"><div class="progress-fill fill-green" id="prog2" style="width:0%;"></div></div>
-          <div class="project-milestone">🔍 <strong>Final inspection</strong> — Friday</div>
-          <div style="font-size:12px;color:#64748b;margin-top:8px;">Bedford • $1.1M • 2,800 sqft</div>
-        </div>
-        <div class="project-card" id="proj3">
-          <div class="project-name">Westwood Drive</div>
-          <div class="project-pct">41% Complete</div>
-          <div class="progress-bar"><div class="progress-fill fill-amber" id="prog3" style="width:0%;"></div></div>
-          <div class="project-milestone">✅ <strong>Foundation complete</strong> — framing next</div>
-          <div style="font-size:12px;color:#64748b;margin-top:8px;">Bedford • $1.4M • 3,600 sqft</div>
-        </div>
-      </div>
-
-      <div class="ai-flags" id="aiFlags">
-        <h3>⚡ AI Flags — Needs Your Attention</h3>
-        <div class="flag-item" id="flag1"><span class="flag-dot red"></span> <span>East Coast Framing hasn't confirmed Tuesday — <strong style="color:#ef4444;">follow-up sent</strong></span></div>
-        <div class="flag-item" id="flag2"><span class="flag-dot amber"></span> <span>Sullivan estimate due tomorrow — <strong style="color:#f59e0b;">draft ready for review</strong></span></div>
-        <div class="flag-item" id="flag3"><span class="flag-dot green"></span> <span>Bedford Commons inspection scheduled — <strong style="color:#22c55e;">all docs prepared</strong></span></div>
-        <div class="flag-item" id="flag4"><span class="flag-dot amber"></span> <span>Harbour View Estates permit review — <strong style="color:#f59e0b;">awaiting municipal response</strong></span></div>
-      </div>
-    </div>
-
-    <!-- Scene 5: Subcontractor Coordination (58.8-74.9s) -->
-    <div class="scene" id="scene5">
-      <div class="scene-header" style="font-size:24px;font-weight:700;">Subcontractor Coordination</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:20px;">Tuesday's rough-in crew — AI handled before 6 AM</div>
-
-      <div class="sub-grid">
-        <div class="sub-card" id="sub1">
-          <div style="font-size:16px;font-weight:700;">Apex Electric</div>
-          <div style="font-size:13px;color:#64748b;margin-top:4px;">Electrical rough-in • Hartley Estate</div>
-          <div class="sub-status sub-confirmed">✅ Confirmed</div>
-          <div style="font-size:12px;color:#64748b;margin-top:8px;">Confirmed yesterday at 3:42 PM</div>
-        </div>
-        <div class="sub-card" id="sub2">
-          <div style="font-size:16px;font-weight:700;">Maritime Plumbing</div>
-          <div style="font-size:13px;color:#64748b;margin-top:4px;">Rough-in • Hartley Estate</div>
-          <div class="sub-status sub-reminded">📱 Reminded</div>
-          <div style="font-size:12px;color:#64748b;margin-top:8px;">Reminder sent for Thursday</div>
-        </div>
-        <div class="sub-card" id="sub3">
-          <div style="font-size:16px;font-weight:700;">East Coast Framing</div>
-          <div style="font-size:13px;color:#64748b;margin-top:4px;">Framing crew • Westwood Drive</div>
-          <div class="sub-status sub-noresponse">⚠️ No Response</div>
-          <div style="font-size:12px;color:#64748b;margin-top:8px;">3 texts, 2 calls, follow-up flagged</div>
-        </div>
-      </div>
-
-      <div class="ai-thread" id="aiThread">
-        <h3>🤖 AI Communication Log — <span style="color:#64748b;font-weight:400;">6:47 AM</span></h3>
-        <div class="thread-item" id="thread1">
-          <div class="thread-time">6:12 AM</div>
-          <div class="thread-action">📤 Sent confirmation request to <strong>Apex Electric</strong> — <span style="color:#22c55e;">✅ Confirmed 3:42 PM yesterday</span></div>
-        </div>
-        <div class="thread-item" id="thread2">
-          <div class="thread-time">6:18 AM</div>
-          <div class="thread-action">📤 Sent reminder to <strong>Maritime Plumbing</strong> about Thursday schedule</div>
-        </div>
-        <div class="thread-item" id="thread3">
-          <div class="thread-time">6:23 AM</div>
-          <div class="thread-action">📤 Text #3 to <strong>East Coast Framing</strong> — still no response</div>
-        </div>
-        <div class="thread-item" id="thread4">
-          <div class="thread-time">6:35 AM</div>
-          <div class="thread-action">📞 Called <strong>East Coast Framing</strong> × 2 — voicemail both times</div>
-        </div>
-        <div class="thread-item" id="thread5">
-          <div class="thread-time">6:47 AM</div>
-          <div class="thread-action">🚩 <strong style="color:#ef4444;">Flagged East Coast Framing</strong> — no response, needs your attention</div>
-        </div>
-      </div>
-      <div style="text-align:center;margin-top:16px;font-size:14px;color:#64748b;opacity:0;transition:all 0.5s;" id="coffeeTag">☕ All handled before you finished your coffee</div>
-    </div>
-
-    <!-- Scene 6: Client Updates (74.9-87.5s) -->
-    <div class="scene" id="scene6">
-      <div class="scene-header" style="font-size:24px;font-weight:700;">Client Communication</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:20px;">Automatic updates keep clients informed — zero manual effort</div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
-        <div class="client-portal" id="clientPortal">
-          <div style="font-size:16px;font-weight:700;margin-bottom:4px;">📋 Weekly Progress Update</div>
-          <div style="font-size:13px;color:#64748b;">Hartley Estate — Week 18</div>
-          <div class="photo-grid">
-            <div class="photo-placeholder">📸 Framing progress</div>
-            <div class="photo-placeholder">📸 Electrical layout</div>
-            <div class="photo-placeholder">📸 Interior walls</div>
-          </div>
-          <div style="font-size:13px;color:#94a3b8;line-height:1.6;">
-            <strong style="color:#e2e8f0;">This week:</strong> Framing complete on second floor. Electrical rough-in underway. HVAC ductwork 80% installed. On track for insulation next week.
-          </div>
-          <div style="font-size:12px;color:#64748b;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">📧 Auto-sent to client Tuesday 9:00 AM</div>
-        </div>
-
-        <div>
-          <div class="milestone-notif" id="milestoneNotif">
-            <span style="font-size:24px;">✅</span>
-            <div>
-              <div style="font-weight:700;color:#22c55e;">Framing Complete — Hartley Estate</div>
-              <div style="font-size:12px;color:#64748b;margin-top:2px;">Milestone notification sent to client automatically</div>
-            </div>
-          </div>
-
-          <div class="client-msg" id="clientMsg">
-            <div class="msg-name">James Hartley</div>
-            <div>"Thanks for the update! Love seeing the progress. The photos are a great touch." 👍</div>
-          </div>
-
-          <div class="milestone-notif" id="milestoneNotif2" style="margin-top:12px;">
-            <span style="font-size:24px;">🔍</span>
-            <div>
-              <div style="font-weight:700;color:#0ea5e9;">Inspection Passed — Bedford Commons</div>
-              <div style="font-size:12px;color:#64748b;margin-top:2px;">Client notified with next steps</div>
-            </div>
-          </div>
-
-          <div class="zero-effort" id="zeroEffort">🎯 Zero manual effort — clients feel informed, you stay focused on building</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scene 7: iMessage/WhatsApp Tracking (87.5-101s) -->
-    <div class="scene" id="scene7">
-      <div class="scene-header" style="font-size:24px;font-weight:700;">Unified Message Tracking</div>
-      <div style="font-size:14px;color:#64748b;margin-bottom:20px;">Every client and sub conversation — iMessage & WhatsApp — one inbox</div>
-
-      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;">
-        <div>
-          <div class="msg-tabs">
-            <div class="msg-tab active">💬 iMessage</div>
-            <div class="msg-tab">📲 WhatsApp</div>
-          </div>
-
-          <div class="msg-feed" id="msgFeed">
-            <div class="msg-row urgent" id="msg1">
-              <div class="msg-avatar">JH</div>
-              <div class="msg-content">
-                <div class="msg-sender">James Hartley <span class="msg-badge urg">🔴 URGENT</span></div>
-                <div class="msg-text">"Quick question — are we still on track for insulation next week? The bank needs a progress update for the next draw."</div>
-                <div class="msg-action">⚡ Action: Client needs timeline confirmation for bank financing</div>
-                <div class="msg-time">Today 7:48 AM • iMessage</div>
-              </div>
-            </div>
-            <div class="msg-row" id="msg2">
-              <div class="msg-avatar">TC</div>
-              <div class="msg-content">
-                <div class="msg-sender">Tony — Apex Electric <span class="msg-badge wapp">WhatsApp</span></div>
-                <div class="msg-text">"Panel's wired up at Hartley. Inspector can come Thursday. Need you to confirm the time slot."</div>
-                <div class="msg-action">📋 Action: Confirm inspection slot — Thursday AM</div>
-                <div class="msg-time">Today 7:15 AM • WhatsApp</div>
-              </div>
-            </div>
-            <div class="msg-row" id="msg3">
-              <div class="msg-avatar">SM</div>
-              <div class="msg-content">
-                <div class="msg-sender">Sullivan Family <span class="msg-badge imsg">iMessage</span></div>
-                <div class="msg-text">"We reviewed the estimate — looks great. Can we add a covered patio? What's the ballpark on that?"</div>
-                <div class="msg-action">📝 Action: Change order request — update Sullivan estimate</div>
-                <div class="msg-time">Today 6:55 AM • iMessage</div>
-              </div>
-            </div>
-            <div class="msg-row" id="msg4">
-              <div class="msg-avatar">DP</div>
-              <div class="msg-content">
-                <div class="msg-sender">Dave — Maritime Plumbing <span class="msg-badge wapp">WhatsApp</span></div>
-                <div class="msg-text">"Running 2 hours behind on Westwood. Got held up at the supply house — fixtures were backordered."</div>
-                <div class="msg-action">⚠️ Action: Schedule delay — notify site supervisor</div>
-                <div class="msg-time">Yesterday 4:30 PM • WhatsApp</div>
-              </div>
-            </div>
-            <div class="msg-row" id="msg5">
-              <div class="msg-avatar">KM</div>
-              <div class="msg-content">
-                <div class="msg-sender">Karen Morrison <span class="msg-badge imsg">iMessage</span></div>
-                <div class="msg-text">"Excited about the consultation Tuesday! Do we need to bring anything specific?"</div>
-                <div class="msg-action">✅ Action: Auto-reply sent with meeting details</div>
-                <div class="msg-time">Yesterday 2:10 PM • iMessage</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- AI Draft -->
-          <div class="msg-ai-draft" id="msgAiDraft" style="opacity:0;transition:all 0.5s;">
-            <h4>🤖 AI Draft Response — James Hartley</h4>
-            <div class="msg-draft-bubble">"Hi James — yes, we're on track. Electrical rough-in wraps this week, insulation starts Monday. I'll send you an updated progress report with photos for the bank draw. Everything's looking good. 👍"</div>
-            <div class="msg-send-opts">
-              <div class="msg-send-btn imsg-btn">💬 Send via iMessage</div>
-              <div class="msg-send-btn wapp-btn">📲 Send via WhatsApp</div>
-            </div>
-            <div class="msg-sent-confirm" id="msgSentConfirm">✅ Sent to James Hartley via iMessage</div>
-          </div>
-        </div>
-
-        <div class="msg-sidebar">
-          <div class="msg-stat-card">
-            <h4>📊 Today's Messages</h4>
-            <div class="msg-stat-row"><span class="label">🔴 Urgent</span><span class="value" style="color:#ef4444;">1</span></div>
-            <div class="msg-stat-row"><span class="label">💬 iMessage</span><span class="value" style="color:#38bdf8;">3</span></div>
-            <div class="msg-stat-row"><span class="label">📲 WhatsApp</span><span class="value" style="color:#22c55e;">2</span></div>
-            <div class="msg-stat-row"><span class="label">✅ Auto-replied</span><span class="value" style="color:#22c55e;">2</span></div>
-            <div class="msg-stat-row"><span class="label">⏳ Needs your input</span><span class="value" style="color:#f59e0b;">3</span></div>
-          </div>
-          <div class="msg-stat-card">
-            <h4>👤 James Hartley</h4>
-            <div class="msg-stat-row"><span class="label">Project</span><span class="value">Hartley Estate</span></div>
-            <div class="msg-stat-row"><span class="label">Contract</span><span class="value" style="color:#0ea5e9;">$1.6M</span></div>
-            <div class="msg-stat-row"><span class="label">Preferred</span><span class="value" style="color:#38bdf8;">iMessage</span></div>
-            <div class="msg-stat-row"><span class="label">Last contact</span><span class="value">Today 7:48 AM</span></div>
-            <div class="msg-stat-row"><span class="label">Response time</span><span class="value" style="color:#22c55e;">< 2 min avg</span></div>
-          </div>
-          <div class="msg-stat-card">
-            <h4>📈 This Week</h4>
-            <div class="msg-stat-row"><span class="label">Total messages</span><span class="value">34</span></div>
-            <div class="msg-stat-row"><span class="label">AI auto-handled</span><span class="value" style="color:#22c55e;">22</span></div>
-            <div class="msg-stat-row"><span class="label">Avg response</span><span class="value" style="color:#0ea5e9;">< 3 min</span></div>
-            <div class="msg-stat-row"><span class="label">Nothing missed</span><span class="value" style="color:#22c55e;">✅</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scene 8: Morning Briefing (101-112.2s) -->
-    <div class="scene" id="scene8">
-      <div class="morning-card" id="morningCard">
-        <div class="morning-greeting">☀️ Good Morning</div>
-        <div style="font-size:14px;color:#64748b;margin-bottom:24px;">Thursday, March 7 — Here's your day</div>
-        <div class="morning-item" id="mi1"><span class="mi-icon">🏗️</span> <strong>2 site visits</strong> — Hartley Estate (9 AM), Westwood Drive (2 PM)</div>
-        <div class="morning-item" id="mi2"><span class="mi-icon">🤝</span> <strong>1 consultation</strong> — Morrison family, 11 AM at office</div>
-        <div class="morning-item" id="mi3"><span class="mi-icon">👷</span> <strong>3 sub confirmations needed</strong> — next week's framing crew</div>
-        <div class="morning-item" id="mi4"><span class="mi-icon">📝</span> <strong>Sullivan estimate due tomorrow</strong> — draft ready for your review</div>
-        <div class="morning-item" id="mi5"><span class="mi-icon">🔍</span> <strong>Bedford Commons final inspection</strong> — Friday 10 AM, all docs prepped</div>
-        <div class="morning-footer" id="morningFooter">Your entire day organized before you leave the house</div>
-      </div>
-    </div>
-
-    <!-- Scene 9: Close (112.2-118.5s) -->
-    <div class="scene" id="scene9">
-      <div class="close-screen">
-        <div class="close-headline" id="closeHeadline">You build <strong>premium homes</strong>. Your operations should match.</div>
-        <div class="close-brand" id="closeBrand">ROOT DEVELOPMENTS</div>
-        <div class="close-brand-sub" id="closeBrandSub">Halifax's Premium Home Builder</div>
-        <div class="close-x" id="closeX">×</div>
-        <div class="close-logo" id="closeLogo">SolveWorks</div>
-        <div class="close-tagline" id="closeTag">Your AI. Only yours.</div>
-        <div class="close-url" id="closeUrl">See it live — solveworks.io</div>
+      <div class="dash-panel anim">
+        <h3>🤖 Today's AI Activity</h3>
+        <div class="dash-row">✅ Confirmed 2 subcontractors for Tuesday</div>
+        <div class="dash-row">📧 Sent 3 client progress updates</div>
+        <div class="dash-row">🔔 Website inquiry captured & responded</div>
+        <div class="dash-row">⚠️ 1 sub requires follow-up</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Fake Cursor -->
-<div id="fakeCursor" style="position:absolute; top:540px; left:960px; z-index:9000; pointer-events:none; display:none; transition: top 0.8s cubic-bezier(0.25,0.1,0.25,1), left 0.8s cubic-bezier(0.25,0.1,0.25,1);">
-  <svg viewBox="0 0 24 24" fill="white" stroke="rgba(0,0,0,0.3)" stroke-width="0.5" style="width:28px;height:28px;filter:drop-shadow(2px 3px 4px rgba(0,0,0,0.5));">
-    <path d="M5.5 3.21V20.8c0 .45.54.67.86.35l4.86-4.86h7.28c.45 0 .67-.54.35-.85L5.85 2.85a.5.5 0 0 0-.35.36z"/>
-  </svg>
-</div>
-
-<!-- Progress Bar -->
-<div id="simpleProgress" style="position:absolute; top:1070px; left:0; width:1920px; height:10px; background:rgba(255,255,255,0.1); z-index:99999; display:none;">
-  <div id="simpleProgressFill" style="height:100%; width:0%; background:#0ea5e9; border-radius:0 5px 5px 0; transition:width 0.3s linear;"></div>
-</div>
-
-<!-- Pause Flash -->
-<div id="pauseFlash" style="position:absolute; top:0; left:0; width:1920px; height:1080px; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; transition:opacity 0.3s; pointer-events:none;">
-  <div style="text-align:center;">
-    <div style="font-size:120px; color:white;">⏸</div>
-    <div style="font-size:48px; color:white; margin-top:20px; font-family:Inter,sans-serif;">PAUSED — Tap to Resume</div>
+<!-- SCENE 3: Lead Pipeline -->
+<div class="scene" id="scene3">
+  <div class="main-content">
+    <div class="anim" style="font-size:24px;font-weight:700;margin-bottom:4px">Lead Pipeline</div>
+    <div class="anim" style="font-size:14px;color:#64748b;margin-bottom:20px">Every inquiry tracked from first touch to contract signed</div>
+    <div class="notif-toast anim-f" id="s3notif">
+      <div class="notif-dot"></div>
+      <div><div style="font-size:13px;font-weight:600">New Website Inquiry</div><div style="font-size:12px;color:#64748b">Custom home build — Bedford area</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:480px 1fr;gap:20px">
+      <div class="ai-chat anim-f" id="s3chat">
+        <h3>🤖 AI Instant Response</h3>
+        <div class="chat-bbl visitor anim-x">Hi, we're looking to build a custom home in the Bedford area. Around 3,500 sqft. Can we get more info?</div>
+        <div class="chat-bbl ai anim-x"><span class="ab">ROOT DEVELOPMENTS AI</span>Thanks for reaching out! We'd love to learn more about your project. Could you share your ideal timeline and budget range? Our builds typically start at $800K.</div>
+        <div class="chat-bbl visitor anim-x">Looking at $1.2-1.5M range, hoping to break ground by summer.</div>
+        <div class="chat-bbl ai anim-x"><span class="ab">ROOT DEVELOPMENTS AI</span>Perfect — that aligns well with our portfolio. I've booked you a consultation with our team for Tuesday at 2 PM. ✅</div>
+      </div>
+      <div class="kanban" id="s3kanban">
+        <div class="kcol anim">
+          <div class="kch">Inquiry <span class="n">2</span></div>
+          <div class="kc"><div class="kn">Parker Residence</div><div class="kv">$900K est.</div><div class="kd">Bedford • 2,800 sqft</div></div>
+          <div class="kc highlight anim-f" id="s3newcard"><div class="kn">New Web Inquiry</div><div class="kv">$1.2-1.5M</div><div class="kd">Bedford • 3,500 sqft</div></div>
+        </div>
+        <div class="kcol anim">
+          <div class="kch">Consultation <span class="n">1</span></div>
+          <div class="kc"><div class="kn">Morrison Residence</div><div class="kv">$1.2M</div><div class="kd">Hammonds Plains • 3,200 sqft</div></div>
+        </div>
+        <div class="kcol anim">
+          <div class="kch">Estimate Sent <span class="n">2</span></div>
+          <div class="kc"><div class="kn">Sullivan Lakefront</div><div class="kv">$1.8M</div><div class="kd">Fall River • 4,200 sqft</div></div>
+          <div class="kc"><div class="kn">Chen Townhomes</div><div class="kv">$2.1M</div><div class="kd">Clayton Park • 6 units</div></div>
+        </div>
+        <div class="kcol anim">
+          <div class="kch">Contract Signed <span class="n">1</span></div>
+          <div class="kc"><div class="kn">Westwood Drive</div><div class="kv">$1.4M</div><div class="kd">Bedford • Breaking ground</div></div>
+        </div>
+        <div class="kcol anim">
+          <div class="kch">In Progress <span class="n">3</span></div>
+          <div class="kc"><div class="kn">Hartley Estate</div><div class="kv">$1.6M</div><div class="kd">73% complete</div></div>
+          <div class="kc"><div class="kn">Bedford Commons</div><div class="kv">$1.1M</div><div class="kd">89% complete</div></div>
+        </div>
+      </div>
+    </div>
   </div>
+</div>
+
+<!-- SCENE 4: Project Tracker -->
+<div class="scene" id="scene4">
+  <div class="main-content">
+    <div class="anim" style="font-size:24px;font-weight:700;margin-bottom:4px">Active Projects</div>
+    <div class="anim" style="font-size:14px;color:#64748b;margin-bottom:20px">Every build at a glance — milestones, progress, and AI-flagged items</div>
+    <div class="proj-grid">
+      <div class="proj-card anim" id="s4p1">
+        <div class="proj-name">Hartley Estate</div>
+        <div class="proj-pct">73% Complete</div>
+        <div class="prog-bar"><div class="prog-fill fill-b" id="prog1" style="width:0%"></div></div>
+        <div class="proj-ms">📍 <strong>Electrical rough-in</strong> — this week</div>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">Bedford • $1.6M • 4,100 sqft</div>
+      </div>
+      <div class="proj-card anim" id="s4p2">
+        <div class="proj-name">Bedford Commons</div>
+        <div class="proj-pct">89% Complete</div>
+        <div class="prog-bar"><div class="prog-fill fill-g" id="prog2" style="width:0%"></div></div>
+        <div class="proj-ms">🔍 <strong>Final inspection</strong> — Friday</div>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">Bedford • $1.1M • 2,800 sqft</div>
+      </div>
+      <div class="proj-card anim" id="s4p3">
+        <div class="proj-name">Westwood Drive</div>
+        <div class="proj-pct">41% Complete</div>
+        <div class="prog-bar"><div class="prog-fill fill-a" id="prog3" style="width:0%"></div></div>
+        <div class="proj-ms">✅ <strong>Foundation complete</strong> — framing next</div>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">Bedford • $1.4M • 3,600 sqft</div>
+      </div>
+    </div>
+    <div class="ai-flags anim-f" id="s4flags">
+      <h3>⚡ AI Flags — Needs Your Attention</h3>
+      <div class="flag-item anim-x"><span class="flag-dot red"></span>East Coast Framing hasn't confirmed Tuesday — <strong style="color:#ef4444">follow-up sent</strong></div>
+      <div class="flag-item anim-x"><span class="flag-dot amber"></span>Sullivan estimate due tomorrow — <strong style="color:#f59e0b">draft ready for review</strong></div>
+      <div class="flag-item anim-x"><span class="flag-dot green"></span>Bedford Commons inspection scheduled — <strong style="color:#22c55e">all docs prepared</strong></div>
+      <div class="flag-item anim-x"><span class="flag-dot amber"></span>Harbour View Estates permit review — <strong style="color:#f59e0b">awaiting municipal response</strong></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5: Subcontractor Coordination -->
+<div class="scene" id="scene5">
+  <div class="main-content">
+    <div class="anim" style="font-size:24px;font-weight:700;margin-bottom:4px">Subcontractor Coordination</div>
+    <div class="anim" style="font-size:14px;color:#64748b;margin-bottom:20px">Tuesday's rough-in crew — AI handled before 6 AM</div>
+    <div class="sub-grid">
+      <div class="sub-card anim">
+        <div style="font-size:16px;font-weight:700">Apex Electric</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px">Electrical rough-in • Hartley Estate</div>
+        <div class="sub-status sub-ok">✅ Confirmed</div>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">Confirmed yesterday at 3:42 PM</div>
+      </div>
+      <div class="sub-card anim">
+        <div style="font-size:16px;font-weight:700">Maritime Plumbing</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px">Rough-in • Hartley Estate</div>
+        <div class="sub-status sub-rem">📱 Reminded</div>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">Reminder sent for Thursday</div>
+      </div>
+      <div class="sub-card anim">
+        <div style="font-size:16px;font-weight:700">East Coast Framing</div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px">Framing crew • Westwood Drive</div>
+        <div class="sub-status sub-no">⚠️ No Response</div>
+        <div style="font-size:12px;color:#64748b;margin-top:8px">3 texts, 2 calls, follow-up flagged</div>
+      </div>
+    </div>
+    <div class="ai-thread anim-f" id="s5thread">
+      <h3>🤖 AI Communication Log — <span style="color:#64748b;font-weight:400">6:47 AM</span></h3>
+      <div class="thr-item anim-x"><div class="thr-time">6:12 AM</div><div class="thr-act">📤 Sent confirmation request to <strong>Apex Electric</strong> — <span style="color:#22c55e">✅ Confirmed 3:42 PM yesterday</span></div></div>
+      <div class="thr-item anim-x"><div class="thr-time">6:18 AM</div><div class="thr-act">📤 Sent reminder to <strong>Maritime Plumbing</strong> about Thursday schedule</div></div>
+      <div class="thr-item anim-x"><div class="thr-time">6:23 AM</div><div class="thr-act">📤 Text #3 to <strong>East Coast Framing</strong> — still no response</div></div>
+      <div class="thr-item anim-x"><div class="thr-time">6:35 AM</div><div class="thr-act">📞 Called <strong>East Coast Framing</strong> × 2 — voicemail both times</div></div>
+      <div class="thr-item anim-x"><div class="thr-time">6:47 AM</div><div class="thr-act">🚩 <strong style="color:#ef4444">Flagged East Coast Framing</strong> — no response, needs your attention</div></div>
+    </div>
+    <div class="anim-f" id="s5coffee" style="text-align:center;margin-top:16px;font-size:14px;color:#64748b">☕ All handled before you finished your coffee</div>
+  </div>
+</div>
+
+<!-- SCENE 6: Client Communication -->
+<div class="scene" id="scene6">
+  <div class="main-content">
+    <div class="anim" style="font-size:24px;font-weight:700;margin-bottom:4px">Client Communication</div>
+    <div class="anim" style="font-size:14px;color:#64748b;margin-bottom:20px">Automatic updates keep clients informed — zero manual effort</div>
+    <div class="client-grid">
+      <div class="client-portal anim">
+        <div style="font-size:16px;font-weight:700;margin-bottom:4px">📋 Weekly Progress Update</div>
+        <div style="font-size:13px;color:#64748b">Hartley Estate — Week 18</div>
+        <div class="photo-grid">
+          <div class="photo-ph">📸 Framing progress</div>
+          <div class="photo-ph">📸 Electrical layout</div>
+          <div class="photo-ph">📸 Interior walls</div>
+        </div>
+        <div style="font-size:13px;color:#94a3b8;line-height:1.6"><strong style="color:#e2e8f0">This week:</strong> Framing complete on second floor. Electrical rough-in underway. HVAC ductwork 80% installed. On track for insulation next week.</div>
+        <div style="font-size:12px;color:#64748b;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06)">📧 Auto-sent to client Tuesday 9:00 AM</div>
+      </div>
+      <div>
+        <div class="milestone-notif anim">
+          <span style="font-size:24px">✅</span>
+          <div><div style="font-weight:700;color:#22c55e">Framing Complete — Hartley Estate</div><div style="font-size:12px;color:#64748b;margin-top:2px">Milestone notification sent to client automatically</div></div>
+        </div>
+        <div class="client-msg anim">
+          <div class="mn">James Hartley</div>
+          <div>"Thanks for the update! Love seeing the progress. The photos are a great touch." 👍</div>
+        </div>
+        <div class="milestone-notif anim">
+          <span style="font-size:24px">🔍</span>
+          <div><div style="font-weight:700;color:#0ea5e9">Inspection Passed — Bedford Commons</div><div style="font-size:12px;color:#64748b;margin-top:2px">Client notified with next steps</div></div>
+        </div>
+        <div class="zero-effort anim-f" id="s6zero">🎯 Zero manual effort — clients feel informed, you stay focused on building</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 7: iMessage/WhatsApp Unified Inbox -->
+<div class="scene" id="scene7">
+  <div class="main-content">
+    <div class="anim" style="font-size:24px;font-weight:700;margin-bottom:4px">Unified Message Tracking</div>
+    <div class="anim" style="font-size:14px;color:#64748b;margin-bottom:20px">Every client and sub conversation — iMessage & WhatsApp — one inbox</div>
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
+      <div>
+        <div class="msg-tabs">
+          <div class="msg-tab on">💬 iMessage</div>
+          <div class="msg-tab">📲 WhatsApp</div>
+        </div>
+        <div class="msg-feed">
+          <div class="msg-row urg anim-x" id="s7m1">
+            <div class="msg-av">JH</div>
+            <div class="msg-c">
+              <div class="msg-snd">James Hartley <span class="msg-badge ur">🔴 URGENT</span></div>
+              <div class="msg-txt">"Quick question — are we still on track for insulation next week? The bank needs a progress update for the next draw."</div>
+              <div class="msg-act">⚡ Action: Client needs timeline confirmation for bank financing</div>
+              <div class="msg-tm">Today 7:48 AM • iMessage</div>
+            </div>
+          </div>
+          <div class="msg-row anim-x">
+            <div class="msg-av">TC</div>
+            <div class="msg-c">
+              <div class="msg-snd">Tony — Apex Electric <span class="msg-badge wa">WhatsApp</span></div>
+              <div class="msg-txt">"Panel's wired up at Hartley. Inspector can come Thursday. Need you to confirm the time slot."</div>
+              <div class="msg-act">📋 Action: Confirm inspection slot — Thursday AM</div>
+              <div class="msg-tm">Today 7:15 AM • WhatsApp</div>
+            </div>
+          </div>
+          <div class="msg-row anim-x">
+            <div class="msg-av">SM</div>
+            <div class="msg-c">
+              <div class="msg-snd">Sullivan Family <span class="msg-badge im">iMessage</span></div>
+              <div class="msg-txt">"We reviewed the estimate — looks great. Can we add a covered patio? What's the ballpark on that?"</div>
+              <div class="msg-act">📝 Action: Change order request — update Sullivan estimate</div>
+              <div class="msg-tm">Today 6:55 AM • iMessage</div>
+            </div>
+          </div>
+          <div class="msg-row anim-x">
+            <div class="msg-av">DP</div>
+            <div class="msg-c">
+              <div class="msg-snd">Dave — Maritime Plumbing <span class="msg-badge wa">WhatsApp</span></div>
+              <div class="msg-txt">"Running 2 hours behind on Westwood. Got held up at the supply house — fixtures were backordered."</div>
+              <div class="msg-act">⚠️ Action: Schedule delay — notify site supervisor</div>
+              <div class="msg-tm">Yesterday 4:30 PM • WhatsApp</div>
+            </div>
+          </div>
+          <div class="msg-row anim-x">
+            <div class="msg-av">KM</div>
+            <div class="msg-c">
+              <div class="msg-snd">Karen Morrison <span class="msg-badge im">iMessage</span></div>
+              <div class="msg-txt">"Excited about the consultation Tuesday! Do we need to bring anything specific?"</div>
+              <div class="msg-act">✅ Action: Auto-reply sent with meeting details</div>
+              <div class="msg-tm">Yesterday 2:10 PM • iMessage</div>
+            </div>
+          </div>
+        </div>
+        <div class="msg-draft anim-f" id="s7draft">
+          <h4>🤖 AI Draft Response — James Hartley</h4>
+          <div class="msg-draft-bbl">"Hi James — yes, we're on track. Electrical rough-in wraps this week, insulation starts Monday. I'll send you an updated progress report with photos for the bank draw. Everything's looking good. 👍"</div>
+          <div class="msg-send-opts">
+            <div class="msg-send-btn ib">💬 Send via iMessage</div>
+            <div class="msg-send-btn wb">📲 Send via WhatsApp</div>
+          </div>
+        </div>
+      </div>
+      <div class="msg-sidebar">
+        <div class="msg-stat anim-f">
+          <h4>📊 Today's Messages</h4>
+          <div class="msg-sr"><span class="l">🔴 Urgent</span><span class="v" style="color:#ef4444">1</span></div>
+          <div class="msg-sr"><span class="l">💬 iMessage</span><span class="v" style="color:#38bdf8">3</span></div>
+          <div class="msg-sr"><span class="l">📲 WhatsApp</span><span class="v" style="color:#22c55e">2</span></div>
+          <div class="msg-sr"><span class="l">✅ Auto-replied</span><span class="v" style="color:#22c55e">2</span></div>
+          <div class="msg-sr"><span class="l">⏳ Needs your input</span><span class="v" style="color:#f59e0b">3</span></div>
+        </div>
+        <div class="msg-stat anim-f">
+          <h4>👤 James Hartley</h4>
+          <div class="msg-sr"><span class="l">Project</span><span class="v">Hartley Estate</span></div>
+          <div class="msg-sr"><span class="l">Contract</span><span class="v" style="color:#0ea5e9">$1.6M</span></div>
+          <div class="msg-sr"><span class="l">Preferred</span><span class="v" style="color:#38bdf8">iMessage</span></div>
+          <div class="msg-sr"><span class="l">Last contact</span><span class="v">Today 7:48 AM</span></div>
+          <div class="msg-sr"><span class="l">Response time</span><span class="v" style="color:#22c55e">< 2 min avg</span></div>
+        </div>
+        <div class="msg-stat anim-f">
+          <h4>📈 This Week</h4>
+          <div class="msg-sr"><span class="l">Total messages</span><span class="v">34</span></div>
+          <div class="msg-sr"><span class="l">AI auto-handled</span><span class="v" style="color:#22c55e">22</span></div>
+          <div class="msg-sr"><span class="l">Avg response</span><span class="v" style="color:#0ea5e9">< 3 min</span></div>
+          <div class="msg-sr"><span class="l">Nothing missed</span><span class="v" style="color:#22c55e">✅</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 8: Morning Briefing -->
+<div class="scene" id="scene8">
+  <div class="morning-card">
+    <div class="morning-greeting anim">☀️ Good Morning</div>
+    <div class="anim" style="font-size:14px;color:#64748b;margin-bottom:24px">Thursday, March 7 — Here's your day</div>
+    <div class="morning-item anim"><span class="mi">🏗️</span> <strong>2 site visits</strong> — Hartley Estate (9 AM), Westwood Drive (2 PM)</div>
+    <div class="morning-item anim"><span class="mi">🤝</span> <strong>1 consultation</strong> — Morrison family, 11 AM at office</div>
+    <div class="morning-item anim"><span class="mi">👷</span> <strong>3 sub confirmations needed</strong> — next week's framing crew</div>
+    <div class="morning-item anim"><span class="mi">📝</span> <strong>Sullivan estimate due tomorrow</strong> — draft ready for your review</div>
+    <div class="morning-item anim"><span class="mi">🔍</span> <strong>Bedford Commons final inspection</strong> — Friday 10 AM, all docs prepped</div>
+    <div class="morning-footer anim-f" id="s8footer">Your entire day organized before you leave the house</div>
+  </div>
+</div>
+
+<!-- SCENE 9: Close/CTA -->
+<div class="scene" id="scene9">
+  <div class="close-hl anim">You build <strong>premium homes</strong>. Your operations should match.</div>
+  <div class="close-brand anim-f">ROOT DEVELOPMENTS</div>
+  <div class="close-brand-sub anim-f">Halifax's Premium Home Builder</div>
+  <div class="close-x anim-f">×</div>
+  <div class="close-logo anim-f">SolveWorks</div>
+  <div class="close-tag anim-f">Your AI. Only yours.</div>
+  <div class="close-url anim-f">See it live — solveworks.io</div>
 </div>
 
 <script>
-var voiceover = new Audio('voiceover.mp3');
-var cursor = document.getElementById('fakeCursor');
+const SCENE_COUNT = 9;
+// Scene durations in ms (from audio file lengths)
+const sceneDurations = [9660,8638,12678,11610,11981,13421,13282,10356,7245];
 
-window.__demoPaused = false;
+let currentScene = 0;
+let playing = false;
+let paused = false;
+let voiceover = null;
+let sceneTimer = null;
+let pauseTime = 0;
+let remainingMs = 0;
 
-function moveCursor(x, y) { cursor.style.left = x+'px'; cursor.style.top = y+'px'; }
+const playBtn = document.getElementById('playBtn');
+const counter = document.getElementById('sceneCounter');
+const pauseInd = document.getElementById('pauseInd');
+const sidebar = document.getElementById('sidebar');
+const progressFill = document.getElementById('progressFill');
 
-function clickEffect(x, y) {
-  var r = document.createElement('div');
-  r.style.cssText = 'position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid rgba(14,165,233,0.7);pointer-events:none;z-index:8999;animation:rippleOut 0.6s ease forwards;top:'+y+'px;left:'+x+'px;transform:translate(-50%,-50%);';
-  document.body.appendChild(r);
-  setTimeout(function(){ r.remove(); }, 600);
+// Total duration for progress bar
+const totalDuration = sceneDurations.reduce((a,b)=>a+b,0) + (SCENE_COUNT-1)*800;
+
+function handlePlay() {
+  playBtn.classList.add('hidden');
+  startDemo();
+}
+playBtn.addEventListener('click', handlePlay);
+playBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handlePlay(); }, {passive: false});
+
+document.body.addEventListener('click', (e) => {
+  if(!playBtn.classList.contains('hidden')) return;
+  if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
+});
+document.body.addEventListener('touchstart', (e) => {
+  if(!playBtn.classList.contains('hidden')) return;
+  if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
+});
+
+function startDemo() {
+  playing = true;
+  voiceover = new Audio('voiceover.mp3');
+  voiceover.play().catch(()=>{});
+  showScene(0);
+  updateProgress();
 }
 
-function showScene(id) {
-  document.querySelectorAll('.scene').forEach(function(s) { s.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
+function pauseDemo() {
+  paused = true;
+  if(voiceover) voiceover.pause();
+  if(sceneTimer) { clearTimeout(sceneTimer); remainingMs = remainingMs - (Date.now() - pauseTime); }
+  pauseInd.classList.add('show');
+}
+
+function resumeDemo() {
+  paused = false;
+  pauseInd.classList.remove('show');
+  if(voiceover) voiceover.play().catch(()=>{});
+  pauseTime = Date.now();
+  if(remainingMs > 0) sceneTimer = setTimeout(() => advanceScene(), remainingMs);
+}
+
+function advanceScene() {
+  if(currentScene + 1 >= SCENE_COUNT) { playing = false; return; }
+  showScene(currentScene + 1);
 }
 
 function setNavActive(id) {
-  document.querySelectorAll('.sidebar-item').forEach(function(s) { s.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
+  var el = document.getElementById(id);
+  if(el) el.classList.add('active');
 }
 
-// Audio-driven cue system — no drift
-var cuesFired = {};
-function cue(id, fn) {
-  if (!cuesFired[id]) { cuesFired[id] = true; fn(); }
+function showScene(idx) {
+  if(idx >= SCENE_COUNT) { playing = false; return; }
+  currentScene = idx;
+  counter.textContent = `${idx+1} / ${SCENE_COUNT}`;
+
+  // Show/hide sidebar (visible for scenes 2-8, hidden for 1 and 9)
+  sidebar.style.display = (idx >= 1 && idx <= 7) ? 'block' : 'none';
+
+  // Set nav active state
+  const navMap = {1:'nav-overview',2:'nav-pipeline',3:'nav-projects',4:'nav-subs',5:'nav-clients',6:'nav-messages',7:'nav-schedule'};
+  if(navMap[idx]) setNavActive(navMap[idx]);
+
+  // Hide all scenes
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const scene = document.getElementById(`scene${idx+1}`);
+  scene.querySelectorAll('.anim,.anim-x,.anim-s,.anim-f').forEach(el => el.classList.remove('show'));
+  scene.classList.add('active');
+
+  // Run scene-specific animations
+  animateScene(idx+1);
+
+  // Schedule next scene
+  if(sceneTimer) clearTimeout(sceneTimer);
+  remainingMs = sceneDurations[idx] + 800;
+  pauseTime = Date.now();
+  sceneTimer = setTimeout(() => advanceScene(), remainingMs);
 }
 
-function startDemo() {
-  document.getElementById('playBtn').classList.add('hidden');
-  document.getElementById('app').style.opacity = '1';
-  cursor.style.display = 'block';
-  voiceover.play().catch(function(){});
+function animateScene(num) {
+  const scene = document.getElementById(`scene${num}`);
+  const els = scene.querySelectorAll('.anim,.anim-x,.anim-s,.anim-f');
+  els.forEach((el, i) => {
+    setTimeout(() => el.classList.add('show'), 300 + i * 250);
+  });
 
-  // Start with pain scene (no sidebar visible feel)
-  showScene('scene1');
-
-  function tick() {
-    if (window.__demoPaused) { requestAnimationFrame(tick); return; }
-    var t = voiceover.currentTime;
-
-    // === SCENE 1: Pain Hook (0-11.9s) ===
-    // [0.0s] "You're managing a million-dollar build..."
-    if (t >= 0.5) cue('pain-headline', function() {
-      document.getElementById('painHeadline').classList.add('show');
-    });
-    // [5.4s] "And a new inquiry just came through..."
-    if (t >= 2.5) cue('pain-item1', function() {
-      document.getElementById('painItem1').classList.add('show');
-      moveCursor(700, 500);
-    });
-    if (t >= 5.4) cue('pain-item2', function() {
-      document.getElementById('painItem2').classList.add('show');
-      moveCursor(1100, 500);
-    });
-    // [10.4s] "Sound familiar?"
-    if (t >= 10.4) cue('pain-familiar', function() {
-      document.getElementById('painFamiliar').classList.add('show');
-    });
-
-    // === SCENE 2: Dashboard Overview (11.9-21s) ===
-    // [11.9s] "This is your command center."
-    if (t >= 11.9) cue('s2-start', function() {
-      showScene('scene2');
-      setNavActive('nav-overview');
-      moveCursor(400, 200);
-      clickEffect(400, 200);
-    });
-    // [13.6s] "Active projects, pending estimates..."
-    if (t >= 13.6) cue('s2-stats', function() {
-      moveCursor(600, 250);
-    });
-    if (t >= 15) cue('s2-move1', function() {
-      moveCursor(900, 250);
-      clickEffect(900, 250);
-    });
-    // [18.8s] "One screen, not ten phone calls."
-    if (t >= 17) cue('s2-move2', function() {
-      moveCursor(1200, 250);
-    });
-    if (t >= 18.8) cue('s2-move3', function() {
-      moveCursor(800, 500);
-    });
-    if (t >= 20) cue('s2-move4', function() {
-      moveCursor(1300, 500);
-      clickEffect(1300, 500);
-    });
-
-    // === SCENE 3: Lead Pipeline (21-42.7s) ===
-    // [21.0s] "New inquiry from your website."
-    if (t >= 21) cue('s3-start', function() {
-      showScene('scene3');
-      setNavActive('nav-pipeline');
-      moveCursor(400, 300);
-      clickEffect(400, 300);
-    });
-    // Notification slides in
-    if (t >= 21.5) cue('s3-notif', function() {
-      document.getElementById('notifToast').classList.add('show');
-    });
-    // [23.0s] "Your AI responds instantly..."
-    if (t >= 23) cue('s3-chat1', function() {
-      document.getElementById('chatMsg1').classList.add('show');
-      moveCursor(600, 350);
-    });
-    if (t >= 24.5) cue('s3-chat2', function() {
-      document.getElementById('chatMsg2').classList.add('show');
-      moveCursor(600, 420);
-    });
-    // [26.3s] "asks about their project scope..."
-    if (t >= 26.5) cue('s3-chat3', function() {
-      document.getElementById('chatMsg3').classList.add('show');
-    });
-    // [30.7s] "By the time you check in, the consultation is already booked."
-    if (t >= 29) cue('s3-chat4', function() {
-      document.getElementById('chatMsg4').classList.add('show');
-      moveCursor(600, 550);
-    });
-    // [34.1s] "Every lead flows into your pipeline."
-    if (t >= 33) cue('s3-notif-hide', function() {
-      document.getElementById('notifToast').classList.remove('show');
-    });
-    if (t >= 34) cue('s3-kanban-focus', function() {
-      moveCursor(1100, 350);
-      clickEffect(1100, 350);
-    });
-    // [36.3s] "Inquiry, consultation, estimate sent, contract signed..."
-    if (t >= 35) cue('s3-new-card', function() {
-      document.getElementById('kc-new').classList.add('show');
-      document.getElementById('kc-new').classList.add('highlight');
-    });
-    if (t >= 36.5) cue('s3-move-kanban', function() {
-      moveCursor(800, 400);
-    });
-    if (t >= 38) cue('s3-move-kanban2', function() {
-      moveCursor(1000, 400);
-      clickEffect(1000, 400);
-    });
-    if (t >= 40) cue('s3-move-kanban3', function() {
-      moveCursor(1400, 400);
-    });
-
-    // === SCENE 4: Project Tracker (42.7-58.8s) ===
-    // [42.7s] "Every active build at a glance."
-    if (t >= 42.7) cue('s4-start', function() {
-      showScene('scene4');
-      setNavActive('nav-projects');
-      moveCursor(500, 300);
-      clickEffect(500, 300);
-    });
-    // Show project cards
-    if (t >= 43.2) cue('s4-proj1', function() {
-      document.getElementById('proj1').classList.add('show');
-      document.getElementById('prog1').style.width = '73%';
-    });
-    // [44.6s] "Hartley Estate, 73% complete."
-    if (t >= 44.6) cue('s4-proj1-hl', function() {
-      document.getElementById('proj1').classList.add('highlight');
-      moveCursor(600, 350);
-      clickEffect(600, 350);
-    });
-    if (t >= 46) cue('s4-proj2', function() {
-      document.getElementById('proj2').classList.add('show');
-      document.getElementById('prog2').style.width = '89%';
-    });
-    // [48.0s] "Electrical rough-in, this week."
-    if (t >= 48) cue('s4-proj1-detail', function() {
-      moveCursor(600, 430);
-    });
-    // [50.7s] "Bedford Commons, final inspection."
-    if (t >= 50.5) cue('s4-proj2-hl', function() {
-      document.getElementById('proj1').classList.remove('highlight');
-      document.getElementById('proj2').classList.add('highlight');
-      moveCursor(960, 350);
-      clickEffect(960, 350);
-    });
-    if (t >= 52) cue('s4-proj3', function() {
-      document.getElementById('proj3').classList.add('show');
-      document.getElementById('prog3').style.width = '41%';
-    });
-    // [54.0s] "Friday, your AI tracks every milestone..."
-    if (t >= 54) cue('s4-flags', function() {
-      document.getElementById('proj2').classList.remove('highlight');
-      moveCursor(700, 650);
-    });
-    if (t >= 55) cue('s4-flag1', function() {
-      document.getElementById('flag1').classList.add('show');
-    });
-    if (t >= 56) cue('s4-flag2', function() {
-      document.getElementById('flag2').classList.add('show');
-    });
-    if (t >= 57) cue('s4-flag3', function() {
-      document.getElementById('flag3').classList.add('show');
-    });
-    if (t >= 58) cue('s4-flag4', function() {
-      document.getElementById('flag4').classList.add('show');
-      moveCursor(700, 750);
-      clickEffect(700, 750);
-    });
-
-    // === SCENE 5: Subcontractor Coordination (58.8-74.9s) ===
-    // [58.8s] "Tuesday's rough-in, your AI confirmed Apex Electric yesterday,"
-    if (t >= 58.8) cue('s5-start', function() {
-      showScene('scene5');
-      setNavActive('nav-subs');
-      moveCursor(500, 250);
-      clickEffect(500, 250);
-    });
-    if (t >= 59.5) cue('s5-sub1', function() {
-      document.getElementById('sub1').classList.add('show');
-    });
-    // [63.4s] "reminded Maritime Plumbing about Thursday,"
-    if (t >= 62) cue('s5-sub2', function() {
-      document.getElementById('sub2').classList.add('show');
-      moveCursor(830, 250);
-    });
-    // [65.9s] "and flagged that East Coast Framing hasn't responded."
-    if (t >= 65) cue('s5-sub3', function() {
-      document.getElementById('sub3').classList.add('show');
-      moveCursor(1150, 250);
-      clickEffect(1150, 250);
-    });
-    // [69.3s] "Three texts, two calls, and a follow-up."
-    if (t >= 67) cue('s5-thread1', function() {
-      document.getElementById('thread1').classList.add('show');
-      moveCursor(700, 550);
-    });
-    if (t >= 68.5) cue('s5-thread2', function() {
-      document.getElementById('thread2').classList.add('show');
-    });
-    if (t >= 69.5) cue('s5-thread3', function() {
-      document.getElementById('thread3').classList.add('show');
-    });
-    if (t >= 70.5) cue('s5-thread4', function() {
-      document.getElementById('thread4').classList.add('show');
-      moveCursor(700, 700);
-    });
-    if (t >= 71.5) cue('s5-thread5', function() {
-      document.getElementById('thread5').classList.add('show');
-    });
-    // [72.2s] "All handled before you finished your coffee."
-    if (t >= 72.2) cue('s5-coffee', function() {
-      document.getElementById('coffeeTag').style.opacity = '1';
-    });
-
-    // === SCENE 6: Client Updates (74.9-87.5s) ===
-    // [74.9s] "Your clients get weekly progress updates with photos automatically."
-    if (t >= 74.9) cue('s6-start', function() {
-      showScene('scene6');
-      setNavActive('nav-clients');
-      moveCursor(600, 400);
-      clickEffect(600, 400);
-    });
-    // [78.7s] "Milestone notifications when framing's done..."
-    if (t >= 78.5) cue('s6-milestone', function() {
-      document.getElementById('milestoneNotif').classList.add('show');
-      moveCursor(1300, 300);
-      clickEffect(1300, 300);
-    });
-    // [82.5s] "No more where-are-we-at calls."
-    if (t >= 81) cue('s6-msg', function() {
-      document.getElementById('clientMsg').classList.add('show');
-      moveCursor(1300, 450);
-    });
-    if (t >= 82.5) cue('s6-milestone2', function() {
-      document.getElementById('milestoneNotif2').classList.add('show');
-    });
-    // [84.9s] "They feel informed."
-    if (t >= 84.5) cue('s6-zero', function() {
-      document.getElementById('zeroEffort').classList.add('show');
-      moveCursor(1300, 600);
-    });
-
-    // === SCENE 7: iMessage/WhatsApp Tracking (87.5-101s) ===
-    // [87.5s] "Every message across iMessage and WhatsApp — one unified inbox."
-    if (t >= 87.5) cue('s7-start', function() {
-      showScene('scene7');
-      setNavActive('nav-messages');
-      moveCursor(500, 300);
-      clickEffect(500, 300);
-    });
-    // Messages appear one by one
-    if (t >= 88.2) cue('s7-msg1', function() {
-      document.getElementById('msg1').classList.add('show');
-      moveCursor(700, 280);
-    });
-    if (t >= 89.5) cue('s7-msg2', function() {
-      document.getElementById('msg2').classList.add('show');
-      moveCursor(700, 370);
-    });
-    if (t >= 90.8) cue('s7-msg3', function() {
-      document.getElementById('msg3').classList.add('show');
-      moveCursor(700, 460);
-    });
-    if (t >= 92) cue('s7-msg4', function() {
-      document.getElementById('msg4').classList.add('show');
-    });
-    if (t >= 93) cue('s7-msg5', function() {
-      document.getElementById('msg5').classList.add('show');
-      moveCursor(700, 550);
-    });
-    // [94.5s] AI draft appears
-    if (t >= 94.5) cue('s7-ai-draft', function() {
-      document.getElementById('msgAiDraft').style.opacity = '1';
-      moveCursor(600, 720);
-      clickEffect(600, 720);
-    });
-    // [96s] Click send via iMessage
-    if (t >= 96) cue('s7-send', function() {
-      moveCursor(550, 800);
-      clickEffect(550, 800);
-    });
-    // [97s] Sent confirmation
-    if (t >= 97) cue('s7-sent', function() {
-      document.getElementById('msgSentConfirm').classList.add('show');
-    });
-    // Highlight first message as handled
-    if (t >= 98) cue('s7-handled', function() {
-      document.getElementById('msg1').style.borderColor = 'rgba(34,197,94,0.3)';
-      document.getElementById('msg1').querySelector('.msg-badge.urg').textContent = '✅ REPLIED';
-      document.getElementById('msg1').querySelector('.msg-badge.urg').style.background = 'rgba(34,197,94,0.15)';
-      document.getElementById('msg1').querySelector('.msg-badge.urg').style.color = '#22c55e';
-    });
-
-    // === SCENE 8: Morning Briefing (101-112.2s) ===
-    // [101s] "Every morning, your priorities."
-    if (t >= 101) cue('s8-start', function() {
-      showScene('scene8');
-      setNavActive('nav-schedule');
-      cursor.style.display = 'none';
-    });
-    if (t >= 102.5) cue('s8-mi1', function() {
-      document.getElementById('mi1').classList.add('show');
-    });
-    if (t >= 103.5) cue('s8-mi2', function() {
-      document.getElementById('mi2').classList.add('show');
-    });
-    if (t >= 105) cue('s8-mi3', function() {
-      document.getElementById('mi3').classList.add('show');
-    });
-    if (t >= 106.5) cue('s8-mi4', function() {
-      document.getElementById('mi4').classList.add('show');
-    });
-    if (t >= 108) cue('s8-mi5', function() {
-      document.getElementById('mi5').classList.add('show');
-    });
-    // [109.5s] "Your entire day organized before you leave the house."
-    if (t >= 109.5) cue('s8-footer', function() {
-      document.getElementById('morningFooter').classList.add('show');
-    });
-
-    // === SCENE 9: Close (112.2-118.5s) ===
-    // [112.2s] "You build premium homes."
-    if (t >= 112.2) cue('s9-start', function() {
-      showScene('scene9');
-    });
-    if (t >= 112.5) cue('s9-headline', function() {
-      document.getElementById('closeHeadline').classList.add('show');
-    });
-    if (t >= 114) cue('s9-brand', function() {
-      document.getElementById('closeBrand').classList.add('show');
-      document.getElementById('closeBrandSub').classList.add('show');
-    });
-    if (t >= 114.8) cue('s9-x', function() {
-      document.getElementById('closeX').classList.add('show');
-    });
-    if (t >= 115.3) cue('s9-logo', function() {
-      document.getElementById('closeLogo').classList.add('show');
-    });
-    if (t >= 116) cue('s9-tag', function() {
-      document.getElementById('closeTag').classList.add('show');
-    });
-    if (t >= 116.6) cue('s9-url', function() {
-      document.getElementById('closeUrl').classList.add('show');
-    });
-
-    if (!voiceover.ended) requestAnimationFrame(tick);
+  // Scene-specific extras
+  if(num === 4) {
+    // Animate progress bars
+    setTimeout(() => { document.getElementById('prog1').style.width = '73%'; }, 800);
+    setTimeout(() => { document.getElementById('prog2').style.width = '89%'; }, 1200);
+    setTimeout(() => { document.getElementById('prog3').style.width = '41%'; }, 1600);
   }
-  requestAnimationFrame(tick);
 }
-</script>
 
-<!-- Tap-to-pause + progress bar + restart on end -->
-<script>
-(function(){
-  var paused=false, started=false;
-  var flash=document.getElementById("pauseFlash");
-  var prog=document.getElementById("simpleProgress");
-  var fill=document.getElementById("simpleProgressFill");
-  var iv=setInterval(function(){
-    var pb=document.getElementById("playBtn");
-    if(pb&&(pb.classList.contains("hidden")||pb.style.display==="none")){
-      started=true; prog.style.display="block"; clearInterval(iv);
-    }
-  },200);
-  function toggle(){
-    if(!started)return;
-    paused=!paused;
-    flash.style.opacity=paused?"1":"0";
-    try{
-      if(voiceover){if(paused)voiceover.pause();else voiceover.play().catch(function(){});}
-    }catch(e){}
-    window.__demoPaused=paused;
-    if(paused)document.body.classList.add("animations-paused");
-    else{window.__demoPaused=false;document.body.classList.remove("animations-paused");}
+// Progress bar tracking
+function updateProgress() {
+  if(!voiceover || !playing) return;
+  if(voiceover.duration && !isNaN(voiceover.duration)) {
+    progressFill.style.width = (voiceover.currentTime / voiceover.duration * 100) + '%';
   }
-  document.addEventListener("touchstart",function(e){if(!started)return;e.preventDefault();try{if(voiceover&&voiceover.ended){location.reload();return;}}catch(ex){}toggle();});
-  document.addEventListener("click",function(e){if(!started||e.target.closest("#playBtn"))return;try{if(voiceover&&voiceover.ended){location.reload();return;}}catch(ex){}toggle();});
-  function upd(){
-    try{
-      if(voiceover&&voiceover.duration&&!isNaN(voiceover.duration))fill.style.width=(voiceover.currentTime/voiceover.duration*100)+"%";
-    }catch(e){}
-    requestAnimationFrame(upd);
-  }
-  requestAnimationFrame(upd);
-  window.addEventListener("pagehide",function(){try{voiceover.pause();}catch(e){}});
-  document.addEventListener("visibilitychange",function(){if(document.hidden)try{voiceover.pause();}catch(e){}});
-})();
+  requestAnimationFrame(updateProgress);
+}
 </script>
 </body>
 </html>

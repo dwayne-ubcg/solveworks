@@ -8,7 +8,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
 body{width:1920px;height:1080px;background:#0F172A;font-family:'Inter',sans-serif;color:#E2E8F0;overflow:hidden;position:relative}
-#playBtn{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
+#playBtn{position:absolute;top:0;left:0;width:1920px;height:1080px;background:rgba(15,23,42,0.97);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 #playBtn .pc{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#F59E0B,#D97706);display:flex;align-items:center;justify-content:center;box-shadow:0 0 80px rgba(245,158,11,0.3);transition:transform 0.3s}
 #playBtn .pc:hover{transform:scale(1.1)}
 #playBtn .pc::after{content:'';border-top:24px solid transparent;border-bottom:24px solid transparent;border-left:40px solid white;margin-left:8px}
@@ -640,44 +640,62 @@ body{width:1920px;height:1080px;background:#0F172A;font-family:'Inter',sans-seri
 
 <script>
 const SCENE_COUNT = 10;
-const audioFiles = [];
-for(let i=1;i<=SCENE_COUNT;i++) audioFiles.push(`scene${i}.mp3`);
+// Scene durations in ms (from per-scene audio lengths)
+const sceneDurations = [21650,29550,24950,29850,24300,21150,23050,30000,21300,18900];
 
 let currentScene = 0;
 let playing = false;
 let paused = false;
-let currentAudio = null;
+let voiceover = null;
+let sceneTimer = null;
+let pauseTime = 0;
+let remainingMs = 0;
 
 const playBtn = document.getElementById('playBtn');
 const counter = document.getElementById('sceneCounter');
 const pauseInd = document.getElementById('pauseInd');
 
-playBtn.addEventListener('click', () => {
+function handlePlay() {
   playBtn.classList.add('hidden');
   startDemo();
-});
+}
+playBtn.addEventListener('click', handlePlay);
+playBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handlePlay(); }, {passive: false});
 
 document.body.addEventListener('click', (e) => {
+  if(!playBtn.classList.contains('hidden')) return;
+  if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
+});
+document.body.addEventListener('touchstart', (e) => {
   if(!playBtn.classList.contains('hidden')) return;
   if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
 });
 
 function startDemo() {
   playing = true;
-  currentScene = 0;
+  voiceover = new Audio('voiceover.mp3');
+  voiceover.play().catch(()=>{});
   showScene(0);
 }
 
 function pauseDemo() {
   paused = true;
-  if(currentAudio) currentAudio.pause();
+  if(voiceover) voiceover.pause();
+  if(sceneTimer) { clearTimeout(sceneTimer); remainingMs = remainingMs - (Date.now() - pauseTime); }
   pauseInd.classList.add('show');
 }
 
 function resumeDemo() {
   paused = false;
   pauseInd.classList.remove('show');
-  if(currentAudio) currentAudio.play();
+  if(voiceover) voiceover.play().catch(()=>{});
+  pauseTime = Date.now();
+  if(remainingMs > 0) sceneTimer = setTimeout(() => advanceScene(), remainingMs);
+}
+
+function advanceScene() {
+  if(currentScene + 1 >= SCENE_COUNT) { playing = false; return; }
+  showScene(currentScene + 1);
 }
 
 function showScene(idx) {
@@ -685,23 +703,17 @@ function showScene(idx) {
   currentScene = idx;
   counter.textContent = `${idx+1} / ${SCENE_COUNT}`;
 
-  // Hide all scenes
   document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
-  // Reset animations in target scene
   const scene = document.getElementById(`scene${idx+1}`);
   scene.querySelectorAll('.anim,.anim-x,.anim-s,.anim-f').forEach(el => el.classList.remove('show'));
   scene.classList.add('active');
-
-  // Animate elements with stagger
   animateScene(idx+1);
 
-  // Play audio
-  if(currentAudio) { currentAudio.pause(); currentAudio = null; }
-  currentAudio = new Audio(audioFiles[idx]);
-  currentAudio.addEventListener('ended', () => {
-    setTimeout(() => showScene(idx+1), 800);
-  });
-  currentAudio.play().catch(()=>{});
+  // Schedule next scene based on duration
+  if(sceneTimer) clearTimeout(sceneTimer);
+  remainingMs = sceneDurations[idx] + 800; // +800ms pause between scenes
+  pauseTime = Date.now();
+  sceneTimer = setTimeout(() => advanceScene(), remainingMs);
 }
 
 function animateScene(num) {
