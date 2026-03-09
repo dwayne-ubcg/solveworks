@@ -527,19 +527,17 @@ function refreshBriefing(){toast('Requesting fresh briefing from agent...');rend
 
 // ─── Overview Activity ────────────────────────────────
 function renderOverviewActivity(){
-  const activities=[
-    {icon:'🔍',cls:'sourcing',time:'6:42 AM PST',text:'Enriched 45 CEIPAL contacts via ZoomInfo — 12 matched to open reqs',action:'View Matches'},
-    {icon:'📧',cls:'outreach',time:'6:15 AM PST',text:'Drafted 12 personalized outreach emails for dormant client reactivation campaign',action:'Review Drafts'},
-    {icon:'📞',cls:'analysis',time:'5:30 AM PST',text:'Analyzed 28 RingCentral call transcripts — flagged 3 for coaching review',action:'View Calls'},
-    {icon:'♻️',cls:'pipeline',time:'5:00 AM PST',text:'Recycled 7 candidates from closed reqs into active pipeline — 2 strong matches found',action:'View Matches'}
-  ];
-  document.getElementById('overview-activity').innerHTML=activities.map(a=>`
+  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.entries||[]);
+  if(!entries.length){
+    document.getElementById('overview-activity').innerHTML='<p style="color:var(--text2);padding:20px;text-align:center">Your AI agent is online and ready. Activity will appear here as it works on tasks for you.</p>';
+    return;
+  }
+  document.getElementById('overview-activity').innerHTML=entries.slice(0,5).map(e=>`
     <div class="feed-item" style="opacity:1;animation:none">
-      <div class="feed-icon ${a.cls}">${a.icon}</div>
+      <div class="feed-icon sourcing">🤖</div>
       <div class="feed-body">
-        <div class="feed-time">${a.time}</div>
-        <div class="feed-text">${a.text}</div>
-        <div class="feed-action" onclick="toast('Loading details...')">${a.action}</div>
+        <div class="feed-time">${e.timestamp?new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}):''}</div>
+        <div class="feed-text">${e.text||''}</div>
       </div>
     </div>
   `).join('');
@@ -643,6 +641,16 @@ function addNewLead(){
 // ─── Revenue ──────────────────────────────────────────
 function renderRevenue(){
   const r=(DATA.dashboard.revenue)||{};
+  if(!r.mtd&&!r.ytd){
+    document.getElementById('revenue-grid').innerHTML=`
+      <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
+        <div style="font-size:32px;margin-bottom:12px">💰</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Revenue Tracking Coming Soon</div>
+        <div style="font-size:13px;max-width:400px;margin:0 auto">Connect QuickBooks to see revenue, margins, and receivables. Tell your AI agent your QuickBooks login to get started.</div>
+      </div>`;
+    document.getElementById('receivables').innerHTML='';
+    return;
+  }
   const pct=r.ytd&&r.target?((r.ytd/r.target)*100).toFixed(1):0;
   const grid=document.getElementById('revenue-grid');
   grid.innerHTML=`
@@ -689,85 +697,38 @@ function renderRevenue(){
 
 // ─── Recruiters ───────────────────────────────────────
 function renderRecruiters(){
-  const recruiters=[
-    {name:'Maria Santos',team:'Philippines — Team A',placements:4,pipeline:285000,fillRate:42,ttf:14,callScore:8.9,color:'#40c080'},
-    {name:'Jessica Reyes',team:'Philippines — Team A',placements:3,pipeline:210000,fillRate:38,ttf:16,callScore:8.5,color:'#4080f0'},
-    {name:'Ana Gutierrez',team:'Philippines — Team B',placements:3,pipeline:195000,fillRate:35,ttf:18,callScore:7.8,color:'#40c8e0'},
-    {name:'Carlos Mendoza',team:'Philippines — Team B',placements:2,pipeline:160000,fillRate:30,ttf:22,callScore:6.2,color:'#f0c040'},
-    {name:'Ryan Park',team:'US — Sales',placements:0,pipeline:120000,fillRate:18,ttf:28,callScore:3.8,color:'#f04060'},
-    {name:'Sofia Chen',team:'Philippines — Team A',placements:2,pipeline:175000,fillRate:33,ttf:19,callScore:7.5,color:'#a060f0'},
-    {name:'Daniel Kim',team:'US — Sales',placements:1,pipeline:145000,fillRate:25,ttf:21,callScore:6.8,color:'#f08040'},
-    {name:'Priya Patel',team:'Philippines — Team C',placements:2,pipeline:190000,fillRate:36,ttf:17,callScore:8.1,color:'#40c080'}
-  ];
   const body=document.getElementById('recruiter-body');
-  body.innerHTML=recruiters.sort((a,b)=>b.placements-a.placements).map(r=>{
-    const barW=Math.min(r.fillRate*2.5,100);
-    const barColor=r.fillRate>=35?'var(--green)':r.fillRate>=25?'var(--yellow)':'var(--red)';
-    const scoreColor=r.callScore>=7?'var(--green)':r.callScore>=5?'var(--yellow)':'var(--red)';
-    return `<tr>
-      <td><div class="recruiter-name">${r.name}</div><div class="recruiter-team">${r.team}</div></td>
-      <td><strong style="font-size:18px">${r.placements}</strong></td>
-      <td>$${r.pipeline.toLocaleString()}</td>
-      <td><span class="perf-bar"><span class="perf-bar-fill" style="width:${barW}%;background:${barColor}"></span></span>${r.fillRate}%</td>
-      <td>${r.ttf} days</td>
-      <td style="color:${scoreColor};font-weight:700">${r.callScore}</td>
-      <td>
-        <span class="recruiter-action" onclick="toast('Loading ${r.name} scorecard...')">Scorecard</span>
-        ${r.callScore<6?`<span class="recruiter-action" style="color:var(--yellow);margin-left:8px" onclick="toast('Flagging ${r.name} for coaching...')">Coach</span>`:''}
-      </td>
-    </tr>`;
-  }).join('');
+  body.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text2)">
+    <div style="font-size:32px;margin-bottom:12px">👥</div>
+    <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Team Performance Coming Soon</div>
+    <div style="font-size:13px;max-width:400px;margin:0 auto">Connect CEIPAL to see recruiter scorecards, fill rates, and placement data. Tell your AI agent your CEIPAL login to get started.</div>
+  </td></tr>`;
 }
 
 // ─── Active Reqs ──────────────────────────────────────
 function renderReqs(){
-  const reqs=[
-    {id:'#4521',title:'Senior Java Developer (x3)',client:'TechCorp Solutions',candidates:8,submittals:3,days:12,source:'ZoomInfo'},
-    {id:'#4518',title:'Registered Nurse — ICU',client:'Pacific Northwest Health',candidates:5,submittals:2,days:18,source:'CEIPAL'},
-    {id:'#4515',title:'Financial Analyst',client:'Cascade Financial Group',candidates:3,submittals:0,days:5,source:'LinkedIn'},
-    {id:'#4510',title:'Warehouse Supervisor (x3)',client:'Emerald City Logistics',candidates:12,submittals:4,days:22,source:'Database'},
-    {id:'#4508',title:'Lab Technician — ASCP Certified',client:'Rainier Biotech',candidates:2,submittals:1,days:8,source:'ZoomInfo'},
-    {id:'#4505',title:'UX Designer (x2)',client:'Fremont Digital Agency',candidates:6,submittals:2,days:15,source:'Referral'}
-  ];
-  document.getElementById('reqs-count').textContent=reqs.length;
-  document.getElementById('reqs-list').innerHTML=reqs.map(r=>{
-    const daysCls=r.days<=10?'fresh':r.days<=20?'aging':'stale';
-    return `
-    <div class="req-card">
-      <span class="req-id">${r.id}</span>
-      <div class="req-info">
-        <div class="req-title">${r.title}</div>
-        <div class="req-meta">${r.client} · Source: ${r.source}</div>
-      </div>
-      <div class="req-stats">
-        <div class="req-stat"><div class="rs-val">${r.candidates}</div><div class="rs-label">Candidates</div></div>
-        <div class="req-stat"><div class="rs-val">${r.submittals}</div><div class="rs-label">Submittals</div></div>
-      </div>
-      <span class="req-days ${daysCls}">${r.days}d open</span>
-      <button class="req-action" onclick="toast('Sourcing candidates for ${r.id}...')">Source More</button>
+  document.getElementById('reqs-count').textContent='0';
+  document.getElementById('reqs-list').innerHTML=`
+    <div style="text-align:center;padding:40px;color:var(--text2)">
+      <div style="font-size:32px;margin-bottom:12px">📋</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Job Orders Will Appear Here</div>
+      <div style="font-size:13px;max-width:400px;margin:0 auto">Connect CEIPAL to pull your active job orders and candidate pipelines. Tell your AI agent your login to get started.</div>
     </div>`;
-  }).join('');
 }
 
 // ─── Activity Feed ────────────────────────────────────
 function renderActivity(){
-  const activities=[
-    {icon:'🔍',cls:'sourcing',time:'Today 6:42 AM',text:'Enriched 45 CEIPAL contacts via ZoomInfo. 12 matched to open reqs: 5 for Java Developer #4521, 4 for Warehouse Supervisor #4510, 3 for Lab Technician #4508.',action:'View Matches'},
-    {icon:'📧',cls:'outreach',time:'Today 6:15 AM',text:'Drafted 12 personalized outreach emails for dormant client reactivation. Targeting accounts inactive 12-18 months with previous placement history. Ready for Mike\'s review.',action:'Review Drafts'},
-    {icon:'📞',cls:'analysis',time:'Today 5:30 AM',text:'Analyzed 28 RingCentral call transcripts from yesterday. Avg score: 7.2/10 (up from 6.8). 3 calls flagged for coaching: Carlos Mendoza (pricing objection), Ryan Park (cold call prep), Sofia Chen (close technique).',action:'View Call Reports'},
-    {icon:'♻️',cls:'pipeline',time:'Today 5:00 AM',text:'Candidate recycling scan complete. 7 rejected candidates matched to new open reqs. 2 strong matches: ex-Java candidate → Financial Analyst #4515, ex-nurse candidate → Lab Tech #4508.',action:'Review Matches'},
-    {icon:'📊',cls:'finance',time:'Today 4:30 AM',text:'QuickBooks sync complete. MTD revenue: $847,500 (12 placements). $189K in 30-day receivables. Generated collection reminder drafts for 3 overdue accounts.',action:'View Financials'},
-    {icon:'🎯',cls:'sourcing',time:'Yesterday 11:00 PM',text:'ZoomInfo intent scan: Bellevue Dynamics (Series B closed), Olympic Steel Works (competitor dropped), 2 other companies showing hiring intent signals. Added to pipeline as New Leads.',action:'View Leads'},
-    {icon:'📋',cls:'pipeline',time:'Yesterday 6:00 PM',text:'Updated recruiter scorecards with weekly data. Maria Santos leading with 4 placements. Ryan Park flagged — 0 placements MTD, call scores declining.',action:'View Scorecards'},
-    {icon:'🔐',cls:'alert',time:'Yesterday 2:00 AM',text:'Nightly security audit passed. All systems operational. Firewall enabled, no unexpected ports, API keys valid, 186GB disk space available.',action:'View Report'}
-  ];
-  document.getElementById('activity-feed').innerHTML=activities.map(a=>`
+  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.entries||[]);
+  if(!entries.length){
+    document.getElementById('activity-feed').innerHTML='<p style="color:var(--text2);text-align:center;padding:40px">Your AI agent is online and ready. Activity will appear here as it completes tasks — research, outreach, pipeline updates, and more.</p>';
+    return;
+  }
+  document.getElementById('activity-feed').innerHTML=entries.map(e=>`
     <div class="feed-item">
-      <div class="feed-icon ${a.cls}">${a.icon}</div>
+      <div class="feed-icon sourcing">🤖</div>
       <div class="feed-body">
-        <div class="feed-time">${a.time}</div>
-        <div class="feed-text">${a.text}</div>
-        <div class="feed-action" onclick="toast('Loading...')">${a.action}</div>
+        <div class="feed-time">${e.timestamp?new Date(e.timestamp).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}):''}</div>
+        <div class="feed-text">${e.text||''}</div>
       </div>
     </div>
   `).join('');
