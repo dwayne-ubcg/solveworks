@@ -572,20 +572,26 @@ const progressFill = document.getElementById('progressFill');
 // Total duration for progress bar
 const totalDuration = sceneDurations.reduce((a,b)=>a+b,0) + (SCENE_COUNT-1)*800;
 
+let started = false;
+let pauseEnabled = false;
+
 function handlePlay() {
+  if(started) return;
+  started = true;
   playBtn.classList.add('hidden');
   startDemo();
+  setTimeout(() => { pauseEnabled = true; }, 1500);
 }
-playBtn.addEventListener('click', (e) => { e.stopPropagation(); handlePlay(); });
+playBtn.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); handlePlay(); });
 playBtn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handlePlay(); }, {passive: false});
 
 document.body.addEventListener('click', (e) => {
-  if(!playBtn.classList.contains('hidden')) return;
-  if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
+  if(!pauseEnabled || !playing) return;
+  if(paused) { resumeDemo(); } else { pauseDemo(); }
 });
 document.body.addEventListener('touchstart', (e) => {
-  if(!playBtn.classList.contains('hidden')) return;
-  if(paused) { resumeDemo(); } else if(playing) { pauseDemo(); }
+  if(!pauseEnabled || !playing) return;
+  if(paused) { resumeDemo(); } else { pauseDemo(); }
 });
 
 function startDemo() {
