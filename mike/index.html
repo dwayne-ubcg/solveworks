@@ -1047,22 +1047,25 @@ function renderCalls(){
   const banner=document.getElementById('flagged-banner');
   if(flaggedCalls.length&&banner){
     banner.style.display='block';
-    document.getElementById('flagged-list').innerHTML=flaggedCalls.map(f=>{
+    document.getElementById('flagged-list').innerHTML=flaggedCalls.map((f,i)=>{
       const durMin=Math.floor((f.duration||0)/60);
       const durSec=(f.duration||0)%60;
       const durStr=durMin>0?durMin+'m '+durSec+'s':durSec+'s';
+      const audioId='flagged-audio-'+i;
       return `
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:6px;border-left:3px solid ${f.severity==='high'?'var(--red)':'var(--yellow)'};margin-bottom:6px">
-        <span style="font-size:14px">${f.severity==='high'?'🔴':'🟡'}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:13px">${f.caller||'Unknown'} → ${f.prospect||'Unknown'} <span style="font-weight:400;color:var(--text2);font-size:11px">${durStr}</span></div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">${f.summary||''}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:2px">${(f.flags||[]).join(' · ')}</div>
+      <div style="margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:6px;border-left:3px solid ${f.severity==='high'?'var(--red)':'var(--yellow)'};cursor:pointer" onclick="toggleFlaggedAudio('${audioId}','data/${f.recordingFile||''}')">
+          <span style="font-size:14px">${f.severity==='high'?'🔴':'🟡'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:13px">${f.caller||'Unknown'} → ${f.prospect||'Unknown'} <span style="font-weight:400;color:var(--text2);font-size:11px">${durStr}</span></div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">${f.summary||''}</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">${(f.flags||[]).join(' · ')}</div>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:${f.score>=7?'var(--green)':f.score>=5?'var(--yellow)':'var(--red)'};min-width:36px;text-align:center">${f.score||'?'}</div>
+          <span style="background:var(--red);color:#fff;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;white-space:nowrap">▶ Listen</span>
         </div>
-        <div style="font-size:22px;font-weight:800;color:${f.score>=7?'var(--green)':f.score>=5?'var(--yellow)':'var(--red)'};min-width:36px;text-align:center">${f.score||'?'}</div>
-        ${f.recordingFile?`<span class="play-btn"><button onclick="event.stopPropagation();toggleAudio(this,'data/${f.recordingFile}')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap">▶ Listen</button></span>`:''}
-      </div>
-      <div class="call-audio-container" style="display:none;padding:4px 0 8px;margin-left:34px"></div>`;
+        <div id="${audioId}" style="display:none;padding:6px 0 4px;margin-left:34px"></div>
+      </div>`;
     }).join('');
   } else if(banner){banner.style.display='none';}
 
@@ -1148,6 +1151,27 @@ function filterCallTab(tab,el){
 }
 
 let currentAudio=null;
+
+function toggleFlaggedAudio(containerId,src){
+  if(!src)return;
+  const container=document.getElementById(containerId);
+  if(!container)return;
+  if(container.style.display!=='none'){
+    const audio=container.querySelector('audio');
+    if(audio)audio.pause();
+    container.style.display='none';
+    container.innerHTML='';
+    return;
+  }
+  // Stop any other playing audio
+  document.querySelectorAll('[id^=flagged-audio-]').forEach(el=>{
+    if(el.id!==containerId){el.style.display='none';el.innerHTML='';}
+  });
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  container.innerHTML='<audio controls autoplay style="width:100%;height:36px" src="'+src+'"></audio>';
+  container.style.display='block';
+  currentAudio=container.querySelector('audio');
+}
 function toggleAudio(btn,src){
   if(!btn)return;
   const card=btn.closest('.call-card');
