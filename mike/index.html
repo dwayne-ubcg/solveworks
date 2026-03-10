@@ -119,6 +119,21 @@ a{color:var(--blue);text-decoration:none}
 .kanban-card .kc-btn.action{border-color:rgba(64,128,240,.3);color:var(--blue)}
 .kanban-card .kc-btn.action:hover{background:rgba(64,128,240,.15)}
 
+/* Kanban Lead Detail Modal */
+.kanban-modal{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:150;display:none;align-items:center;justify-content:center}
+.kanban-modal.open{display:flex}
+.kanban-modal-content{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;animation:cardIn .3s ease}
+.kanban-modal-content h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.kanban-modal-content .km-contact{font-size:13px;color:var(--text2);margin-bottom:12px}
+.kanban-modal-content .km-section{margin-bottom:14px}
+.kanban-modal-content .km-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:4px}
+.kanban-modal-content .km-text{font-size:13px;line-height:1.6;color:var(--text)}
+.kanban-modal-content .km-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.km-delete-btn{padding:10px 20px;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;width:100%;margin-top:8px}
+.km-delete-btn:hover{background:rgba(240,64,96,.15)}
+.km-move-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--blue);background:transparent;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.km-move-btn:hover{background:rgba(64,128,240,.15)}
+
 /* Recruiter Table */
 .recruiter-table{width:100%;border-collapse:collapse;font-size:13px}
 .recruiter-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap}
@@ -341,6 +356,11 @@ a{color:var(--blue);text-decoration:none}
 </div>
 
 <button class="menu-toggle" id="menuToggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<!-- KANBAN LEAD DETAIL MODAL -->
+<div id="kanban-modal" class="kanban-modal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="kanban-modal-content" id="kanban-modal-body"></div>
+</div>
 
 <!-- MOBILE TABS -->
 <div class="mobile-tabs">
@@ -637,7 +657,7 @@ function buildKanban(){
 function renderKanbanCard(c){
   const srcCls='src-'+(c.source||'').replace(/\s/g,'-');
   return `
-  <div class="kanban-card" draggable="true" data-id="${c.id}"
+  <div class="kanban-card" draggable="true" data-id="${c.id}" onclick="openEditModal(pipelineCards.find(x=>x.id==='${c.id}'))"
     ondragstart="event.dataTransfer.setData('text/plain','${c.id}');this.classList.add('dragging')"
     ondragend="this.classList.remove('dragging')">
     <div class="kc-company">${c.company||''}</div>
@@ -650,8 +670,7 @@ function renderKanbanCard(c){
       <span class="kc-date">${c.date||''}</span>
     </div>
     <div class="kc-actions">
-      <button class="kc-btn action" onclick="toast('Opening CRM record for ${c.company}...')">View Details</button>
-      <button class="kc-btn" onclick="toast('Sending follow-up draft...')">Follow Up</button>
+      <button class="kc-btn" onclick="event.stopPropagation();toast('Sending follow-up draft for ${c.company}...')">Follow Up</button>
     </div>
   </div>`;
 }
@@ -692,6 +711,53 @@ function addNewLead(){
   updatePipelineValue();
   updateCounts();
   toast('Added '+company+' to pipeline');
+}
+
+function openEditModal(card){
+  const COLUMNS=['New Leads','Contacted','Discovery','Proposal','Won','Lost','Placed'];
+  const COL_COLORS_MAP={'New Leads':'var(--blue)','Contacted':'var(--cyan)','Discovery':'var(--yellow)','Proposal':'var(--purple)','Won':'var(--green)','Lost':'var(--red)','Placed':'var(--green)'};
+  const m=document.getElementById('kanban-modal-body');
+  m.innerHTML=`<h2>${card.company||''}</h2>
+    <div class="km-contact">${card.contact||'No contact info'}</div>
+    ${card.value?`<div class="km-section"><div class="km-label">Estimated Value</div><div class="km-text" style="font-size:18px;font-weight:700;color:var(--green)">$${(card.value||0).toLocaleString()}</div></div>`:''}
+    ${card.signal?`<div class="km-section"><div class="km-label">Signal</div><div class="km-text">${card.signal}</div></div>`:''}
+    <div class="km-section"><div class="km-label">Source</div><div class="km-text">${card.source||'—'}</div></div>
+    <div class="km-section"><div class="km-label">Added</div><div class="km-text">${card.date||'—'}</div></div>
+    ${card.tags&&card.tags.length?`<div class="km-tags">${card.tags.map(t=>`<span class="kc-tag">${t}</span>`).join('')}</div>`:''}
+    <div class="km-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div class="km-label">Move to</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">
+        ${COLUMNS.filter(c=>c!==card.column).map(c=>`<button class="km-move-btn" style="border-color:${COL_COLORS_MAP[c]||'var(--blue)'};color:${COL_COLORS_MAP[c]||'var(--blue)'}" onclick="moveCard('${card.id}','${c}')">${c}</button>`).join('')}
+      </div>
+    </div>
+    <button class="km-delete-btn" onclick="deleteCardFromModal('${card.id}')">🗑 Delete Card</button>`;
+  document.getElementById('kanban-modal').classList.add('open');
+}
+
+function moveCard(cardId,targetCol){
+  const card=pipelineCards.find(c=>c.id===cardId);
+  if(card){
+    const oldCol=card.column;
+    card.column=targetCol;
+    localStorage.setItem('mc_pipeline',JSON.stringify(pipelineCards));
+    document.getElementById('kanban-modal').classList.remove('open');
+    buildKanban();
+    updatePipelineValue();
+    toast('Moved '+card.company+' from '+oldCol+' → '+targetCol);
+  }
+}
+
+function deleteCardFromModal(cardId){
+  const card=pipelineCards.find(c=>c.id===cardId);
+  if(card&&confirm('Delete '+card.company+' from pipeline?')){
+    pipelineCards=pipelineCards.filter(c=>c.id!==cardId);
+    localStorage.setItem('mc_pipeline',JSON.stringify(pipelineCards));
+    document.getElementById('kanban-modal').classList.remove('open');
+    buildKanban();
+    updatePipelineValue();
+    updateCounts();
+    toast('Deleted '+card.company);
+  }
 }
 
 // ─── Revenue ──────────────────────────────────────────
