@@ -1011,8 +1011,10 @@ function renderCalls(){
   let html='';
   if(isLive&&top.length){
     html+=`<div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">`;
-    top.slice(0,6).forEach(t=>{
-      html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px"><strong>${t.name}</strong> <span style="color:var(--blue)">${t.calls} calls</span></div>`;
+    html+=`<div class="caller-filter active" data-caller="all" onclick="filterCalls('all',this)" style="background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer"><strong>All</strong> <span>${today.totalCalls||0}</span></div>`;
+    top.slice(0,8).forEach(t=>{
+      const escapedName=t.name.replace(/'/g,"\\'");
+      html+=`<div class="caller-filter" data-caller="${escapedName}" onclick="filterCalls('${escapedName}',this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;transition:all .2s"><strong>${t.name}</strong> <span style="color:var(--blue)">${t.calls}</span></div>`;
     });
     html+=`</div>`;
   }
@@ -1026,7 +1028,7 @@ function renderCalls(){
       const durStr=durMin>0?durMin+'m '+durSec+'s':durSec+'s';
       const recBadge=c.recorded?'<span style="background:rgba(64,192,128,.15);color:var(--green);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">REC</span>':'';
       return `
-      <div class="call-card">
+      <div class="call-card" data-from="${(c.from||'').replace(/"/g,'')}" data-to="${(c.to||'').replace(/"/g,'')}">
         <div class="call-header">
           <div style="flex:1">
             <div class="call-caller">${dir} ${c.from||'Unknown'}</div>
@@ -1049,6 +1051,25 @@ function renderCalls(){
   }
 
   document.getElementById('calls-list').innerHTML=html;
+}
+
+function filterCalls(name,el){
+  // Update active state on filter badges
+  document.querySelectorAll('.caller-filter').forEach(f=>{
+    if(f===el){
+      f.style.background='var(--accent)';f.style.color='#fff';f.style.borderColor='var(--accent)';f.classList.add('active');
+    } else {
+      f.style.background='var(--surface2)';f.style.color='';f.style.borderColor='var(--border)';f.classList.remove('active');
+    }
+  });
+  // Filter call cards
+  document.querySelectorAll('.call-card').forEach(card=>{
+    if(name==='all'){card.style.display='';return;}
+    const from=(card.dataset.from||'').toLowerCase();
+    const to=(card.dataset.to||'').toLowerCase();
+    const match=from.includes(name.toLowerCase())||to.includes(name.toLowerCase());
+    card.style.display=match?'':'none';
+  });
 }
 
 // ─── Security ─────────────────────────────────────────
