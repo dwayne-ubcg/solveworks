@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lordon — Finch & Sparrow by SolveWorks</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪶</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#FAF8F5;--bg-sidebar:#FFFFFF;--bg-card:#FFFFFF;--bg-card-hover:#F5F2EE;
+--border:#E8E4DF;--border-light:#F0ECE7;
+--text:#2D2A26;--text-secondary:#6B6560;--text-muted:#9B9590;
+--accent:#C4A882;--accent-dark:#A8906E;--accent-rose:#D4A0A0;--accent-sage:#8FA387;
+--accent-sage-light:#E8EDE6;--accent-warm:#E8D5C0;--accent-warm-deep:#D4BFA8;
+--green:#6B9E6B;--green-light:#EAF2EA;--yellow:#C9A94E;--yellow-light:#F5F0E0;
+--red:#C47070;--red-light:#F5EAEA;--purple:#9B8EC4;--purple-light:#F0EDF5;
+--blue:#7BA3C4;--blue-light:#EAF0F5;
+--shadow:0 2px 12px rgba(45,42,38,0.06);--shadow-lg:0 8px 32px rgba(45,42,38,0.10);
+--sidebar-width:260px;--topbar-height:56px;
+--transition:0.3s cubic-bezier(0.4,0,0.2,1);
+}
+body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+h1,h2,h3,h4,h5{font-family:'Playfair Display',serif;font-weight:600}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#FAF8F5 0%,#F0EBE3 50%,#E8E0D5 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-card{background:#fff;border-radius:20px;padding:48px 40px;width:380px;max-width:90vw;box-shadow:var(--shadow-lg);text-align:center}
+.login-logo{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--text);margin-bottom:4px;letter-spacing:-0.5px}
+.login-sub{font-size:12px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
+.login-store{font-size:14px;color:var(--text-secondary);margin-bottom:24px}
+.login-store strong{color:var(--text);font-weight:600}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:#fff;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:var(--transition);letter-spacing:0.5px}
+.login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(196,168,130,0.4)}
+.login-powered{margin-top:24px;font-size:11px;color:var(--text-muted)}
+.login-decor{position:absolute;font-size:120px;opacity:0.04;pointer-events:none}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-height);background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:1000;box-shadow:0 1px 4px rgba(45,42,38,0.04)}
+.topbar-left{display:flex;align-items:center;gap:16px}
+.hamburger{display:none;width:36px;height:36px;border-radius:10px;background:var(--bg);border:1px solid var(--border);align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text-secondary);transition:var(--transition)}
+.hamburger:hover{background:var(--bg-card-hover)}
+.topbar-brand{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:600;letter-spacing:2.5px;color:var(--text-secondary);text-transform:uppercase}
+.topbar-brand .sw-mark{width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--accent-dark));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.topbar-brand .divider{color:var(--border);font-weight:300}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-store{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-secondary)}
+.store-logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent-warm),var(--accent));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#fff}
+.topbar-notif{position:relative;width:36px;height:36px;border-radius:10px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);font-size:16px;transition:var(--transition)}
+.topbar-notif:hover{background:var(--bg-card-hover);color:var(--text)}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--accent-rose);color:#fff;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;margin-right:6px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:var(--topbar-height);left:0;bottom:0;width:var(--sidebar-width);background:var(--bg-sidebar);border-right:1px solid var(--border);padding:20px 0;overflow-y:auto;z-index:900;transition:transform var(--transition);display:flex;flex-direction:column}
+.sidebar-section{padding:0 16px;margin-bottom:20px}
+.sidebar-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);padding:0 12px;margin-bottom:8px}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--text-secondary);transition:var(--transition);margin-bottom:2px;position:relative}
+.nav-item:hover{background:var(--bg-card-hover);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,var(--accent-warm),#F0E4D4);color:var(--text);font-weight:600}
+.nav-item .nav-icon{width:20px;text-align:center;font-size:16px}
+.nav-item .nav-badge{margin-left:auto;background:var(--accent-rose);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.sidebar-footer{margin-top:auto;padding:16px}
+
+/* MAIN */
+.main{margin-left:var(--sidebar-width);margin-top:var(--topbar-height);padding:28px 32px;min-height:calc(100vh - var(--topbar-height))}
+.page{display:none}.page.active{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:24px}
+.page-header h2{font-size:24px;margin-bottom:4px}
+.page-header .subtitle{font-size:13px;color:var(--text-secondary)}
+
+/* CARDS */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;transition:var(--transition)}
+.card:hover{box-shadow:var(--shadow-lg)}
+.card-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+
+/* BADGES */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.3px}
+.badge-green{background:#E8F5E8;color:var(--green)}.badge-yellow{background:#FFF8E1;color:var(--yellow)}
+.badge-red{background:#FDE8E8;color:var(--red)}.badge-sage{background:var(--accent-sage-light);color:var(--accent-sage)}
+.badge-rose{background:#F5E0E0;color:var(--accent-rose)}.badge-blue{background:var(--blue-light);color:var(--blue)}
+.badge-purple{background:var(--purple-light);color:var(--purple)}
+
+/* STAT CARDS */
+.stat-card{text-align:center;padding:16px;background:var(--bg);border-radius:10px}
+.stat-card .value{font-size:28px;font-weight:700;font-family:'DM Sans',sans-serif;line-height:1.1}
+.stat-card .label{font-size:11px;color:var(--text-secondary);margin-top:4px}
+.stat-card .change{font-size:12px;font-weight:600;margin-top:2px}
+.stat-card .change.up{color:var(--green)}.stat-card .change.down{color:var(--red)}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;border-bottom:2px solid var(--border);font-weight:600;color:var(--text-secondary);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:10px 12px;border-bottom:1px solid var(--border-light)}
+tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg)}
+
+/* PROGRESS */
+.progress-bar{height:8px;border-radius:4px;background:#F0ECE8;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:4px;transition:width 1s ease}
+
+/* BAR CHART */
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:12px}
+.bar-label{width:90px;font-size:12px;font-weight:500;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:26px;background:#F0ECE8;border-radius:6px;position:relative;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:600;color:white;transition:width 1s ease}
+
+/* AI REC */
+.ai-rec{background:linear-gradient(135deg,#FFF9F0,#FFF5E8);border:1px solid #E8D5C0;border-radius:12px;padding:16px 20px;display:flex;gap:12px;align-items:flex-start}
+.ai-rec .ai-icon{width:32px;height:32px;border-radius:8px;background:var(--accent);color:white;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ai-rec .ai-text{font-size:13px;line-height:1.55}
+.ai-rec .ai-text strong{color:var(--accent-dark)}
+
+/* STATUS DOTS */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.status-shipped{background:var(--green)}.status-processing{background:var(--yellow)}.status-late{background:var(--red)}
+
+/* CLIENT CARD */
+.client-card{display:flex;align-items:center;gap:14px;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg-card);margin-bottom:8px}
+.client-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:white;flex-shrink:0}
+.client-info{flex:1}.client-info .client-name{font-weight:600;font-size:14px}
+.client-info .client-detail{font-size:12px;color:var(--text-secondary);margin-top:2px}
+
+/* CALENDAR ITEM */
+.cal-item{display:flex;gap:12px;padding:12px;border-radius:10px;background:var(--bg);margin-bottom:8px;align-items:center}
+.cal-thumb{width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.cal-item-info{flex:1}.cal-item-info .cal-title{font-size:13px;font-weight:600}
+.cal-item-info .cal-meta{font-size:11px;color:var(--text-secondary);margin-top:2px}
+
+/* DONUT */
+.donut{width:120px;height:120px;border-radius:50%;position:relative;margin:0 auto}
+.donut-center{position:absolute;inset:20px;border-radius:50%;background:var(--bg-card);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-center .donut-val{font-size:22px;font-weight:700;line-height:1}
+.donut-center .donut-label{font-size:10px;color:var(--text-secondary)}
+
+/* CHAT */
+.telegram-mock{background:#fff;border-radius:20px;border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden}
+.telegram-header{background:var(--accent-sage);color:white;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.telegram-header .avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:18px}
+.telegram-header .name{font-weight:600;font-size:15px}
+.telegram-header .status{font-size:12px;opacity:.8}
+.telegram-body{padding:14px;display:flex;flex-direction:column;gap:8px}
+.msg-owner{background:#DCFDD2;border-radius:16px 16px 4px 16px;padding:12px 16px;font-size:13px;line-height:1.55;max-width:82%;align-self:flex-end}
+.msg-owner .msg-time{font-size:10px;color:var(--text-muted);text-align:right;margin-top:4px}
+.msg-agent{background:#E8EDE6;border-radius:16px 16px 16px 4px;padding:12px 16px;font-size:13px;line-height:1.55;max-width:82%;display:flex;gap:10px}
+.msg-agent .agent-av{width:28px;height:28px;border-radius:50%;background:var(--accent-sage);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.msg-agent .msg-time{font-size:10px;color:var(--text-muted);text-align:right;margin-top:4px}
+
+/* BUTTONS */
+.btn{padding:7px 16px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition)}
+.btn-sage{background:var(--accent-sage);color:white}.btn-sage:hover{background:#7A9172}
+.btn-accent{background:var(--accent);color:white}.btn-accent:hover{background:var(--accent-dark)}
+.btn-red{background:var(--red);color:white}.btn-red:hover{background:#B05555}
+.btn-outline{background:var(--bg);color:var(--text);border:1px solid var(--border)}.btn-outline:hover{background:var(--bg-card-hover)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(45,42,38,.5);z-index:2000;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:480px;max-width:90vw;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal h3{font-size:20px;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);transition:var(--transition)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,168,130,.15)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light)}
+.toggle-row:last-child{border-bottom:none}
+.toggle{width:44px;height:24px;border-radius:12px;background:#D0CCC7;position:relative;cursor:pointer;transition:var(--transition)}
+.toggle.on{background:var(--accent-sage)}
+.toggle::after{content:'';width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:var(--transition)}
+.toggle.on::after{left:22px}
+
+/* SEARCH */
+.search-bar{display:flex;gap:8px;margin-bottom:16px}
+.search-bar input{flex:1;padding:10px 16px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg)}
+.search-bar input:focus{outline:none;border-color:var(--accent)}
+.search-bar select{padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);cursor:pointer}
+
+/* RESPONSIVE */
+@media(max-width:1024px){.grid-2,.grid-2-1{grid-template-columns:1fr}.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){
+.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+.main{margin-left:0}.hamburger{display:flex}
+.grid-3,.grid-4{grid-template-columns:1fr 1fr}
+.topbar-brand span:not(.sw-mark){display:none}.topbar-brand .divider{display:none}
+}
+@media(max-width:480px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.main{padding:16px}}
+.app-shell{display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="loginScreen">
+<div class="login-decor" style="top:-30px;left:-20px">🪶</div>
+<div class="login-decor" style="bottom:-30px;right:-20px;transform:scaleX(-1)">🌿</div>
+<div class="login-card">
+<div class="login-logo">Finch & Sparrow</div>
+<div class="login-sub">Boutique Intelligence</div>
+<div style="width:48px;height:2px;background:var(--accent);margin:0 auto 24px;border-radius:1px"></div>
+<div class="login-store">Welcome back, <strong>Lordon</strong></div>
+<p style="font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5">Your morning briefing is ready.<br>3 locations · 1,247 SKUs · AI monitoring active</p>
+<button class="login-btn" onclick="doLogin()">Enter Dashboard →</button>
+<div class="login-powered">Powered by Finch & Sparrow × SolveWorks</div>
+</div>
+</div>
+
+<!-- APP SHELL -->
+<div class="app-shell" id="appShell">
+
+<!-- TOPBAR -->
+<div class="topbar">
+<div class="topbar-left">
+<div class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</div>
+<div class="topbar-brand">
+<div class="sw-mark">L</div>
+<span>Lordon</span>
+<span class="divider">|</span>
+<span style="color:var(--text-muted);letter-spacing:1.5px;font-size:11px">Finch & Sparrow</span>
+</div>
+</div>
+<div class="topbar-right">
+<div style="display:flex;align-items:center;font-size:12px;color:var(--text-muted)">
+<span class="live-dot"></span> Live — Lightspeed synced 2 min ago
+</div>
+<div class="topbar-notif" onclick="navigateTo('briefing')">🔔<span class="notif-badge">5</span></div>
+<div class="topbar-store">
+<div class="store-logo">L</div>
+<div>
+<div style="font-weight:600;font-size:13px;color:var(--text)">Lordon</div>
+<div style="font-size:11px">Saint John · Moncton · Halifax</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<div class="sidebar-section">
+<div class="sidebar-label">Daily</div>
+<div class="nav-item active" onclick="navigateTo('briefing')"><span class="nav-icon">☀️</span> Morning Briefing<span class="nav-badge">5</span></div>
+<div class="nav-item" onclick="navigateTo('analytics')"><span class="nav-icon">📊</span> Analytics</div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-label">Merchandising</div>
+<div class="nav-item" onclick="navigateTo('buyplan')"><span class="nav-icon">🛍️</span> Buy Plan</div>
+<div class="nav-item" onclick="navigateTo('sellthrough')"><span class="nav-icon">📈</span> Sell Through</div>
+<div class="nav-item" onclick="navigateTo('inventory')"><span class="nav-icon">📦</span> Inventory<span class="nav-badge" style="background:var(--red)">3</span></div>
+<div class="nav-item" onclick="navigateTo('multistore')"><span class="nav-icon">🏪</span> Multi-Store<span class="nav-badge" style="background:var(--accent)">4</span></div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-label">Operations</div>
+<div class="nav-item" onclick="navigateTo('vendor')"><span class="nav-icon">🤝</span> Vendors</div>
+<div class="nav-item" onclick="navigateTo('clienteling')"><span class="nav-icon">💎</span> Clienteling<span class="nav-badge" style="background:var(--yellow)">2</span></div>
+<div class="nav-item" onclick="navigateTo('receipts')"><span class="nav-icon">🧾</span> Receipts</div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-label">Growth</div>
+<div class="nav-item" onclick="navigateTo('social')"><span class="nav-icon">📱</span> Social</div>
+<div class="nav-item" onclick="navigateTo('chat')"><span class="nav-icon">💬</span> Chat</div>
+</div>
+<div class="sidebar-section">
+<div class="sidebar-label">System</div>
+<div class="nav-item" onclick="navigateTo('documents')"><span class="nav-icon">📁</span> Documents</div>
+<div class="nav-item" onclick="navigateTo('settings')"><span class="nav-icon">⚙️</span> Settings</div>
+</div>
+<div class="sidebar-footer">
+<div style="padding:14px;background:linear-gradient(135deg,var(--accent-warm),#F0E4D4);border-radius:12px">
+<div style="font-size:12px;font-weight:600;margin-bottom:4px">🪶 AI Agent Active</div>
+<div style="font-size:11px;color:var(--text-secondary);line-height:1.4">Monitoring Lightspeed POS, inventory alerts, and social engagement 24/7</div>
+</div>
+<div style="text-align:center;margin-top:12px;font-size:10px;color:var(--text-muted)">Powered by Finch & Sparrow × SolveWorks</div>
+</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+<!-- ═══ BRIEFING ═══ -->
+<div class="page active" id="page-briefing">
+<div class="page-header">
+<h2>☀️ Morning Briefing</h2>
+<div class="subtitle">Tuesday, March 10, 2026 · 6:00 AM · Your AI woke up before you did.</div>
+</div>
+<div class="grid-2" style="margin-bottom:16px">
+<div class="telegram-mock" style="max-height:480px">
+<div class="telegram-header">
+<div class="avatar">🪶</div>
+<div><div class="name">Lordon AI</div><div class="status">Online · 6:00 AM</div></div>
+</div>
+<div class="telegram-body">
+<div style="background:#E8EDE6;border-radius:16px 16px 16px 4px;padding:12px 16px;font-size:13px;line-height:1.55;max-width:92%">
+<strong>☀️ Good morning! Here's your Tuesday briefing:</strong><br><br>
+<strong>💰 Yesterday's Sales: $3,284</strong><br>↑ 14% vs last Tuesday · 28 transactions across 3 locations<br><br>
+<strong>🔥 Top Sellers:</strong><br>• Structured Blazer — Navy, 4 sold<br>• Satin Midi Dress — Champagne, 3 sold<br>• High-Rise Straight Denim — Vintage Wash, 3 sold<br><br>
+<strong>⚠️ Low Stock Alerts:</strong><br>• Tailored Blazer (Black, S/M) — 2 left at Saint John<br>• Ribbed Bodysuit (White, XS) — 1 left<br>• Wide-Leg Trouser Set — reorder?<br><br>
+<strong>📅 Today:</strong><br>• 10:30 AM — Spring vendor preview (virtual)<br>• 2:00 PM — Window display refresh — Saint John<br>• 4:30 PM — VIP styling appointment — Catherine M.<br><br>
+<strong>📱 Instagram:</strong> 1,240 reach overnight, 18 new followers, 5 DM inquiries about the blazer collection<br><br>
+<strong>📦 Online:</strong> 6 orders to fulfill (3 local pickup, 3 ship)
+<div style="font-size:10px;color:var(--text-muted);text-align:right;margin-top:4px">6:00 AM ✓✓</div>
+</div>
+</div>
+</div>
+<div>
+<div class="grid-2" style="margin-bottom:16px">
+<div class="stat-card"><div class="value">$3,284</div><div class="label">Yesterday's Sales</div><div class="change up">↑ 14% vs last Tue</div></div>
+<div class="stat-card"><div class="value">28</div><div class="label">Transactions</div><div class="change up">↑ 4 from average</div></div>
+<div class="stat-card"><div class="value">$117.29</div><div class="label">Avg Transaction</div><div class="change up">↑ 6%</div></div>
+<div class="stat-card"><div class="value">1,240</div><div class="label">IG Reach</div><div class="change up">+18 followers</div></div>
+</div>
+<div class="card">
+<div class="card-title">📅 Today's Schedule</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--accent-sage-light);border-radius:8px"><span style="font-size:13px;font-weight:600;color:var(--accent-sage);width:70px">10:30 AM</span><span style="font-size:13px">Spring vendor preview — virtual call</span></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--accent-warm);border-radius:8px"><span style="font-size:13px;font-weight:600;color:var(--accent);width:70px">2:00 PM</span><span style="font-size:13px">Window display refresh — Saint John flagship</span></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#F5E0E0;border-radius:8px"><span style="font-size:13px;font-weight:600;color:var(--accent-rose);width:70px">4:30 PM</span><span style="font-size:13px">Catherine M. — VIP styling appointment</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">📦 Orders to Fulfill</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span>Order #2041 — Blazer + Trouser Set (Navy, M)</span><span class="badge badge-blue">🏪 Local Pickup</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span>Order #2042 — Satin Midi Dress × 2 (S, M)</span><span class="badge badge-blue">🏪 Local Pickup</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span>Order #2043 — High-Rise Straight Jean (28)</span><span class="badge badge-sage">📦 Ship</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span>Order #2044 — Ribbed Tank 3-Pack (XS)</span><span class="badge badge-sage">📦 Ship</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══ ANALYTICS ═══ -->
+<div class="page" id="page-analytics">
+<div class="page-header"><h2>📊 Sales Analytics</h2><div class="subtitle">Real-time from Lightspeed POS · Last 30 days</div></div>
+<div class="grid-4" style="margin-bottom:16px">
+<div class="stat-card"><div class="value">$42,860</div><div class="label">Revenue (30d)</div><div class="change up">↑ 16% vs last month</div></div>
+<div class="stat-card"><div class="value">348</div><div class="label">Transactions</div><div class="change up">↑ 28 from last month</div></div>
+<div class="stat-card"><div class="value">$123.16</div><div class="label">AOV</div><div class="change up">↑ $5.20</div></div>
+<div class="stat-card"><div class="value">2.4</div><div class="label">Items per Transaction</div><div class="change up">↑ 0.3</div></div>
+</div>
+<div class="grid-2">
+<div class="card">
+<div class="card-title">💰 Revenue by Week</div>
+<div class="bar-chart">
+<div class="bar-row"><div class="bar-label">Week 1</div><div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--accent-sage)">$9,420</div></div></div>
+<div class="bar-row"><div class="bar-label">Week 2</div><div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--accent-sage)">$11,080</div></div></div>
+<div class="bar-row"><div class="bar-label">Week 3</div><div class="bar-track"><div class="bar-fill" style="width:76%;background:var(--accent-sage)">$10,240</div></div></div>
+<div class="bar-row"><div class="bar-label">Week 4</div><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--accent);font-weight:700">$12,120</div></div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">🏆 Top Categories — Revenue</div>
+<table>
+<thead><tr><th>Category</th><th>Revenue</th><th>Units</th><th>AOV</th></tr></thead>
+<tbody>
+<tr><td><strong>Blazers</strong></td><td style="font-weight:700">$9,840</td><td>62</td><td>$159</td></tr>
+<tr><td><strong>Dresses</strong></td><td>$8,220</td><td>48</td><td>$171</td></tr>
+<tr><td><strong>Denim</strong></td><td>$6,480</td><td>52</td><td>$125</td></tr>
+<tr><td><strong>Matching Sets</strong></td><td>$5,640</td><td>28</td><td>$201</td></tr>
+<tr><td><strong>Tops & Blouses</strong></td><td>$4,920</td><td>68</td><td>$72</td></tr>
+<tr><td><strong>Workwear</strong></td><td>$4,380</td><td>32</td><td>$137</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="grid-2" style="margin-top:0">
+<div class="card">
+<div class="card-title">📅 Sales Heatmap — Last 4 Weeks</div>
+<div style="display:flex;gap:4px;margin-bottom:8px;padding-left:30px">
+<span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Mon</span><span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Tue</span><span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Wed</span><span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Thu</span><span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Fri</span><span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Sat</span><span style="flex:1;text-align:center;font-size:10px;color:var(--text-muted)">Sun</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;gap:4px;align-items:center"><span style="width:26px;font-size:10px;color:var(--text-muted)">W1</span><div style="flex:1;height:28px;border-radius:4px;background:#E8EDE6"></div><div style="flex:1;height:28px;border-radius:4px;background:#C8D8C2"></div><div style="flex:1;height:28px;border-radius:4px;background:#E8EDE6"></div><div style="flex:1;height:28px;border-radius:4px;background:#D8E4D4"></div><div style="flex:1;height:28px;border-radius:4px;background:#8FA387"></div><div style="flex:1;height:28px;border-radius:4px;background:#6B8A62"></div><div style="flex:1;height:28px;border-radius:4px;background:#D8E4D4"></div></div>
+<div style="display:flex;gap:4px;align-items:center"><span style="width:26px;font-size:10px;color:var(--text-muted)">W2</span><div style="flex:1;height:28px;border-radius:4px;background:#D8E4D4"></div><div style="flex:1;height:28px;border-radius:4px;background:#8FA387"></div><div style="flex:1;height:28px;border-radius:4px;background:#C8D8C2"></div><div style="flex:1;height:28px;border-radius:4px;background:#D8E4D4"></div><div style="flex:1;height:28px;border-radius:4px;background:#6B8A62"></div><div style="flex:1;height:28px;border-radius:4px;background:#4A7040"></div><div style="flex:1;height:28px;border-radius:4px;background:#C8D8C2"></div></div>
+<div style="display:flex;gap:4px;align-items:center"><span style="width:26px;font-size:10px;color:var(--text-muted)">W3</span><div style="flex:1;height:28px;border-radius:4px;background:#E8EDE6"></div><div style="flex:1;height:28px;border-radius:4px;background:#D8E4D4"></div><div style="flex:1;height:28px;border-radius:4px;background:#E8EDE6"></div><div style="flex:1;height:28px;border-radius:4px;background:#C8D8C2"></div><div style="flex:1;height:28px;border-radius:4px;background:#8FA387"></div><div style="flex:1;height:28px;border-radius:4px;background:#6B8A62"></div><div style="flex:1;height:28px;border-radius:4px;background:#E8EDE6"></div></div>
+<div style="display:flex;gap:4px;align-items:center"><span style="width:26px;font-size:10px;color:var(--text-muted)">W4</span><div style="flex:1;height:28px;border-radius:4px;background:#C8D8C2"></div><div style="flex:1;height:28px;border-radius:4px;background:#8FA387"></div><div style="flex:1;height:28px;border-radius:4px;background:#C8D8C2"></div><div style="flex:1;height:28px;border-radius:4px;background:#8FA387"></div><div style="flex:1;height:28px;border-radius:4px;background:#4A7040"></div><div style="flex:1;height:28px;border-radius:4px;background:#3A5830"></div><div style="flex:1;height:28px;border-radius:4px;background:#D8E4D4"></div></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center">
+<span style="font-size:10px;color:var(--text-muted)">Low</span>
+<div style="width:16px;height:10px;border-radius:2px;background:#E8EDE6"></div><div style="width:16px;height:10px;border-radius:2px;background:#C8D8C2"></div><div style="width:16px;height:10px;border-radius:2px;background:#8FA387"></div><div style="width:16px;height:10px;border-radius:2px;background:#4A7040"></div>
+<span style="font-size:10px;color:var(--text-muted)">High</span>
+</div>
+</div>
+<div class="card">
+<div class="card-title">🛍️ Channel Breakdown</div>
+<div style="display:flex;gap:24px;align-items:center;margin-bottom:16px">
+<div class="donut" style="background:conic-gradient(var(--accent-sage) 0% 65%,var(--accent) 65% 84%,var(--accent-rose) 84% 100%)">
+<div class="donut-center"><div class="donut-val">$42.9k</div><div class="donut-label">Total</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:var(--accent-sage)"></div><span>In-Store — $27,859 (65%)</span></div>
+<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:var(--accent)"></div><span>Online — $8,143 (19%)</span></div>
+<div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:var(--accent-rose)"></div><span>Local Delivery — $6,858 (16%)</span></div>
+</div>
+</div>
+<div class="ai-rec"><div class="ai-icon" style="width:24px;height:24px;font-size:12px">💡</div><div class="ai-text" style="font-size:12px">Online sales up 28% month-over-month. <strong>Instagram shopping tags</strong> driving 38% of online traffic. Your blazer collection carousel generated $2,400 in direct attributable sales last week.</div></div>
+</div>
+</div>
+</div>
+
+<!-- ═══ BUY PLAN ═══ -->
+<div class="page" id="page-buyplan">
+<div class="page-header"><h2>🛍️ Buy Plan</h2><div class="subtitle">Spring 2026 · Open-to-Buy Tracker · $168,000 total budget</div></div>
+<div style="display:flex;gap:16px;margin-bottom:16px">
+<div class="stat-card" style="flex:1;background:var(--accent-sage-light)"><div class="value" style="color:var(--accent-sage)">$168,000</div><div class="label">Total Budget</div></div>
+<div class="stat-card" style="flex:1;background:var(--accent-warm)"><div class="value" style="color:var(--accent-dark)">$142,800</div><div class="label">Committed</div></div>
+<div class="stat-card" style="flex:1;background:var(--green-light)"><div class="value" style="color:var(--green)">$25,200</div><div class="label">OTB Remaining</div></div>
+<div class="stat-card" style="flex:1"><div class="value">8</div><div class="label">Categories</div></div>
+</div>
+<div class="grid-2">
+<div class="card">
+<div class="card-title">Category Allocation</div>
+<div class="bar-chart">
+<div class="bar-row"><div class="bar-label">Blazers</div><div class="bar-track"><div class="bar-fill" style="width:24%;background:var(--accent-sage)">24%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$40,320</div></div>
+<div class="bar-row"><div class="bar-label">Dresses</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--accent-rose)">20%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$33,600</div></div>
+<div class="bar-row"><div class="bar-label">Denim</div><div class="bar-track"><div class="bar-fill" style="width:16%;background:#7B98B8">16%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$26,880</div></div>
+<div class="bar-row"><div class="bar-label">Sets</div><div class="bar-track"><div class="bar-fill" style="width:14%;background:var(--accent)">14%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$23,520</div></div>
+<div class="bar-row"><div class="bar-label">Tops</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--purple)">10%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$16,800</div></div>
+<div class="bar-row"><div class="bar-label">Workwear</div><div class="bar-track"><div class="bar-fill" style="width:8%;background:#9B8EA8">8%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$13,440</div></div>
+<div class="bar-row"><div class="bar-label">Accessories</div><div class="bar-track"><div class="bar-fill" style="width:5%;background:#B8A898">5%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$8,400</div></div>
+<div class="bar-row"><div class="bar-label">Basics</div><div class="bar-track"><div class="bar-fill" style="width:3%;background:#C4B8A8">3%</div></div><div style="font-size:12px;color:var(--text-secondary);width:70px">$5,040</div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">Spring 2026 vs Spring 2025</div>
+<table>
+<thead><tr><th>Category</th><th>S25</th><th>S26</th><th>Shift</th><th>S25 ST%</th></tr></thead>
+<tbody>
+<tr><td>Blazers</td><td>$32,000</td><td>$40,320</td><td style="color:var(--green);font-weight:600">↑ +$8,320</td><td><span class="badge badge-green">88%</span></td></tr>
+<tr><td>Dresses</td><td>$30,200</td><td>$33,600</td><td style="color:var(--green);font-weight:600">↑ +$3,400</td><td><span class="badge badge-yellow">64%</span></td></tr>
+<tr><td>Denim</td><td>$22,400</td><td>$26,880</td><td style="color:var(--green);font-weight:600">↑ +$4,480</td><td><span class="badge badge-green">82%</span></td></tr>
+<tr><td>Matching Sets</td><td>$18,000</td><td>$23,520</td><td style="color:var(--green);font-weight:600">↑ +$5,520</td><td><span class="badge badge-green">76%</span></td></tr>
+<tr><td>Tops & Blouses</td><td>$18,800</td><td>$16,800</td><td style="color:var(--red);font-weight:600">↓ -$2,000</td><td><span class="badge badge-yellow">58%</span></td></tr>
+<tr><td>Workwear</td><td>$15,600</td><td>$13,440</td><td style="color:var(--red);font-weight:600">↓ -$2,160</td><td><span class="badge badge-yellow">52%</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="ai-rec" style="margin-bottom:16px">
+<div class="ai-icon">🤖</div>
+<div class="ai-text"><strong>AI Recommendation:</strong> Blazers had 88% sell-through last spring — the increased allocation is well-justified. Your matching sets are trending hard (social engagement up 140%) — <strong>consider shifting $4,000 from workwear into sets.</strong> Workwear sell-through was only 52% last spring. Dresses at 64% sell-through with a 20% budget allocation is a bit high — monitor closely and consider markdown triggers at the 8-week mark.</div>
+</div>
+</div>
+
+<!-- ═══ SELL THROUGH ═══ -->
+<div class="page" id="page-sellthrough">
+<div class="page-header"><h2>📈 Sell-Through Intelligence</h2><div class="subtitle">Real-time from Lightspeed POS · Updated 5 min ago</div></div>
+<div class="grid-2-1">
+<div>
+<div class="card">
+<div class="card-title">Sell-Through by Category — Spring 2026</div>
+<table>
+<thead><tr><th></th><th>Category</th><th>Received</th><th>Sold</th><th>ST%</th><th>Wks Supply</th></tr></thead>
+<tbody>
+<tr><td><span class="status-dot status-shipped"></span></td><td><strong>Blazers</strong></td><td>168</td><td>148</td><td><strong style="color:var(--green)">88%</strong></td><td>2.8</td></tr>
+<tr><td><span class="status-dot status-shipped"></span></td><td><strong>Denim</strong></td><td>204</td><td>167</td><td><strong style="color:var(--green)">82%</strong></td><td>3.6</td></tr>
+<tr><td><span class="status-dot status-shipped"></span></td><td><strong>Matching Sets</strong></td><td>96</td><td>73</td><td><strong style="color:var(--green)">76%</strong></td><td>4.2</td></tr>
+<tr><td><span class="status-dot status-shipped"></span></td><td><strong>Basics</strong></td><td>280</td><td>210</td><td><strong style="color:var(--green)">75%</strong></td><td>5.0</td></tr>
+<tr><td><span class="status-dot status-processing"></span></td><td><strong>Dresses</strong></td><td>186</td><td>119</td><td><strong style="color:var(--yellow)">64%</strong></td><td>7.8</td></tr>
+<tr><td><span class="status-dot status-processing"></span></td><td><strong>Tops & Blouses</strong></td><td>248</td><td>144</td><td><strong style="color:var(--yellow)">58%</strong></td><td>9.2</td></tr>
+<tr><td><span class="status-dot status-late"></span></td><td><strong>Workwear</strong></td><td>112</td><td>58</td><td><strong style="color:var(--red)">52%</strong></td><td>11.4</td></tr>
+<tr><td><span class="status-dot status-late"></span></td><td><strong>Accessories</strong></td><td>320</td><td>147</td><td><strong style="color:var(--red)">46%</strong></td><td>14.2</td></tr>
+</tbody>
+</table>
+</div>
+<div style="background:#FFF5F5;border:1px solid #F0D0D0;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;margin-bottom:16px">
+<span style="font-size:24px">🚨</span>
+<div><strong style="color:var(--red)">Dead Stock Alert: 38 units · $8,200 at cost</strong>
+<div style="font-size:13px;color:var(--text-secondary);margin-top:4px">Items older than 90 days with &lt;45% sell-through. Recommendation: markdown oversized linen shirts (14 units) by 30%, move 8 printed wrap skirts to online clearance, bundle statement earrings with full-price blazers.</div></div>
+</div>
+<div class="grid-2">
+<div class="card">
+<div class="card-title">🔥 Best Performers</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Structured Blazer — Navy</span><span class="badge badge-green">92%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>High-Rise Straight Jean</span><span class="badge badge-green">88%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Knit Blazer — Oatmeal</span><span class="badge badge-green">86%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Ribbed Bodysuit — Black</span><span class="badge badge-green">84%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Wide-Leg Trouser Set</span><span class="badge badge-green">82%</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">❄️ Slow Movers — Markdown Candidates</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Oversized Linen Shirt — Ecru</span><span class="badge badge-red">32%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Printed Wrap Skirt — Floral</span><span class="badge badge-red">36%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Crochet Cardigan — Cream</span><span class="badge badge-red">38%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Statement Earrings — Gold</span><span class="badge badge-red">40%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Pleated Midi — Olive</span><span class="badge badge-red">42%</span></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div class="card">
+<div class="card-title">📐 Size Curve Analysis</div>
+<p style="font-size:11px;color:var(--text-secondary);margin-bottom:12px">Your current buy ratio vs actual demand</p>
+<div style="margin-bottom:16px">
+<div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text-muted)">CURRENT BUY (1-2-2-1)</div>
+<div style="display:flex;gap:4px;align-items:flex-end;height:70px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:33%;background:var(--accent-rose);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">XS</div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:67%;background:var(--accent-rose);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">S</div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:67%;background:var(--accent-rose);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">M</div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:33%;background:var(--accent-rose);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">L</div></div>
+</div>
+</div>
+<div style="margin-bottom:16px">
+<div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text-muted)">ACTUAL DEMAND (2-3-2-1)</div>
+<div style="display:flex;gap:4px;align-items:flex-end;height:70px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:50%;background:var(--accent-sage);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">XS</div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:80%;background:var(--accent-sage);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">S</div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:50%;background:var(--accent-sage);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">M</div></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end"><div style="width:100%;height:25%;background:var(--accent-sage);border-radius:4px 4px 0 0"></div><div style="font-size:10px;margin-top:3px;color:var(--text-muted)">L</div></div>
+</div>
+</div>
+<div class="ai-rec" style="padding:10px"><div class="ai-icon" style="width:24px;height:24px;font-size:12px">💡</div><div class="ai-text" style="font-size:11px">You're selling out of <strong>XS and S</strong> 2–3 weeks before M and L. Shift from 1-2-2-1 to <strong>2-3-2-1</strong> to capture ~<strong>$5,800 in missed sales</strong> per season.</div></div>
+</div>
+<div class="card">
+<div class="card-title">📊 Weeks of Supply</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;width:80px">Blazers</span><div class="progress-bar" style="flex:1"><div class="fill" style="width:22%;background:var(--red)"></div></div><span style="font-size:12px;font-weight:600;color:var(--red)">2.8 wk ⚠️</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;width:80px">Denim</span><div class="progress-bar" style="flex:1"><div class="fill" style="width:30%;background:var(--yellow)"></div></div><span style="font-size:12px;font-weight:600">3.6 wk</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;width:80px">Sets</span><div class="progress-bar" style="flex:1"><div class="fill" style="width:35%;background:var(--accent-sage)"></div></div><span style="font-size:12px;font-weight:600">4.2 wk</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;width:80px">Dresses</span><div class="progress-bar" style="flex:1"><div class="fill" style="width:65%;background:var(--accent-sage)"></div></div><span style="font-size:12px;font-weight:600">7.8 wk</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;width:80px">Workwear</span><div class="progress-bar" style="flex:1"><div class="fill" style="width:95%;background:var(--red)"></div></div><span style="font-size:12px;font-weight:600;color:var(--red)">11.4 wk ⚠️</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══ INVENTORY ═══ -->
+<div class="page" id="page-inventory">
+<div class="page-header"><h2>📦 Inventory Management</h2><div class="subtitle">1,247 SKUs active · 38 items flagged · Last sync: 2 min ago</div></div>
+<div class="grid-4" style="margin-bottom:16px">
+<div class="stat-card"><div class="value">1,247</div><div class="label">Active SKUs</div></div>
+<div class="stat-card" style="background:var(--red-light)"><div class="value" style="color:var(--red)">38</div><div class="label">Dead Stock Items</div></div>
+<div class="stat-card" style="background:var(--yellow-light)"><div class="value" style="color:var(--yellow)">14</div><div class="label">Low Stock Alerts</div></div>
+<div class="stat-card" style="background:var(--green-light)"><div class="value" style="color:var(--green)">$184,200</div><div class="label">Inventory Value</div></div>
+</div>
+<div class="search-bar">
+<input type="text" placeholder="Search products, SKUs, brands..." id="invSearch" oninput="filterInventory()">
+<select id="invFilter" onchange="filterInventory()"><option value="">All Categories</option><option>Blazers</option><option>Dresses</option><option>Denim</option><option>Matching Sets</option><option>Tops & Blouses</option><option>Workwear</option><option>Accessories</option><option>Basics</option></select>
+</div>
+<div class="grid-2">
+<div class="card">
+<div class="card-title">⚠️ Low Stock — Reorder Now</div>
+<table>
+<thead><tr><th>Product</th><th>Category</th><th>Qty</th><th>Rate</th><th>Days</th><th></th></tr></thead>
+<tbody id="lowStockBody">
+<tr><td><strong>Structured Blazer (Black, S/M)</strong></td><td>Blazers</td><td style="color:var(--red);font-weight:700">2</td><td>5/wk</td><td style="color:var(--red);font-weight:700">3</td><td><button class="btn btn-red" style="font-size:11px;padding:4px 10px">Urgent</button></td></tr>
+<tr><td><strong>Ribbed Bodysuit (White, XS)</strong></td><td>Basics</td><td style="color:var(--red);font-weight:700">1</td><td>3/wk</td><td style="color:var(--red);font-weight:700">2</td><td><button class="btn btn-red" style="font-size:11px;padding:4px 10px">Urgent</button></td></tr>
+<tr><td><strong>Wide-Leg Trouser (Black, S)</strong></td><td>Workwear</td><td style="color:var(--yellow);font-weight:600">4</td><td>2/wk</td><td>14</td><td><button class="btn btn-sage" style="font-size:11px;padding:4px 10px">Reorder</button></td></tr>
+<tr><td><strong>Satin Midi Dress (Champagne)</strong></td><td>Dresses</td><td style="color:var(--yellow);font-weight:600">3</td><td>3/wk</td><td>7</td><td><button class="btn btn-sage" style="font-size:11px;padding:4px 10px">Reorder</button></td></tr>
+<tr><td><strong>High-Rise Straight Jean (26-28)</strong></td><td>Denim</td><td style="color:var(--yellow);font-weight:600">5</td><td>4/wk</td><td>9</td><td><button class="btn btn-sage" style="font-size:11px;padding:4px 10px">Reorder</button></td></tr>
+<tr><td><strong>Knit Blazer (Oatmeal, M)</strong></td><td>Blazers</td><td style="color:var(--yellow);font-weight:600">2</td><td>1/wk</td><td>14</td><td><button class="btn btn-outline" style="font-size:11px;padding:4px 10px">Monitor</button></td></tr>
+</tbody>
+</table>
+</div>
+<div class="card">
+<div class="card-title">📊 Inventory Value by Category</div>
+<div class="bar-chart">
+<div class="bar-row"><div class="bar-label">Blazers</div><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--accent-sage)">$38,400</div></div></div>
+<div class="bar-row"><div class="bar-label">Dresses</div><div class="bar-track"><div class="bar-fill" style="width:68%;background:var(--accent-sage)">$28,200</div></div></div>
+<div class="bar-row"><div class="bar-label">Denim</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--accent-sage)">$24,600</div></div></div>
+<div class="bar-row"><div class="bar-label">Sets</div><div class="bar-track"><div class="bar-fill" style="width:48%;background:var(--accent-sage)">$22,100</div></div></div>
+<div class="bar-row"><div class="bar-label">Tops</div><div class="bar-track"><div class="bar-fill" style="width:38%;background:var(--accent-sage)">$18,400</div></div></div>
+<div class="bar-row"><div class="bar-label" style="color:var(--red)">Workwear</div><div class="bar-track"><div class="bar-fill" style="width:28%;background:var(--red)">$14,200</div></div></div>
+<div class="bar-row"><div class="bar-label" style="color:var(--red)">Accessories</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:var(--red)">$11,800</div></div></div>
+</div>
+<div class="ai-rec" style="margin-top:12px;padding:10px"><div class="ai-icon" style="width:24px;height:24px;font-size:12px">⚠️</div><div class="ai-text" style="font-size:11px"><strong>$26,000 tied up in slow-moving workwear and accessories.</strong> At current sell-through rates, that's 11+ weeks of supply. Markdown or clearance recommended to free cash for blazer and denim reorders.</div></div>
+</div>
+</div>
+</div>
+
+<!-- ═══ MULTI-STORE ═══ -->
+<div class="page" id="page-multistore">
+<div class="page-header"><h2>🏪 Multi-Store Intelligence</h2><div class="subtitle">3 locations · Real-time inventory sync · AI-powered transfer recommendations</div></div>
+<div class="grid-4" style="margin-bottom:16px">
+<div class="stat-card"><div class="value">$184,200</div><div class="label">Total Inventory Value</div><div class="change" style="color:var(--text-secondary)">across 3 doors</div></div>
+<div class="stat-card"><div class="value" style="color:var(--yellow)">14</div><div class="label">Items Need Rebalancing</div><div class="change down">↑ 3 since last week</div></div>
+<div class="stat-card"><div class="value" style="color:var(--accent)">4</div><div class="label">Transfer Suggestions</div><div class="change" style="color:var(--text-secondary)">pending review</div></div>
+<div class="stat-card"><div class="value" style="color:var(--red)">12d</div><div class="label">Last Rebalanced</div><div class="change down">⚠️ overdue</div></div>
+</div>
+<div class="card">
+<div class="card-title">📊 Stock Overview by Door</div>
+<div style="overflow-x:auto">
+<table>
+<thead><tr><th>Product</th><th style="text-align:center">Saint John</th><th style="text-align:center">Moncton</th><th style="text-align:center">Halifax</th><th style="text-align:center">Total</th><th style="text-align:center">Velocity</th></tr></thead>
+<tbody>
+<tr><td><strong>Structured Blazer — Navy</strong></td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">0 · 5/wk</span></td>
+<td style="text-align:center"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">4 · 2/wk</span></td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">8 · 1/wk</span></td>
+<td style="text-align:center;font-weight:600">12</td><td style="text-align:center"><span class="badge badge-green">🔥 High</span></td></tr>
+<tr><td><strong>Satin Midi Dress — Champagne</strong></td>
+<td style="text-align:center"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">3 · 3/wk</span></td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">6 · 0/wk</span></td>
+<td style="text-align:center"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">2 · 2/wk</span></td>
+<td style="text-align:center;font-weight:600">11</td><td style="text-align:center"><span class="badge badge-yellow">⚡ Med</span></td></tr>
+<tr><td><strong>High-Rise Straight Jean</strong></td>
+<td style="text-align:center"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">5 · 3/wk</span></td>
+<td style="text-align:center"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">4 · 3/wk</span></td>
+<td style="text-align:center"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">7 · 2/wk</span></td>
+<td style="text-align:center;font-weight:600">16</td><td style="text-align:center"><span class="badge badge-green">🔥 High</span></td></tr>
+<tr><td><strong>Wide-Leg Trouser Set</strong></td>
+<td style="text-align:center"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">2 · 4/wk</span></td>
+<td style="text-align:center"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">6 · 3/wk</span></td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">12 · 1/wk</span></td>
+<td style="text-align:center;font-weight:600">20</td><td style="text-align:center"><span class="badge badge-green">🔥 High</span></td></tr>
+<tr><td style="color:var(--text-secondary)">Oversized Linen Shirt — Ecru</td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">5 · 0/wk</span></td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">4 · 0/wk</span></td>
+<td style="text-align:center"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px">5 · 0/wk</span></td>
+<td style="text-align:center;font-weight:600">14</td><td style="text-align:center"><span class="badge badge-red">🐌 Stale</span></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="card" style="background:linear-gradient(135deg,#FFF9F0,#FFF5E8);border-color:#E8D5C0">
+<div class="card-title">🤖 AI Transfer Recommendations</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px">
+<div style="display:flex;align-items:flex-start;gap:12px">
+<div style="width:36px;height:36px;border-radius:8px;background:var(--accent-sage);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">↗️</div>
+<div style="flex:1">
+<div style="font-weight:600;font-size:14px;margin-bottom:6px">Structured Blazer — Navy</div>
+<div style="font-size:13px;line-height:1.6;color:var(--text-secondary)"><strong style="color:var(--text)">Halifax</strong> has 8 units (1 sold in 14 days) — <strong style="color:var(--text)">Saint John</strong> is sold out with <span style="color:var(--accent-rose);font-weight:600">6 customer requests</span> logged.</div>
+<div style="margin-top:8px;padding:8px 12px;background:var(--accent-sage-light);border-radius:8px;font-size:12px;font-weight:600;color:var(--accent-sage)">💡 Transfer 4 units Halifax → Saint John</div>
+<div style="margin-top:12px;display:flex;gap:8px">
+<button class="btn btn-sage" onclick="this.textContent='✓ Approved';this.disabled=true">✓ Approve Transfer</button>
+<button class="btn btn-outline" onclick="this.closest('[style]').style.display='none'">✕ Dismiss</button>
+</div>
+</div>
+</div>
+</div>
+<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px">
+<div style="display:flex;align-items:flex-start;gap:12px">
+<div style="width:36px;height:36px;border-radius:8px;background:var(--accent-sage);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">↗️</div>
+<div style="flex:1">
+<div style="font-weight:600;font-size:14px;margin-bottom:6px">Wide-Leg Trouser Set</div>
+<div style="font-size:13px;line-height:1.6;color:var(--text-secondary)"><strong style="color:var(--text)">Halifax</strong> has 12 units (1/wk) — <strong style="color:var(--text)">Saint John</strong> has only 2 left and sells <span style="color:var(--green);font-weight:600">4/week</span>.</div>
+<div style="margin-top:8px;padding:8px 12px;background:var(--accent-sage-light);border-radius:8px;font-size:12px;font-weight:600;color:var(--accent-sage)">💡 Transfer 6 units Halifax → Saint John</div>
+<div style="margin-top:12px;display:flex;gap:8px">
+<button class="btn btn-sage" onclick="this.textContent='✓ Approved';this.disabled=true">✓ Approve Transfer</button>
+<button class="btn btn-outline" onclick="this.closest('[style]').style.display='none'">✕ Dismiss</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="grid-3" style="margin-top:0">
+<div class="card" style="border-top:3px solid var(--accent-sage)">
+<div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px">📍 Saint John <span style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif">King St · Flagship</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Revenue (this month)</span><span style="font-size:16px;font-weight:700">$18,640</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Avg Transaction</span><span style="font-size:14px;font-weight:600">$138.40</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Units Sold</span><span style="font-size:14px;font-weight:600">156</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Top Category</span><span class="badge badge-green">Blazers</span></div>
+<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-secondary)">Sell-Through Rate</span><span style="font-weight:600;color:var(--green)">74%</span></div><div class="progress-bar"><div class="fill" style="width:74%;background:var(--accent-sage)"></div></div></div>
+</div>
+</div>
+<div class="card" style="border-top:3px solid var(--accent)">
+<div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px">📍 Moncton <span style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif">Main St</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Revenue (this month)</span><span style="font-size:16px;font-weight:700">$14,280</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Avg Transaction</span><span style="font-size:14px;font-weight:600">$122.60</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Units Sold</span><span style="font-size:14px;font-weight:600">118</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Top Category</span><span class="badge badge-green">Denim</span></div>
+<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-secondary)">Sell-Through Rate</span><span style="font-weight:600;color:var(--yellow)">62%</span></div><div class="progress-bar"><div class="fill" style="width:62%;background:var(--accent)"></div></div></div>
+</div>
+</div>
+<div class="card" style="border-top:3px solid var(--accent-rose)">
+<div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px">📍 Halifax <span style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif">Spring Garden Rd · Newest</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Revenue (this month)</span><span style="font-size:16px;font-weight:700">$9,940</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Avg Transaction</span><span style="font-size:14px;font-weight:600">$108.20</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Units Sold</span><span style="font-size:14px;font-weight:600">84</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:var(--text-secondary)">Top Category</span><span class="badge badge-green">Matching Sets</span></div>
+<div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-secondary)">Sell-Through Rate</span><span style="font-weight:600;color:var(--yellow)">51%</span></div><div class="progress-bar"><div class="fill" style="width:51%;background:var(--accent-rose)"></div></div></div>
+</div>
+</div>
+</div>
+<div class="ai-rec" style="margin-top:0"><div class="ai-icon">🪶</div><div class="ai-text"><strong>Multi-Store Insight:</strong> Saint John drives 43% of total revenue but holds only 30% of inventory. Halifax is overstocked on 6 SKUs that sell 3× faster in Saint John. Approving the pending transfers would unlock an estimated <strong>$3,200/month in trapped revenue</strong>. Halifax is still ramping — focus inventory on matching sets and basics where it's performing strongest.</div></div>
+</div>
+
+<!-- ═══ VENDOR ═══ -->
+<div class="page" id="page-vendor">
+<div class="page-header"><h2>🤝 Vendor Management</h2><div class="subtitle">Order tracking · Payment schedule · Vendor performance</div></div>
+<div class="grid-2">
+<div>
+<div class="card">
+<div class="card-title">📦 Order Tracking</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px"><span class="status-dot status-shipped"></span><div style="flex:1"><div style="font-size:13px;font-weight:600">Spring Blazer Collection</div><div style="font-size:11px;color:var(--text-secondary)">42 units · Shipped Mar 5 · Arrives Mar 12</div></div><span class="badge badge-green">In Transit</span></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px"><span class="status-dot status-shipped"></span><div style="flex:1"><div style="font-size:13px;font-weight:600">Denim Restock — Premium Washes</div><div style="font-size:11px;color:var(--text-secondary)">28 units · Shipped Mar 7 · Arrives Mar 14</div></div><span class="badge badge-green">In Transit</span></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px"><span class="status-dot status-processing"></span><div style="flex:1"><div style="font-size:13px;font-weight:600">Matching Sets — Spring Colourways</div><div style="font-size:11px;color:var(--text-secondary)">18 units · Processing · ETA Mar 18-22</div></div><span class="badge badge-yellow">Processing</span></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FDE8E8;border-radius:8px"><span class="status-dot status-late"></span><div style="flex:1"><div style="font-size:13px;font-weight:600">Event Dresses — Satin Collection</div><div style="font-size:11px;color:var(--text-secondary)">12 units · Was due Feb 28 · 10 days late</div></div><span class="badge badge-red">Late ⚠️</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">🔄 Reorder Alerts</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px"><div><div style="font-size:13px;font-weight:600">Structured Blazer — Black S/M</div><div style="font-size:11px;color:var(--text-secondary)">2 left · Sells 5/week · 3 days of supply</div></div><button class="btn btn-red" style="font-size:11px">Urgent Reorder →</button></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px"><div><div style="font-size:13px;font-weight:600">Ribbed Bodysuit — White XS</div><div style="font-size:11px;color:var(--text-secondary)">1 left · Sells 3/week · 2 days of supply</div></div><button class="btn btn-red" style="font-size:11px">Urgent Reorder →</button></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px"><div><div style="font-size:13px;font-weight:600">High-Rise Straight Jean (26-28)</div><div style="font-size:11px;color:var(--text-secondary)">5 left · Sells 4/week · 9 days of supply</div></div><button class="btn btn-sage" style="font-size:11px">Reorder →</button></div>
+</div>
+</div>
+</div>
+<div>
+<div class="card">
+<div class="card-title">📅 Upcoming Appointments</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="padding:10px;background:var(--accent-warm);border-radius:8px;border-left:3px solid var(--accent)"><div style="font-size:13px;font-weight:600">Today — Spring Vendor Preview</div><div style="font-size:11px;color:var(--text-secondary)">10:30 AM · Virtual · Review blazer and set collections for summer fill-ins</div></div>
+<div style="padding:10px;background:var(--accent-sage-light);border-radius:8px;border-left:3px solid var(--accent-sage)"><div style="font-size:13px;font-weight:600">Mar 14 — Denim Supplier Meeting</div><div style="font-size:11px;color:var(--text-secondary)">Virtual · Review performance data, negotiate better terms on straight-leg styles</div></div>
+<div style="padding:10px;background:#F5E0E0;border-radius:8px;border-left:3px solid var(--accent-rose)"><div style="font-size:13px;font-weight:600">Mar 24-27 — Atlantic Fashion Market</div><div style="font-size:11px;color:var(--text-secondary)">Pre-booked: 6 vendor appointments · OTB remaining: $25,200</div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">💰 Payment Schedule</div>
+<div style="display:flex;flex-direction:column;gap:2px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px"><div><div style="font-weight:600">Blazer Supplier — Net 30</div><div style="font-size:11px;color:var(--text-secondary)">Invoice #BZ-4821</div></div><div style="text-align:right"><div style="font-weight:600">$6,840</div><div style="font-size:11px;color:var(--red)">Due Mar 15</div></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px"><div><div style="font-weight:600">Denim House — Net 30</div><div style="font-size:11px;color:var(--text-secondary)">Invoice #DH-1193</div></div><div style="text-align:right"><div style="font-weight:600">$4,280</div><div style="font-size:11px;color:var(--yellow)">Due Mar 22</div></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13px"><div><div style="font-weight:600">Set Collection — Net 45</div><div style="font-size:11px;color:var(--text-secondary)">Invoice #SC-0892</div></div><div style="text-align:right"><div style="font-weight:600">$3,420</div><div style="font-size:11px;color:var(--text-secondary)">Due Apr 10</div></div></div>
+</div>
+<div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;text-align:center"><span style="font-size:13px;color:var(--text-secondary)">Next 30 days payable:</span><span style="font-size:18px;font-weight:700;margin-left:8px">$14,540</span></div>
+</div>
+<div class="card">
+<div class="card-title">📊 Vendor Scorecard</div>
+<table>
+<thead><tr><th>Vendor</th><th>Fill Rate</th><th>On-Time</th><th>Margin</th></tr></thead>
+<tbody>
+<tr><td><strong>Blazer Co.</strong></td><td><span class="badge badge-green">96%</span></td><td><span class="badge badge-green">94%</span></td><td>58%</td></tr>
+<tr><td><strong>Denim House</strong></td><td><span class="badge badge-green">92%</span></td><td><span class="badge badge-green">88%</span></td><td>54%</td></tr>
+<tr><td><strong>Set Studio</strong></td><td><span class="badge badge-green">90%</span></td><td><span class="badge badge-yellow">78%</span></td><td>56%</td></tr>
+<tr><td style="color:var(--text-secondary)">Event Dress Co.</td><td><span class="badge badge-red">68%</span></td><td><span class="badge badge-red">52%</span></td><td>48%</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══ CLIENTELING ═══ -->
+<div class="page" id="page-clienteling">
+<div class="page-header"><h2>💎 Clienteling & CRM</h2><div class="subtitle">VIP intelligence · Purchase history · Style preferences · AI-powered outreach</div></div>
+<div class="grid-2">
+<div>
+<div class="card">
+<div class="card-title">👑 Top VIP Clients</div>
+<div class="client-card"><div class="client-avatar" style="background:var(--accent-rose)">CM</div><div class="client-info"><div class="client-name">Catherine M.</div><div class="client-detail">$6,240 lifetime · Last visit: Mar 4 · Size S<br>Loves: structured blazers, tailored trousers, monochrome · Shopping for: spring work wardrobe · 18 purchases</div></div><span class="badge badge-sage">VIP ★</span></div>
+<div class="client-card"><div class="client-avatar" style="background:var(--accent-sage)">RB</div><div class="client-info"><div class="client-name">Rebecca B.</div><div class="client-detail">$4,820 lifetime · Last visit: Feb 28 · Size M<br>Loves: matching sets, event dresses, gold accessories · Shopping for: sister's wedding in May · 14 purchases</div></div><span class="badge badge-sage">VIP ★</span></div>
+<div class="client-card"><div class="client-avatar" style="background:var(--accent)">JT</div><div class="client-info"><div class="client-name">Jessica T.</div><div class="client-detail">$3,640 lifetime · Last visit: Mar 6 · Size XS<br>Loves: high-rise denim, basics, minimalist style · Prefers neutral palette · 11 purchases</div></div><span class="badge badge-sage">VIP ★</span></div>
+<div class="client-card"><div class="client-avatar" style="background:#7B98B8">LK</div><div class="client-info"><div class="client-name">Laura K.</div><div class="client-detail">$3,210 lifetime · Last visit: Jan 18 · Size L<br>Loves: relaxed blazers, wide-leg denim, weekend-to-office looks · 9 purchases</div></div><span class="badge badge-yellow">67 days ⚠️</span></div>
+<div class="client-card"><div class="client-avatar" style="background:var(--purple)">EH</div><div class="client-info"><div class="client-name">Emily H.</div><div class="client-detail">$2,680 lifetime · Last visit: Dec 28 · Size M<br>Loves: statement blazers, date night dresses · Birthday Mar 20 · 7 purchases</div></div><span class="badge badge-red">72 days ⚠️</span></div>
+</div>
+<div class="card">
+<div class="card-title">⚠️ Lapsed Customer Alerts</div>
+<div style="padding:12px;background:#FFF8E1;border-radius:8px;font-size:13px">
+<strong>12 customers</strong> haven't visited in 60+ days. Top recovery targets:
+<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+<div>• <strong>Laura K.</strong> — $3,210 LTV, 67 days. New relaxed-fit blazers just arrived in her size.</div>
+<div>• <strong>Emily H.</strong> — $2,680 LTV, 72 days. Birthday March 20 — perfect gift opportunity.</div>
+<div>• <strong>Nicole P.</strong> — $1,950 LTV, 81 days. Loved our basics collection last fall.</div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<div style="background:linear-gradient(135deg,#F5F0FF,#F0E8FF);border:1px solid #E0D4F0;border-radius:12px;padding:16px;margin-bottom:16px">
+<div style="font-size:15px;margin-bottom:8px">🤖 <strong>AI Re-Engagement Suggestion</strong></div>
+<div style="font-size:13px;line-height:1.6"><strong>Catherine M.</strong> bought 3 structured blazers last season — the new spring knit blazer in Oatmeal ($168) just arrived. She prefers tailored, monochrome pieces and this is exactly her style. She has a styling appointment today at 4:30.<br><br><em>Send her a heads-up about the new arrivals before she comes in?</em></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-sage">📱 Draft Text</button><button class="btn btn-accent">📧 Draft Email</button></div>
+</div>
+<div class="card">
+<div class="card-title">🎂 Upcoming Birthdays & Events</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF0F5;border-radius:8px"><span style="font-size:18px">🎂</span><div style="flex:1"><div style="font-size:13px"><strong>Emily H.</strong> — Birthday Mar 20</div><div style="font-size:11px;color:var(--text-secondary)">Suggestion: Statement blazer ($168) — she's browsed blazers 3x online</div></div></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF0F5;border-radius:8px"><span style="font-size:18px">💍</span><div style="flex:1"><div style="font-size:13px"><strong>Rebecca B.</strong> — Sister's wedding May 3</div><div style="font-size:11px;color:var(--text-secondary)">Suggestion: Satin midi in Champagne ($189) — perfect wedding guest dress</div></div></div>
+<div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF0F5;border-radius:8px"><span style="font-size:18px">🎉</span><div style="flex:1"><div style="font-size:13px"><strong>Jessica T.</strong> — 1 Year VIP Anniversary Apr 2</div><div style="font-size:11px;color:var(--text-secondary)">Suggestion: Early access to new denim drop + 15% loyalty reward</div></div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">📊 CRM Metrics</div>
+<div class="grid-2" style="gap:10px">
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">428</div><div class="label">Total Customers</div></div>
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">52</div><div class="label">VIP Clients</div></div>
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">38%</div><div class="label">Repeat Rate</div></div>
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">$486</div><div class="label">Avg LTV</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══ SOCIAL ═══ -->
+<div class="page" id="page-social">
+<div class="page-header"><h2>📱 Social & Marketing Hub</h2><div class="subtitle">Content calendar · Performance analytics · AI-drafted content</div></div>
+<div class="grid-2">
+<div>
+<div class="card">
+<div class="card-title">📅 This Week's Content Calendar</div>
+<div class="cal-item"><div class="cal-thumb" style="background:#FFE4E1">📸</div><div class="cal-item-info"><div class="cal-title">New Arrivals: Spring Blazer Collection</div><div class="cal-meta">Monday · Instagram Feed + Story · Product tagged</div></div><span class="badge badge-green">Posted ✓</span></div>
+<div class="cal-item"><div class="cal-thumb" style="background:#E8EDE6">🎬</div><div class="cal-item-info"><div class="cal-title">Styling Reel: 3 Ways to Wear the Knit Blazer</div><div class="cal-meta">Tuesday · Instagram Reel + TikTok · AI-drafted script</div></div><span class="badge badge-green">Posted ✓</span></div>
+<div class="cal-item"><div class="cal-thumb" style="background:#FFF8E1">✍️</div><div class="cal-item-info"><div class="cal-title">Behind the Scenes: Window Display Refresh</div><div class="cal-meta">Today · Instagram Story · Casual, authentic</div></div><span class="badge badge-yellow">Scheduled</span></div>
+<div class="cal-item"><div class="cal-thumb" style="background:#F0E8FF">👗</div><div class="cal-item-info"><div class="cal-title">Staff Pick Friday: Sophie's Top 5 Spring Pieces</div><div class="cal-meta">Friday · Feed + Story · Product tagged</div></div><span class="badge badge-yellow">Draft ready</span></div>
+</div>
+<div class="card">
+<div class="card-title">✨ AI-Drafted Post</div>
+<div style="padding:14px;background:var(--bg);border-radius:10px;font-size:13px;line-height:1.6;font-style:italic;color:var(--text-secondary)">"The blazer that does everything 🤍 Our structured knit blazer in Oatmeal — throw it on with jeans for Saturday brunch or pair it with the matching trouser for Monday morning. The kind of piece that earns its place in your closet.<br><br>#lordon #newbrunswick #springblazer #capsulewardrobe #shoplocalnb"</div>
+<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-sage">✓ Approve & Post</button><button class="btn btn-outline">✏️ Edit</button></div>
+</div>
+</div>
+<div>
+<div class="card">
+<div class="card-title">📊 Instagram Performance — Last 7 Days</div>
+<div class="grid-2" style="gap:10px;margin-bottom:14px">
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">14,820</div><div class="label">Reach</div><div class="change up">↑ 28%</div></div>
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">5.2%</div><div class="label">Engagement</div><div class="change up">↑ 0.8%</div></div>
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">+112</div><div class="label">New Followers</div><div class="change up">↑ 34%</div></div>
+<div class="stat-card" style="padding:10px"><div class="value" style="font-size:22px">$1,840</div><div class="label">Social Revenue</div><div class="change up">↑ 22%</div></div>
+</div>
+<div class="ai-rec" style="padding:10px"><div class="ai-icon" style="width:24px;height:24px;font-size:12px">🔥</div><div class="ai-text" style="font-size:12px">Your blazer styling reel got <strong>4,100 views — 380% above average.</strong> "How to style" content is your best performer. Aim for 2 styling reels per week.</div></div>
+</div>
+<div class="card">
+<div class="card-title">📊 Top Performing Content</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>Blazer Styling Reel</strong><div style="font-size:11px;color:var(--text-secondary)">Reel · Mar 4</div></div><div style="text-align:right"><strong>4,100</strong> views<br><span style="font-size:11px;color:var(--green)">6.8% engage</span></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>New Arrivals Carousel</strong><div style="font-size:11px;color:var(--text-secondary)">Feed · Mar 1</div></div><div style="text-align:right"><strong>2,240</strong> reach<br><span style="font-size:11px;color:var(--green)">5.1% engage</span></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>"Just Sold Out" Story</strong><div style="font-size:11px;color:var(--text-secondary)">Story · Mar 6</div></div><div style="text-align:right"><strong>1,680</strong> views<br><span style="font-size:11px;color:var(--green)">38 DM taps</span></div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">💡 Content Ideas — AI Generated</div>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:13px">
+<div style="padding:8px;background:var(--bg);border-radius:6px">🎬 "What's selling this week at Lordon" weekly series — Reel</div>
+<div style="padding:8px;background:var(--bg);border-radius:6px">📸 Customer spotlight: Catherine's spring work wardrobe</div>
+<div style="padding:8px;background:var(--bg);border-radius:6px">✍️ "5 wedding guest outfits under $200" — Carousel</div>
+<div style="padding:8px;background:var(--bg);border-radius:6px">🎬 Spring capsule wardrobe: 10 pieces, 30 outfits</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══ CHAT ═══ -->
+<div class="page" id="page-chat">
+<div class="page-header"><h2>💬 Your Entire Store. Managed by Chat.</h2><div class="subtitle">No Lightspeed admin. No web developer. Just tell your agent what you need.</div></div>
+<div style="max-width:720px;margin:0 auto">
+<div class="telegram-mock" style="margin-bottom:20px">
+<div class="telegram-header"><div class="avatar">🪶</div><div><div class="name">Lordon AI</div><div class="status">Online · Lightspeed connected</div></div></div>
+<div class="telegram-body" style="max-height:520px;overflow-y:auto">
+<div class="msg-owner">How many structured blazers do we have left in small across all stores?<div class="msg-time">10:32 AM ✓✓</div></div>
+<div class="msg-agent"><div class="agent-av">🪶</div><div>5 left in Small across all 3 locations — <strong>2 Saint John, 2 Moncton, 1 Halifax</strong>. At current sell-through rate, you'll be out by Thursday at Saint John. Want me to suggest a transfer from Halifax?<div class="msg-time">10:32 AM</div></div></div>
+<div class="msg-owner">Put the oversized linen shirts on sale — 30% off, this weekend only<div class="msg-time">11:05 AM ✓✓</div></div>
+<div class="msg-agent"><div class="agent-av">🪶</div><div><strong>Done ✅</strong> Created discount on all 14 oversized linen shirts across all locations in Lightspeed. Active Friday 6AM to Sunday midnight. Want me to post it on Instagram too?<div class="msg-time">11:05 AM</div></div></div>
+<div class="msg-owner">How did blazers do this week?<div class="msg-time">3:45 PM ✓✓</div></div>
+<div class="msg-agent"><div class="agent-av">🪶</div><div><strong>📊 Blazers — This Week:</strong><br><br><span style="font-family:monospace;font-size:12px">Structured Blazer — Navy · 6 sold · $948<br>Knit Blazer — Oatmeal · 4 sold · $672<br>Relaxed Blazer — Black · 3 sold · $474<br>Cropped Blazer — Sage · 2 sold · $316</span><br><br>Total: <strong>15 units · $2,410</strong> · Sell-through at <strong>88%</strong> — highest category 🔥<br>Navy structured is leading. You'll run out of S/M at Saint John by next week.<div class="msg-time">3:45 PM</div></div></div>
+<div class="msg-owner">Create a collection called "Wedding Season"<div class="msg-time">4:10 PM ✓✓</div></div>
+<div class="msg-agent"><div class="agent-av">🪶</div><div><strong>Created ✅</strong> Added 14 products — satin midi dresses, matching sets, statement earrings, and structured blazers that work for wedding guest outfits. Ready to feature on your homepage?<div class="msg-time">4:11 PM</div></div></div>
+</div>
+</div>
+<div class="grid-4" style="margin-bottom:20px">
+<div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;margin-bottom:8px">🛍️</div><div style="font-size:13px;font-weight:700;margin-bottom:4px">Products</div><div style="font-size:11px;color:var(--text-secondary);line-height:1.4">Add, edit, price changes, photos, descriptions</div></div>
+<div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;margin-bottom:8px">💰</div><div style="font-size:13px;font-weight:700;margin-bottom:4px">Discounts</div><div style="font-size:11px;color:var(--text-secondary);line-height:1.4">Create codes, automatic sales, VIP pricing</div></div>
+<div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;margin-bottom:8px">📦</div><div style="font-size:13px;font-weight:700;margin-bottom:4px">Inventory</div><div style="font-size:11px;color:var(--text-secondary);line-height:1.4">Stock checks, reorder alerts, transfers</div></div>
+<div class="card" style="text-align:center;padding:16px"><div style="font-size:24px;margin-bottom:8px">🎨</div><div style="font-size:13px;font-weight:700;margin-bottom:4px">Store Design</div><div style="font-size:11px;color:var(--text-secondary);line-height:1.4">Homepage, collections, banners, SEO</div></div>
+</div>
+</div>
+</div>
+
+<!-- ═══ RECEIPTS ═══ -->
+<div class="page" id="page-receipts">
+<div class="page-header"><h2>🧾 Expense Tracking</h2><div class="subtitle">Track receipts, categorize expenses, capture photos</div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<div style="display:flex;gap:8px">
+<select id="expCatFilter" onchange="renderExpenses()" style="padding:8px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg)">
+<option value="">All Categories</option><option>Inventory/Stock</option><option>Shipping</option><option>Marketing</option><option>Rent</option><option>Utilities</option><option>Supplies</option><option>Professional</option><option>Other</option>
+</select>
+<select id="expMonthFilter" onchange="renderExpenses()" style="padding:8px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg)">
+<option value="">All Months</option><option value="01">January</option><option value="02">February</option><option value="03">March</option><option value="04">April</option><option value="05">May</option><option value="06">June</option><option value="07">July</option><option value="08">August</option><option value="09">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+</select>
+</div>
+<button class="btn btn-accent" onclick="openExpenseModal()">+ Add Expense</button>
+</div>
+<div class="grid-4" style="margin-bottom:16px" id="expSummaryCards"></div>
+<div class="card"><div class="card-title">Recent Expenses</div><table><thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Amount</th><th>Notes</th><th></th></tr></thead><tbody id="expTableBody"></tbody></table></div>
+</div>
+
+<!-- ═══ DOCUMENTS ═══ -->
+<div class="page" id="page-documents">
+<div class="page-header"><h2>📁 Document Hub</h2><div class="subtitle">Purchase orders, invoices, contracts, lookbooks & planograms</div></div>
+<div class="search-bar">
+<input type="text" placeholder="Search documents..." id="docSearch" oninput="renderDocuments()">
+<select id="docCatFilter" onchange="renderDocuments()" style="padding:10px 14px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;background:var(--bg);cursor:pointer">
+<option value="">All Categories</option><option>Purchase Orders</option><option>Invoices</option><option>Contracts</option><option>Lookbooks</option><option>Planograms</option>
+</select>
+<button class="btn btn-accent" onclick="openDocUpload()">+ Upload</button>
+</div>
+<div class="grid-2" id="docGrid">
+<div class="card">
+<div class="card-title">📋 Purchase Orders</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>PO-2026-042</strong> — Spring Blazer Collection<div style="font-size:11px;color:var(--text-secondary)">Mar 1, 2026 · 42 units · $6,840</div></div><span class="badge badge-green">Received</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>PO-2026-043</strong> — Denim Restock<div style="font-size:11px;color:var(--text-secondary)">Mar 3, 2026 · 28 units · $4,280</div></div><span class="badge badge-yellow">In Transit</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>PO-2026-044</strong> — Matching Sets Spring<div style="font-size:11px;color:var(--text-secondary)">Mar 5, 2026 · 18 units · $3,420</div></div><span class="badge badge-yellow">Processing</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">📄 Invoices</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>INV-BZ-4821</strong> — Blazer Supplier<div style="font-size:11px;color:var(--text-secondary)">Due Mar 15 · $6,840</div></div><span class="badge badge-red">Due Soon</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>INV-DH-1193</strong> — Denim House<div style="font-size:11px;color:var(--text-secondary)">Due Mar 22 · $4,280</div></div><span class="badge badge-yellow">Pending</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>INV-SC-0892</strong> — Set Collection<div style="font-size:11px;color:var(--text-secondary)">Due Apr 10 · $3,420</div></div><span class="badge badge-sage">Upcoming</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">📝 Contracts</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>Lease — Saint John</strong><div style="font-size:11px;color:var(--text-secondary)">Expires Dec 2027 · King St</div></div><span class="badge badge-green">Active</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>Lease — Moncton</strong><div style="font-size:11px;color:var(--text-secondary)">Expires Jun 2027 · Main St</div></div><span class="badge badge-green">Active</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>Lease — Halifax</strong><div style="font-size:11px;color:var(--text-secondary)">Expires Mar 2028 · Spring Garden Rd</div></div><span class="badge badge-green">Active</span></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">📚 Lookbooks & Planograms</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>Spring 2026 Lookbook</strong><div style="font-size:11px;color:var(--text-secondary)">Updated Feb 28 · 24 pages</div></div><span class="badge badge-sage">Current</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>Saint John — Floor Plan</strong><div style="font-size:11px;color:var(--text-secondary)">Updated Mar 1 · Spring layout</div></div><span class="badge badge-sage">Current</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:var(--bg);border-radius:8px"><div><strong>Window Display — March</strong><div style="font-size:11px;color:var(--text-secondary)">Created Mar 8 · Blazer feature</div></div><span class="badge badge-sage">Current</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div class="page" id="page-settings">
+<div class="page-header"><h2>⚙️ Store Settings</h2><div class="subtitle">Manage your store information, staff, and integrations</div></div>
+<div class="grid-2">
+<div>
+<div class="card">
+<div class="card-title">🏪 Store Information</div>
+<div class="form-group"><label>Store Name</label><input type="text" value="Lordon" id="settStoreName"></div>
+<div class="form-group"><label>Email</label><input type="text" value="hello@lordon.ca" id="settEmail"></div>
+<div class="form-group"><label>Phone</label><input type="text" value="(506) 555-0142" id="settPhone"></div>
+<div style="margin-top:12px"><button class="btn btn-sage" onclick="saveSettings()">Save Changes</button></div>
+</div>
+<div class="card">
+<div class="card-title">📍 Locations</div>
+<div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+<div style="padding:12px;background:var(--bg);border-radius:8px;border-left:3px solid var(--accent-sage)"><div style="font-weight:600">Saint John — Flagship</div><div style="color:var(--text-secondary);margin-top:4px">82 King St, Saint John, NB E2L 1G3<br>Mon–Sat 10AM–6PM · Sun 12PM–5PM</div></div>
+<div style="padding:12px;background:var(--bg);border-radius:8px;border-left:3px solid var(--accent)"><div style="font-weight:600">Moncton</div><div style="color:var(--text-secondary);margin-top:4px">145 Main St, Moncton, NB E1C 1B8<br>Mon–Sat 10AM–6PM · Sun 12PM–5PM</div></div>
+<div style="padding:12px;background:var(--bg);border-radius:8px;border-left:3px solid var(--accent-rose)"><div style="font-weight:600">Halifax</div><div style="color:var(--text-secondary);margin-top:4px">5480 Spring Garden Rd, Halifax, NS B3J 1G6<br>Mon–Sat 10AM–7PM · Sun 11AM–6PM</div></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">👥 Staff</div>
+<div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light)"><div><strong>Sarah L.</strong> — Store Manager<div style="font-size:11px;color:var(--text-secondary)">Saint John · Full-time</div></div><span class="badge badge-green">Active</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light)"><div><strong>Sophie M.</strong> — Sales Associate<div style="font-size:11px;color:var(--text-secondary)">Saint John · Full-time</div></div><span class="badge badge-green">Active</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light)"><div><strong>Megan R.</strong> — Sales Associate<div style="font-size:11px;color:var(--text-secondary)">Moncton · Full-time</div></div><span class="badge badge-green">Active</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light)"><div><strong>Chloe D.</strong> — Sales Associate<div style="font-size:11px;color:var(--text-secondary)">Halifax · Part-time</div></div><span class="badge badge-green">Active</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><div><strong>Emma W.</strong> — Visual Merchandiser<div style="font-size:11px;color:var(--text-secondary)">All locations · Contract</div></div><span class="badge badge-sage">Contract</span></div>
+</div>
+</div>
+</div>
+<div>
+<div class="card">
+<div class="card-title">🔗 Connected Integrations</div>
+<div class="toggle-row">
+<div><div style="font-weight:600;font-size:14px">Lightspeed POS</div><div style="font-size:12px;color:var(--text-secondary)">Primary point-of-sale · 3 locations synced</div></div>
+<div class="toggle on" onclick="this.classList.toggle('on')"></div>
+</div>
+<div class="toggle-row">
+<div><div style="font-weight:600;font-size:14px">Instagram Shopping</div><div style="font-size:12px;color:var(--text-secondary)">Product tagging · Shopping checkout</div></div>
+<div class="toggle on" onclick="this.classList.toggle('on')"></div>
+</div>
+<div class="toggle-row">
+<div><div style="font-weight:600;font-size:14px">Klaviyo</div><div style="font-size:12px;color:var(--text-secondary)">Email marketing · 2,340 subscribers</div></div>
+<div class="toggle on" onclick="this.classList.toggle('on')"></div>
+</div>
+<div class="toggle-row">
+<div><div style="font-weight:600;font-size:14px">Google Business Profile</div><div style="font-size:12px;color:var(--text-secondary)">Reviews, hours, location data</div></div>
+<div class="toggle on" onclick="this.classList.toggle('on')"></div>
+</div>
+<div class="toggle-row">
+<div><div style="font-weight:600;font-size:14px">QuickBooks Online</div><div style="font-size:12px;color:var(--text-secondary)">Accounting & bookkeeping sync</div></div>
+<div class="toggle" onclick="this.classList.toggle('on')"></div>
+</div>
+<div class="toggle-row">
+<div><div style="font-weight:600;font-size:14px">TikTok Shop</div><div style="font-size:12px;color:var(--text-secondary)">Social commerce · Not connected</div></div>
+<div class="toggle" onclick="this.classList.toggle('on')"></div>
+</div>
+</div>
+<div class="card">
+<div class="card-title">🔔 Notification Preferences</div>
+<div class="toggle-row"><div><div style="font-weight:600">Low Stock Alerts</div><div style="font-size:12px;color:var(--text-secondary)">When any item drops below 3 units</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><div><div style="font-weight:600">Daily Sales Summary</div><div style="font-size:12px;color:var(--text-secondary)">Morning briefing at 6:00 AM</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><div><div style="font-weight:600">VIP Customer Alerts</div><div style="font-size:12px;color:var(--text-secondary)">When VIP customers visit or reach milestones</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><div><div style="font-weight:600">Social Mentions</div><div style="font-size:12px;color:var(--text-secondary)">When @lordon is tagged or mentioned</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><div><div style="font-weight:600">Transfer Recommendations</div><div style="font-size:12px;color:var(--text-secondary)">AI-generated inter-store transfer suggestions</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+</div>
+<div class="card">
+<div class="card-title">🤖 AI Agent Settings</div>
+<div class="toggle-row"><div><div style="font-weight:600">Auto-post social content</div><div style="font-size:12px;color:var(--text-secondary)">AI drafts posts, you approve before posting</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><div><div style="font-weight:600">Auto-reorder when critical</div><div style="font-size:12px;color:var(--text-secondary)">Place reorders when stock hits 0 at any location</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+<div class="toggle-row"><div><div style="font-weight:600">Customer follow-up messages</div><div style="font-size:12px;color:var(--text-secondary)">Send personalized follow-ups after purchases</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- end .main -->
+</div><!-- end .app-shell -->
+
+<!-- EXPENSE MODAL -->
+<div class="modal-overlay" id="expenseModal">
+<div class="modal">
+<h3>Add Expense</h3>
+<div class="form-group"><label>Vendor / Payee</label><input type="text" id="expVendor" placeholder="e.g. Canada Post, Lightspeed"></div>
+<div class="grid-2">
+<div class="form-group"><label>Amount (CAD)</label><input type="number" id="expAmount" step="0.01" placeholder="0.00"></div>
+<div class="form-group"><label>Date</label><input type="date" id="expDate"></div>
+</div>
+<div class="form-group"><label>Category</label><select id="expCategory"><option>Inventory/Stock</option><option>Shipping</option><option>Marketing</option><option>Rent</option><option>Utilities</option><option>Supplies</option><option>Professional</option><option>Other</option></select></div>
+<div class="form-group"><label>Notes</label><textarea id="expNotes" placeholder="Optional notes..."></textarea></div>
+<div class="form-group"><label>Receipt Photo</label><input type="file" id="expPhoto" accept="image/*" capture="environment" style="font-size:13px"></div>
+<div class="form-actions">
+<button class="btn btn-outline" onclick="closeExpenseModal()">Cancel</button>
+<button class="btn btn-accent" onclick="saveExpense()">Save Expense</button>
+</div>
+</div>
+</div>
+
+<script>
+// ═══ AUTH ═══
+function doLogin(){localStorage.setItem('fs_auth','lordon');document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='block'}
+function checkAuth(){if(localStorage.getItem('fs_auth')){document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='block'}}
+checkAuth();
+
+// ═══ NAVIGATION ═══
+const pages=['briefing','analytics','buyplan','sellthrough','inventory','multistore','vendor','clienteling','receipts','social','chat','documents','settings'];
+function navigateTo(page){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+const t=document.getElementById('page-'+page);
+if(t){t.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})}
+const navItems=document.querySelectorAll('.nav-item');
+const idx=pages.indexOf(page);
+if(idx!==-1&&navItems[idx])navItems[idx].classList.add('active');
+if(window.innerWidth<=768)document.querySelector('.sidebar').classList.remove('open');
+}
+
+// ═══ INVENTORY FILTER ═══
+function filterInventory(){
+const q=document.getElementById('invSearch').value.toLowerCase();
+const cat=document.getElementById('invFilter').value;
+document.querySelectorAll('#lowStockBody tr').forEach(row=>{
+const text=row.textContent.toLowerCase();
+const matchQ=!q||text.includes(q);
+const matchCat=!cat||text.includes(cat.toLowerCase());
+row.style.display=(matchQ&&matchCat)?'':'none';
+});
+}
+
+// ═══ EXPENSES ═══
+function getExpenses(){return JSON.parse(localStorage.getItem('fs_expenses')||'[]')}
+function saveExpenses(e){localStorage.setItem('fs_expenses',JSON.stringify(e))}
+function openExpenseModal(){
+document.getElementById('expenseModal').classList.add('show');
+document.getElementById('expDate').value=new Date().toISOString().split('T')[0];
+document.getElementById('expVendor').value='';document.getElementById('expAmount').value='';
+document.getElementById('expNotes').value='';document.getElementById('expCategory').selectedIndex=0;
+}
+function closeExpenseModal(){document.getElementById('expenseModal').classList.remove('show')}
+function saveExpense(){
+const v=document.getElementById('expVendor').value.trim();
+const a=parseFloat(document.getElementById('expAmount').value);
+if(!v||!a){alert('Please enter vendor and amount');return}
+const expenses=getExpenses();
+const photoInput=document.getElementById('expPhoto');
+let photo='';
+if(photoInput.files.length>0){
+const reader=new FileReader();reader.onload=function(e){
+expenses.push({id:Date.now(),vendor:v,amount:a,date:document.getElementById('expDate').value,
+category:document.getElementById('expCategory').value,notes:document.getElementById('expNotes').value,photo:e.target.result});
+saveExpenses(expenses);closeExpenseModal();renderExpenses();
+};reader.readAsDataURL(photoInput.files[0]);return;
+}
+expenses.push({id:Date.now(),vendor:v,amount:a,date:document.getElementById('expDate').value,
+category:document.getElementById('expCategory').value,notes:document.getElementById('expNotes').value,photo:''});
+saveExpenses(expenses);closeExpenseModal();renderExpenses();
+}
+function deleteExpense(id){
+const expenses=getExpenses().filter(e=>e.id!==id);
+saveExpenses(expenses);renderExpenses();
+}
+function renderExpenses(){
+const expenses=getExpenses();
+const catF=document.getElementById('expCatFilter').value;
+const monF=document.getElementById('expMonthFilter').value;
+const filtered=expenses.filter(e=>{
+if(catF&&e.category!==catF)return false;
+if(monF&&e.date&&e.date.substring(5,7)!==monF)return false;
+return true;
+}).sort((a,b)=>b.date.localeCompare(a.date));
+// Summary cards
+const cats={};filtered.forEach(e=>{cats[e.category]=(cats[e.category]||0)+e.amount});
+const total=filtered.reduce((s,e)=>s+e.amount,0);
+let summaryHTML=`<div class="stat-card"><div class="value" style="font-size:22px">$${total.toLocaleString('en-CA',{minimumFractionDigits:2})}</div><div class="label">Total (filtered)</div></div>`;
+summaryHTML+=`<div class="stat-card"><div class="value" style="font-size:22px">${filtered.length}</div><div class="label">Expenses</div></div>`;
+const topCat=Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+summaryHTML+=`<div class="stat-card"><div class="value" style="font-size:18px">${topCat?topCat[0]:'—'}</div><div class="label">Top Category</div></div>`;
+summaryHTML+=`<div class="stat-card"><div class="value" style="font-size:18px">${topCat?'$'+topCat[1].toLocaleString('en-CA',{minimumFractionDigits:2}):'—'}</div><div class="label">Top Amount</div></div>`;
+document.getElementById('expSummaryCards').innerHTML=summaryHTML;
+// Table
+let html='';
+if(filtered.length===0){html='<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:24px">No expenses yet. Click "+ Add Expense" to get started.</td></tr>';}
+filtered.forEach(e=>{
+html+=`<tr>
+<td>${e.date||'—'}</td><td><strong>${e.vendor}</strong></td>
+<td><span class="badge badge-sage">${e.category}</span></td>
+<td style="font-weight:600">$${e.amount.toFixed(2)}</td>
+<td style="color:var(--text-secondary);font-size:12px">${e.notes||'—'}${e.photo?' 📷':''}</td>
+<td><button class="btn btn-outline" style="font-size:11px;padding:3px 8px" onclick="deleteExpense(${e.id})">✕</button></td>
+</tr>`;
+});
+document.getElementById('expTableBody').innerHTML=html;
+}
+renderExpenses();
+
+// ═══ DOCUMENTS ═══
+function renderDocuments(){
+const q=document.getElementById('docSearch').value.toLowerCase();
+const cat=document.getElementById('docCatFilter').value;
+document.querySelectorAll('#docGrid .card').forEach(card=>{
+const title=card.querySelector('.card-title').textContent;
+const text=card.textContent.toLowerCase();
+const matchQ=!q||text.includes(q);
+let matchCat=true;
+if(cat){
+const catMap={'Purchase Orders':'Purchase Orders','Invoices':'Invoices','Contracts':'Contracts','Lookbooks':'Lookbooks','Planograms':'Planograms'};
+matchCat=title.includes(cat)||text.includes(cat.toLowerCase());
+}
+card.style.display=(matchQ&&matchCat)?'':'none';
+});
+}
+function openDocUpload(){alert('Document upload coming soon — files will be stored locally.')}
+
+// ═══ SETTINGS ═══
+function saveSettings(){
+const data={name:document.getElementById('settStoreName').value,email:document.getElementById('settEmail').value,phone:document.getElementById('settPhone').value};
+localStorage.setItem('fs_settings',JSON.stringify(data));
+const btn=event.target;btn.textContent='✓ Saved!';setTimeout(()=>btn.textContent='Save Changes',2000);
+}
+
+// Mobile sidebar close
+if(window.innerWidth<=768){document.querySelectorAll('.nav-item').forEach(item=>{item.addEventListener('click',()=>{document.querySelector('.sidebar').classList.remove('open')})})}
+</script>
+</body>
+</html>
