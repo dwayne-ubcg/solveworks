@@ -626,10 +626,11 @@ let pipelineCards=[];
 
 function renderPipeline(){
   const board=(DATA.leads.boards||[])[0]||{cards:[]};
-  pipelineCards=[...board.cards||[]];
-  // Load any localStorage changes
+  const freshCards=[...board.cards||[]];
+  pipelineCards=freshCards;
+  // Load localStorage changes only if they have data (user moved cards)
   const saved=localStorage.getItem('mc_pipeline');
-  if(saved){try{pipelineCards=JSON.parse(saved)}catch(e){}}
+  if(saved){try{const savedCards=JSON.parse(saved);if(savedCards.length>=freshCards.length){pipelineCards=savedCards}}catch(e){}}
   buildKanban();
   updatePipelineValue();
 }
