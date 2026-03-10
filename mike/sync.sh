@@ -121,6 +121,30 @@ SECEOF
 # Pull dashboard.json directly from Mike's machine (source of truth)
 scp -o StrictHostKeyChecking=no $REMOTE:~/.openclaw/workspace/data/dashboard.json "$LOCAL_DATA/dashboard.json" 2>/dev/null
 
+
+# Sync research & playbook files
+mkdir -p "$LOCAL_DATA/research"
+for dir in deals research; do
+  ssh -o StrictHostKeyChecking=no $REMOTE "ls ~/.openclaw/workspace/memory/$dir/*.md 2>/dev/null" 2>/dev/null | while read f; do
+    fname=$(basename "$f")
+    scp -q -o StrictHostKeyChecking=no $REMOTE:"$f" "$LOCAL_DATA/research/$fname" 2>/dev/null
+  done
+done
+
+# Generate research manifest
+python3 -c "
+import os, json
+from datetime import datetime
+d = os.path.expanduser('$LOCAL_DATA/research')
+m = []
+for f in sorted(os.listdir(d)):
+    if f.endswith('.md'):
+        mt = os.path.getmtime(os.path.join(d, f))
+        m.append({'file': f, 'modified': datetime.fromtimestamp(mt).strftime('%Y-%m-%d')})
+with open(os.path.join(d, 'manifest.json'), 'w') as mf:
+    json.dump(m, mf, indent=2)
+" 2>/dev/null
+
 # Git push
 cd ~/clawd/solveworks-site
 git add mike/data/ 2>/dev/null
