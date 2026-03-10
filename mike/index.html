@@ -568,21 +568,20 @@ function updateCounts(){
 // ─── Stats ────────────────────────────────────────────
 function renderStats(){
   const d=DATA.dashboard;
-  const r=d.revenue||{};
   const p=d.pipeline||{};
   const fin=DATA.financials||{};
+  const kpi=fin.kpis||{};
   const inv=fin.invoices||{};
-  const bank=fin.bankAccounts||{};
   const rc=DATA.calls||{};
   const rcToday=rc.today||rc.todayStats||{};
   const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
   const grid=document.getElementById('stats-grid');
   const stats=[
-    {label:'Paid (30d)',value:fmt(inv.paidLast30Days||r.mtd),cls:'green',sub:inv.paidLast30Days?'QuickBooks':'Revenue MTD',action:'View Revenue →',section:'revenue'},
-    {label:'Pipeline Value',value:fmt(p.totalValue),cls:'blue',sub:(p.activeDeals||0)+' active deals',action:'View Pipeline →',section:'pipeline'},
-    {label:'Bank Balance',value:fmt(bank.totalBalance),cls:'cyan',sub:(bank.accounts||[]).length+' accounts',action:'View Financials →',section:'revenue'},
-    {label:'Overdue',value:fmt(inv.overdueTotal),cls:'red',sub:(inv.recentOverdue||[]).length+' invoices',action:'View Invoices →',section:'revenue'},
-    {label:'Calls Today',value:String(rcToday.totalCalls||0),cls:'purple',sub:(rcToday.recorded||0)+' recorded · '+(rcToday.totalMinutes||0)+'m',action:'View Calls →',section:'calls'}
+    {label:'Revenue YTD',value:fmt(kpi.revenueYTD),cls:'green',sub:'~'+fmt(kpi.annualizedRevenue)+' annualized',action:'View Financials →',section:'revenue'},
+    {label:'Gross Margin',value:((kpi.grossMargin||0)*100).toFixed(1)+'%',cls:'blue',sub:fmt(kpi.grossProfit)+' gross profit',action:'View P&L →',section:'revenue'},
+    {label:'Cash Position',value:fmt(kpi.totalCash),cls:'cyan',sub:'6 bank accounts',action:'View Balance Sheet →',section:'revenue'},
+    {label:'Receivables',value:fmt(kpi.totalAR),cls:'yellow',sub:fmt(kpi.overdueAR)+' overdue',action:'View AR →',section:'revenue'},
+    {label:'Calls Today',value:String(rcToday.totalCalls||0),cls:'purple',sub:(rcToday.recorded||0)+' recorded · '+Math.round(rcToday.totalMinutes||0)+'m',action:'View Calls →',section:'calls'}
   ];
   grid.innerHTML=stats.map(s=>`
     <div class="stat-card">
@@ -771,10 +770,15 @@ function deleteCardFromModal(cardId){
 // ─── Revenue ──────────────────────────────────────────
 function renderRevenue(){
   const fin=DATA.financials||{};
-  const r=(DATA.dashboard.revenue)||{};
+  const pnl=fin.profitAndLoss||{};
+  const bs=fin.balanceSheet||{};
   const inv=fin.invoices||{};
-  const bank=fin.bankAccounts||{};
-  if(!inv.unpaidTotal&&!r.mtd&&!r.ytd){
+  const kpi=fin.kpis||{};
+  const inc=pnl.income||{};
+  const bsAssets=bs.assets||{};
+  const bankAccts=bsAssets.bankAccounts||{};
+  const ar=bsAssets.accountsReceivable||{};
+  if(!kpi.revenueYTD&&!inv.unpaidTotal){
     document.getElementById('revenue-grid').innerHTML=`
       <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
         <div style="font-size:32px;margin-bottom:12px">💰</div>
@@ -784,48 +788,74 @@ function renderRevenue(){
     document.getElementById('receivables').innerHTML='';
     return;
   }
-  const grid=document.getElementById('revenue-grid');
   const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
+  const grid=document.getElementById('revenue-grid');
   grid.innerHTML=`
     <div class="rev-card">
-      <div class="rev-label">Paid Last 30 Days</div>
-      <div class="rev-value" style="color:var(--green)">${fmt(inv.paidLast30Days||r.mtd)}</div>
-      <div class="rev-sub">${inv.paidLast30Days?'Deposited revenue':'MTD revenue'}</div>
+      <div class="rev-label">Revenue YTD</div>
+      <div class="rev-value" style="color:var(--green)">${fmt(kpi.revenueYTD)}</div>
+      <div class="rev-sub">${pnl.period||'2026 YTD'} · ~${fmt(kpi.revenuePerMonth)}/mo</div>
     </div>
     <div class="rev-card">
-      <div class="rev-label">Bank Balance</div>
-      <div class="rev-value" style="color:var(--blue)">${fmt(bank.totalBalance)}</div>
-      <div class="rev-sub">${(bank.accounts||[]).length} accounts</div>
+      <div class="rev-label">Gross Profit</div>
+      <div class="rev-value" style="color:var(--blue)">${fmt(kpi.grossProfit)}</div>
+      <div class="rev-sub">${((kpi.grossMargin||0)*100).toFixed(1)}% margin</div>
     </div>
     <div class="rev-card">
-      <div class="rev-label">Unpaid Invoices</div>
-      <div class="rev-value" style="color:var(--yellow)">${fmt(inv.unpaidTotal)}</div>
-      <div class="rev-sub">${fmt(inv.notDueYet)} not yet due</div>
+      <div class="rev-label">Cash Position</div>
+      <div class="rev-value" style="color:var(--cyan)">${fmt(kpi.totalCash)}</div>
+      <div class="rev-sub">Total across all accounts</div>
     </div>
     <div class="rev-card">
-      <div class="rev-label">Overdue</div>
-      <div class="rev-value" style="color:var(--red)">${fmt(inv.overdueTotal)}</div>
-      <div class="rev-sub">${(inv.recentOverdue||[]).length} overdue invoices</div>
+      <div class="rev-label">Annualized Revenue</div>
+      <div class="rev-value" style="color:var(--yellow)">${fmt(kpi.annualizedRevenue)}</div>
+      <div class="rev-sub">Based on current run rate</div>
     </div>
   `;
 
   let recHTML='';
-  if((bank.accounts||[]).length){
-    recHTML+=`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">Bank Accounts</div>`;
-    recHTML+=(bank.accounts||[]).map(a=>`
-      <div class="rec-row"><span>${a.name}</span><strong style="color:var(--green)">${fmt(a.bankBalance||a.qbBalance)}</strong></div>
-    `).join('');
+  // P&L Breakdown
+  if(inc.totalIncome){
+    recHTML+=`<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">📊 Profit & Loss (${pnl.period||'YTD'})</div>`;
+    recHTML+=`<div class="rec-row"><span>Contract (VMS) Services</span><strong style="color:var(--green)">${fmt(inc.contractVMS)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>Contract (Non-VMS) Services</span><strong style="color:var(--green)">${fmt(inc.contractNonVMS)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>Contract GDM Services</span><strong style="color:var(--green)">${fmt(inc.contractGDM)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>Placement Services</span><strong style="color:var(--green)">${fmt(inc.placementServices)}</strong></div>`;
+    recHTML+=`<div class="rec-row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:4px"><span><strong>Total Revenue</strong></span><strong style="color:var(--green)">${fmt(inc.totalIncome)}</strong></div>`;
+    const cogs=pnl.cogs||{};
+    recHTML+=`<div class="rec-row"><span>Cost of Goods Sold</span><strong style="color:var(--red)">-${fmt(cogs.totalCOGS)}</strong></div>`;
+    recHTML+=`<div class="rec-row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:4px"><span><strong>Gross Profit</strong></span><strong style="color:var(--blue)">${fmt(pnl.grossProfit)} <span style="font-size:11px;color:var(--text2)">(${pnl.grossMarginPct||0}%)</span></strong></div>`;
     recHTML+=`</div>`;
   }
+  // Balance Sheet - Bank Accounts
+  if(bankAccts.total){
+    recHTML+=`<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">🏦 Bank Accounts</div>`;
+    recHTML+=`<div class="rec-row"><span>Money Market</span><strong style="color:var(--green)">${fmt(bankAccts.moneyMarket)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>PPP Account</span><strong style="color:var(--green)">${fmt(bankAccts.pppAccount)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>BizX</span><strong style="color:var(--green)">${fmt(bankAccts.bizX)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>Banner Bank Checking</span><strong style="color:var(--green)">${fmt(bankAccts.bannerBankChecking)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>Wise USD</span><strong style="color:var(--green)">${fmt(bankAccts.wiseUSD)}</strong></div>`;
+    recHTML+=`<div class="rec-row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:4px"><span><strong>Total Cash</strong></span><strong style="color:var(--cyan)">${fmt(bankAccts.total)}</strong></div>`;
+    recHTML+=`</div>`;
+  }
+  // AR
+  if(ar.totalAR){
+    recHTML+=`<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">📑 Accounts Receivable</div>`;
+    recHTML+=`<div class="rec-row"><span>Billed AR</span><strong>${fmt(ar.ar)}</strong></div>`;
+    recHTML+=`<div class="rec-row"><span>Accrued AR</span><strong>${fmt(ar.accruedAR)}</strong></div>`;
+    recHTML+=`<div class="rec-row" style="border-top:2px solid var(--border);padding-top:8px;margin-top:4px"><span><strong>Total AR</strong></span><strong style="color:var(--yellow)">${fmt(ar.totalAR)}</strong></div>`;
+    recHTML+=`</div>`;
+  }
+  // Overdue Invoices
   if((inv.recentOverdue||[]).length){
-    recHTML+=`<div><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">Overdue Invoices</div>`;
-    recHTML+=(inv.recentOverdue||[]).slice(0,6).map(o=>`
-      <div class="rec-row"><span>#${o.invoice} ${o.customer} <span style="color:var(--red);font-size:11px">${o.daysOverdue}d overdue</span></span><strong style="color:var(--red)">${fmt(o.amount)}</strong></div>
+    recHTML+=`<div style="margin-bottom:20px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">⚠️ Overdue Invoices (${fmt(inv.overdueTotal)})</div>`;
+    recHTML+=(inv.recentOverdue||[]).slice(0,8).map(o=>`
+      <div class="rec-row"><span>#${o.invoice} ${o.customer} <span style="color:var(--red);font-size:11px;font-weight:600">${o.daysOverdue}d</span></span><strong style="color:var(--red)">${fmt(o.amount)}</strong></div>
     `).join('');
     recHTML+=`</div>`;
   }
   if(fin.lastUpdated){
-    recHTML+=`<div style="margin-top:12px;font-size:11px;color:var(--text2)">Source: ${fin.source==='quickbooks_browser_snapshot'?'QuickBooks (snapshot)':'QuickBooks API'} · Updated ${new Date(fin.lastUpdated).toLocaleString()}</div>`;
+    recHTML+=`<div style="font-size:11px;color:var(--text2)">Source: QuickBooks Online · ${bs.asOf||''} · Updated ${new Date(fin.lastUpdated).toLocaleString()}</div>`;
   }
   document.getElementById('receivables').innerHTML=recHTML;
 }
