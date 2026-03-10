@@ -6,8 +6,8 @@ REMOTE="mikedades@100.92.185.73"
 LOCAL_DATA="$HOME/clawd/solveworks-site/mike/data"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-# Pull agent activity (memory files)
-MEMORY_CONTENT=$(ssh $REMOTE "find ~/clawd/memory/daily -name '*.md' -mtime -7 -exec cat {} \; 2>/dev/null" 2>/dev/null)
+# Pull agent activity (memory files) — agent writes to ~/.openclaw/workspace/
+MEMORY_CONTENT=$(ssh $REMOTE "find ~/.openclaw/workspace/memory/daily -name '*.md' -mtime -7 -exec cat {} \; 2>/dev/null" 2>/dev/null)
 if [ -n "$MEMORY_CONTENT" ]; then
   echo "$MEMORY_CONTENT" | python3 -c "
 import sys, json
@@ -37,7 +37,7 @@ except:
 " 2>/dev/null)
 
 if [ "$EXISTING_FORMAT" != "kanban" ]; then
-  LEADS=$(ssh $REMOTE "cat ~/clawd/memory/deals/prospect-research.md 2>/dev/null" 2>/dev/null)
+  LEADS=$(ssh $REMOTE "cat ~/.openclaw/workspace/memory/deals/prospect-research.md 2>/dev/null" 2>/dev/null)
   if [ -n "$LEADS" ]; then
     echo "$LEADS" | python3 -c "
 import sys, json, re
@@ -78,7 +78,7 @@ json.dump({'boards': [{'name': 'Rylem Pipeline', 'cards': cards}]}, sys.stdout, 
 fi
 
 # Pull tasks
-TASKS=$(ssh $REMOTE "cat ~/clawd/memory/active-tasks.md 2>/dev/null" 2>/dev/null)
+TASKS=$(ssh $REMOTE "cat ~/.openclaw/workspace/memory/active-tasks.md 2>/dev/null" 2>/dev/null)
 if [ -n "$TASKS" ]; then
   echo "$TASKS" | python3 -c "
 import sys, json
