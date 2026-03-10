@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1920">
+<meta name="viewport" content="width=1920, user-scalable=no">
 <title>Touchstone × SolveWorks — Your AI, Built for You</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; -webkit-touch-callout: none; }
 
 :root {
   --bg: #0A1628;
@@ -910,6 +910,14 @@ html, body {
 </style>
 </head>
 <body>
+
+<!-- Play Overlay (iOS audio unlock + clear CTA) -->
+<div id="playOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#000;display:flex;align-items:center;justify-content:center;z-index:99999;cursor:pointer;flex-direction:column;gap:24px;" onclick="startFullDemo()">
+  <div style="width:120px;height:120px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">
+    <div style="width:0;height:0;border-left:40px solid #fff;border-top:24px solid transparent;border-bottom:24px solid transparent;margin-left:8px;"></div>
+  </div>
+  <div style="font-size:16px;color:#64748b;font-family:Inter,sans-serif;letter-spacing:0.05em;">Touchstone AI Demo — Tap to Play</div>
+</div>
 
 <!-- Brand Bar -->
 <div class="brand-bar">
@@ -1944,6 +1952,22 @@ document.addEventListener('keydown', (e) => {
 
 // Set initial progress
 document.getElementById('progress-bar').style.width = '0%';
+
+// Full-screen play overlay handler (unlocks iOS audio)
+function startFullDemo() {
+  document.getElementById('playOverlay').style.display = 'none';
+  playing = true;
+  document.getElementById('play-btn').textContent = '⏸';
+  playCurrentAudio();
+}
+
+// Touch handler for mobile pause/resume
+document.addEventListener('touchstart', function(e) {
+  if (document.getElementById('playOverlay').style.display !== 'none' &&
+      document.getElementById('playOverlay').style.display !== '') return;
+  e.preventDefault();
+  togglePlay();
+});
 </script>
 
 </body>
