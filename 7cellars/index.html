@@ -2415,7 +2415,7 @@ try {
     {id:'not-interested',label:'Not Interested',color:'var(--text2)'}
   ];
   const overrides=JSON.parse(localStorage.getItem('7c-pipeline-stages')||'{}');
-  let filterPri='all',filterCat='all',filterArea='all',searchTerm='';
+  let filterPri='all',filterCat='all',filterArea='all',filterRep='all',searchTerm='';
 
   function getStage(id,orig){return overrides[id]||orig}
   function setStage(id,stage){overrides[id]=stage;localStorage.setItem('7c-pipeline-stages',JSON.stringify(overrides))}
@@ -2458,6 +2458,7 @@ try {
       <button class="${filterPri==='C'?'active':''}" style="${filterPri==='C'?'background:#4080f0;color:#fff;border-color:transparent':''}" onclick="window._pf('pri','C')">❄️ Priority C</button>
       <select onchange="window._pf('cat',this.value)"><option value="all">All Categories</option>${cats.map(c=>`<option value="${c}"${filterCat===c?' selected':''}>${c}</option>`).join('')}</select>
       <select onchange="window._pf('area',this.value)"><option value="all">All Areas</option>${areas.map(a=>`<option value="${a}"${filterArea===a?' selected':''}>${a}</option>`).join('')}</select>
+      <select onchange="window._pf('rep',this.value)"><option value="all">All Reps</option><option value="Roberto"${filterRep==='Roberto'?' selected':''}>🍷 Roberto</option><option value="Tallyn"${filterRep==='Tallyn'?' selected':''}>📋 Tallyn</option><option value="unassigned"${filterRep==='unassigned'?' selected':''}>— Unassigned</option></select>
       <input type="text" id="pipeline-search" placeholder="Search restaurants..." value="${searchTerm||''}" oninput="window._pf('search',this.value)" style="padding:7px 14px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;flex:1;min-width:160px;outline:none">
     `;
   }
@@ -2466,6 +2467,7 @@ try {
     if(type==='pri')filterPri=val;
     if(type==='cat')filterCat=val;
     if(type==='area')filterArea=val;
+    if(type==='rep')filterRep=val;
     if(type==='search'){searchTerm=val;renderPipeline();return;}
     renderFilters();
     renderPipeline();
@@ -2476,6 +2478,7 @@ try {
       if(filterPri!=='all'&&l.priority!==filterPri)return false;
       if(filterCat!=='all'&&l.category!==filterCat)return false;
       if(filterArea!=='all'&&getArea(l)!==filterArea)return false;
+      if(filterRep!=='all'){const _lxr=JSON.parse(localStorage.getItem('lead_extras_'+l.id)||'{}');const rep=_lxr.salesperson||'';if(filterRep==='unassigned'&&rep)return false;if(filterRep!=='unassigned'&&rep!==filterRep)return false;}
       if(searchTerm){const q=searchTerm.toLowerCase();if(!(l.company||'').toLowerCase().includes(q)&&!(l.signal||'').toLowerCase().includes(q)&&!(l.location||'').toLowerCase().includes(q)&&!(l.subcategory||'').toLowerCase().includes(q))return false;}
       return true;
     });
@@ -2507,8 +2510,12 @@ try {
       colLeads.slice(0,showCount).forEach(lead=>{
         const priClass=lead.priority==='A'?'pri-a':lead.priority==='B'?'pri-b':'pri-c';
         const _lx=JSON.parse(localStorage.getItem('lead_extras_'+lead.id)||'{}')||{};
+        const _rep=_lx.salesperson||'';const _repColor=_rep==='Roberto'?'#EF4444':_rep==='Tallyn'?'#8B5CF6':'';
         html+=`<div class="kanban-card" draggable="true" data-id="${esc(lead.id)}" data-company="${esc(lead.company)}" ondragstart="window._pdrag(event)" onclick="window._pmodal('${lead.id}')">
-          <div class="kc-company">${esc(lead.company)}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="kc-company" style="margin-bottom:0">${esc(lead.company)}</div>
+            ${_rep?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:${_repColor}22;color:${_repColor};border:1px solid ${_repColor}44;white-space:nowrap">${_rep==='Roberto'?'🍷':'📋'} ${_rep}</span>`:''}
+          </div>
           ${_lx.contactName?`<div style="font-size:11px;color:var(--blue);margin-bottom:2px">👤 ${esc(_lx.contactName)}</div>`:''}
           <div class="kc-location">📍 ${esc(lead.location||'Grand Cayman')}</div>
           <div class="kc-signal">${esc(lead.signal||'')}</div>
@@ -2550,8 +2557,12 @@ try {
       colLeads.slice(0,showCount).forEach(lead=>{
         const priClass=lead.priority==='A'?'pri-a':lead.priority==='B'?'pri-b':'pri-c';
         const _lx=JSON.parse(localStorage.getItem('lead_extras_'+lead.id)||'{}')||{};
+        const _rep=_lx.salesperson||'';const _repColor=_rep==='Roberto'?'#EF4444':_rep==='Tallyn'?'#8B5CF6':'';
         html+=`<div class="kanban-card" draggable="true" data-id="${esc(lead.id)}" data-company="${esc(lead.company)}" ondragstart="window._pdrag(event)" onclick="window._pmodal('${lead.id}')">
-          <div class="kc-company">${esc(lead.company)}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div class="kc-company" style="margin-bottom:0">${esc(lead.company)}</div>
+            ${_rep?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:${_repColor}22;color:${_repColor};border:1px solid ${_repColor}44;white-space:nowrap">${_rep==='Roberto'?'🍷':'📋'} ${_rep}</span>`:''}
+          </div>
           ${_lx.contactName?`<div style="font-size:11px;color:var(--blue);margin-bottom:2px">👤 ${esc(_lx.contactName)}</div>`:''}
           <div class="kc-location">📍 ${esc(lead.location||'Grand Cayman')}</div>
           <div class="kc-signal">${esc(lead.signal||'')}</div>
@@ -2597,6 +2608,7 @@ try {
 
   window._psaveExtras=function(id){
     const extras={
+      salesperson:document.getElementById('lead-salesperson').value,
       contactName:document.getElementById('lead-contact-name').value.trim(),
       contactEmail:document.getElementById('lead-contact-email').value.trim(),
       contactPhone:document.getElementById('lead-contact-phone').value.trim(),
@@ -2629,6 +2641,7 @@ try {
     const contactEmail=extras.contactEmail||l.email||'';
     const contactPhone=extras.contactPhone||l.phone||'';
     const userNotes=extras.notes||'';
+    const salesperson=extras.salesperson||'';
     m.innerHTML=`
       <h2>${esc(l.company)}</h2>
       <div class="km-contact">${esc(l.subcategory||l.category)} · ${esc(l.location||'Grand Cayman')}</div>
@@ -2638,6 +2651,14 @@ try {
       ${l.rating?`<div class="km-section"><div class="km-label">Rating</div><div class="km-text">⭐ ${esc(l.rating)} ${esc(l.priceLevel||'')}</div></div>`:''}
       ${l.website?`<div class="km-section"><div class="km-label">Website</div><div class="km-text"><a href="https://${esc(l.website)}" target="_blank">${esc(l.website)}</a></div></div>`:''}
       ${l.instagram?`<div class="km-section"><div class="km-label">Instagram</div><div class="km-text"><a href="https://instagram.com/${l.instagram.replace('@','')}" target="_blank">${esc(l.instagram)}</a></div></div>`:''}
+      <div class="km-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div class="km-label">👤 Assigned Sales Rep</div>
+        <select id="lead-salesperson" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-family:inherit;margin-top:6px">
+          <option value="">— Unassigned</option>
+          <option value="Roberto"${salesperson==='Roberto'?' selected':''}>🍷 Roberto</option>
+          <option value="Tallyn"${salesperson==='Tallyn'?' selected':''}>📋 Tallyn</option>
+        </select>
+      </div>
       <div class="km-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
         <div class="km-label">Contact Info</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
