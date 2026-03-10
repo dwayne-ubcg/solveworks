@@ -529,6 +529,7 @@ async function init(){
   try{DATA.memory=await loadJSON('memory-recent')||{entries:[]}}catch(e){DATA.memory={entries:[]}}
   try{DATA.security=await loadJSON('security')||{}}catch(e){DATA.security={}}
   try{DATA.tasks=await loadJSON('tasks')||{tasks:[]}}catch(e){DATA.tasks={tasks:[]}}
+  try{DATA.financials=await loadJSON('financials')||{}}catch(e){DATA.financials={}}
   renderAll();
   loadResearch();
   startClock();
@@ -569,13 +570,19 @@ function renderStats(){
   const d=DATA.dashboard;
   const r=d.revenue||{};
   const p=d.pipeline||{};
+  const fin=DATA.financials||{};
+  const inv=fin.invoices||{};
+  const bank=fin.bankAccounts||{};
+  const rc=DATA.calls||{};
+  const rcToday=rc.today||rc.todayStats||{};
+  const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
   const grid=document.getElementById('stats-grid');
   const stats=[
-    {label:'Revenue MTD',value:'$'+(r.mtd||0).toLocaleString(),cls:'green',sub:(r.placements?.mtd||0)+' placements',action:'View Revenue →',section:'revenue'},
-    {label:'Pipeline Value',value:'$'+(p.totalValue||0).toLocaleString(),cls:'blue',sub:(p.activeDeals||0)+' active deals',action:'View Pipeline →',section:'pipeline'},
-    {label:'Gross Margin',value:((r.grossMargin||0)*100).toFixed(0)+'%',cls:'yellow',sub:'$'+((r.avgFeePerPlacement||0)).toLocaleString()+' avg fee',action:'View Financials →',section:'revenue'},
-    {label:'Active Recruiters',value:(d.team?.activeToday||0)+'/'+( d.team?.totalRecruiters||0),cls:'purple',sub:'Avg '+(d.team?.avgPlacements||0)+' placements/mo',action:'View Team →',section:'recruiters'},
-    {label:'Win Rate',value:((p.winRate||0)*100).toFixed(0)+'%',cls:'cyan',sub:(p.avgCycleTime||0)+' day avg cycle',action:'View Pipeline →',section:'pipeline'}
+    {label:'Paid (30d)',value:fmt(inv.paidLast30Days||r.mtd),cls:'green',sub:inv.paidLast30Days?'QuickBooks':'Revenue MTD',action:'View Revenue →',section:'revenue'},
+    {label:'Pipeline Value',value:fmt(p.totalValue),cls:'blue',sub:(p.activeDeals||0)+' active deals',action:'View Pipeline →',section:'pipeline'},
+    {label:'Bank Balance',value:fmt(bank.totalBalance),cls:'cyan',sub:(bank.accounts||[]).length+' accounts',action:'View Financials →',section:'revenue'},
+    {label:'Overdue',value:fmt(inv.overdueTotal),cls:'red',sub:(inv.recentOverdue||[]).length+' invoices',action:'View Invoices →',section:'revenue'},
+    {label:'Calls Today',value:String(rcToday.totalCalls||0),cls:'purple',sub:(rcToday.recorded||0)+' recorded · '+(rcToday.totalMinutes||0)+'m',action:'View Calls →',section:'calls'}
   ];
   grid.innerHTML=stats.map(s=>`
     <div class="stat-card">
@@ -763,59 +770,64 @@ function deleteCardFromModal(cardId){
 
 // ─── Revenue ──────────────────────────────────────────
 function renderRevenue(){
+  const fin=DATA.financials||{};
   const r=(DATA.dashboard.revenue)||{};
-  if(!r.mtd&&!r.ytd){
+  const inv=fin.invoices||{};
+  const bank=fin.bankAccounts||{};
+  if(!inv.unpaidTotal&&!r.mtd&&!r.ytd){
     document.getElementById('revenue-grid').innerHTML=`
       <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text2)">
         <div style="font-size:32px;margin-bottom:12px">💰</div>
         <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Revenue Tracking Coming Soon</div>
-        <div style="font-size:13px;max-width:400px;margin:0 auto">Connect QuickBooks to see revenue, margins, and receivables. Tell your AI agent your QuickBooks login to get started.</div>
+        <div style="font-size:13px;max-width:400px;margin:0 auto">Connect QuickBooks to see revenue, margins, and receivables.</div>
       </div>`;
     document.getElementById('receivables').innerHTML='';
     return;
   }
-  const pct=r.ytd&&r.target?((r.ytd/r.target)*100).toFixed(1):0;
   const grid=document.getElementById('revenue-grid');
+  const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});
   grid.innerHTML=`
     <div class="rev-card">
-      <div class="rev-label">Month-to-Date Revenue</div>
-      <div class="rev-value" style="color:var(--green)">$${(r.mtd||0).toLocaleString()}</div>
-      <div class="rev-sub">${r.placements?.mtd||0} placements × $${(r.avgFeePerPlacement||0).toLocaleString()} avg fee</div>
-      <div class="rev-action" onclick="toast('Opening QuickBooks P&L...')">View in QuickBooks →</div>
+      <div class="rev-label">Paid Last 30 Days</div>
+      <div class="rev-value" style="color:var(--green)">${fmt(inv.paidLast30Days||r.mtd)}</div>
+      <div class="rev-sub">${inv.paidLast30Days?'Deposited revenue':'MTD revenue'}</div>
     </div>
     <div class="rev-card">
-      <div class="rev-label">Year-to-Date</div>
-      <div class="rev-value" style="color:var(--blue)">$${(r.ytd||0).toLocaleString()}</div>
-      <div class="rev-sub">${pct}% of $${(r.target||0).toLocaleString()} annual target</div>
-      <div class="rev-bar"><div class="rev-bar-fill" style="width:${Math.min(pct,100)}%;background:var(--blue)"></div></div>
-      <div class="rev-action" onclick="toast('Generating YTD report...')">Export Report →</div>
+      <div class="rev-label">Bank Balance</div>
+      <div class="rev-value" style="color:var(--blue)">${fmt(bank.totalBalance)}</div>
+      <div class="rev-sub">${(bank.accounts||[]).length} accounts</div>
     </div>
     <div class="rev-card">
-      <div class="rev-label">Gross Margin</div>
-      <div class="rev-value" style="color:var(--yellow)">${((r.grossMargin||0)*100).toFixed(1)}%</div>
-      <div class="rev-sub">Last month: $${(r.lastMonth||0).toLocaleString()} (${r.placements?.lastMonth||0} placements)</div>
-      <div class="rev-action" onclick="toast('Loading margin breakdown...')">View Breakdown →</div>
+      <div class="rev-label">Unpaid Invoices</div>
+      <div class="rev-value" style="color:var(--yellow)">${fmt(inv.unpaidTotal)}</div>
+      <div class="rev-sub">${fmt(inv.notDueYet)} not yet due</div>
     </div>
     <div class="rev-card">
-      <div class="rev-label">Cash Collected MTD</div>
-      <div class="rev-value" style="color:var(--cyan)">$${(r.cashFlow?.collected||0).toLocaleString()}</div>
-      <div class="rev-sub">$${(r.cashFlow?.receivables||0).toLocaleString()} total receivables</div>
-      <div class="rev-action" onclick="toast('Opening AR aging report...')">View Aging →</div>
+      <div class="rev-label">Overdue</div>
+      <div class="rev-value" style="color:var(--red)">${fmt(inv.overdueTotal)}</div>
+      <div class="rev-sub">${(inv.recentOverdue||[]).length} overdue invoices</div>
     </div>
   `;
 
-  const cf=r.cashFlow||{};
-  document.getElementById('receivables').innerHTML=`
-    <div class="receivables-list">
-      <div class="rec-row"><span>Current (0-30 days)</span><strong style="color:var(--green)">$${(cf.outstanding30||0).toLocaleString()}</strong></div>
-      <div class="rec-row"><span>Overdue (31-60 days)</span><strong style="color:var(--yellow)">$${(cf.outstanding60||0).toLocaleString()}</strong></div>
-      <div class="rec-row"><span>Total Outstanding</span><strong style="color:var(--text)">$${((cf.outstanding30||0)+(cf.outstanding60||0)).toLocaleString()}</strong></div>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="kc-btn action" onclick="toast('Generating collection reminders...')" style="padding:6px 14px">Send Reminders</button>
-      <button class="kc-btn" onclick="toast('Exporting AR report...')" style="padding:6px 14px">Export CSV</button>
-    </div>
-  `;
+  let recHTML='';
+  if((bank.accounts||[]).length){
+    recHTML+=`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">Bank Accounts</div>`;
+    recHTML+=(bank.accounts||[]).map(a=>`
+      <div class="rec-row"><span>${a.name}</span><strong style="color:var(--green)">${fmt(a.bankBalance||a.qbBalance)}</strong></div>
+    `).join('');
+    recHTML+=`</div>`;
+  }
+  if((inv.recentOverdue||[]).length){
+    recHTML+=`<div><div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px">Overdue Invoices</div>`;
+    recHTML+=(inv.recentOverdue||[]).slice(0,6).map(o=>`
+      <div class="rec-row"><span>#${o.invoice} ${o.customer} <span style="color:var(--red);font-size:11px">${o.daysOverdue}d overdue</span></span><strong style="color:var(--red)">${fmt(o.amount)}</strong></div>
+    `).join('');
+    recHTML+=`</div>`;
+  }
+  if(fin.lastUpdated){
+    recHTML+=`<div style="margin-top:12px;font-size:11px;color:var(--text2)">Source: ${fin.source==='quickbooks_browser_snapshot'?'QuickBooks (snapshot)':'QuickBooks API'} · Updated ${new Date(fin.lastUpdated).toLocaleString()}</div>`;
+  }
+  document.getElementById('receivables').innerHTML=recHTML;
 }
 
 // ─── Recruiters ───────────────────────────────────────
@@ -859,43 +871,68 @@ function renderActivity(){
 
 // ─── Calls ────────────────────────────────────────────
 function renderCalls(){
-  const analyses=DATA.calls.analyses||[];
-  if(analyses.length){
-    const scores=analyses.map(a=>a.score);
-    const avg=(scores.reduce((s,v)=>s+v,0)/scores.length).toFixed(1);
-    const flags=analyses.filter(a=>(a.flags||[]).length>0).length;
-    document.getElementById('avg-call-score').textContent=avg;
-    document.getElementById('avg-call-score').style.color=avg>=7?'var(--green)':avg>=5?'var(--yellow)':'var(--red)';
-    document.getElementById('calls-analyzed').textContent=analyses.length;
-    document.getElementById('coaching-flags').textContent=flags;
+  const cd=DATA.calls||{};
+  const today=cd.today||cd.todayStats||{};
+  const recent=cd.recentCalls||[];
+  const top=cd.topCallers||[];
+  const isLive=cd.source&&cd.source.indexOf('ringcentral')>-1;
+
+  // Update stats header
+  document.getElementById('avg-call-score').textContent=today.totalCalls||0;
+  document.getElementById('avg-call-score').style.color='var(--blue)';
+  document.getElementById('calls-analyzed').textContent=today.recorded||0;
+  document.getElementById('coaching-flags').textContent=Math.round(today.totalMinutes||0);
+
+  // Update labels if they exist
+  const labels=document.querySelectorAll('.calls-stat-label');
+  if(labels.length>=3){labels[0].textContent='Total Calls';labels[1].textContent='Recorded';labels[2].textContent='Minutes';}
+
+  if(!recent.length&&!(cd.analyses||[]).length){
+    document.getElementById('calls-list').innerHTML='<p style="color:var(--text2);text-align:center;padding:40px">No call data available yet.</p>';
+    return;
   }
-  document.getElementById('calls-list').innerHTML=(DATA.calls.analyses||[]).map((c,i)=>{
-    const scoreCls=c.score>=7?'high':c.score>=5?'mid':'low';
-    const outCls=c.sentiment==='positive'||c.sentiment==='very-positive'?'positive':c.sentiment==='negative'?'negative':'neutral';
-    return `
-    <div class="call-card">
-      <div class="call-header">
-        <div style="flex:1">
-          <div class="call-caller">${c.caller}</div>
-          <div class="call-prospect">${c.prospect} · ${c.duration} · ${c.date}</div>
+
+  let html='';
+  if(isLive&&top.length){
+    html+=`<div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">`;
+    top.slice(0,6).forEach(t=>{
+      html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px"><strong>${t.name}</strong> <span style="color:var(--blue)">${t.calls} calls</span></div>`;
+    });
+    html+=`</div>`;
+  }
+
+  if(recent.length){
+    html+=recent.map((c,i)=>{
+      const time=c.time?new Date(c.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'';
+      const dir=c.direction==='Inbound'?'📥':'📤';
+      const durMin=Math.floor((c.duration||0)/60);
+      const durSec=(c.duration||0)%60;
+      const durStr=durMin>0?durMin+'m '+durSec+'s':durSec+'s';
+      const recBadge=c.recorded?'<span style="background:rgba(64,192,128,.15);color:var(--green);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">REC</span>':'';
+      return `
+      <div class="call-card">
+        <div class="call-header">
+          <div style="flex:1">
+            <div class="call-caller">${dir} ${c.from||'Unknown'}</div>
+            <div class="call-prospect">→ ${c.to||'Unknown'} · ${durStr} · ${time}</div>
+          </div>
+          ${recBadge}
+          <span class="call-outcome ${c.result==='Accepted'?'positive':c.result==='Missed'?'negative':'neutral'}">${c.direction||''}</span>
         </div>
-        <div class="call-score ${scoreCls}">${c.score}</div>
-        <span class="call-outcome ${outCls}">${(c.outcome||'').replace(/-/g,' ')}</span>
-      </div>
-      <ul class="call-highlights">
-        ${(c.highlights||[]).map(h=>`<li>${h}</li>`).join('')}
-        ${(c.flags||[]).map(f=>`<li class="flag">${f}</li>`).join('')}
-      </ul>
-      <div class="call-summary" id="call-sum-${i}">${c.summary||''}</div>
-      <div class="call-toggle" onclick="document.getElementById('call-sum-${i}').classList.toggle('open');this.textContent=this.textContent==='Show details'?'Hide details':'Show details'">Show details</div>
-      <div class="call-actions">
-        <button class="call-btn" onclick="toast('Playing recording for ${c.caller}...')">▶ Play</button>
-        <button class="call-btn" onclick="toast('Opening full transcript...')">Transcript</button>
-        ${c.score<6?`<button class="call-btn coach" onclick="toast('Creating coaching plan for ${c.caller}...')">⚡ Coach</button>`:''}
-        <button class="call-btn" onclick="toast('Sharing analysis...')">Share</button>
-      </div>
-    </div>`;
-  }).join('')||'<p style="color:var(--text2);text-align:center;padding:40px">No call analyses available yet.</p>';
+      </div>`;
+    }).join('');
+  } else if((cd.analyses||[]).length){
+    html+=(cd.analyses||[]).map((c,i)=>{
+      const scoreCls=c.score>=7?'high':c.score>=5?'mid':'low';
+      return `<div class="call-card"><div class="call-header"><div style="flex:1"><div class="call-caller">${c.caller}</div><div class="call-prospect">${c.prospect||''} · ${c.duration||''}</div></div><div class="call-score ${scoreCls}">${c.score}</div></div></div>`;
+    }).join('');
+  }
+
+  if(isLive){
+    html+=`<div style="margin-top:12px;font-size:11px;color:var(--text2)">Source: RingCentral API (live) · ${today.inbound||0} inbound, ${today.outbound||0} outbound · Updated ${cd.lastUpdated?new Date(cd.lastUpdated).toLocaleString():'just now'}</div>`;
+  }
+
+  document.getElementById('calls-list').innerHTML=html;
 }
 
 // ─── Security ─────────────────────────────────────────
