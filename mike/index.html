@@ -531,6 +531,7 @@ async function init(){
   try{DATA.tasks=await loadJSON('tasks')||{tasks:[]}}catch(e){DATA.tasks={tasks:[]}}
   try{DATA.financials=await loadJSON('financials')||{}}catch(e){DATA.financials={}}
   try{DATA.recruiters=await loadJSON('recruiters')||{}}catch(e){DATA.recruiters={}}
+  try{DATA.jobs=await loadJSON('jobs')||{}}catch(e){DATA.jobs={}}
   renderAll();
   loadResearch();
   startClock();
@@ -914,13 +915,56 @@ function renderRecruiters(){
 
 // ─── Active Reqs ──────────────────────────────────────
 function renderReqs(){
-  document.getElementById('reqs-count').textContent='0';
-  document.getElementById('reqs-list').innerHTML=`
-    <div style="text-align:center;padding:40px;color:var(--text2)">
-      <div style="font-size:32px;margin-bottom:12px">📋</div>
-      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Job Orders Will Appear Here</div>
-      <div style="font-size:13px;max-width:400px;margin:0 auto">Connect CEIPAL to pull your active job orders and candidate pipelines. Tell your AI agent your login to get started.</div>
+  const jd=DATA.jobs||{};
+  const jobs=jd.jobs||[];
+  const statuses=jd.statusBreakdown||{};
+  if(!jobs.length){
+    document.getElementById('reqs-count').textContent='0';
+    document.getElementById('reqs-list').innerHTML=`
+      <div style="text-align:center;padding:40px;color:var(--text2)">
+        <div style="font-size:32px;margin-bottom:12px">📋</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Job Orders Will Appear Here</div>
+        <div style="font-size:13px;max-width:400px;margin:0 auto">Connect CEIPAL to pull your active job orders.</div>
+      </div>`;
+    return;
+  }
+  const active=jobs.filter(j=>j.status==='Active');
+  const covered=jobs.filter(j=>j.status==='Covered');
+  document.getElementById('reqs-count').textContent=String(active.length);
+  const statusColors={'Active':'var(--green)','Covered':'var(--blue)','Hold by Client':'var(--yellow)','Closed':'var(--red)','Draft':'var(--text2)'};
+  const renderJob=j=>`
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${j.title}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${j.location} · ${j.type||'Contract'} · ${j.taxTerms||''} ${j.remote==='Yes'?' · 🏠 Remote':''}</div>
+        ${j.skills?`<div style="font-size:11px;color:var(--text2);margin-top:2px">${j.skills}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        ${j.pay?`<div style="font-weight:700;font-size:14px;color:var(--green)">${j.pay}</div>`:''}
+        <div style="font-size:11px;margin-top:2px"><span style="color:${statusColors[j.status]||'var(--text2)'};font-weight:600">${j.status}</span></div>
+        <div style="font-size:10px;color:var(--text2)">${j.updated||''}</div>
+      </div>
     </div>`;
+  let html='';
+  // Status summary
+  html+=`<div style="display:flex;gap:12px;padding:16px;flex-wrap:wrap">`;
+  Object.entries(statuses).forEach(([s,c])=>{
+    html+=`<div style="padding:8px 16px;background:var(--surface2);border-radius:var(--radius);text-align:center"><div style="font-size:20px;font-weight:800;color:${statusColors[s]||'var(--text)'}">${c}</div><div style="font-size:11px;color:var(--text2)">${s}</div></div>`;
+  });
+  html+=`</div>`;
+  // Active jobs
+  if(active.length){
+    html+=`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green);padding:12px 16px 4px">🟢 Active (${active.length})</div>`;
+    html+=active.map(renderJob).join('');
+  }
+  // Covered jobs (show first 20)
+  if(covered.length){
+    html+=`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--blue);padding:16px 16px 4px">✅ Covered (${covered.length})</div>`;
+    html+=covered.slice(0,20).map(renderJob).join('');
+    if(covered.length>20) html+=`<div style="text-align:center;padding:12px;font-size:12px;color:var(--text2)">+${covered.length-20} more covered positions</div>`;
+  }
+  html+=`<div style="padding:12px 16px;font-size:11px;color:var(--text2)">Source: CEIPAL ATS · ${jd.totalJobs} total positions · Updated ${jd.lastUpdated?new Date(jd.lastUpdated).toLocaleString():'just now'}</div>`;
+  document.getElementById('reqs-list').innerHTML=html;
 }
 
 // ─── Activity Feed ────────────────────────────────────
