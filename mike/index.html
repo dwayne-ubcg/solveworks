@@ -455,11 +455,28 @@ a{color:var(--blue);text-decoration:none}
   <!-- CALL MONITOR -->
   <div class="section" id="sec-calls">
     <h1 class="page-title">Call Monitoring</h1>
-    <p class="page-sub">RingCentral call analyses — scores and coaching flags</p>
-    <div style="display:flex;gap:16px;margin-bottom:20px">
-      <div class="stat-card" style="opacity:1;animation:none;flex:1"><div class="label">Avg Score</div><div class="value" id="avg-call-score">—</div></div>
-      <div class="stat-card" style="opacity:1;animation:none;flex:1"><div class="label">Calls Analyzed</div><div class="value blue" id="calls-analyzed">—</div></div>
-      <div class="stat-card" style="opacity:1;animation:none;flex:1"><div class="label">Coaching Flags</div><div class="value yellow" id="coaching-flags">—</div></div>
+    <p class="page-sub">AI-powered call analysis — scores, flags, and coaching insights</p>
+    <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+      <div class="stat-card" style="opacity:1;animation:none;flex:1;min-width:120px"><div class="label">Total Calls</div><div class="value blue" id="avg-call-score">—</div></div>
+      <div class="stat-card" style="opacity:1;animation:none;flex:1;min-width:120px"><div class="label">Avg Score</div><div class="value" id="avg-ai-score">—</div></div>
+      <div class="stat-card" style="opacity:1;animation:none;flex:1;min-width:120px"><div class="label">Analyzed</div><div class="value blue" id="calls-analyzed">—</div></div>
+      <div class="stat-card" style="opacity:1;animation:none;flex:1;min-width:120px"><div class="label">🚨 Flagged</div><div class="value" style="color:var(--red)" id="coaching-flags">0</div></div>
+      <div class="stat-card" style="opacity:1;animation:none;flex:1;min-width:120px"><div class="label">Connect Rate</div><div class="value" id="connect-rate">—</div></div>
+    </div>
+    <!-- Flagged Calls Banner -->
+    <div id="flagged-banner" style="display:none;background:linear-gradient(135deg,rgba(240,64,96,.06),rgba(240,192,64,.06));border:1px solid rgba(240,64,96,.2);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:18px">🚨</span>
+        <span style="font-weight:700;font-size:14px;color:var(--red)">Calls Requiring Review</span>
+      </div>
+      <div id="flagged-list"></div>
+    </div>
+    <!-- Filter tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="call-tab active" onclick="filterCallTab('all',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">All Calls</button>
+      <button class="call-tab" onclick="filterCallTab('flagged',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">🚨 Flagged</button>
+      <button class="call-tab" onclick="filterCallTab('high',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">⭐ High Score</button>
+      <button class="call-tab" onclick="filterCallTab('long',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">📞 Long Calls</button>
     </div>
     <div id="calls-list"></div>
   </div>
@@ -532,6 +549,7 @@ async function init(){
   try{DATA.financials=await loadJSON('financials')||{}}catch(e){DATA.financials={}}
   try{DATA.recruiters=await loadJSON('recruiters')||{}}catch(e){DATA.recruiters={}}
   try{DATA.jobs=await loadJSON('jobs')||{}}catch(e){DATA.jobs={}}
+  try{DATA.callScores=await loadJSON('call-scores')||{}}catch(e){DATA.callScores={}}
   renderAll();
   loadResearch();
   startClock();
@@ -993,25 +1011,55 @@ function renderCalls(){
   const top=cd.topCallers||[];
   const isLive=cd.source&&cd.source.indexOf('ringcentral')>-1;
 
-  // Update stats header
-  document.getElementById('avg-call-score').textContent=today.totalCalls||0;
-  document.getElementById('avg-call-score').style.color='var(--blue)';
-  document.getElementById('calls-analyzed').textContent=today.recorded||0;
-  document.getElementById('coaching-flags').textContent=Math.round(today.totalMinutes||0);
+  // AI scores from call-scores.json (loaded separately)
+  const scores=DATA.callScores||{};
+  const scoredCalls=scores.scoredCalls||[];
+  const scoreMap={};
+  scoredCalls.forEach(s=>{if(s.recordingId)scoreMap[s.recordingId]=s;});
 
-  // Update labels if they exist
-  const labels=document.querySelectorAll('.calls-stat-label');
-  if(labels.length>=3){labels[0].textContent='Total Calls';labels[1].textContent='Recorded';labels[2].textContent='Minutes';}
+  // Stats
+  const totalCalls=today.totalCalls||recent.length||0;
+  const analyzed=scoredCalls.length;
+  const flagged=scoredCalls.filter(s=>s.flagged).length;
+  const avgScore=analyzed?Math.round(scoredCalls.reduce((a,s)=>a+(s.score||0),0)/analyzed*10)/10:0;
+  const connected=recent.filter(c=>c.result==='Accepted'||c.duration>10).length;
+  const connectRate=totalCalls?Math.round(connected/totalCalls*100):0;
 
-  if(!recent.length&&!(cd.analyses||[]).length){
+  document.getElementById('avg-call-score').textContent=totalCalls;
+  document.getElementById('avg-ai-score').textContent=analyzed?avgScore+'/10':'—';
+  document.getElementById('avg-ai-score').style.color=avgScore>=7?'var(--green)':avgScore>=5?'var(--yellow)':'var(--red)';
+  document.getElementById('calls-analyzed').textContent=analyzed||today.recorded||0;
+  document.getElementById('coaching-flags').textContent=flagged;
+  const crEl=document.getElementById('connect-rate');
+  if(crEl){crEl.textContent=connectRate+'%';crEl.style.color=connectRate>=50?'var(--green)':connectRate>=30?'var(--yellow)':'var(--red)';}
+
+  // Flagged calls banner
+  const flaggedCalls=scoredCalls.filter(s=>s.flagged);
+  const banner=document.getElementById('flagged-banner');
+  if(flaggedCalls.length&&banner){
+    banner.style.display='block';
+    document.getElementById('flagged-list').innerHTML=flaggedCalls.map(f=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-radius:6px;border-left:3px solid ${f.severity==='high'?'var(--red)':'var(--yellow)'}">
+        <span style="font-size:14px">${f.severity==='high'?'🔴':'🟡'}</span>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${f.caller||'Unknown'} → ${f.prospect||'Unknown'}</div>
+          <div style="font-size:12px;color:var(--text2)">${(f.flags||[]).join(' · ')}</div>
+        </div>
+        <div style="font-size:20px;font-weight:800;color:${f.score>=7?'var(--green)':f.score>=5?'var(--yellow)':'var(--red)'}">${f.score||'?'}</div>
+        ${f.recordingFile?`<button onclick="event.stopPropagation();toggleAudio(this,'data/${f.recordingFile}')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600">▶ Listen</button>`:''}
+      </div>`).join('');
+  } else if(banner){banner.style.display='none';}
+
+  if(!recent.length&&!scoredCalls.length){
     document.getElementById('calls-list').innerHTML='<p style="color:var(--text2);text-align:center;padding:40px">No call data available yet.</p>';
     return;
   }
 
   let html='';
+  // Top callers filter
   if(isLive&&top.length){
     html+=`<div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">`;
-    html+=`<div class="caller-filter active" data-caller="all" onclick="filterCalls('all',this)" style="background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer"><strong>All</strong> <span>${today.totalCalls||0}</span></div>`;
+    html+=`<div class="caller-filter active" data-caller="all" onclick="filterCalls('all',this)" style="background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer"><strong>All</strong> <span>${totalCalls}</span></div>`;
     top.slice(0,8).forEach(t=>{
       const escapedName=t.name.replace(/'/g,"\\'");
       html+=`<div class="caller-filter" data-caller="${escapedName}" onclick="filterCalls('${escapedName}',this)" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;transition:all .2s"><strong>${t.name}</strong> <span style="color:var(--blue)">${t.calls}</span></div>`;
@@ -1028,13 +1076,24 @@ function renderCalls(){
       const durStr=durMin>0?durMin+'m '+durSec+'s':durSec+'s';
       const recBadge=c.recorded?'<span style="background:rgba(64,192,128,.15);color:var(--green);font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600">REC</span>':'';
       const playBtn=c.recordingFile?`<button onclick="event.stopPropagation();toggleAudio(this,'data/${c.recordingFile}')" style="background:var(--accent);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600;white-space:nowrap">▶ Play</button>`:'';
+
+      // AI score for this call
+      const recId=c.recordingFile?c.recordingFile.replace('recordings/','').replace('.mp3',''):'';
+      const ai=scoreMap[recId];
+      const scoreHtml=ai?`<div style="text-align:center;min-width:44px"><div style="font-size:20px;font-weight:800;line-height:1;color:${ai.score>=7?'var(--green)':ai.score>=5?'var(--yellow)':'var(--red)'}">${ai.score}</div><div style="font-size:9px;color:var(--text2)">/ 10</div></div>`:'';
+      const flagsHtml=ai&&ai.flags&&ai.flags.length?`<div style="padding:4px 0 0;display:flex;gap:4px;flex-wrap:wrap">${ai.flags.map(f=>`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${f.startsWith('🔴')?'rgba(240,64,96,.1)':f.startsWith('🟡')?'rgba(240,192,64,.1)':'rgba(64,192,128,.1)'};color:var(--text2)">${f}</span>`).join('')}</div>`:'';
+      const summaryHtml=ai&&ai.summary?`<div style="font-size:12px;color:var(--text2);margin-top:4px;padding:6px 10px;background:var(--surface2);border-radius:6px">${ai.summary}</div>`:'';
+
       return `
-      <div class="call-card" data-from="${(c.from||'').replace(/"/g,'')}" data-to="${(c.to||'').replace(/"/g,'')}" ${c.recordingFile?'style="cursor:pointer" onclick="toggleAudio(this.querySelector(\'.play-btn\'),\'data/'+c.recordingFile+'\')"':''}>
+      <div class="call-card" data-from="${(c.from||'').replace(/"/g,'')}" data-to="${(c.to||'').replace(/"/g,'')}" data-score="${ai?ai.score:''}" data-flagged="${ai&&ai.flagged?'1':''}" data-duration="${c.duration||0}" ${c.recordingFile?'style="cursor:pointer"':''}>
         <div class="call-header">
           <div style="flex:1">
             <div class="call-caller">${dir} ${c.from||'Unknown'}</div>
             <div class="call-prospect">→ ${c.to||'Unknown'} · ${durStr} · ${time}</div>
+            ${flagsHtml}
+            ${summaryHtml}
           </div>
+          ${scoreHtml}
           ${playBtn?`<span class="play-btn">${playBtn}</span>`:''}
           ${recBadge}
           <span class="call-outcome ${c.result==='Accepted'?'positive':c.result==='Missed'?'negative':'neutral'}">${c.direction||''}</span>
@@ -1042,18 +1101,28 @@ function renderCalls(){
         <div class="call-audio-container" style="display:none;padding:8px 0 4px"></div>
       </div>`;
     }).join('');
-  } else if((cd.analyses||[]).length){
-    html+=(cd.analyses||[]).map((c,i)=>{
-      const scoreCls=c.score>=7?'high':c.score>=5?'mid':'low';
-      return `<div class="call-card"><div class="call-header"><div style="flex:1"><div class="call-caller">${c.caller}</div><div class="call-prospect">${c.prospect||''} · ${c.duration||''}</div></div><div class="call-score ${scoreCls}">${c.score}</div></div></div>`;
-    }).join('');
   }
 
   if(isLive){
-    html+=`<div style="margin-top:12px;font-size:11px;color:var(--text2)">Source: RingCentral API (live) · ${today.inbound||0} inbound, ${today.outbound||0} outbound · Updated ${cd.lastUpdated?new Date(cd.lastUpdated).toLocaleString():'just now'}</div>`;
+    html+=`<div style="margin-top:12px;font-size:11px;color:var(--text2)">Source: RingCentral API (live) · ${today.inbound||0} inbound, ${today.outbound||0} outbound · AI analysis: ${analyzed} scored · Updated ${cd.lastUpdated?new Date(cd.lastUpdated).toLocaleString():'just now'}</div>`;
   }
 
   document.getElementById('calls-list').innerHTML=html;
+}
+
+// Call tab filter (All / Flagged / High Score / Long)
+function filterCallTab(tab,el){
+  document.querySelectorAll('.call-tab').forEach(t=>{
+    t.style.background=t===el?'var(--accent)':'var(--surface2)';
+    t.style.color=t===el?'#fff':'var(--text)';
+    t.style.borderColor=t===el?'var(--accent)':'var(--border)';
+  });
+  document.querySelectorAll('.call-card').forEach(card=>{
+    if(tab==='all'){card.style.display='';return;}
+    if(tab==='flagged'){card.style.display=card.dataset.flagged==='1'?'':'none';return;}
+    if(tab==='high'){card.style.display=parseInt(card.dataset.score)>=8?'':'none';return;}
+    if(tab==='long'){card.style.display=parseInt(card.dataset.duration)>=120?'':'none';return;}
+  });
 }
 
 let currentAudio=null;
@@ -1061,13 +1130,11 @@ function toggleAudio(btn,src){
   if(!btn)return;
   const card=btn.closest('.call-card');
   const container=card.querySelector('.call-audio-container');
-  // If same audio is playing, pause it
   if(currentAudio&&currentAudio.parentElement===container){
     if(currentAudio.paused){currentAudio.play();btn.closest('.play-btn').querySelector('button').textContent='⏸ Pause';}
     else{currentAudio.pause();btn.closest('.play-btn').querySelector('button').textContent='▶ Play';}
     return;
   }
-  // Stop any other audio
   if(currentAudio){currentAudio.pause();currentAudio.parentElement.style.display='none';
     const oldBtn=currentAudio.closest('.call-card')?.querySelector('.play-btn button');
     if(oldBtn)oldBtn.textContent='▶ Play';
