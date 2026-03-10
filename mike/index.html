@@ -1024,7 +1024,14 @@ function renderCalls(){
   const analyzed=realCalls.length;
   const flagged=realCalls.filter(s=>s.flagged).length;
   const avgScore=analyzed?Math.round(realCalls.reduce((a,s)=>a+(s.score||0),0)/analyzed*10)/10:0;
-  const connected=recent.filter(c=>c.result==='Accepted'||c.duration>10).length;
+  // Connect rate: only count calls with real conversations (not voicemails)
+  const scoreById={};
+  scoredCalls.forEach(s=>{const rid=(s.recordingFile||'').replace('recordings/','').replace('.mp3','');if(rid)scoreById[rid]=s;});
+  const connected=recent.filter(c=>{
+    const rid=(c.recordingFile||'').replace('recordings/','').replace('.mp3','');
+    const sc=scoreById[rid];
+    return sc&&!sc.voicemail&&sc.score!==null;
+  }).length;
   const connectRate=totalCalls?Math.round(connected/totalCalls*100):0;
 
   document.getElementById('avg-call-score').textContent=totalCalls;
