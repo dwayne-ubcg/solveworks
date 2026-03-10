@@ -201,6 +201,47 @@ a{color:var(--blue);text-decoration:none}
 .security-check .sc-name{flex:1;font-weight:500}
 .security-check .sc-detail{color:var(--text2);font-size:12px}
 
+/* Research & Playbooks */
+.research-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.research-filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.research-filter-btn:hover{border-color:var(--border-hover);color:var(--text)}
+.research-filter-btn.active{background:var(--accent-light);border-color:rgba(64,128,240,.4);color:#fff}
+.research-doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;transition:all .25s;overflow:hidden;opacity:0;animation:cardIn .4s ease forwards}
+.research-doc-card:hover{border-color:var(--border-hover)}
+.research-doc-header{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none}
+.research-doc-title{font-size:15px;font-weight:700;flex:1}
+.research-doc-meta{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.research-cat-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.research-cat-badge.pipeline{background:rgba(64,128,240,.18);color:var(--blue)}
+.research-cat-badge.playbooks{background:rgba(240,192,64,.18);color:var(--yellow)}
+.research-cat-badge.outreach{background:rgba(64,192,128,.18);color:var(--green)}
+.research-cat-badge.market{background:rgba(160,96,240,.18);color:var(--purple)}
+.research-cat-badge.other{background:rgba(64,200,224,.18);color:var(--cyan)}
+.research-doc-toggle{font-size:14px;color:var(--text2);transition:transform .25s;display:flex;align-items:center}
+.research-doc-toggle.open{transform:rotate(90deg)}
+.research-doc-content{display:none;padding:0 20px 20px;font-size:13px;line-height:1.75;color:var(--text);border-top:1px solid var(--border)}
+.research-doc-content.open{display:block}
+.research-doc-content.loading{color:var(--text2);padding-top:16px}
+.research-doc-content h1,.research-doc-content h2,.research-doc-content h3{font-weight:700;margin:16px 0 8px;letter-spacing:-.01em}
+.research-doc-content h1{font-size:18px;color:var(--text)}
+.research-doc-content h2{font-size:15px;color:var(--text)}
+.research-doc-content h3{font-size:13px;color:var(--blue)}
+.research-doc-content p{margin:8px 0}
+.research-doc-content ul,.research-doc-content ol{margin:8px 0 8px 20px}
+.research-doc-content li{margin:4px 0}
+.research-doc-content strong{font-weight:700;color:var(--text)}
+.research-doc-content em{font-style:italic;color:var(--text2)}
+.research-doc-content code{background:var(--surface3);border-radius:4px;padding:1px 6px;font-family:ui-monospace,monospace;font-size:12px;color:var(--cyan)}
+.research-doc-content pre{background:var(--surface3);border-radius:8px;padding:12px 16px;overflow-x:auto;margin:12px 0}
+.research-doc-content pre code{background:none;padding:0;font-size:12px}
+.research-doc-content a{color:var(--blue)}.research-doc-content a:hover{text-decoration:underline}
+.research-doc-content blockquote{border-left:3px solid var(--border-hover);padding:4px 12px;margin:8px 0;color:var(--text2)}
+.research-doc-content hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+.research-empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.research-empty .empty-icon{font-size:40px;margin-bottom:12px}
+.research-empty .empty-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px}
+.research-empty .empty-sub{font-size:13px;max-width:360px;margin:0 auto;line-height:1.6}
+
 /* Sync Footer */
 .sync-footer{position:fixed;bottom:0;left:240px;right:0;padding:8px 20px;background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;z-index:10}
 .sync-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
@@ -284,6 +325,11 @@ a{color:var(--blue);text-decoration:none}
       Call Monitor
       <span class="nav-badge" id="calls-count">5</span>
     </div>
+    <div class="nav-item" data-section="research" onclick="showSection('research',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Research
+      <span class="nav-badge" id="research-count">0</span>
+    </div>
     <div class="nav-item" data-section="security" onclick="showSection('security',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       Security
@@ -304,6 +350,7 @@ a{color:var(--blue);text-decoration:none}
     <button class="mobile-tab" onclick="showSection('revenue',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue</button>
     <button class="mobile-tab" onclick="showSection('calls',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Calls</button>
     <button class="mobile-tab" onclick="showSection('recruiters',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Team</button>
+    <button class="mobile-tab" onclick="showSection('research',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Research</button>
   </div>
 </div>
 
@@ -397,6 +444,14 @@ a{color:var(--blue);text-decoration:none}
     <div id="calls-list"></div>
   </div>
 
+  <!-- RESEARCH & PLAYBOOKS -->
+  <div class="section" id="sec-research">
+    <h1 class="page-title">Research & Playbooks</h1>
+    <p class="page-sub">Agent-generated research documents, playbooks, and outreach templates</p>
+    <div class="research-filters" id="research-filters"></div>
+    <div id="research-docs"></div>
+  </div>
+
   <!-- SECURITY -->
   <div class="section" id="sec-security">
     <h1 class="page-title">Security & System Health</h1>
@@ -455,6 +510,7 @@ async function init(){
   try{DATA.security=await loadJSON('security')||{}}catch(e){DATA.security={}}
   try{DATA.tasks=await loadJSON('tasks')||{tasks:[]}}catch(e){DATA.tasks={tasks:[]}}
   renderAll();
+  loadResearch();
   startClock();
 }
 
@@ -797,6 +853,172 @@ function renderSecurity(){
       </div>
     </div>
   `;
+}
+
+// ─── Research & Playbooks ─────────────────────────────
+const RESEARCH_CATEGORIES={
+  pipeline:{label:'Pipeline Research',cls:'pipeline',keywords:['leads','pipeline','prospect','company','overnight']},
+  playbooks:{label:'Playbooks',cls:'playbooks',keywords:['playbook']},
+  outreach:{label:'Outreach',cls:'outreach',keywords:['outreach','template','linkedin']},
+  market:{label:'Market Intel',cls:'market',keywords:['competitor','market','diversity','funded','government','vertical']}
+};
+
+function getResearchCategory(filename){
+  const f=filename.toLowerCase();
+  for(const[key,cat] of Object.entries(RESEARCH_CATEGORIES)){
+    if(cat.keywords.some(kw=>f.includes(kw)))return{key,label:cat.label,cls:cat.cls};
+  }
+  return{key:'other',label:'Other',cls:'other'};
+}
+
+function kebabToTitle(str){
+  return str.replace(/\.md$/i,'').replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+
+function mdToHtml(md){
+  if(!md)return'';
+  let html=md
+    // Code blocks (before inline)
+    .replace(/```[\w]*\n?([\s\S]*?)```/g,(_,c)=>`<pre><code>${c.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</code></pre>`)
+    // Headers
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    // Bold / italic
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    // Inline code
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    // HR
+    .replace(/^---+$/gm,'<hr>')
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>')
+    // Blockquote
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
+    // Unordered lists
+    .replace(/^[*\-] (.+)$/gm,'<li>$1</li>')
+    // Ordered lists
+    .replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  // Wrap consecutive <li> in <ul>
+  html=html.replace(/(<li>[\s\S]*?<\/li>)/g,m=>`<ul>${m}</ul>`);
+  // Paragraphs — lines not already wrapped
+  html=html.split('\n').map(line=>{
+    if(/^<(h[1-6]|ul|ol|li|pre|hr|blockquote)/.test(line.trim())||line.trim()==='')return line;
+    return`<p>${line}</p>`;
+  }).join('\n');
+  return html;
+}
+
+let researchDocs=[];
+let researchFilter='all';
+
+async function loadResearch(){
+  try{
+    const r=await fetch('data/research/manifest.json?t='+Date.now());
+    if(!r.ok)throw new Error(r.status);
+    researchDocs=await r.json();
+  }catch(e){
+    researchDocs=[];
+  }
+  document.getElementById('research-count').textContent=researchDocs.length;
+  renderResearch();
+}
+
+function renderResearch(){
+  const filtersEl=document.getElementById('research-filters');
+  const docsEl=document.getElementById('research-docs');
+
+  // Detect which categories are actually present
+  const presentCats=new Set();
+  researchDocs.forEach(doc=>presentCats.add(getResearchCategory(doc.file).key));
+
+  // Build filter buttons
+  const allBtn=`<button class="research-filter-btn${researchFilter==='all'?' active':''}" onclick="setResearchFilter('all',this)">Show All</button>`;
+  const catBtns=Object.entries(RESEARCH_CATEGORIES)
+    .filter(([key])=>presentCats.has(key))
+    .map(([key,cat])=>`<button class="research-filter-btn${researchFilter===key?' active':''}" onclick="setResearchFilter('${key}',this)">${cat.label}</button>`)
+    .join('');
+  filtersEl.innerHTML=allBtn+catBtns;
+
+  // Filter docs
+  const filtered=researchFilter==='all'
+    ?researchDocs
+    :researchDocs.filter(doc=>getResearchCategory(doc.file).key===researchFilter);
+
+  if(!researchDocs.length){
+    docsEl.innerHTML=`
+      <div class="research-empty">
+        <div class="empty-icon">📚</div>
+        <div class="empty-title">No research documents yet.</div>
+        <div class="empty-sub">Your agent is working on it.</div>
+      </div>`;
+    return;
+  }
+
+  if(!filtered.length){
+    docsEl.innerHTML=`
+      <div class="research-empty">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">No documents in this category.</div>
+        <div class="empty-sub">Try another filter or check back after your agent runs.</div>
+      </div>`;
+    return;
+  }
+
+  docsEl.innerHTML=filtered.map((doc,i)=>{
+    const cat=getResearchCategory(doc.file);
+    const title=kebabToTitle(doc.file);
+    const delay=Math.min(i*0.05,0.4);
+    return `
+    <div class="research-doc-card" style="animation-delay:${delay}s" data-file="${doc.file}">
+      <div class="research-doc-header" onclick="toggleResearchDoc(this,'${doc.file}')">
+        <div style="flex:1;min-width:0">
+          <div class="research-doc-title">${title}</div>
+          <div class="research-doc-meta">
+            <span class="research-cat-badge ${cat.cls}">${cat.label}</span>
+            <span>${doc.modified||''}</span>
+          </div>
+        </div>
+        <div class="research-doc-toggle">›</div>
+      </div>
+      <div class="research-doc-content" id="rdoc-${i}">
+        <div class="loading" style="padding:16px 0;color:var(--text2)">Loading…</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setResearchFilter(key,el){
+  researchFilter=key;
+  renderResearch();
+}
+
+async function toggleResearchDoc(headerEl,file){
+  const toggleEl=headerEl.querySelector('.research-doc-toggle');
+  const contentEl=headerEl.nextElementSibling;
+  const isOpen=contentEl.classList.contains('open');
+
+  if(isOpen){
+    contentEl.classList.remove('open');
+    toggleEl.classList.remove('open');
+    return;
+  }
+
+  contentEl.classList.add('open');
+  toggleEl.classList.add('open');
+
+  // Only load if not already loaded
+  if(contentEl.dataset.loaded)return;
+  contentEl.dataset.loaded='1';
+  try{
+    const r=await fetch('data/research/'+file+'?t='+Date.now());
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const text=await r.text();
+    contentEl.innerHTML=mdToHtml(text);
+  }catch(e){
+    contentEl.innerHTML=`<p style="color:var(--red);padding:16px 0">Failed to load document: ${e.message}</p>`;
+  }
 }
 
 // ─── Toast ────────────────────────────────────────────
