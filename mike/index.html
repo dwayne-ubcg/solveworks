@@ -530,6 +530,7 @@ async function init(){
   try{DATA.security=await loadJSON('security')||{}}catch(e){DATA.security={}}
   try{DATA.tasks=await loadJSON('tasks')||{tasks:[]}}catch(e){DATA.tasks={tasks:[]}}
   try{DATA.financials=await loadJSON('financials')||{}}catch(e){DATA.financials={}}
+  try{DATA.recruiters=await loadJSON('recruiters')||{}}catch(e){DATA.recruiters={}}
   renderAll();
   loadResearch();
   startClock();
@@ -862,12 +863,53 @@ function renderRevenue(){
 
 // ─── Recruiters ───────────────────────────────────────
 function renderRecruiters(){
+  const rd=DATA.recruiters||{};
+  const recs=rd.recruiters||[];
+  const totals=rd.totals||{};
+  const sources=rd.sourceBreakdown||{};
+  const statuses=rd.statusBreakdown||{};
   const body=document.getElementById('recruiter-body');
-  body.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text2)">
-    <div style="font-size:32px;margin-bottom:12px">👥</div>
-    <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Team Performance Coming Soon</div>
-    <div style="font-size:13px;max-width:400px;margin:0 auto">Connect CEIPAL to see recruiter scorecards, fill rates, and placement data. Tell your AI agent your CEIPAL login to get started.</div>
-  </td></tr>`;
+  if(!recs.length){
+    body.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text2)">
+      <div style="font-size:32px;margin-bottom:12px">👥</div>
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">Team Performance Coming Soon</div>
+      <div style="font-size:13px;max-width:400px;margin:0 auto">Connect CEIPAL to see recruiter scorecards.</div>
+    </td></tr>`;
+    return;
+  }
+  body.innerHTML=recs.map(r=>`
+    <tr>
+      <td><strong>${r.id}</strong></td>
+      <td>${r.candidates}</td>
+      <td>${r.submissions}</td>
+      <td>${r.todayActivity}</td>
+      <td><span class="kc-badge src-${r.topSource?.toLowerCase()||'other'}">${r.topSource||'N/A'}</span></td>
+      <td>${r.candidates+r.submissions}</td>
+      <td><span style="color:var(--green)">●</span> Active</td>
+    </tr>
+  `).join('');
+
+  // Add summary below the table
+  const panel=document.getElementById('recruiter-body').closest('.section-panel');
+  if(panel){
+    let summary=panel.querySelector('.recruiter-summary');
+    if(!summary){summary=document.createElement('div');summary.className='recruiter-summary';panel.appendChild(summary);}
+    const srcHTML=Object.entries(sources).slice(0,5).map(([k,v])=>`<span style="margin-right:12px"><strong>${k||'Other'}:</strong> ${v}</span>`).join('');
+    const stHTML=Object.entries(statuses).slice(0,5).map(([k,v])=>`<span style="margin-right:12px"><strong>${k||'Unknown'}:</strong> ${v}</span>`).join('');
+    summary.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:20px;padding:16px;background:var(--surface2);border-radius:var(--radius)">
+        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px">Total Database</div>
+          <div style="font-size:24px;font-weight:800;color:var(--blue)">${(totals.applicants||0).toLocaleString()}</div><div style="font-size:12px;color:var(--text2)">applicants</div></div>
+        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px">Total Submissions</div>
+          <div style="font-size:24px;font-weight:800;color:var(--green)">${(totals.submissions||0).toLocaleString()}</div><div style="font-size:12px;color:var(--text2)">all time</div></div>
+        <div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:6px">Clients</div>
+          <div style="font-size:24px;font-weight:800;color:var(--yellow)">${(totals.clients||0).toLocaleString()}</div><div style="font-size:12px;color:var(--text2)">in system</div></div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text2)"><strong>Sources:</strong> ${srcHTML}</div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text2)"><strong>Statuses:</strong> ${stHTML}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text2)">Source: CEIPAL ATS API · Updated ${rd.lastUpdated?new Date(rd.lastUpdated).toLocaleString():'just now'}</div>
+    `;
+  }
 }
 
 // ─── Active Reqs ──────────────────────────────────────
