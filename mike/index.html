@@ -1020,9 +1020,10 @@ function renderCalls(){
 
   // Stats
   const totalCalls=today.totalCalls||recent.length||0;
-  const analyzed=scoredCalls.length;
-  const flagged=scoredCalls.filter(s=>s.flagged&&!s.voicemail&&s.score!==null).length;
-  const avgScore=analyzed?Math.round(scoredCalls.reduce((a,s)=>a+(s.score||0),0)/analyzed*10)/10:0;
+  const realCalls=scoredCalls.filter(s=>!s.voicemail&&s.score!==null);
+  const analyzed=realCalls.length;
+  const flagged=realCalls.filter(s=>s.flagged).length;
+  const avgScore=analyzed?Math.round(realCalls.reduce((a,s)=>a+(s.score||0),0)/analyzed*10)/10:0;
   const connected=recent.filter(c=>c.result==='Accepted'||c.duration>10).length;
   const connectRate=totalCalls?Math.round(connected/totalCalls*100):0;
 
