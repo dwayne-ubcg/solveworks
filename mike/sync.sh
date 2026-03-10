@@ -118,16 +118,8 @@ cat > "$LOCAL_DATA/security.json" << SECEOF
 }
 SECEOF
 
-# Update dashboard timestamp
-python3 -c "
-import json
-with open('$LOCAL_DATA/dashboard.json') as f:
-    d = json.load(f)
-d['lastSync'] = '$TIMESTAMP'
-d['timestamp'] = '$TIMESTAMP'
-with open('$LOCAL_DATA/dashboard.json', 'w') as f:
-    json.dump(d, f, indent=2)
-" 2>/dev/null
+# Pull dashboard.json directly from Mike's machine (source of truth)
+scp -o StrictHostKeyChecking=no $REMOTE:~/.openclaw/workspace/data/dashboard.json "$LOCAL_DATA/dashboard.json" 2>/dev/null
 
 # Git push
 cd ~/clawd/solveworks-site
