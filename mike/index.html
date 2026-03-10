@@ -474,8 +474,9 @@ a{color:var(--blue);text-decoration:none}
     <!-- Filter tabs -->
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
       <button class="call-tab active" onclick="filterCallTab('all',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:600;cursor:pointer">All Calls</button>
+      <button class="call-tab" onclick="filterCallTab('conversations',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">💬 Conversations</button>
       <button class="call-tab" onclick="filterCallTab('flagged',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">🚨 Flagged</button>
-      <button class="call-tab" onclick="filterCallTab('high',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">⭐ High Score</button>
+      <button class="call-tab" onclick="filterCallTab('voicemail',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">📫 Voicemail</button>
       <button class="call-tab" onclick="filterCallTab('long',this)" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer">📞 Long Calls</button>
     </div>
     <div id="calls-list"></div>
@@ -1020,7 +1021,7 @@ function renderCalls(){
   // Stats
   const totalCalls=today.totalCalls||recent.length||0;
   const analyzed=scoredCalls.length;
-  const flagged=scoredCalls.filter(s=>s.flagged).length;
+  const flagged=scoredCalls.filter(s=>s.flagged&&!s.voicemail&&s.score!==null).length;
   const avgScore=analyzed?Math.round(scoredCalls.reduce((a,s)=>a+(s.score||0),0)/analyzed*10)/10:0;
   const connected=recent.filter(c=>c.result==='Accepted'||c.duration>10).length;
   const connectRate=totalCalls?Math.round(connected/totalCalls*100):0;
@@ -1033,21 +1034,28 @@ function renderCalls(){
   const crEl=document.getElementById('connect-rate');
   if(crEl){crEl.textContent=connectRate+'%';crEl.style.color=connectRate>=50?'var(--green)':connectRate>=30?'var(--yellow)':'var(--red)';}
 
-  // Flagged calls banner
-  const flaggedCalls=scoredCalls.filter(s=>s.flagged);
+  // Flagged calls banner — only real conversations, not voicemails
+  const flaggedCalls=scoredCalls.filter(s=>s.flagged&&!s.voicemail&&s.score!==null);
   const banner=document.getElementById('flagged-banner');
   if(flaggedCalls.length&&banner){
     banner.style.display='block';
-    document.getElementById('flagged-list').innerHTML=flaggedCalls.map(f=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border-radius:6px;border-left:3px solid ${f.severity==='high'?'var(--red)':'var(--yellow)'}">
+    document.getElementById('flagged-list').innerHTML=flaggedCalls.map(f=>{
+      const durMin=Math.floor((f.duration||0)/60);
+      const durSec=(f.duration||0)%60;
+      const durStr=durMin>0?durMin+'m '+durSec+'s':durSec+'s';
+      return `
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border-radius:6px;border-left:3px solid ${f.severity==='high'?'var(--red)':'var(--yellow)';margin-bottom:6px}">
         <span style="font-size:14px">${f.severity==='high'?'🔴':'🟡'}</span>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:13px">${f.caller||'Unknown'} → ${f.prospect||'Unknown'}</div>
-          <div style="font-size:12px;color:var(--text2)">${(f.flags||[]).join(' · ')}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${f.caller||'Unknown'} → ${f.prospect||'Unknown'} <span style="font-weight:400;color:var(--text2);font-size:11px">${durStr}</span></div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${f.summary||''}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${(f.flags||[]).join(' · ')}</div>
         </div>
-        <div style="font-size:20px;font-weight:800;color:${f.score>=7?'var(--green)':f.score>=5?'var(--yellow)':'var(--red)'}">${f.score||'?'}</div>
-        ${f.recordingFile?`<button onclick="event.stopPropagation();toggleAudio(this,'data/${f.recordingFile}')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600">▶ Listen</button>`:''}
-      </div>`).join('');
+        <div style="font-size:22px;font-weight:800;color:${f.score>=7?'var(--green)':f.score>=5?'var(--yellow)':'var(--red)';min-width:36px;text-align:center}">${f.score||'?'}</div>
+        ${f.recordingFile?`<span class="play-btn"><button onclick="event.stopPropagation();toggleAudio(this,'data/${f.recordingFile}')" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-weight:600;white-space:nowrap">▶ Listen</button></span>`:''}
+      </div>
+      <div class="call-audio-container" style="display:none;padding:4px 0 8px;margin-left:34px"></div>`;
+    }).join('');
   } else if(banner){banner.style.display='none';}
 
   if(!recent.length&&!scoredCalls.length){
@@ -1084,8 +1092,9 @@ function renderCalls(){
       const flagsHtml=ai&&ai.flags&&ai.flags.length?`<div style="padding:4px 0 0;display:flex;gap:4px;flex-wrap:wrap">${ai.flags.map(f=>`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${f.startsWith('🔴')?'rgba(240,64,96,.1)':f.startsWith('🟡')?'rgba(240,192,64,.1)':'rgba(64,192,128,.1)'};color:var(--text2)">${f}</span>`).join('')}</div>`:'';
       const summaryHtml=ai&&ai.summary?`<div style="font-size:12px;color:var(--text2);margin-top:4px;padding:6px 10px;background:var(--surface2);border-radius:6px">${ai.summary}</div>`:'';
 
+      const isVM=ai&&(ai.voicemail||ai.score===null);
       return `
-      <div class="call-card" data-from="${(c.from||'').replace(/"/g,'')}" data-to="${(c.to||'').replace(/"/g,'')}" data-score="${ai?ai.score:''}" data-flagged="${ai&&ai.flagged?'1':''}" data-duration="${c.duration||0}" ${c.recordingFile?'style="cursor:pointer"':''}>
+      <div class="call-card" data-from="${(c.from||'').replace(/"/g,'')}" data-to="${(c.to||'').replace(/"/g,'')}" data-score="${ai?ai.score:''}" data-flagged="${ai&&ai.flagged&&!isVM?'1':''}" data-voicemail="${isVM?'1':''}" data-duration="${c.duration||0}" ${c.recordingFile?'style="cursor:pointer"':''}>
         <div class="call-header">
           <div style="flex:1">
             <div class="call-caller">${dir} ${c.from||'Unknown'}</div>
@@ -1110,7 +1119,7 @@ function renderCalls(){
   document.getElementById('calls-list').innerHTML=html;
 }
 
-// Call tab filter (All / Flagged / High Score / Long)
+// Call tab filter
 function filterCallTab(tab,el){
   document.querySelectorAll('.call-tab').forEach(t=>{
     t.style.background=t===el?'var(--accent)':'var(--surface2)';
@@ -1118,10 +1127,15 @@ function filterCallTab(tab,el){
     t.style.borderColor=t===el?'var(--accent)':'var(--border)';
   });
   document.querySelectorAll('.call-card').forEach(card=>{
+    const isVM=card.dataset.voicemail==='1';
+    const isFlagged=card.dataset.flagged==='1';
+    const score=parseInt(card.dataset.score)||0;
+    const dur=parseInt(card.dataset.duration)||0;
     if(tab==='all'){card.style.display='';return;}
-    if(tab==='flagged'){card.style.display=card.dataset.flagged==='1'?'':'none';return;}
-    if(tab==='high'){card.style.display=parseInt(card.dataset.score)>=8?'':'none';return;}
-    if(tab==='long'){card.style.display=parseInt(card.dataset.duration)>=120?'':'none';return;}
+    if(tab==='conversations'){card.style.display=!isVM?'':'none';return;}
+    if(tab==='flagged'){card.style.display=(isFlagged&&!isVM)?'':'none';return;}
+    if(tab==='voicemail'){card.style.display=isVM?'':'none';return;}
+    if(tab==='long'){card.style.display=dur>=120?'':'none';return;}
   });
 }
 
