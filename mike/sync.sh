@@ -17,7 +17,7 @@ for i, line in enumerate(lines[-20:]):
     line = line.strip()
     if line and not line.startswith('#'):
         entries.append({'id': i, 'text': line, 'timestamp': '$TIMESTAMP'})
-json.dump(entries, sys.stdout, indent=2)
+json.dump({"entries": entries}, sys.stdout, indent=2)
 " > "$LOCAL_DATA/memory-recent.json" 2>/dev/null
 fi
 
