@@ -128,7 +128,7 @@ tr:hover td { background: var(--bg); }
   <div class="topbar-left">
     <div class="hamburger" onclick="toggleSidebar()">☰</div>
     <div class="topbar-brand">
-      <div class="sw-mark">S</div> SolveWorks <span class="divider">|</span> LORDON
+      <div class="sw-mark">L</div> LORDON
     </div>
   </div>
   <div class="topbar-right">
@@ -145,42 +145,69 @@ tr:hover td { background: var(--bg); }
 <div class="sidebar" id="sidebar">
   <div class="nav-section">
     <div class="nav-label">Dashboard</div>
-    <div class="nav-item active" data-tab="overview"><span class="nav-icon">📊</span> Overview</div>
+    <div class="nav-item active" data-tab="overview"><span class="nav-icon">☀️</span> Morning Briefing</div>
+    <div class="nav-item" data-tab="analytics"><span class="nav-icon">📊</span> Sales Analytics</div>
     <div class="nav-item" data-tab="orders"><span class="nav-icon">🛒</span> Online Orders</div>
     <div class="nav-item" data-tab="pos"><span class="nav-icon">💳</span> In-Store Sales</div>
-    <div class="nav-item" data-tab="products"><span class="nav-icon">👗</span> Products</div>
-    <div class="nav-item" data-tab="customers"><span class="nav-icon">👥</span> Customers</div>
   </div>
   <div class="nav-section">
-    <div class="nav-label">Locations</div>
-    <div class="nav-item" data-tab="locations"><span class="nav-icon">📍</span> All Locations</div>
+    <div class="nav-label">Intelligence</div>
+    <div class="nav-item" data-tab="buyplan"><span class="nav-icon">🛍️</span> Buy Planning</div>
+    <div class="nav-item" data-tab="sellthrough"><span class="nav-icon">📈</span> Sell-Through Intel</div>
+    <div class="nav-item" data-tab="inventory"><span class="nav-icon">📦</span> Inventory</div>
+    <div class="nav-item" data-tab="multistore"><span class="nav-icon">🏪</span> Multi-Store</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Relationships</div>
+    <div class="nav-item" data-tab="customers"><span class="nav-icon">👑</span> Clienteling & CRM</div>
+    <div class="nav-item" data-tab="social"><span class="nav-icon">📱</span> Social & Marketing</div>
+    <div class="nav-item" data-tab="chat"><span class="nav-icon">💬</span> Chat Management</div>
   </div>
 </div>
 
 <!-- MAIN CONTENT -->
 <div class="main">
 
-  <!-- OVERVIEW TAB -->
+  <!-- MORNING BRIEFING TAB -->
   <div class="tab-content active" id="tab-overview">
     <div class="section-header">
-      <h2>Overview</h2>
+      <h2>☀️ Morning Briefing</h2>
       <span class="updated-time" id="last-updated"></span>
     </div>
+    <div class="card" id="briefing-message" style="background:linear-gradient(135deg,#FAF8F5,#F0ECE7);border-left:4px solid var(--accent);"></div>
     <div class="stats-grid" id="stats-grid"></div>
     <div class="locations-grid" id="locations-overview"></div>
+    <div class="card">
+      <h3>📅 Orders to Fulfill</h3>
+      <div class="table-wrap"><table id="fulfill-table"><thead><tr><th>Order</th><th>Items</th><th>Total</th><th>Type</th></tr></thead><tbody></tbody></table></div>
+    </div>
     <div class="card">
       <h3>Recent In-Store Sales</h3>
       <div class="table-wrap"><table id="overview-sales-table"><thead><tr><th>Invoice</th><th>Location</th><th>Total</th><th>Date</th><th>Items</th></tr></thead><tbody></tbody></table></div>
     </div>
+  </div>
+
+  <!-- SALES ANALYTICS TAB -->
+  <div class="tab-content" id="tab-analytics">
+    <div class="section-header"><h2>📊 Sales Analytics</h2></div>
+    <div class="stats-grid" id="analytics-stats"></div>
     <div class="card">
-      <h3>Recent Online Orders</h3>
-      <div class="table-wrap"><table id="overview-orders-table"><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Date</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+      <h3>💰 Revenue by Week</h3>
+      <div id="weekly-chart" style="display:flex;align-items:flex-end;gap:12px;height:200px;padding:20px 0;"></div>
+    </div>
+    <div class="card">
+      <h3>🏆 Top Brands — Revenue</h3>
+      <div class="table-wrap"><table id="brands-table"><thead><tr><th>Brand</th><th>Revenue</th><th>Units</th><th>AOV</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>🛍️ Channel Breakdown</h3>
+      <div id="channel-breakdown" style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;"></div>
     </div>
   </div>
 
   <!-- ONLINE ORDERS TAB -->
   <div class="tab-content" id="tab-orders">
-    <div class="section-header"><h2>Online Orders</h2></div>
+    <div class="section-header"><h2>🛒 Online Orders</h2></div>
     <div class="stats-grid" id="orders-stats"></div>
     <div class="card">
       <h3>All Orders</h3>
@@ -190,7 +217,7 @@ tr:hover td { background: var(--bg); }
 
   <!-- POS SALES TAB -->
   <div class="tab-content" id="tab-pos">
-    <div class="section-header"><h2>In-Store Sales</h2></div>
+    <div class="section-header"><h2>💳 In-Store Sales</h2></div>
     <div class="stats-grid" id="pos-stats"></div>
     <div class="card">
       <h3>Lightspeed POS Sales</h3>
@@ -198,30 +225,109 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
-  <!-- PRODUCTS TAB -->
-  <div class="tab-content" id="tab-products">
-    <div class="section-header"><h2>Products</h2></div>
-    <div class="stats-grid" id="products-stats"></div>
+  <!-- BUY PLANNING TAB -->
+  <div class="tab-content" id="tab-buyplan">
+    <div class="section-header"><h2>🛍️ Buy Planning Dashboard</h2></div>
+    <div class="stats-grid" id="buyplan-stats"></div>
     <div class="card">
-      <h3>Product Catalog (Shopify)</h3>
+      <h3>Category Allocation</h3>
+      <div id="category-allocation"></div>
+    </div>
+    <div class="card" id="ai-buy-recommendation" style="background:linear-gradient(135deg,#EAF0F5,#F0EDF5);border-left:4px solid var(--blue);"></div>
+    <div class="card">
+      <h3>🏅 Brand Scorecard — Keep / Grow / Watch / Cut</h3>
+      <div class="table-wrap"><table id="brand-scorecard"><thead><tr><th>Brand</th><th>Products</th><th>Avg Cost</th><th>Avg Retail</th><th>Margin</th><th>Rating</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- SELL-THROUGH TAB -->
+  <div class="tab-content" id="tab-sellthrough">
+    <div class="section-header"><h2>📈 Sell-Through Intelligence</h2></div>
+    <div class="card">
+      <h3>Sell-Through by Category</h3>
+      <div class="table-wrap"><table id="sellthrough-table"><thead><tr><th>Category</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card" id="dead-stock-alert" style="background:var(--red-light);border-left:4px solid var(--red);"></div>
+  </div>
+
+  <!-- INVENTORY TAB -->
+  <div class="tab-content" id="tab-inventory">
+    <div class="section-header"><h2>📦 Inventory Management</h2></div>
+    <div class="stats-grid" id="inventory-stats"></div>
+    <div class="card">
+      <h3>Inventory by Brand</h3>
+      <div class="table-wrap"><table id="inventory-table"><thead><tr><th>Brand</th><th>Products</th><th>Cost Value</th><th>Retail Value</th><th>Margin</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Product Catalog</h3>
       <div class="table-wrap"><table id="products-table"><thead><tr><th>Product</th><th>Type</th><th>Vendor</th><th>Price</th><th>Variants</th><th>Status</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 
-  <!-- CUSTOMERS TAB -->
+  <!-- MULTI-STORE TAB -->
+  <div class="tab-content" id="tab-multistore">
+    <div class="section-header"><h2>🏪 Multi-Store Intelligence</h2></div>
+    <div class="locations-grid" id="multistore-cards"></div>
+    <div class="card">
+      <h3>Location Comparison</h3>
+      <div class="table-wrap"><table id="multistore-table"><thead><tr><th>Metric</th><th>Saint John</th><th>Moncton</th><th>Halifax</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card" id="transfer-recommendation" style="background:linear-gradient(135deg,#E8EDE6,#EAF0F5);border-left:4px solid var(--accent-sage);"></div>
+  </div>
+
+  <!-- CLIENTELING & CRM TAB -->
   <div class="tab-content" id="tab-customers">
-    <div class="section-header"><h2>Customers</h2></div>
+    <div class="section-header"><h2>👑 Clienteling & CRM</h2></div>
     <div class="stats-grid" id="customers-stats"></div>
     <div class="card">
-      <h3>Recent Customers (Shopify)</h3>
+      <h3>Top Customers</h3>
       <div class="table-wrap"><table id="customers-table"><thead><tr><th>Name</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Location</th><th>Joined</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 
-  <!-- LOCATIONS TAB -->
-  <div class="tab-content" id="tab-locations">
-    <div class="section-header"><h2>Locations</h2></div>
-    <div class="locations-grid" id="locations-detail"></div>
+  <!-- SOCIAL & MARKETING TAB -->
+  <div class="tab-content" id="tab-social">
+    <div class="section-header"><h2>📱 Social & Marketing</h2></div>
+    <div class="stats-grid" id="social-stats"></div>
+    <div class="card">
+      <h3>Instagram Performance</h3>
+      <p style="color:var(--text-secondary);padding:20px 0;">Connect Instagram to see reach, followers, and engagement data. Your agent can auto-generate captions and schedule posts.</p>
+    </div>
+    <div class="card">
+      <h3>Email Marketing — Omnisend</h3>
+      <p style="color:var(--text-secondary);padding:20px 0;">Connect Omnisend to see campaign performance, subscriber growth, and automated flow results.</p>
+    </div>
+  </div>
+
+  <!-- CHAT MANAGEMENT TAB -->
+  <div class="tab-content" id="tab-chat">
+    <div class="section-header"><h2>💬 Your Entire Store. Managed by Chat.</h2></div>
+    <div class="card" style="max-width:600px;">
+      <div style="background:#F5F2EE;border-radius:16px;padding:24px;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Kate</div>
+        <div style="font-size:15px;">Can you update the hero banner with the new spring collection photos?</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(196,168,130,0.1),rgba(196,168,130,0.05));border-radius:16px;padding:24px;margin-bottom:16px;margin-left:40px;">
+        <div style="font-size:13px;color:var(--accent-dark);margin-bottom:8px;">LORDON AI</div>
+        <div style="font-size:15px;"><strong>Done ✅</strong> Updated the hero banner with your new spring lifestyle shots. Rotates between 3 images. Take a look: <span style="color:#4A90D9;text-decoration:underline;">shoplordon.com →</span></div>
+      </div>
+      <div style="background:#F5F2EE;border-radius:16px;padding:24px;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Kate</div>
+        <div style="font-size:15px;">Create a spring date night collection — dresses, blazers, and accessories under $200</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(196,168,130,0.1),rgba(196,168,130,0.05));border-radius:16px;padding:24px;margin-bottom:16px;margin-left:40px;">
+        <div style="font-size:13px;color:var(--accent-dark);margin-bottom:8px;">LORDON AI</div>
+        <div style="font-size:15px;"><strong>Created ✅</strong> Added 12 products that match — ICHI dresses, SADIE AND SAGE blazers, and PILGRIM accessories. Live at <span style="color:#4A90D9;">shoplordon.com/collections/spring-date-night</span>. Want me to feature it on the homepage?</div>
+      </div>
+      <div style="background:#F5F2EE;border-radius:16px;padding:24px;margin-bottom:16px;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">Kate</div>
+        <div style="font-size:15px;">Write me an Instagram caption for the new B YOUNG cardigan — casual, spring vibes</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(196,168,130,0.1),rgba(196,168,130,0.05));border-radius:16px;padding:24px;margin-left:40px;">
+        <div style="font-size:13px;color:var(--accent-dark);margin-bottom:8px;">LORDON AI</div>
+        <div style="font-size:15px;">"Spring layers done right 🌸 This B YOUNG open-front cardi is your new go-to for breezy days. Throw it over a tank + denim for effortless weekend style. Available in 3 colours — in-store & online 💛<br><br>#shoplordon #byoung #halifaxboutique #springwardrobe #shoplocal"</div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -252,7 +358,7 @@ document.querySelectorAll('.nav-item').forEach(item=>{
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
 
 /* ═══ DATA ═══ */
-let shopifyOrders=[],shopifyProducts=[],shopifyCustomers=[],lsSales=[],summary={};
+let shopifyOrders=[],shopifyProducts=[],shopifyCustomers=[],lsSales=[],summary={},dashboard={};
 
 async function loadJSON(path){
   try{const r=await fetch(path+'?_='+Date.now());if(!r.ok)throw new Error(r.status);return await r.json();}
@@ -260,18 +366,20 @@ async function loadJSON(path){
 }
 
 async function init(){
-  const [orders,products,customers,sales,sum]=await Promise.all([
+  const [orders,products,customers,sales,sum,dash]=await Promise.all([
     loadJSON('data/shopify-orders.json'),
     loadJSON('data/shopify-products.json'),
     loadJSON('data/shopify-customers.json'),
     loadJSON('data/lightspeed-sales.json'),
-    loadJSON('data/summary.json')
+    loadJSON('data/summary.json'),
+    loadJSON('data/dashboard.json')
   ]);
   shopifyOrders=orders||[];
   shopifyProducts=products||[];
   shopifyCustomers=customers||[];
   lsSales=sales||[];
   summary=sum||{};
+  dashboard=dash||{};
   renderAll();
 }
 
@@ -284,72 +392,95 @@ function outletClass(name){if(name.includes('Saint'))return'outlet-sj';if(name.i
 function statusBadge(s){const map={paid:'badge-green',fulfilled:'badge-green',CLOSED:'badge-green',unfulfilled:'badge-yellow',pending:'badge-yellow',OPEN:'badge-blue',refunded:'badge-red',VOIDED:'badge-red'};return'<span class="badge '+(map[s]||'badge-blue')+'">'+s+'</span>'}
 
 function renderAll(){
-  renderOverview();
+  renderBriefing();
+  renderAnalytics();
   renderOrders();
   renderPOS();
-  renderProducts();
+  renderBuyPlan();
+  renderSellThrough();
+  renderInventory();
+  renderMultiStore();
   renderCustomers();
-  renderLocations();
+  renderSocial();
 }
 
-function renderOverview(){
+function renderBriefing(){
   const s=summary;
-  const shopTotal=shopifyOrders.reduce((a,o)=>a+parseFloat(o.total_price||0),0);
-  const lsTotal=lsSales.reduce((a,s)=>a+parseFloat(s.total||0),0);
+  const b=dashboard.briefing||{};
   const today=new Date().toISOString().slice(0,10);
   const todayLS=lsSales.filter(s=>s.sale_date&&s.sale_date.startsWith(today));
   const todayShopify=shopifyOrders.filter(o=>o.created_at&&o.created_at.startsWith(today));
   const todayRevLS=todayLS.reduce((a,s)=>a+parseFloat(s.total||0),0);
   const todayRevShopify=todayShopify.reduce((a,o)=>a+parseFloat(o.total_price||0),0);
+  const yesterdayRev=b.yesterdayRevenue||0;
+  const yesterdayTx=b.yesterdayTransactions||0;
+  const topSellers=(b.topSellers||[]).map(t=>`• ${t.name} — ${t.qty} sold`).join('\n');
+
+  // Morning briefing message
+  const now=new Date();
+  const greeting=now.getHours()<12?'Good morning':'Good afternoon';
+  document.getElementById('briefing-message').innerHTML=`
+    <div style="font-size:15px;line-height:1.8;">
+      <strong>${greeting}!</strong> Here's your briefing:<br><br>
+      💰 <strong>Yesterday's Sales: ${fmtCurrency(yesterdayRev)}</strong><br>
+      <span style="color:var(--text-secondary);">${yesterdayTx} transactions · POS ${fmtCurrency(b.yesterdayPOS||0)} · Online ${fmtCurrency(b.yesterdayOnline||0)}</span><br><br>
+      ${topSellers?`🔥 <strong>Top Sellers:</strong><br><span style="color:var(--text-secondary);white-space:pre-line;">${topSellers}</span><br><br>`:''}
+      📦 <strong>Online Orders to Fulfill:</strong> ${(b.unfulfilledOrders||[]).length} pending<br><br>
+      📍 <strong>Today so far:</strong> ${fmtCurrency(todayRevLS)} across ${todayLS.length} in-store transactions
+    </div>
+  `;
 
   document.getElementById('stats-grid').innerHTML=`
     <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Today's Revenue</div><div class="stat-value">${fmtCurrency(todayRevLS+todayRevShopify)}</div><div class="stat-sub">POS ${fmtCurrency(todayRevLS)} · Online ${fmtCurrency(todayRevShopify)}</div></div>
     <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-label">Today's Transactions</div><div class="stat-value">${todayLS.length+todayShopify.length}</div><div class="stat-sub">${todayLS.length} in-store · ${todayShopify.length} online</div></div>
     <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-label">Total Orders</div><div class="stat-value">${(s.shopify?.total_orders||0).toLocaleString()}</div><div class="stat-sub">Shopify lifetime</div></div>
     <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Customers</div><div class="stat-value">${(s.shopify?.total_customers||0).toLocaleString()}</div><div class="stat-sub">Shopify database</div></div>
-    <div class="stat-card"><div class="stat-icon">📍</div><div class="stat-label">Locations</div><div class="stat-value">3</div><div class="stat-sub">Saint John · Moncton · Halifax</div></div>
   `;
 
-  // Location breakdown
   const locMap={};
-  lsSales.forEach(s=>{
-    const loc=s.outlet||'Unknown';
-    if(!locMap[loc])locMap[loc]={count:0,revenue:0,todayCount:0,todayRev:0};
-    locMap[loc].count++;
-    locMap[loc].revenue+=parseFloat(s.total||0);
-    if(s.sale_date&&s.sale_date.startsWith(today)){locMap[loc].todayCount++;locMap[loc].todayRev+=parseFloat(s.total||0)}
-  });
-  document.getElementById('locations-overview').innerHTML=Object.entries(locMap).map(([name,d])=>`
-    <div class="location-card">
-      <div class="location-name"><span class="outlet-dot ${outletClass(name)}"></span>${name}</div>
-      <div class="location-stat"><span>Today</span><span>${d.todayCount} sales · ${fmtCurrency(d.todayRev)}</span></div>
-      <div class="location-stat"><span>Recent Total</span><span>${d.count} sales · ${fmtCurrency(d.revenue)}</span></div>
-    </div>
-  `).join('');
+  lsSales.forEach(s=>{const loc=s.outlet||'Unknown';if(!locMap[loc])locMap[loc]={count:0,revenue:0,todayCount:0,todayRev:0};locMap[loc].count++;locMap[loc].revenue+=parseFloat(s.total||0);if(s.sale_date&&s.sale_date.startsWith(today)){locMap[loc].todayCount++;locMap[loc].todayRev+=parseFloat(s.total||0)}});
+  document.getElementById('locations-overview').innerHTML=Object.entries(locMap).map(([name,d])=>`<div class="location-card"><div class="location-name"><span class="outlet-dot ${outletClass(name)}"></span>${name}</div><div class="location-stat"><span>Today</span><span>${d.todayCount} sales · ${fmtCurrency(d.todayRev)}</span></div><div class="location-stat"><span>Recent Total</span><span>${d.count} sales · ${fmtCurrency(d.revenue)}</span></div></div>`).join('');
 
-  // Recent sales
-  const tbody1=document.querySelector('#overview-sales-table tbody');
-  tbody1.innerHTML=lsSales.slice(0,10).map(s=>`<tr>
-    <td>#${s.invoice_number}</td>
-    <td><span class="outlet-dot ${outletClass(s.outlet||'')}"></span>${s.outlet||'—'}</td>
-    <td>${fmtCurrency(s.total)}</td>
-    <td>${fmtDate(s.sale_date)} ${fmtTime(s.sale_date)}</td>
-    <td>${s.items}</td>
-  </tr>`).join('');
+  // Orders to fulfill
+  const unfulfilled=shopifyOrders.filter(o=>o.fulfillment_status!=='fulfilled'&&o.financial_status==='paid').slice(0,8);
+  document.querySelector('#fulfill-table tbody').innerHTML=unfulfilled.map(o=>{const items=(o.line_items||[]).map(li=>li.title).join(', ');return`<tr><td><strong>${o.name}</strong></td><td>${items.slice(0,60)}${items.length>60?'...':''}</td><td>${fmtCurrency(o.total_price)}</td><td>${o.tags&&o.tags.includes('local')?'🏪 Pickup':'📦 Ship'}</td></tr>`}).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);">All caught up! ✅</td></tr>';
 
-  // Recent orders
-  const tbody2=document.querySelector('#overview-orders-table tbody');
-  tbody2.innerHTML=shopifyOrders.slice(0,10).map(o=>{
-    const cust=o.customer?(o.customer.first_name||'')+' '+(o.customer.last_name||''):'Guest';
-    return`<tr>
-      <td>${o.name}</td><td>${cust.trim()||'Guest'}</td>
-      <td>${fmtCurrency(o.total_price)} ${o.currency}</td>
-      <td>${fmtDate(o.created_at)}</td>
-      <td>${statusBadge(o.financial_status||'—')}</td>
-    </tr>`;
-  }).join('');
+  // Recent POS sales
+  document.querySelector('#overview-sales-table tbody').innerHTML=lsSales.slice(0,10).map(s=>`<tr><td>#${s.invoice_number}</td><td><span class="outlet-dot ${outletClass(s.outlet||'')}"></span>${s.outlet||'—'}</td><td>${fmtCurrency(s.total)}</td><td>${fmtDate(s.sale_date)} ${fmtTime(s.sale_date)}</td><td>${s.items}</td></tr>`).join('');
 
   document.getElementById('last-updated').textContent='Updated: '+(s.last_updated?new Date(s.last_updated).toLocaleString('en-CA'):'—');
+}
+
+function renderAnalytics(){
+  const a=dashboard.analytics||{};
+  const rev30=a.revenue30d||0;
+  const tx30=a.transactions30d||0;
+  const aov=a.aov||0;
+
+  document.getElementById('analytics-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Revenue (30d)</div><div class="stat-value">${fmtCurrency(rev30)}</div><div class="stat-sub">POS ${fmtCurrency(a.revenue30dPOS||0)} · Online ${fmtCurrency(a.revenue30dOnline||0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Transactions</div><div class="stat-value">${tx30}</div></div>
+    <div class="stat-card"><div class="stat-label">AOV</div><div class="stat-value">${fmtCurrency(aov)}</div></div>
+  `;
+
+  // Weekly chart
+  const weeks=a.weeklyRevenue||{};
+  const maxW=Math.max(...Object.values(weeks),1);
+  document.getElementById('weekly-chart').innerHTML=Object.entries(weeks).map(([w,v])=>`<div style="flex:1;text-align:center;"><div style="background:linear-gradient(to top,var(--accent),var(--accent-dark));height:${Math.max(v/maxW*160,8)}px;border-radius:8px 8px 0 0;margin-bottom:8px;"></div><div style="font-size:12px;font-weight:600;">${fmtCurrency(v)}</div><div style="font-size:11px;color:var(--text-muted);">${w}</div></div>`).join('')||'<p style="color:var(--text-muted);">No weekly data yet</p>';
+
+  // Top brands
+  const brands=a.topBrands||[];
+  document.querySelector('#brands-table tbody').innerHTML=brands.map(b=>`<tr><td><strong>${b.name}</strong></td><td>${fmtCurrency(b.revenue)}</td><td>${b.units}</td><td>${fmtCurrency(b.aov)}</td></tr>`).join('')||'<tr><td colspan="4" style="color:var(--text-muted);">Brand data building...</td></tr>';
+
+  // Channel breakdown
+  const ch=a.channelBreakdown||{};
+  document.getElementById('channel-breakdown').innerHTML=`
+    <div style="flex:1;min-width:200px;"><div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:8px;">${fmtCurrency((ch.inStore||0)+(ch.online||0))}</div><div style="font-size:12px;color:var(--text-muted);">Total (30d)</div></div>
+    <div style="flex:2;min-width:300px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;"><div style="flex:${ch.inStorePct||50};height:28px;background:var(--accent);border-radius:6px 0 0 6px;"></div><div style="flex:${ch.onlinePct||50};height:28px;background:var(--blue);border-radius:0 6px 6px 0;"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;"><span>🏪 In-Store — ${fmtCurrency(ch.inStore||0)} (${ch.inStorePct||0}%)</span><span>🛒 Online — ${fmtCurrency(ch.online||0)} (${ch.onlinePct||0}%)</span></div>
+    </div>
+  `;
 }
 
 function renderOrders(){
@@ -389,60 +520,100 @@ function renderPOS(){
   </tr>`).join('');
 }
 
-function renderProducts(){
-  const active=shopifyProducts.filter(p=>p.status==='active').length;
-  document.getElementById('products-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Products Loaded</div><div class="stat-value">${shopifyProducts.length}</div></div>
-    <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value">${active}</div></div>
-    <div class="stat-card"><div class="stat-label">Draft/Archived</div><div class="stat-value">${shopifyProducts.length-active}</div></div>
+function renderBuyPlan(){
+  const inv=dashboard.inventory||{};
+  const totalCost=inv.totalValue||0;
+  const brands=inv.brandBreakdown||[];
+  const types=inv.typeBreakdown||[];
+
+  document.getElementById('buyplan-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Inventory (Cost)</div><div class="stat-value">${fmtCurrency(totalCost)}</div></div>
+    <div class="stat-card"><div class="stat-label">Active Brands</div><div class="stat-value">${brands.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Product Count (POS)</div><div class="stat-value">${inv.totalProducts||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Shopify Products</div><div class="stat-value">${inv.totalShopifyProducts||0}</div></div>
   `;
-  document.querySelector('#products-table tbody').innerHTML=shopifyProducts.map(p=>{
-    const price=p.variants?.[0]?.price||'—';
-    return`<tr>
-      <td><strong>${p.title||'—'}</strong></td><td>${p.product_type||'—'}</td><td>${p.vendor||'—'}</td>
-      <td>${price!=='—'?fmtCurrency(price):'—'}</td><td>${p.variants?.length||0}</td>
-      <td>${statusBadge(p.status||'active')}</td>
-    </tr>`;
+
+  // Category allocation
+  const totalTypeCost=types.reduce((a,t)=>a+t.cost,0)||1;
+  document.getElementById('category-allocation').innerHTML=types.slice(0,8).map(t=>{const pct=Math.round(t.cost/totalTypeCost*100);return`<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><div style="width:120px;font-size:13px;font-weight:600;">${t.name}</div><div style="flex:1;height:24px;background:var(--border-light);border-radius:6px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent-dark));border-radius:6px;"></div></div><div style="width:80px;text-align:right;font-size:13px;">${pct}%</div><div style="width:80px;text-align:right;font-size:12px;color:var(--text-secondary);">${fmtCurrency(t.cost)}</div></div>`}).join('');
+
+  // AI recommendation
+  document.getElementById('ai-buy-recommendation').innerHTML=`<div style="font-size:14px;line-height:1.7;">🤖 <strong>AI Recommendation:</strong> Your top categories by cost are ${types.slice(0,3).map(t=>t.name).join(', ')}. ${brands.length>0&&brands[0].margin>50?`${brands[0].name} has a strong ${brands[0].margin}% margin — consider growing this brand.`:''} Review slow-moving categories and consider markdown strategies for items with low sell-through.</div>`;
+
+  // Brand scorecard
+  document.querySelector('#brand-scorecard tbody').innerHTML=brands.map(b=>{
+    const rating=b.margin>=55?'⭐ Grow':b.margin>=45?'✅ Keep':b.margin>=35?'👁️ Watch':'🔻 Cut';
+    const ratingColor=b.margin>=55?'var(--green)':b.margin>=45?'var(--blue)':b.margin>=35?'var(--yellow)':'var(--red)';
+    return`<tr><td><strong>${b.name}</strong></td><td>${b.count}</td><td>${fmtCurrency(b.count?b.cost/b.count:0)}</td><td>${fmtCurrency(b.count?b.retail/b.count:0)}</td><td>${b.margin}%</td><td style="color:${ratingColor};font-weight:600;">${rating}</td></tr>`;
   }).join('');
+}
+
+function renderSellThrough(){
+  const types=(dashboard.inventory||{}).typeBreakdown||[];
+  document.querySelector('#sellthrough-table tbody').innerHTML=types.map(t=>{
+    const margin=t.retail?Math.round((1-t.cost/t.retail)*100):0;
+    return`<tr><td><strong>${t.name}</strong></td><td>${t.count}</td><td>${fmtCurrency(t.cost)}</td><td>${fmtCurrency(t.retail)}</td><td>${margin}%</td></tr>`;
+  }).join('');
+
+  document.getElementById('dead-stock-alert').innerHTML=`<div style="font-size:14px;line-height:1.7;">🚨 <strong>Dead Stock Alert:</strong> Review items with low sell-through rates. As more sales data accumulates, this section will automatically identify slow-moving inventory and recommend markdowns or transfers between locations.</div>`;
+}
+
+function renderInventory(){
+  const inv=dashboard.inventory||{};
+  const brands=inv.brandBreakdown||[];
+  const active=shopifyProducts.filter(p=>p.status==='active').length;
+
+  document.getElementById('inventory-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Inventory Value</div><div class="stat-value">${fmtCurrency(inv.totalValue||0)}</div><div class="stat-sub">At cost</div></div>
+    <div class="stat-card"><div class="stat-label">POS Products</div><div class="stat-value">${inv.totalProducts||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Shopify Products</div><div class="stat-value">${inv.totalShopifyProducts||0}</div><div class="stat-sub">${active} active</div></div>
+    <div class="stat-card"><div class="stat-label">Brands</div><div class="stat-value">${brands.length}</div></div>
+  `;
+
+  document.querySelector('#inventory-table tbody').innerHTML=brands.map(b=>`<tr><td><strong>${b.name}</strong></td><td>${b.count}</td><td>${fmtCurrency(b.cost)}</td><td>${fmtCurrency(b.retail)}</td><td>${b.margin}%</td></tr>`).join('');
+
+  document.querySelector('#products-table tbody').innerHTML=shopifyProducts.slice(0,50).map(p=>{
+    const price=p.variants?.[0]?.price||'—';
+    return`<tr><td><strong>${p.title||'—'}</strong></td><td>${p.product_type||'—'}</td><td>${p.vendor||'—'}</td><td>${price!=='—'?fmtCurrency(price):'—'}</td><td>${p.variants?.length||0}</td><td>${statusBadge(p.status||'active')}</td></tr>`;
+  }).join('');
+}
+
+function renderMultiStore(){
+  const locMap={};
+  lsSales.forEach(s=>{const loc=s.outlet||'Unknown';if(!locMap[loc])locMap[loc]={count:0,revenue:0,items:0,today:0,todayRev:0};locMap[loc].count++;locMap[loc].revenue+=parseFloat(s.total||0);locMap[loc].items+=s.items||0;const today=new Date().toISOString().slice(0,10);if(s.sale_date&&s.sale_date.startsWith(today)){locMap[loc].today++;locMap[loc].todayRev+=parseFloat(s.total||0)}});
+
+  document.getElementById('multistore-cards').innerHTML=Object.entries(locMap).map(([name,d])=>`<div class="location-card"><div class="location-name"><span class="outlet-dot ${outletClass(name)}"></span>${name}</div><div class="location-stat"><span>Today</span><span>${d.today} sales · ${fmtCurrency(d.todayRev)}</span></div><div class="location-stat"><span>Total Sales</span><span>${d.count}</span></div><div class="location-stat"><span>Revenue</span><span>${fmtCurrency(d.revenue)}</span></div><div class="location-stat"><span>Items Sold</span><span>${d.items}</span></div><div class="location-stat"><span>Avg Sale</span><span>${fmtCurrency(d.count?d.revenue/d.count:0)}</span></div></div>`).join('');
+
+  // Comparison table
+  const locs=['Saint John','Moncton','Halifax'];
+  const metrics=['Total Sales','Revenue','Items Sold','Avg Sale','Today Sales','Today Revenue'];
+  document.querySelector('#multistore-table tbody').innerHTML=metrics.map(m=>{
+    const vals=locs.map(l=>{const d=locMap[l]||{count:0,revenue:0,items:0,today:0,todayRev:0};if(m==='Total Sales')return d.count;if(m==='Revenue')return fmtCurrency(d.revenue);if(m==='Items Sold')return d.items;if(m==='Avg Sale')return fmtCurrency(d.count?d.revenue/d.count:0);if(m==='Today Sales')return d.today;if(m==='Today Revenue')return fmtCurrency(d.todayRev);return'—'});
+    return`<tr><td><strong>${m}</strong></td>${vals.map(v=>`<td style="text-align:center;">${v}</td>`).join('')}</tr>`;
+  }).join('');
+
+  document.getElementById('transfer-recommendation').innerHTML=`<div style="font-size:14px;line-height:1.7;">💡 <strong>Transfer Intelligence:</strong> As sales data accumulates across all 3 locations, this section will automatically identify inventory imbalances and recommend transfers. For example, if an item is selling fast in Halifax but slow in Moncton, we'll flag it for transfer.</div>`;
 }
 
 function renderCustomers(){
-  const withOrders=shopifyCustomers.filter(c=>c.orders_count>0).length;
-  const totalSpent=shopifyCustomers.reduce((a,c)=>a+parseFloat(c.total_spent||0),0);
+  const cust=dashboard.customers||{};
+  const topCust=cust.topCustomers||[];
   document.getElementById('customers-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Customers Loaded</div><div class="stat-value">${shopifyCustomers.length}</div></div>
-    <div class="stat-card"><div class="stat-label">With Orders</div><div class="stat-value">${withOrders}</div></div>
-    <div class="stat-card"><div class="stat-label">Total Spent</div><div class="stat-value">${fmtCurrency(totalSpent)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Customers</div><div class="stat-value">${(cust.total||0).toLocaleString()}</div></div>
+    <div class="stat-card"><div class="stat-label">With Orders</div><div class="stat-value">${cust.withOrders||0}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Spent</div><div class="stat-value">${fmtCurrency(cust.totalSpent||0)}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">${(cust.totalOrders||0).toLocaleString()}</div></div>
   `;
-  document.querySelector('#customers-table tbody').innerHTML=shopifyCustomers.map(c=>{
-    const name=(c.first_name||'')+' '+(c.last_name||'');
-    const loc=[c.default_address?.city,c.default_address?.province].filter(Boolean).join(', ')||'—';
-    return`<tr>
-      <td><strong>${name.trim()||'—'}</strong></td><td>${c.email||'—'}</td>
-      <td>${c.orders_count||0}</td><td>${fmtCurrency(c.total_spent)}</td>
-      <td>${loc}</td><td>${fmtDate(c.created_at)}</td>
-    </tr>`;
-  }).join('');
+
+  document.querySelector('#customers-table tbody').innerHTML=(topCust.length?topCust:shopifyCustomers.filter(c=>c.orders_count>0).sort((a,b)=>parseFloat(b.total_spent||0)-parseFloat(a.total_spent||0)).slice(0,15).map(c=>({name:((c.first_name||'')+' '+(c.last_name||'')).trim(),email:c.email,orders:c.orders_count,spent:parseFloat(c.total_spent||0),city:c.default_address?.city||'',province:c.default_address?.province||''}))).map(c=>`<tr><td><strong>${c.name||'—'}</strong></td><td>${c.email||'—'}</td><td>${c.orders||0}</td><td>${fmtCurrency(c.spent)}</td><td>${[c.city,c.province].filter(Boolean).join(', ')||'—'}</td><td>—</td></tr>`).join('');
 }
 
-function renderLocations(){
-  const locMap={};
-  lsSales.forEach(s=>{
-    const loc=s.outlet||'Unknown';
-    if(!locMap[loc])locMap[loc]={count:0,revenue:0,items:0};
-    locMap[loc].count++;
-    locMap[loc].revenue+=parseFloat(s.total||0);
-    locMap[loc].items+=s.items||0;
-  });
-  document.getElementById('locations-detail').innerHTML=Object.entries(locMap).map(([name,d])=>`
-    <div class="location-card">
-      <div class="location-name"><span class="outlet-dot ${outletClass(name)}"></span>${name}</div>
-      <div class="location-stat"><span>Total Sales</span><span>${d.count}</span></div>
-      <div class="location-stat"><span>Revenue</span><span>${fmtCurrency(d.revenue)}</span></div>
-      <div class="location-stat"><span>Items Sold</span><span>${d.items}</span></div>
-      <div class="location-stat"><span>Avg Sale</span><span>${fmtCurrency(d.count?d.revenue/d.count:0)}</span></div>
-    </div>
-  `).join('');
+function renderSocial(){
+  document.getElementById('social-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Instagram</div><div class="stat-value">@shoplordon</div><div class="stat-sub">Connect for live metrics</div></div>
+    <div class="stat-card"><div class="stat-label">Facebook</div><div class="stat-value">Lordon</div><div class="stat-sub">Connect for live metrics</div></div>
+    <div class="stat-card"><div class="stat-label">Omnisend</div><div class="stat-value">Email</div><div class="stat-sub">kate@shoplordon.com</div></div>
+  `;
 }
 </script>
 </body>
