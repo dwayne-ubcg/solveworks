@@ -410,6 +410,8 @@ a{color:var(--blue);text-decoration:none}
     <h1 class="page-title">Revenue & Financials</h1>
     <p class="page-sub">QuickBooks data — updated daily</p>
     <div class="revenue-grid" id="revenue-grid"></div>
+    <!-- Service Line Margins -->
+    <div id="margin-breakdown"></div>
     <div class="card">
       <div class="card-title">Receivables Aging <span class="card-action" onclick="toast('Opening QuickBooks...')">Open QuickBooks →</span></div>
       <div id="receivables"></div>
@@ -879,6 +881,76 @@ function renderRevenue(){
     recHTML+=`<div style="font-size:11px;color:var(--text2)">Source: QuickBooks Online · ${bs.asOf||''} · Updated ${new Date(fin.lastUpdated).toLocaleString()}</div>`;
   }
   document.getElementById('receivables').innerHTML=recHTML;
+
+  // Service Line Margin Breakdown
+  if(inc.totalIncome){
+    const cogs=pnl.cogs||{};
+    const totalRev=inc.totalIncome||0;
+    const totalCOGS=cogs.totalCOGS||0;
+    const totalGP=totalRev-totalCOGS;
+    const lines=[
+      {name:'Contract (VMS)',rev:inc.contractVMS||0,icon:'🏢',desc:'Vendor Management System placements'},
+      {name:'Contract (Non-VMS)',rev:inc.contractNonVMS||0,icon:'🤝',desc:'Direct contract placements'},
+      {name:'Contract (GDM)',rev:inc.contractGDM||0,icon:'🌏',desc:'Global Delivery Model'},
+      {name:'Placement Services',rev:inc.placementServices||0,icon:'🎯',desc:'Direct hire placements'}
+    ].filter(l=>l.rev>0);
+    // Estimate COGS per line proportionally (QB doesn't break COGS by service line)
+    const revTotal=lines.reduce((a,l)=>a+l.rev,0);
+    lines.forEach(l=>{
+      l.cogsEst=Math.round(totalCOGS*(l.rev/revTotal));
+      l.gpEst=l.rev-l.cogsEst;
+      l.marginPct=l.rev?Math.round((l.gpEst/l.rev)*100):0;
+      l.revPct=revTotal?Math.round((l.rev/revTotal)*100):0;
+    });
+
+    let mhtml=`<div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:12px">📊 Margin by Service Line</div>`;
+
+    // Margin bar chart
+    lines.forEach(l=>{
+      const barColor=l.marginPct>=60?'var(--green)':l.marginPct>=40?'var(--yellow)':'var(--red)';
+      mhtml+=`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div>
+            <span style="font-size:16px;margin-right:6px">${l.icon}</span>
+            <span style="font-weight:600;font-size:14px">${l.name}</span>
+            <span style="font-size:11px;color:var(--text2);margin-left:6px">${l.revPct}% of revenue</span>
+          </div>
+          <div style="text-align:right">
+            <span style="font-weight:800;font-size:18px;color:${barColor}">${l.marginPct}%</span>
+            <span style="font-size:11px;color:var(--text2)"> margin</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--text2);margin-bottom:6px">
+          <span>Revenue: <strong style="color:var(--green)">${fmt(l.rev)}</strong></span>
+          <span>Est. Cost: <strong style="color:var(--red)">${fmt(l.cogsEst)}</strong></span>
+          <span>Gross Profit: <strong style="color:var(--blue)">${fmt(l.gpEst)}</strong></span>
+        </div>
+        <div style="background:var(--surface3);border-radius:3px;height:8px;overflow:hidden">
+          <div style="height:100%;width:${l.marginPct}%;background:${barColor};border-radius:3px;transition:width .5s"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">${l.desc}</div>
+      </div>`;
+    });
+
+    // Overall summary
+    const overallMargin=totalRev?Math.round((totalGP/totalRev)*100):0;
+    mhtml+=`
+    <div style="background:var(--surface);border:2px solid var(--accent);border-radius:var(--radius);padding:14px 16px;margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <span style="font-weight:700;font-size:14px">Overall Blended Margin</span>
+          <span style="font-size:12px;color:var(--text2);margin-left:8px">${fmt(totalRev)} revenue · ${fmt(totalCOGS)} cost · ${fmt(totalGP)} profit</span>
+        </div>
+        <span style="font-weight:800;font-size:24px;color:var(--green)">${overallMargin}%</span>
+      </div>
+    </div>`;
+
+    mhtml+=`<div style="font-size:10px;color:var(--text2);margin-top:6px;font-style:italic">* Cost allocated proportionally across service lines. For exact per-job margins, bill rate data from CEIPAL is needed.</div>`;
+    mhtml+=`</div>`;
+    document.getElementById('margin-breakdown').innerHTML=mhtml;
+  }
 }
 
 // ─── Recruiters ───────────────────────────────────────
