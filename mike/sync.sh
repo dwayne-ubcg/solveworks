@@ -7,19 +7,8 @@ LOCAL_DATA="$HOME/clawd/solveworks-site/mike/data"
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Pull agent activity (memory files) — agent writes to ~/.openclaw/workspace/
-MEMORY_CONTENT=$(ssh $REMOTE "find ~/.openclaw/workspace/memory/daily -name '*.md' -mtime -7 -exec cat {} \; 2>/dev/null" 2>/dev/null)
-if [ -n "$MEMORY_CONTENT" ]; then
-  echo "$MEMORY_CONTENT" | python3 -c "
-import sys, json
-lines = sys.stdin.read().strip().split('\n')
-entries = []
-for i, line in enumerate(lines[-20:]):
-    line = line.strip()
-    if line and not line.startswith('#'):
-        entries.append({'id': i, 'text': line, 'timestamp': '$TIMESTAMP'})
-json.dump({"entries": entries}, sys.stdout, indent=2)
-" > "$LOCAL_DATA/memory-recent.json" 2>/dev/null
-fi
+# Pull memory-recent.json directly from agent workspace
+scp -q $REMOTE:~/.openclaw/workspace/data/memory-recent.json "$LOCAL_DATA/memory-recent.json" 2>/dev/null
 
 # Pull leads/pipeline from agent workspace
 # Only overwrite leads.json if it doesn't already have kanban format (boards array)
