@@ -1238,25 +1238,14 @@ tr:hover td { background: var(--bg); }
       </div>
 
       <div class="card">
-        <div class="card-title">📧 Klaviyo Email Performance</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-            <span>New Arrivals (Mar 3)</span>
-            <div style="display:flex;gap:6px;"><span class="badge badge-green">42% open</span><span class="badge badge-sage">3.8% click</span></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-            <span>Winter Clearance Reminder</span>
-            <div style="display:flex;gap:6px;"><span class="badge badge-green">38% open</span><span class="badge badge-green">5.2% click</span></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-            <span>VIP Early Access</span>
-            <div style="display:flex;gap:6px;"><span class="badge badge-green">56% open</span><span class="badge badge-green">8.1% click</span></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;">
-            <span>Tribal Trunk Show (scheduled)</span>
-            <div style="display:flex;gap:6px;"><span class="badge badge-yellow">Draft</span></div>
-          </div>
+        <div class="card-title">📧 Omnisend Email Performance</div>
+        <div id="omnisend-stats" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div class="stat-card" style="padding:10px;flex:1;min-width:100px;"><div class="value" style="font-size:20px;" id="os-subscribers">7,296</div><div class="label">Subscribers</div></div>
+          <div class="stat-card" style="padding:10px;flex:1;min-width:100px;"><div class="value" style="font-size:20px;" id="os-open-rate">42.2%</div><div class="label">Avg Open Rate</div></div>
+          <div class="stat-card" style="padding:10px;flex:1;min-width:100px;"><div class="value" style="font-size:20px;" id="os-click-rate">3.1%</div><div class="label">Avg Click Rate</div></div>
+          <div class="stat-card" style="padding:10px;flex:1;min-width:100px;"><div class="value" style="font-size:20px;" id="os-revenue">$3,933</div><div class="label">Email Revenue (30d)</div></div>
         </div>
+        <div id="omnisend-campaigns" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
 
       <div class="card">
@@ -1758,12 +1747,12 @@ async function loadJSON(path){
   catch(e){console.warn('Load failed:'+path,e);return null;}
 }
 async function initData(){
-  const [orders,products,customers,sales,summary,dashboard]=await Promise.all([
+  const [orders,products,customers,sales,summary,dashboard,omnisend]=await Promise.all([
     loadJSON('data/shopify-orders.json'),loadJSON('data/shopify-products.json'),
     loadJSON('data/shopify-customers.json'),loadJSON('data/lightspeed-sales.json'),
-    loadJSON('data/summary.json'),loadJSON('data/dashboard.json')
+    loadJSON('data/summary.json'),loadJSON('data/dashboard.json'),loadJSON('data/omnisend.json')
   ]);
-  window._ld={orders:orders||[],products:products||[],customers:customers||[],sales:sales||[],summary:summary||{},dashboard:dashboard||{}};
+  window._ld={orders:orders||[],products:products||[],customers:customers||[],sales:sales||[],summary:summary||{},dashboard:dashboard||{},omnisend:omnisend||{}};
   console.log('Lordon data loaded:',Object.fromEntries(Object.entries(window._ld).map(([k,v])=>[k,Array.isArray(v)?v.length:'obj'])));
   renderDashboard();
 }
@@ -1915,6 +1904,28 @@ function renderDashboard(){
       ['Today Sales',sj.todayCount,mc.todayCount,hx.todayCount],
       ['Avg Sale',fmtC(sj.count?sj.revenue/sj.count:0),fmtC(mc.count?mc.revenue/mc.count:0),fmtC(hx.count?hx.revenue/hx.count:0)]
     ].map(r=>`<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+  }
+
+  // === OMNISEND EMAIL MARKETING ===
+  const os=d.omnisend;
+  if(os&&os.stats30d){
+    const s=os.stats30d;
+    const sub=os.subscribers||{};
+    document.getElementById('os-subscribers').textContent=fmtN(sub.email);
+    document.getElementById('os-open-rate').textContent=s.avgOpenRate+'%';
+    document.getElementById('os-click-rate').textContent=s.avgClickRate+'%';
+    document.getElementById('os-revenue').textContent=fmtC(s.revenueFromOmnisend);
+    
+    // Recent campaigns list
+    const campEl=document.getElementById('omnisend-campaigns');
+    if(campEl&&os.recentCampaigns){
+      campEl.innerHTML=os.recentCampaigns.slice(0,8).map(c=>{
+        const dt=c.sentDate?new Date(c.sentDate).toLocaleDateString('en-CA',{month:'short',day:'numeric'}):'';
+        const orBadge=c.openRate>=40?'badge-green':c.openRate>=30?'badge-sage':'badge-yellow';
+        const crBadge=c.clickRate>=4?'badge-green':c.clickRate>=2?'badge-sage':'badge-yellow';
+        return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);font-size:13px;"><span>${c.name} (${dt})</span><div style="display:flex;gap:6px;"><span class="badge ${orBadge}">${c.openRate}% open</span><span class="badge ${crBadge}">${c.clickRate}% click</span></div></div>`;
+      }).join('');
+    }
   }
 
   console.log('Dashboard rendered with real data');
