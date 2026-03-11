@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7 Cellars — Sales Dashboard</title>
+<meta name="theme-color" content="#0D1B2A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="7 Cellars">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
+  --border:#1e3048;--text:#e4e8ec;--text2:#8898b0;--accent:#0D1B2A;
+  --yellow:#f0c040;--green:#40c080;--blue:#4080f0;--red:#f04060;
+  --radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+::selection{background:var(--accent);color:#fff}
+
+/* Login */
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:90%;max-width:360px;text-align:center}
+.login-box h1{font-size:24px;margin-bottom:4px}
+.login-box .login-sub{font-size:12px;color:var(--text2);margin-bottom:24px;text-transform:uppercase;letter-spacing:2px}
+.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;outline:none}
+.login-box input:focus{border-color:var(--blue)}
+.login-box button{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;font-family:inherit}
+.login-box button:hover{opacity:.9}
+.login-err{color:var(--red);font-size:13px;margin-top:8px;display:none}
+.hidden{display:none!important}
+
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.header h1{font-size:20px;display:flex;align-items:center;gap:10px}
+.header-logo{font-size:20px}
+.header-right{display:flex;align-items:center;gap:12px}
+.btn-logout{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit}
+.btn-logout:hover{color:var(--text);background:var(--surface3)}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;white-space:nowrap;transition:all .15s}
+.tab.active{background:var(--surface3);color:var(--text)}
+.tab:hover:not(.active){background:var(--surface2);color:var(--text)}
+
+/* Main content */
+.main{padding:24px;max-width:1200px;margin:0 auto}
+.section{display:none;animation:fadeIn .2s ease}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* KPI Cards */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:768px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+.kpi-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.kpi-val{font-size:26px;font-weight:700}
+.kpi-sub{font-size:12px;margin-top:4px;color:var(--text2)}
+.kpi-up{color:var(--green)}
+.kpi-down{color:var(--red)}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:15px;font-weight:600}
+.card-body{padding:18px}
+
+/* Tables */
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 14px;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:600}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(30,48,72,.5)}
+tr:last-child td{border-bottom:none}
+tr:hover{background:var(--surface2)}
+
+/* Tags/Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(64,192,128,.15);color:var(--green)}
+.badge-yellow{background:rgba(240,192,64,.15);color:var(--yellow)}
+.badge-red{background:rgba(240,64,96,.15);color:var(--red)}
+.badge-blue{background:rgba(64,128,240,.15);color:var(--blue)}
+
+/* Kanban */
+.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.kanban-col{min-width:240px;flex:1;background:var(--surface2);border-radius:var(--radius);padding:12px}
+.kanban-col-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.kanban-col-count{font-size:11px;background:var(--surface3);padding:2px 8px;border-radius:10px}
+.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:background .15s}
+.kanban-card:hover{background:var(--surface3)}
+.kanban-card h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.kanban-card p{font-size:12px;color:var(--text2);line-height:1.4}
+.kanban-card .kc-meta{display:flex;gap:8px;margin-top:8px;font-size:11px;color:var(--text2)}
+
+/* Inventory bars */
+.stock-bar{width:80px;height:6px;background:var(--surface3);border-radius:3px;display:inline-block;vertical-align:middle}
+.stock-fill{height:6px;border-radius:3px}
+
+/* Order status */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+
+/* Search */
+.search-bar{width:100%;padding:10px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:16px}
+.search-bar:focus{border-color:var(--blue)}
+.search-bar::placeholder{color:var(--text2)}
+
+/* Responsive */
+@media(max-width:600px){
+  .header{flex-direction:column;gap:10px;align-items:stretch}
+  .tabs{padding:8px 16px}
+  .main{padding:16px}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h1>🍷 7 Cellars</h1>
+    <div class="login-sub">Sales Dashboard</div>
+    <input type="password" id="pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()">
+    <button onclick="tryLogin()">Sign In</button>
+    <div class="login-err" id="loginErr">Incorrect password</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+  <div class="header">
+    <h1><span class="header-logo">🍷</span> 7 Cellars</h1>
+    <div class="header-right">
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabBar">
+    <button class="tab active" onclick="showTab('overview')">Overview</button>
+    <button class="tab" onclick="showTab('sales')">Sales</button>
+    <button class="tab" onclick="showTab('inventory')">Inventory</button>
+    <button class="tab" onclick="showTab('orders')">Orders</button>
+    <button class="tab" onclick="showTab('tasks')">Tasks</button>
+    <button class="tab" onclick="showTab('catalog')">Wine Catalog</button>
+    <button class="tab" onclick="showTab('customers')">Customers</button>
+  </div>
+
+  <div class="main">
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="tab-overview">
+      <div class="kpis" id="overviewKpis"></div>
+      <div class="card">
+        <div class="card-header"><h3>Recent Activity</h3></div>
+        <div class="card-body" id="recentActivity"><div style="color:var(--text2)">Loading...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Upcoming Tasks</h3></div>
+        <div class="card-body" id="upcomingTasks"><div style="color:var(--text2)">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- SALES -->
+    <div class="section" id="tab-sales">
+      <div class="kpis" id="salesKpis"></div>
+      <div class="card">
+        <div class="card-header"><h3>Recent Orders — Revenue</h3></div>
+        <div style="overflow-x:auto">
+          <table id="salesTable">
+            <thead><tr><th>Date</th><th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody id="salesBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Top Sellers — Last 30 Days</h3></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Wine</th><th>Units Sold</th><th>Revenue</th><th>Sell-Through</th></tr></thead>
+            <tbody id="topSellersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div class="section" id="tab-inventory">
+      <input class="search-bar" id="invSearch" placeholder="Search inventory..." oninput="renderInventory()">
+      <div class="card">
+        <div class="card-header"><h3>Current Stock</h3><span id="invCount" style="font-size:13px;color:var(--text2)"></span></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Wine</th><th>SKU</th><th>In Stock</th><th>Committed</th><th>Available</th><th>Status</th></tr></thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDERS -->
+    <div class="section" id="tab-orders">
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px" id="orderKpis"></div>
+      <div class="card">
+        <div class="card-header"><h3>All Orders</h3></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Order #</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Fulfillment</th></tr></thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="section" id="tab-tasks">
+      <div class="kanban" id="taskKanban"></div>
+    </div>
+
+    <!-- WINE CATALOG -->
+    <div class="section" id="tab-catalog">
+      <input class="search-bar" id="catalogSearch" placeholder="Search wines..." oninput="renderCatalog()">
+      <div class="card">
+        <div class="card-header"><h3>Wine Catalog</h3><span id="catCount" style="font-size:13px;color:var(--text2)"></span></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Wine</th><th>Type</th><th>Region</th><th>Vintage</th><th>Price</th><th>In Stock</th></tr></thead>
+            <tbody id="catalogBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="section" id="tab-customers">
+      <input class="search-bar" id="custSearch" placeholder="Search customers..." oninput="renderCustomers()">
+      <div class="card">
+        <div class="card-header"><h3>Customer List</h3><span id="custCount" style="font-size:13px;color:var(--text2)"></span></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Last Order</th></tr></thead>
+            <tbody id="custBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── AUTH ───
+const PW_HASH='f70839a804c06777ab404eee23c93523ca6848ad7aab97a4635735e7eb6e9971';
+async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function tryLogin(){
+  const pw=document.getElementById('pw').value;
+  if(await sha256(pw)===PW_HASH){localStorage.setItem('7c_staff_auth','1');showApp()}
+  else{document.getElementById('loginErr').style.display='block'}
+}
+function logout(){localStorage.removeItem('7c_staff_auth');location.reload()}
+function showApp(){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');init()}
+if(localStorage.getItem('7c_staff_auth')==='1')showApp();
+
+// ─── TABS ───
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ─── DATA ───
+let shopifyOrders=[],cin7Orders=[],inventory=[],shopifyInv=[],tasks=[],customers=[],activity=[];
+const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtInt=n=>'$'+Number(n||0).toLocaleString();
+
+async function loadJSON(p){try{const r=await fetch('../7cellars/'+p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+
+async function init(){
+  const [so,co,si,ci,t,c,a]=await Promise.all([
+    loadJSON('data/shopify-orders.json'),
+    loadJSON('data/cin7-orders.json'),
+    loadJSON('data/shopify-inventory.json'),
+    loadJSON('data/cin7-inventory.json'),
+    loadJSON('data/tasks.json'),
+    loadJSON('data/customers.json'),
+    loadJSON('data/activity.json')
+  ]);
+  shopifyOrders=(so&&so.orders)||[];
+  cin7Orders=(co&&co.orders)||[];
+  inventory=(ci&&ci.products)||[];
+  shopifyInv=(si&&si.products)||[];
+  tasks=(t&&t.tasks)||[];
+  customers=(c&&c.customers)||[];
+  activity=(a&&a.entries)||[];
+
+  renderOverview();
+  renderSales();
+  renderInventory();
+  renderOrders();
+  renderTasks();
+  renderCatalog();
+  renderCustomers();
+}
+
+// ─── OVERVIEW ───
+function renderOverview(){
+  const allOrders=[...shopifyOrders,...cin7Orders];
+  const totalRev=allOrders.reduce((a,o)=>a+Number(o.total||o.total_price||0),0);
+  const totalOrders=allOrders.length;
+  const lowStock=inventory.filter(p=>(p.available||p.stock||0)<6).length+shopifyInv.filter(p=>(p.available||p.inventory_quantity||0)<6).length;
+  const openTasks=tasks.filter(t=>t.status!=='done'&&t.status!=='completed').length;
+
+  document.getElementById('overviewKpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Revenue</div><div class="kpi-val">${fmtInt(totalRev)}</div></div>
+    <div class="kpi"><div class="kpi-label">Orders</div><div class="kpi-val">${totalOrders}</div></div>
+    <div class="kpi"><div class="kpi-label">Low Stock Items</div><div class="kpi-val" style="color:${lowStock>0?'var(--yellow)':'var(--green)'}">${lowStock}</div></div>
+    <div class="kpi"><div class="kpi-label">Open Tasks</div><div class="kpi-val">${openTasks}</div></div>`;
+
+  // Recent activity
+  const recentAct=activity.slice(0,8);
+  document.getElementById('recentActivity').innerHTML=recentAct.length?
+    recentAct.map(a=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text2)">${a.time||a.date||''}</span> — ${a.note||a.text||a.description||''}</div>`).join(''):
+    '<div style="color:var(--text2)">No recent activity</div>';
+
+  // Upcoming tasks
+  const upcoming=tasks.filter(t=>t.status!=='done'&&t.status!=='completed').slice(0,5);
+  document.getElementById('upcomingTasks').innerHTML=upcoming.length?
+    upcoming.map(t=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between"><span>${t.title||t.name||''}</span><span class="badge ${t.priority==='high'?'badge-red':t.priority==='medium'?'badge-yellow':'badge-blue'}">${t.priority||'normal'}</span></div>`).join(''):
+    '<div style="color:var(--text2)">No open tasks</div>';
+}
+
+// ─── SALES ───
+function renderSales(){
+  const allOrders=[...shopifyOrders,...cin7Orders].sort((a,b)=>new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0));
+  const totalRev=allOrders.reduce((a,o)=>a+Number(o.total||o.total_price||0),0);
+  const avgOrder=allOrders.length?totalRev/allOrders.length:0;
+
+  document.getElementById('salesKpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Revenue</div><div class="kpi-val">${fmtInt(totalRev)}</div></div>
+    <div class="kpi"><div class="kpi-label">Total Orders</div><div class="kpi-val">${allOrders.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Avg Order Value</div><div class="kpi-val">${fmt(avgOrder)}</div></div>
+    <div class="kpi"><div class="kpi-label">Shopify / Cin7</div><div class="kpi-val">${shopifyOrders.length} / ${cin7Orders.length}</div></div>`;
+
+  document.getElementById('salesBody').innerHTML=allOrders.slice(0,30).map(o=>{
+    const date=o.created_at||o.date||'';
+    const d=date?new Date(date).toLocaleDateString():'—';
+    const num=o.order_number||o.name||o.id||'—';
+    const cust=o.customer_name||o.customer||(o.customer&&o.customer.first_name)||'—';
+    const items=o.line_items?o.line_items.length:(o.items||1);
+    const total=fmt(o.total||o.total_price||0);
+    const status=o.financial_status||o.status||'—';
+    const sc=status==='paid'?'green':status==='pending'?'yellow':'blue';
+    return `<tr><td>${d}</td><td>${num}</td><td>${cust}</td><td>${items}</td><td>${total}</td><td><span class="badge badge-${sc}">${status}</span></td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="color:var(--text2)">No orders found</td></tr>';
+
+  // Top sellers - aggregate from line items
+  const productSales={};
+  allOrders.forEach(o=>{
+    (o.line_items||[]).forEach(li=>{
+      const name=li.title||li.name||'Unknown';
+      if(!productSales[name])productSales[name]={name,units:0,revenue:0};
+      productSales[name].units+=Number(li.quantity||1);
+      productSales[name].revenue+=Number(li.price||0)*Number(li.quantity||1);
+    });
+  });
+  const topSellers=Object.values(productSales).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+  document.getElementById('topSellersBody').innerHTML=topSellers.map(p=>{
+    return `<tr><td>${p.name}</td><td>${p.units}</td><td>${fmt(p.revenue)}</td><td>—</td></tr>`;
+  }).join('')||'<tr><td colspan="4" style="color:var(--text2)">No sales data</td></tr>';
+}
+
+// ─── INVENTORY ───
+function renderInventory(){
+  const q=(document.getElementById('invSearch').value||'').toLowerCase();
+  const allInv=[...inventory.map(p=>({
+    name:p.name||p.product_name||'',
+    sku:p.sku||p.code||'',
+    stock:Number(p.stock||p.quantity||0),
+    committed:Number(p.committed||0),
+    available:Number(p.available||p.stock||p.quantity||0),
+    source:'cin7'
+  })),...shopifyInv.map(p=>({
+    name:p.title||p.name||'',
+    sku:p.sku||p.variant_sku||'',
+    stock:Number(p.inventory_quantity||p.stock||0),
+    committed:0,
+    available:Number(p.inventory_quantity||p.stock||0),
+    source:'shopify'
+  }))];
+  const filtered=q?allInv.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)):allInv;
+  document.getElementById('invCount').textContent=filtered.length+' items';
+  document.getElementById('invBody').innerHTML=filtered.slice(0,50).map(p=>{
+    const statusClass=p.available<=0?'badge-red':p.available<6?'badge-yellow':'badge-green';
+    const statusText=p.available<=0?'Out of Stock':p.available<6?'Low Stock':'In Stock';
+    return `<tr><td>${p.name}</td><td style="color:var(--text2)">${p.sku}</td><td>${p.stock}</td><td>${p.committed}</td><td>${p.available}</td><td><span class="badge ${statusClass}">${statusText}</span></td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="color:var(--text2)">No inventory data</td></tr>';
+}
+
+// ─── ORDERS ───
+function renderOrders(){
+  const allOrders=[...shopifyOrders.map(o=>({...o,source:'shopify'})),...cin7Orders.map(o=>({...o,source:'cin7'}))].sort((a,b)=>new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0));
+  const pending=allOrders.filter(o=>(o.fulfillment_status||o.status)==='unfulfilled'||(o.fulfillment_status||o.status)==='pending').length;
+  const fulfilled=allOrders.filter(o=>(o.fulfillment_status||o.status)==='fulfilled'||(o.fulfillment_status||o.status)==='completed').length;
+
+  document.getElementById('orderKpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Total Orders</div><div class="kpi-val">${allOrders.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Pending Fulfillment</div><div class="kpi-val" style="color:var(--yellow)">${pending}</div></div>
+    <div class="kpi"><div class="kpi-label">Fulfilled</div><div class="kpi-val" style="color:var(--green)">${fulfilled}</div></div>`;
+
+  document.getElementById('ordersBody').innerHTML=allOrders.slice(0,40).map(o=>{
+    const date=o.created_at||o.date||'';
+    const d=date?new Date(date).toLocaleDateString():'—';
+    const num=o.order_number||o.name||o.id||'—';
+    const cust=o.customer_name||o.customer||(o.customer&&o.customer.first_name)||'—';
+    const items=o.line_items?o.line_items.length:(o.items||1);
+    const total=fmt(o.total||o.total_price||0);
+    const fs=o.financial_status||o.status||'—';
+    const ff=o.fulfillment_status||'pending';
+    const fsc=fs==='paid'?'green':fs==='pending'?'yellow':'blue';
+    const ffc=ff==='fulfilled'||ff==='completed'?'green':ff==='partial'?'yellow':'blue';
+    return `<tr><td>${num}</td><td>${d}</td><td>${cust}</td><td>${items}</td><td>${total}</td><td><span class="badge badge-${fsc}">${fs}</span></td><td><span class="badge badge-${ffc}">${ff}</span></td></tr>`;
+  }).join('')||'<tr><td colspan="7" style="color:var(--text2)">No orders</td></tr>';
+}
+
+// ─── TASKS ───
+function renderTasks(){
+  const cols={todo:[],in_progress:[],done:[]};
+  tasks.forEach(t=>{
+    const s=t.status||'todo';
+    if(s==='done'||s==='completed')cols.done.push(t);
+    else if(s==='in_progress'||s==='in-progress'||s==='active')cols.in_progress.push(t);
+    else cols.todo.push(t);
+  });
+  const renderCol=(title,items,color)=>`
+    <div class="kanban-col">
+      <div class="kanban-col-title">${title}<span class="kanban-col-count">${items.length}</span></div>
+      ${items.map(t=>`
+        <div class="kanban-card">
+          <h4>${t.title||t.name||''}</h4>
+          <p>${t.description||t.notes||''}</p>
+          <div class="kc-meta">
+            ${t.assignee?'<span>👤 '+t.assignee+'</span>':''}
+            ${t.due?'<span>📅 '+t.due+'</span>':''}
+            ${t.priority?'<span class="badge badge-'+(t.priority==='high'?'red':t.priority==='medium'?'yellow':'blue')+'">'+t.priority+'</span>':''}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('taskKanban').innerHTML=
+    renderCol('To Do',cols.todo,'blue')+
+    renderCol('In Progress',cols.in_progress,'yellow')+
+    renderCol('Done',cols.done.slice(0,10),'green');
+}
+
+// ─── WINE CATALOG ───
+function renderCatalog(){
+  const q=(document.getElementById('catalogSearch').value||'').toLowerCase();
+  const allWines=[...shopifyInv.map(p=>({
+    name:p.title||p.name||'',
+    type:p.product_type||p.type||'',
+    region:p.vendor||'',
+    vintage:p.tags||'',
+    price:p.price||p.variant_price||0,
+    stock:p.inventory_quantity||p.stock||0
+  })),...inventory.map(p=>({
+    name:p.name||p.product_name||'',
+    type:p.category||p.type||'',
+    region:p.brand||p.region||'',
+    vintage:'',
+    price:p.price||p.retail_price||0,
+    stock:p.stock||p.available||0
+  }))];
+  const filtered=q?allWines.filter(w=>w.name.toLowerCase().includes(q)||w.type.toLowerCase().includes(q)||w.region.toLowerCase().includes(q)):allWines;
+  document.getElementById('catCount').textContent=filtered.length+' wines';
+  document.getElementById('catalogBody').innerHTML=filtered.slice(0,50).map(w=>{
+    const sc=Number(w.stock)<=0?'badge-red':Number(w.stock)<6?'badge-yellow':'badge-green';
+    return `<tr><td style="font-weight:500">${w.name}</td><td>${w.type}</td><td>${w.region}</td><td>${w.vintage}</td><td>${w.price?fmt(w.price):'—'}</td><td><span class="badge ${sc}">${w.stock}</span></td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="color:var(--text2)">No wines found</td></tr>';
+}
+
+// ─── CUSTOMERS ───
+function renderCustomers(){
+  const q=(document.getElementById('custSearch').value||'').toLowerCase();
+  const filtered=q?customers.filter(c=>(c.name||c.first_name||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)):customers;
+  document.getElementById('custCount').textContent=filtered.length+' customers';
+  document.getElementById('custBody').innerHTML=filtered.slice(0,40).map(c=>{
+    const name=c.name||((c.first_name||'')+' '+(c.last_name||'')).trim()||'—';
+    const email=c.email||'—';
+    const orders=c.orders_count||c.order_count||0;
+    const spent=c.total_spent||0;
+    const last=c.last_order_date||c.last_order||'—';
+    const d=last!=='—'?new Date(last).toLocaleDateString():last;
+    return `<tr><td style="font-weight:500">${name}</td><td style="color:var(--text2)">${email}</td><td>${orders}</td><td>${fmt(spent)}</td><td>${d}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="color:var(--text2)">No customers found</td></tr>';
+}
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/boutique/sw.js')}</script>
+</body>
+</html>
