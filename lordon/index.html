@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LORDON — Mission Control</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FAF8F5">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #FAF8F5; --bg-sidebar: #FFFFFF; --bg-card: #FFFFFF; --bg-card-hover: #F5F2EE;
+  --border: #E8E4DF; --border-light: #F0ECE7; --text: #2D2A26; --text-secondary: #6B6560;
+  --text-muted: #9B9590; --accent: #C4A882; --accent-dark: #A8906E; --accent-rose: #D4A0A0;
+  --accent-sage: #8FA387; --accent-sage-light: #E8EDE6; --accent-warm: #E8D5C0;
+  --green: #6B9E6B; --green-light: #EAF2EA; --yellow: #C9A94E; --yellow-light: #F5F0E0;
+  --red: #C47070; --red-light: #F5EAEA; --blue: #7BA3C4; --blue-light: #EAF0F5;
+  --shadow: 0 2px 12px rgba(45,42,38,0.06); --shadow-lg: 0 8px 32px rgba(45,42,38,0.10);
+  --sidebar-width: 260px; --topbar-height: 56px; --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+h1,h2,h3,h4,h5 { font-family: 'Playfair Display', serif; font-weight: 600; }
+
+/* ═══ LOGIN ═══ */
+.login-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.login-overlay.hidden { display: none; }
+.login-box { text-align: center; max-width: 360px; padding: 40px; }
+.login-box h2 { font-size: 28px; margin-bottom: 8px; }
+.login-box p { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; }
+.login-box input { width: 100%; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; font-size: 15px; background: var(--bg-card); outline: none; font-family: inherit; }
+.login-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,168,130,0.15); }
+.login-box button { width: 100%; padding: 14px; margin-top: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.login-error { color: var(--red); font-size: 13px; margin-top: 8px; display: none; }
+
+/* ═══ TOPBAR ═══ */
+.topbar { position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-height); background: #fff; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 1000; }
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.hamburger { display: none; width: 36px; height: 36px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); align-items: center; justify-content: center; cursor: pointer; font-size: 18px; color: var(--text-secondary); }
+.topbar-brand { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 600; letter-spacing: 2.5px; color: var(--text-secondary); text-transform: uppercase; }
+.topbar-brand .sw-mark { width: 26px; height: 26px; background: linear-gradient(135deg, var(--accent), var(--accent-dark)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+.topbar-brand .divider { color: var(--border); font-weight: 300; }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+.topbar-store { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); }
+.store-logo { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-warm), var(--accent)); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: #fff; }
+.refresh-btn { width: 36px; height: 36px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 16px; transition: var(--transition); }
+.refresh-btn:hover { background: var(--bg-card-hover); }
+.logout-btn { padding: 6px 14px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); cursor: pointer; font-family: inherit; }
+
+/* ═══ SIDEBAR ═══ */
+.sidebar { position: fixed; top: var(--topbar-height); left: 0; bottom: 0; width: var(--sidebar-width); background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 24px 16px; overflow-y: auto; z-index: 900; transition: var(--transition); }
+.nav-section { margin-bottom: 24px; }
+.nav-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); padding: 0 12px; margin-bottom: 8px; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 14px; color: var(--text-secondary); transition: var(--transition); }
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: linear-gradient(135deg, rgba(196,168,130,0.12), rgba(196,168,130,0.06)); color: var(--accent-dark); font-weight: 600; }
+.nav-icon { width: 20px; text-align: center; font-size: 16px; }
+
+/* ═══ MAIN ═══ */
+.main { margin-left: var(--sidebar-width); padding: calc(var(--topbar-height) + 24px) 32px 32px; min-height: 100vh; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ═══ CARDS ═══ */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; transition: var(--transition); }
+.stat-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.stat-label { font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+.stat-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; }
+.stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.stat-icon { font-size: 20px; float: right; margin-top: -4px; }
+
+/* ═══ TABLE ═══ */
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+.card h3 { font-size: 18px; margin-bottom: 16px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
+td { padding: 12px; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); }
+tr:hover td { background: var(--bg); }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-yellow { background: var(--yellow-light); color: var(--yellow); }
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-blue { background: var(--blue-light); color: var(--blue); }
+.outlet-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.outlet-sj { background: var(--accent-sage); }
+.outlet-mc { background: var(--blue); }
+.outlet-hx { background: var(--accent-rose); }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.section-header h2 { font-size: 22px; }
+.updated-time { font-size: 12px; color: var(--text-muted); }
+
+/* ═══ LOCATION BREAKDOWN ═══ */
+.locations-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.location-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+.location-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.location-stat { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: var(--text-secondary); }
+.location-stat span:last-child { font-weight: 600; color: var(--text); }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 768px) {
+  .hamburger { display: flex; }
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+  .main { margin-left: 0; padding: calc(var(--topbar-height) + 16px) 16px 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="login">
+  <div class="login-box">
+    <h2>LORDON</h2>
+    <p>Mission Control — Boutique Intelligence</p>
+    <input type="password" id="pw" placeholder="Password" autofocus>
+    <button onclick="tryLogin()">Enter</button>
+    <div class="login-error" id="login-error">Incorrect password</div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="hamburger" onclick="toggleSidebar()">☰</div>
+    <div class="topbar-brand">
+      <div class="sw-mark">S</div> SolveWorks <span class="divider">|</span> LORDON
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-store">
+      <div class="store-logo">L</div>
+      <span>lordon</span>
+    </div>
+    <button class="refresh-btn" onclick="refreshData()" title="Refresh data">↻</button>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Dashboard</div>
+    <div class="nav-item active" data-tab="overview"><span class="nav-icon">📊</span> Overview</div>
+    <div class="nav-item" data-tab="orders"><span class="nav-icon">🛒</span> Online Orders</div>
+    <div class="nav-item" data-tab="pos"><span class="nav-icon">💳</span> In-Store Sales</div>
+    <div class="nav-item" data-tab="products"><span class="nav-icon">👗</span> Products</div>
+    <div class="nav-item" data-tab="customers"><span class="nav-icon">👥</span> Customers</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Locations</div>
+    <div class="nav-item" data-tab="locations"><span class="nav-icon">📍</span> All Locations</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- OVERVIEW TAB -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="section-header">
+      <h2>Overview</h2>
+      <span class="updated-time" id="last-updated"></span>
+    </div>
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="locations-grid" id="locations-overview"></div>
+    <div class="card">
+      <h3>Recent In-Store Sales</h3>
+      <div class="table-wrap"><table id="overview-sales-table"><thead><tr><th>Invoice</th><th>Location</th><th>Total</th><th>Date</th><th>Items</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Recent Online Orders</h3>
+      <div class="table-wrap"><table id="overview-orders-table"><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Date</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- ONLINE ORDERS TAB -->
+  <div class="tab-content" id="tab-orders">
+    <div class="section-header"><h2>Online Orders</h2></div>
+    <div class="stats-grid" id="orders-stats"></div>
+    <div class="card">
+      <h3>All Orders</h3>
+      <div class="table-wrap"><table id="orders-table"><thead><tr><th>Order</th><th>Customer</th><th>Email</th><th>Total</th><th>Date</th><th>Items</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- POS SALES TAB -->
+  <div class="tab-content" id="tab-pos">
+    <div class="section-header"><h2>In-Store Sales</h2></div>
+    <div class="stats-grid" id="pos-stats"></div>
+    <div class="card">
+      <h3>Lightspeed POS Sales</h3>
+      <div class="table-wrap"><table id="pos-table"><thead><tr><th>Invoice</th><th>Location</th><th>Total</th><th>Tax</th><th>Date</th><th>Items</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS TAB -->
+  <div class="tab-content" id="tab-products">
+    <div class="section-header"><h2>Products</h2></div>
+    <div class="stats-grid" id="products-stats"></div>
+    <div class="card">
+      <h3>Product Catalog (Shopify)</h3>
+      <div class="table-wrap"><table id="products-table"><thead><tr><th>Product</th><th>Type</th><th>Vendor</th><th>Price</th><th>Variants</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS TAB -->
+  <div class="tab-content" id="tab-customers">
+    <div class="section-header"><h2>Customers</h2></div>
+    <div class="stats-grid" id="customers-stats"></div>
+    <div class="card">
+      <h3>Recent Customers (Shopify)</h3>
+      <div class="table-wrap"><table id="customers-table"><thead><tr><th>Name</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Location</th><th>Joined</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- LOCATIONS TAB -->
+  <div class="tab-content" id="tab-locations">
+    <div class="section-header"><h2>Locations</h2></div>
+    <div class="locations-grid" id="locations-detail"></div>
+  </div>
+
+</div>
+
+<script>
+/* ═══ AUTH ═══ */
+async function sha256(str){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+async function tryLogin(){
+  const v=document.getElementById('pw').value;
+  if(await sha256(v)==='5276d13f8d503a5d4ebdcb4e002c1fa245934140524671040f87391f68142ab2'){
+    localStorage.setItem('mc_auth_lordon','1');document.getElementById('login').classList.add('hidden');init();
+  } else { document.getElementById('login-error').style.display='block'; }
+}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin()});
+function logout(){localStorage.removeItem('mc_auth_lordon');location.reload()}
+window.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem('mc_auth_lordon')){document.getElementById('login').classList.add('hidden');init()}});
+
+/* ═══ NAV ═══ */
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('tab-'+item.dataset.tab).classList.add('active');
+    if(window.innerWidth<=768)document.getElementById('sidebar').classList.remove('open');
+  });
+});
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open')}
+
+/* ═══ DATA ═══ */
+let shopifyOrders=[],shopifyProducts=[],shopifyCustomers=[],lsSales=[],summary={};
+
+async function loadJSON(path){
+  try{const r=await fetch(path+'?_='+Date.now());if(!r.ok)throw new Error(r.status);return await r.json();}
+  catch(e){console.warn('Failed to load '+path,e);return null;}
+}
+
+async function init(){
+  const [orders,products,customers,sales,sum]=await Promise.all([
+    loadJSON('data/shopify-orders.json'),
+    loadJSON('data/shopify-products.json'),
+    loadJSON('data/shopify-customers.json'),
+    loadJSON('data/lightspeed-sales.json'),
+    loadJSON('data/summary.json')
+  ]);
+  shopifyOrders=orders||[];
+  shopifyProducts=products||[];
+  shopifyCustomers=customers||[];
+  lsSales=sales||[];
+  summary=sum||{};
+  renderAll();
+}
+
+function refreshData(){init()}
+
+function fmtCurrency(v){return '$'+parseFloat(v||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function fmtDate(d){if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'})}
+function fmtTime(d){if(!d)return'';const dt=new Date(d);return dt.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'})}
+function outletClass(name){if(name.includes('Saint'))return'outlet-sj';if(name.includes('Moncton'))return'outlet-mc';if(name.includes('Halifax'))return'outlet-hx';return''}
+function statusBadge(s){const map={paid:'badge-green',fulfilled:'badge-green',CLOSED:'badge-green',unfulfilled:'badge-yellow',pending:'badge-yellow',OPEN:'badge-blue',refunded:'badge-red',VOIDED:'badge-red'};return'<span class="badge '+(map[s]||'badge-blue')+'">'+s+'</span>'}
+
+function renderAll(){
+  renderOverview();
+  renderOrders();
+  renderPOS();
+  renderProducts();
+  renderCustomers();
+  renderLocations();
+}
+
+function renderOverview(){
+  const s=summary;
+  const shopTotal=shopifyOrders.reduce((a,o)=>a+parseFloat(o.total_price||0),0);
+  const lsTotal=lsSales.reduce((a,s)=>a+parseFloat(s.total||0),0);
+  const today=new Date().toISOString().slice(0,10);
+  const todayLS=lsSales.filter(s=>s.sale_date&&s.sale_date.startsWith(today));
+  const todayShopify=shopifyOrders.filter(o=>o.created_at&&o.created_at.startsWith(today));
+  const todayRevLS=todayLS.reduce((a,s)=>a+parseFloat(s.total||0),0);
+  const todayRevShopify=todayShopify.reduce((a,o)=>a+parseFloat(o.total_price||0),0);
+
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">Today's Revenue</div><div class="stat-value">${fmtCurrency(todayRevLS+todayRevShopify)}</div><div class="stat-sub">POS ${fmtCurrency(todayRevLS)} · Online ${fmtCurrency(todayRevShopify)}</div></div>
+    <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-label">Today's Transactions</div><div class="stat-value">${todayLS.length+todayShopify.length}</div><div class="stat-sub">${todayLS.length} in-store · ${todayShopify.length} online</div></div>
+    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-label">Total Orders</div><div class="stat-value">${(s.shopify?.total_orders||0).toLocaleString()}</div><div class="stat-sub">Shopify lifetime</div></div>
+    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Customers</div><div class="stat-value">${(s.shopify?.total_customers||0).toLocaleString()}</div><div class="stat-sub">Shopify database</div></div>
+    <div class="stat-card"><div class="stat-icon">📍</div><div class="stat-label">Locations</div><div class="stat-value">3</div><div class="stat-sub">Saint John · Moncton · Halifax</div></div>
+  `;
+
+  // Location breakdown
+  const locMap={};
+  lsSales.forEach(s=>{
+    const loc=s.outlet||'Unknown';
+    if(!locMap[loc])locMap[loc]={count:0,revenue:0,todayCount:0,todayRev:0};
+    locMap[loc].count++;
+    locMap[loc].revenue+=parseFloat(s.total||0);
+    if(s.sale_date&&s.sale_date.startsWith(today)){locMap[loc].todayCount++;locMap[loc].todayRev+=parseFloat(s.total||0)}
+  });
+  document.getElementById('locations-overview').innerHTML=Object.entries(locMap).map(([name,d])=>`
+    <div class="location-card">
+      <div class="location-name"><span class="outlet-dot ${outletClass(name)}"></span>${name}</div>
+      <div class="location-stat"><span>Today</span><span>${d.todayCount} sales · ${fmtCurrency(d.todayRev)}</span></div>
+      <div class="location-stat"><span>Recent Total</span><span>${d.count} sales · ${fmtCurrency(d.revenue)}</span></div>
+    </div>
+  `).join('');
+
+  // Recent sales
+  const tbody1=document.querySelector('#overview-sales-table tbody');
+  tbody1.innerHTML=lsSales.slice(0,10).map(s=>`<tr>
+    <td>#${s.invoice_number}</td>
+    <td><span class="outlet-dot ${outletClass(s.outlet||'')}"></span>${s.outlet||'—'}</td>
+    <td>${fmtCurrency(s.total)}</td>
+    <td>${fmtDate(s.sale_date)} ${fmtTime(s.sale_date)}</td>
+    <td>${s.items}</td>
+  </tr>`).join('');
+
+  // Recent orders
+  const tbody2=document.querySelector('#overview-orders-table tbody');
+  tbody2.innerHTML=shopifyOrders.slice(0,10).map(o=>{
+    const cust=o.customer?(o.customer.first_name||'')+' '+(o.customer.last_name||''):'Guest';
+    return`<tr>
+      <td>${o.name}</td><td>${cust.trim()||'Guest'}</td>
+      <td>${fmtCurrency(o.total_price)} ${o.currency}</td>
+      <td>${fmtDate(o.created_at)}</td>
+      <td>${statusBadge(o.financial_status||'—')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('last-updated').textContent='Updated: '+(s.last_updated?new Date(s.last_updated).toLocaleString('en-CA'):'—');
+}
+
+function renderOrders(){
+  const total=shopifyOrders.reduce((a,o)=>a+parseFloat(o.total_price||0),0);
+  const avg=shopifyOrders.length?total/shopifyOrders.length:0;
+  document.getElementById('orders-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Showing</div><div class="stat-value">${shopifyOrders.length}</div><div class="stat-sub">Recent orders</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue (shown)</div><div class="stat-value">${fmtCurrency(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Order</div><div class="stat-value">${fmtCurrency(avg)}</div></div>
+  `;
+  document.querySelector('#orders-table tbody').innerHTML=shopifyOrders.map(o=>{
+    const cust=o.customer?(o.customer.first_name||'')+' '+(o.customer.last_name||''):'Guest';
+    const email=o.customer?.email||o.email||'—';
+    return`<tr>
+      <td><strong>${o.name}</strong></td><td>${cust.trim()||'Guest'}</td><td>${email}</td>
+      <td>${fmtCurrency(o.total_price)} ${o.currency}</td><td>${fmtDate(o.created_at)}</td>
+      <td>${o.line_items?.length||0}</td><td>${statusBadge(o.financial_status||'—')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPOS(){
+  const closed=lsSales.filter(s=>s.status==='CLOSED');
+  const total=closed.reduce((a,s)=>a+parseFloat(s.total||0),0);
+  const avg=closed.length?total/closed.length:0;
+  document.getElementById('pos-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Closed Sales</div><div class="stat-value">${closed.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Revenue</div><div class="stat-value">${fmtCurrency(total)}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Sale</div><div class="stat-value">${fmtCurrency(avg)}</div></div>
+  `;
+  document.querySelector('#pos-table tbody').innerHTML=lsSales.map(s=>`<tr>
+    <td><strong>#${s.invoice_number}</strong></td>
+    <td><span class="outlet-dot ${outletClass(s.outlet||'')}"></span>${s.outlet||'—'}</td>
+    <td>${fmtCurrency(s.total)}</td><td>${fmtCurrency(s.tax)}</td>
+    <td>${fmtDate(s.sale_date)} ${fmtTime(s.sale_date)}</td>
+    <td>${s.items}</td><td>${statusBadge(s.status)}</td>
+  </tr>`).join('');
+}
+
+function renderProducts(){
+  const active=shopifyProducts.filter(p=>p.status==='active').length;
+  document.getElementById('products-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Products Loaded</div><div class="stat-value">${shopifyProducts.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value">${active}</div></div>
+    <div class="stat-card"><div class="stat-label">Draft/Archived</div><div class="stat-value">${shopifyProducts.length-active}</div></div>
+  `;
+  document.querySelector('#products-table tbody').innerHTML=shopifyProducts.map(p=>{
+    const price=p.variants?.[0]?.price||'—';
+    return`<tr>
+      <td><strong>${p.title||'—'}</strong></td><td>${p.product_type||'—'}</td><td>${p.vendor||'—'}</td>
+      <td>${price!=='—'?fmtCurrency(price):'—'}</td><td>${p.variants?.length||0}</td>
+      <td>${statusBadge(p.status||'active')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCustomers(){
+  const withOrders=shopifyCustomers.filter(c=>c.orders_count>0).length;
+  const totalSpent=shopifyCustomers.reduce((a,c)=>a+parseFloat(c.total_spent||0),0);
+  document.getElementById('customers-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Customers Loaded</div><div class="stat-value">${shopifyCustomers.length}</div></div>
+    <div class="stat-card"><div class="stat-label">With Orders</div><div class="stat-value">${withOrders}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Spent</div><div class="stat-value">${fmtCurrency(totalSpent)}</div></div>
+  `;
+  document.querySelector('#customers-table tbody').innerHTML=shopifyCustomers.map(c=>{
+    const name=(c.first_name||'')+' '+(c.last_name||'');
+    const loc=[c.default_address?.city,c.default_address?.province].filter(Boolean).join(', ')||'—';
+    return`<tr>
+      <td><strong>${name.trim()||'—'}</strong></td><td>${c.email||'—'}</td>
+      <td>${c.orders_count||0}</td><td>${fmtCurrency(c.total_spent)}</td>
+      <td>${loc}</td><td>${fmtDate(c.created_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderLocations(){
+  const locMap={};
+  lsSales.forEach(s=>{
+    const loc=s.outlet||'Unknown';
+    if(!locMap[loc])locMap[loc]={count:0,revenue:0,items:0};
+    locMap[loc].count++;
+    locMap[loc].revenue+=parseFloat(s.total||0);
+    locMap[loc].items+=s.items||0;
+  });
+  document.getElementById('locations-detail').innerHTML=Object.entries(locMap).map(([name,d])=>`
+    <div class="location-card">
+      <div class="location-name"><span class="outlet-dot ${outletClass(name)}"></span>${name}</div>
+      <div class="location-stat"><span>Total Sales</span><span>${d.count}</span></div>
+      <div class="location-stat"><span>Revenue</span><span>${fmtCurrency(d.revenue)}</span></div>
+      <div class="location-stat"><span>Items Sold</span><span>${d.items}</span></div>
+      <div class="location-stat"><span>Avg Sale</span><span>${fmtCurrency(d.count?d.revenue/d.count:0)}</span></div>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>
