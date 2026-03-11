@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>urbanbutter — Sell-Through Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FAF8F5;--cream2:#F0EDE8;--sage:#7C9A82;--sage-light:#9AB89F;--sage-dark:#5F7D64;
+  --rose:#C4A882;--gold:#D4A853;--text:#2C2C2C;--text2:#6B6B6B;--text3:#999;
+  --white:#FFF;--red:#E85D5D;--green:#40c080;--blue:#5B8DEF;
+  --shadow:0 2px 12px rgba(0,0,0,0.06);--radius:12px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Playfair Display',Georgia,serif}
+
+/* LOGIN */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--cream)}
+.login-box{background:var(--white);padding:48px;border-radius:16px;box-shadow:var(--shadow);text-align:center;max-width:380px;width:90%}
+.login-box h1{font-size:28px;margin-bottom:8px}
+.login-box p{color:var(--text2);font-size:14px;margin-bottom:24px}
+.login-box input{width:100%;padding:14px 16px;border:2px solid var(--cream2);border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:border 0.2s}
+.login-box input:focus{border-color:var(--sage)}
+.login-box button{width:100%;padding:14px;background:var(--sage);color:var(--white);border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:12px;font-family:inherit}
+.login-box button:hover{background:var(--sage-dark)}
+.login-err{color:var(--red);font-size:13px;margin-top:8px;display:none}
+
+/* LAYOUT */
+#app{display:none}
+.topbar{background:var(--white);border-bottom:1px solid var(--cream2);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:22px}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.client-select{padding:10px 16px;border:2px solid var(--cream2);border-radius:10px;font-size:14px;font-family:inherit;background:var(--white);cursor:pointer;min-width:180px}
+.client-select:focus{border-color:var(--sage);outline:none}
+.logout-btn{padding:8px 16px;border:1px solid var(--cream2);border-radius:8px;background:transparent;font-size:13px;cursor:pointer;color:var(--text2)}
+.main{max-width:1200px;margin:0 auto;padding:24px}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--white);border-radius:12px;padding:4px;box-shadow:var(--shadow)}
+.tab{padding:10px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;transition:all 0.2s}
+.tab.active{background:var(--sage);color:var(--white)}
+.tab:hover:not(.active){background:var(--cream)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* KPI CARDS */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:768px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.kpi-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.kpi-val{font-size:28px;font-weight:700;font-family:'Playfair Display',serif}
+.kpi-sub{font-size:13px;margin-top:4px}
+.kpi-up{color:var(--green)}
+.kpi-down{color:var(--red)}
+
+/* TABLES */
+.card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--cream2);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:16px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 16px;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--cream2);font-family:'DM Sans',sans-serif;font-weight:600}
+td{padding:12px 16px;font-size:14px;border-bottom:1px solid var(--cream)}
+tr:last-child td{border-bottom:none}
+tr:hover{background:var(--cream)}
+.brand-row{cursor:pointer;transition:background 0.15s}
+.brand-row:hover{background:var(--cream2)}
+.brand-row td:first-child{font-weight:600;display:flex;align-items:center;gap:8px}
+.expand-icon{font-size:12px;color:var(--text3);transition:transform 0.2s;display:inline-block}
+.expand-icon.open{transform:rotate(90deg)}
+.style-row{background:var(--cream)!important}
+.style-row td:first-child{padding-left:40px;font-weight:500}
+.sku-row{background:#F5F2ED!important}
+.sku-row td:first-child{padding-left:64px;font-size:13px;color:var(--text2)}
+.hidden-row{display:none}
+.st-bar{display:inline-block;height:8px;border-radius:4px;min-width:4px}
+.st-fill{background:var(--sage)}
+.st-bg{background:var(--cream2);width:80px;border-radius:4px;display:inline-block;position:relative;height:8px}
+.st-bar-wrap{display:flex;align-items:center;gap:8px}
+.st-pct{font-size:13px;font-weight:600}
+.st-hot{color:var(--red);font-weight:700}
+.st-good{color:var(--green);font-weight:600}
+.st-slow{color:var(--gold);font-weight:600}
+
+/* BUY RECS */
+.rec-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:12px;display:flex;align-items:flex-start;gap:16px}
+.rec-icon{font-size:28px;min-width:40px;text-align:center}
+.rec-body h4{font-size:15px;font-weight:700;margin-bottom:4px}
+.rec-body p{font-size:13px;color:var(--text2);line-height:1.5}
+.rec-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;margin-top:6px}
+.rec-reorder{background:#E8F5ED;color:var(--green)}
+.rec-reduce{background:#FFF3E0;color:#E6A23C}
+.rec-hold{background:#FEE;color:var(--red)}
+
+/* COMPARISON */
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.comp-card{background:var(--white);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.comp-card h4{font-size:15px;margin-bottom:4px}
+.comp-card .comp-loc{font-size:12px;color:var(--text3);margin-bottom:16px}
+.comp-stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--cream)}
+.comp-stat:last-child{border-bottom:none}
+.comp-stat-label{font-size:13px;color:var(--text2)}
+.comp-stat-val{font-size:14px;font-weight:600}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .topbar{flex-direction:column;gap:12px;align-items:stretch}
+  .topbar-right{flex-direction:column}
+  .tabs{overflow-x:auto;flex-wrap:nowrap}
+  .tab{white-space:nowrap;font-size:13px;padding:8px 14px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h1>urbanbutter</h1>
+    <p>Sell-Through Analytics · Powered by Finch & Sparrow</p>
+    <input type="password" id="pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()">
+    <button onclick="tryLogin()">Sign In</button>
+    <div class="login-err" id="loginErr">Incorrect password</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <h1>urbanbutter</h1>
+    <div class="topbar-right">
+      <select class="client-select" id="clientSelect" onchange="switchClient()">
+        <option value="all">All Clients</option>
+        <option value="lordon">Lordon Boutique</option>
+        <option value="seaside">Seaside & Co</option>
+        <option value="marigold">Marigold</option>
+      </select>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('overview')">Overview</button>
+      <button class="tab" onclick="showTab('brands')">By Brand</button>
+      <button class="tab" onclick="showTab('buyrec')">Buy Planning</button>
+      <button class="tab" onclick="showTab('compare')">Compare Stores</button>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="kpis" id="kpis"></div>
+      <div class="card">
+        <div class="card-header"><h3>Brand Performance — Last 30 Days</h3></div>
+        <div style="overflow-x:auto">
+          <table id="brandTable">
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th>Revenue</th>
+                <th>Units Sold</th>
+                <th>Units Remaining</th>
+                <th>Sell-Through</th>
+                <th>Weeks of Supply</th>
+                <th>Margin</th>
+              </tr>
+            </thead>
+            <tbody id="brandBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BY BRAND TAB -->
+    <div class="tab-content" id="tab-brands">
+      <div class="card">
+        <div class="card-header"><h3>Brand → Style → Color/Size Drill-Down</h3></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Revenue</th>
+                <th>Sold</th>
+                <th>Remaining</th>
+                <th>Sell-Through</th>
+                <th>Velocity</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="drillBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUY PLANNING TAB -->
+    <div class="tab-content" id="tab-buyrec">
+      <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+        <div class="kpi"><div class="kpi-label">OTB Budget Remaining</div><div class="kpi-val" id="otbVal">$18,400</div><div class="kpi-sub">of $145,000 total</div></div>
+        <div class="kpi"><div class="kpi-label">Reorder Suggestions</div><div class="kpi-val" id="reorderCount">8</div><div class="kpi-sub">styles need attention</div></div>
+        <div class="kpi"><div class="kpi-label">Overstock Alerts</div><div class="kpi-val" id="overstockCount">3</div><div class="kpi-sub">consider markdown</div></div>
+      </div>
+      <h3 style="font-size:16px;margin-bottom:16px">Recommendations</h3>
+      <div id="recCards"></div>
+    </div>
+
+    <!-- COMPARE STORES TAB -->
+    <div class="tab-content" id="tab-compare">
+      <div class="comp-grid" id="compGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── AUTH ───
+const PW_HASH='730a0dc5afef99829c826bd202de04cc11d2813b5032d77176512e3691001d15';
+async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function tryLogin(){
+  const pw=document.getElementById('pw').value;
+  if(await sha256(pw)===PW_HASH){localStorage.setItem('ub_auth','1');showApp()}
+  else{document.getElementById('loginErr').style.display='block'}
+}
+function logout(){localStorage.removeItem('ub_auth');location.reload()}
+function showApp(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';renderAll()}
+if(localStorage.getItem('ub_auth')==='1')showApp();
+
+// ─── DATA ───
+const DATA={
+  lordon:{
+    name:'Lordon Boutique',locations:['Saint John','Moncton','Halifax'],
+    brands:[
+      {name:'Tribal',revenue:12640,sold:78,remaining:34,cost:5056,styles:[
+        {name:'Ponte Jacket',revenue:4760,sold:28,remaining:6,skus:[
+          {label:'Sage · S/M',sold:12,remaining:0,revenue:2040},{label:'Sage · L/XL',sold:6,remaining:1,revenue:1020},
+          {label:'Black · S/M',sold:6,remaining:2,revenue:1020},{label:'Navy · S/M',sold:4,remaining:3,revenue:680}
+        ]},
+        {name:'Wide Leg Pant',revenue:3920,sold:28,remaining:14,skus:[
+          {label:'Black · S',sold:10,remaining:1,revenue:1400},{label:'Black · M',sold:8,remaining:3,revenue:1120},
+          {label:'Black · L',sold:6,remaining:4,revenue:840},{label:'Taupe · S',sold:4,remaining:6,revenue:560}
+        ]},
+        {name:'Ponte Blazer',revenue:3960,sold:22,remaining:14,skus:[
+          {label:'Navy · S',sold:8,remaining:3,revenue:1440},{label:'Navy · M',sold:7,remaining:4,revenue:1260},
+          {label:'Black · S',sold:4,remaining:3,revenue:720},{label:'Black · M',sold:3,remaining:4,revenue:540}
+        ]}
+      ]},
+      {name:'Shannon Passero',revenue:8820,sold:54,remaining:28,cost:3528,styles:[
+        {name:'Wrap Dress',revenue:4200,sold:24,remaining:8,skus:[
+          {label:'Sage · S',sold:9,remaining:1,revenue:1575},{label:'Sage · M',sold:8,remaining:2,revenue:1400},
+          {label:'Rose · S',sold:4,remaining:2,revenue:700},{label:'Rose · M',sold:3,remaining:3,revenue:525}
+        ]},
+        {name:'Linen Blouse',revenue:2640,sold:18,remaining:12,skus:[
+          {label:'White · S',sold:7,remaining:3,revenue:1030},{label:'White · M',sold:6,remaining:4,revenue:880},
+          {label:'Cream · S',sold:3,remaining:2,revenue:440},{label:'Cream · M',sold:2,remaining:3,revenue:290}
+        ]},
+        {name:'Cropped Cardigan',revenue:1980,sold:12,remaining:8,skus:[
+          {label:'Oat · OS',sold:7,remaining:3,revenue:1155},{label:'Charcoal · OS',sold:5,remaining:5,revenue:825}
+        ]}
+      ]},
+      {name:'Kut from the Kloth',revenue:7080,sold:48,remaining:22,cost:3186,styles:[
+        {name:'Skinny Jean',revenue:3200,sold:24,remaining:8,skus:[
+          {label:'Dark Wash · 27',sold:8,remaining:1,revenue:1068},{label:'Dark Wash · 28',sold:7,remaining:2,revenue:934},
+          {label:'Dark Wash · 29',sold:5,remaining:2,revenue:668},{label:'Dark Wash · 30',sold:4,remaining:3,revenue:530}
+        ]},
+        {name:'Straight Leg',revenue:2400,sold:16,remaining:10,skus:[
+          {label:'Mid Wash · 27',sold:5,remaining:3,revenue:750},{label:'Mid Wash · 28',sold:5,remaining:2,revenue:750},
+          {label:'Mid Wash · 29',sold:4,remaining:3,revenue:600},{label:'Mid Wash · 30',sold:2,remaining:2,revenue:300}
+        ]},
+        {name:'Wide Leg Crop',revenue:1480,sold:8,remaining:4,skus:[
+          {label:'White · 27',sold:3,remaining:1,revenue:555},{label:'White · 28',sold:3,remaining:2,revenue:555},
+          {label:'White · 29',sold:2,remaining:1,revenue:370}
+        ]}
+      ]},
+      {name:'Ilse Jacobsen',revenue:6225,sold:33,remaining:19,cost:2490,styles:[
+        {name:'Rain Coat',revenue:3780,sold:18,remaining:7,skus:[
+          {label:'Sage · 36',sold:7,remaining:1,revenue:1470},{label:'Sage · 38',sold:6,remaining:2,revenue:1260},
+          {label:'Black · 36',sold:3,remaining:2,revenue:630},{label:'Black · 38',sold:2,remaining:2,revenue:420}
+        ]},
+        {name:'Tulip Shoe',revenue:2445,sold:15,remaining:12,skus:[
+          {label:'Army · 37',sold:5,remaining:3,revenue:815},{label:'Army · 38',sold:4,remaining:3,revenue:652},
+          {label:'Black · 37',sold:3,remaining:3,revenue:489},{label:'Black · 38',sold:3,remaining:3,revenue:489}
+        ]}
+      ]},
+      {name:'Z Supply',revenue:4560,sold:72,remaining:48,cost:2280,styles:[
+        {name:'Classic Tank',revenue:1920,sold:32,remaining:20,skus:[
+          {label:'White · S',sold:10,remaining:5,revenue:600},{label:'White · M',sold:8,remaining:5,revenue:480},
+          {label:'Black · S',sold:8,remaining:4,revenue:480},{label:'Black · M',sold:6,remaining:6,revenue:360}
+        ]},
+        {name:'Pocket Tee',revenue:1600,sold:24,remaining:16,skus:[
+          {label:'Heather Grey · S',sold:8,remaining:4,revenue:536},{label:'Heather Grey · M',sold:7,remaining:4,revenue:468},
+          {label:'White · S',sold:5,remaining:4,revenue:330},{label:'White · M',sold:4,remaining:4,revenue:266}
+        ]},
+        {name:'Reverie Dress',revenue:1040,sold:16,remaining:12,skus:[
+          {label:'Dusty Rose · S',sold:6,remaining:3,revenue:390},{label:'Dusty Rose · M',sold:5,remaining:4,revenue:325},
+          {label:'Sage · S',sold:3,remaining:2,revenue:195},{label:'Sage · M',sold:2,remaining:3,revenue:130}
+        ]}
+      ]},
+      {name:'Korner',revenue:4770,sold:30,remaining:20,cost:1908,styles:[
+        {name:'Blazer',revenue:2862,sold:18,remaining:10,skus:[
+          {label:'Navy · S',sold:6,remaining:2,revenue:954},{label:'Navy · M',sold:5,remaining:3,revenue:795},
+          {label:'Black · S',sold:4,remaining:2,revenue:636},{label:'Black · M',sold:3,remaining:3,revenue:477}
+        ]},
+        {name:'Ponte Pant',revenue:1908,sold:12,remaining:10,skus:[
+          {label:'Black · S',sold:4,remaining:3,revenue:636},{label:'Black · M',sold:4,remaining:3,revenue:636},
+          {label:'Navy · S',sold:2,remaining:2,revenue:318},{label:'Navy · M',sold:2,remaining:2,revenue:318}
+        ]}
+      ]}
+    ],
+    storeData:[
+      {store:'Saint John',revenue:18240,transactions:148,avgTx:123.24,sellThru:72},
+      {store:'Moncton',revenue:14580,transactions:118,avgTx:123.56,sellThru:68},
+      {store:'Halifax',revenue:11275,transactions:96,avgTx:117.45,sellThru:64}
+    ]
+  },
+  seaside:{
+    name:'Seaside & Co',locations:['Charlottetown'],
+    brands:[
+      {name:'Tribal',revenue:8420,sold:52,remaining:24,cost:3368,styles:[
+        {name:'Ponte Jacket',revenue:3240,sold:18,remaining:6,skus:[{label:'Black · S/M',sold:10,remaining:2,revenue:1800},{label:'Sage · S/M',sold:8,remaining:4,revenue:1440}]},
+        {name:'Pull-On Pant',revenue:2880,sold:20,remaining:10,skus:[{label:'Black · S',sold:8,remaining:3,revenue:1152},{label:'Black · M',sold:7,remaining:3,revenue:1008},{label:'Navy · S',sold:5,remaining:4,revenue:720}]},
+        {name:'Ponte Blazer',revenue:2300,sold:14,remaining:8,skus:[{label:'Navy · S',sold:8,remaining:3,revenue:1312},{label:'Navy · M',sold:6,remaining:5,revenue:988}]}
+      ]},
+      {name:'Shannon Passero',revenue:5880,sold:38,remaining:18,cost:2352,styles:[
+        {name:'Wrap Dress',revenue:3200,sold:20,remaining:6,skus:[{label:'Sage · S',sold:10,remaining:1,revenue:1600},{label:'Rose · M',sold:10,remaining:5,revenue:1600}]},
+        {name:'Linen Blouse',revenue:2680,sold:18,remaining:12,skus:[{label:'White · S',sold:10,remaining:4,revenue:1490},{label:'White · M',sold:8,remaining:8,revenue:1190}]}
+      ]},
+      {name:'Ilse Jacobsen',revenue:4150,sold:22,remaining:14,cost:1660,styles:[
+        {name:'Rain Coat',revenue:2800,sold:14,remaining:8,skus:[{label:'Sage · 36',sold:8,remaining:3,revenue:1600},{label:'Black · 38',sold:6,remaining:5,revenue:1200}]},
+        {name:'Tulip Shoe',revenue:1350,sold:8,remaining:6,skus:[{label:'Army · 37',sold:5,remaining:3,revenue:845},{label:'Black · 38',sold:3,remaining:3,revenue:505}]}
+      ]},
+      {name:'Z Supply',revenue:3640,sold:56,remaining:36,cost:1820,styles:[
+        {name:'Classic Tank',revenue:1800,sold:30,remaining:18,skus:[{label:'White · S',sold:12,remaining:6,revenue:720},{label:'Black · M',sold:10,remaining:6,revenue:600},{label:'White · M',sold:8,remaining:6,revenue:480}]},
+        {name:'Pocket Tee',revenue:1840,sold:26,remaining:18,skus:[{label:'Grey · S',sold:14,remaining:8,revenue:940},{label:'White · M',sold:12,remaining:10,revenue:900}]}
+      ]}
+    ],
+    storeData:[{store:'Charlottetown',revenue:22090,transactions:168,avgTx:131.49,sellThru:70}]
+  },
+  marigold:{
+    name:'Marigold',locations:['Fredericton','Riverview'],
+    brands:[
+      {name:'Tribal',revenue:6800,sold:42,remaining:30,cost:2720,styles:[
+        {name:'Ponte Jacket',revenue:2720,sold:16,remaining:10,skus:[{label:'Black · S/M',sold:8,remaining:4,revenue:1360},{label:'Sage · S/M',sold:8,remaining:6,revenue:1360}]},
+        {name:'Wide Leg Pant',revenue:2200,sold:14,remaining:12,skus:[{label:'Black · S',sold:6,remaining:4,revenue:942},{label:'Black · M',sold:4,remaining:4,revenue:628},{label:'Taupe · S',sold:4,remaining:4,revenue:630}]},
+        {name:'Ponte Blazer',revenue:1880,sold:12,remaining:8,skus:[{label:'Navy · S',sold:7,remaining:3,revenue:1095},{label:'Black · M',sold:5,remaining:5,revenue:785}]}
+      ]},
+      {name:'Shannon Passero',revenue:4200,sold:26,remaining:18,cost:1680,styles:[
+        {name:'Wrap Dress',revenue:2400,sold:14,remaining:8,skus:[{label:'Sage · S',sold:8,remaining:3,revenue:1370},{label:'Rose · M',sold:6,remaining:5,revenue:1030}]},
+        {name:'Cropped Cardigan',revenue:1800,sold:12,remaining:10,skus:[{label:'Oat · OS',sold:7,remaining:5,revenue:1050},{label:'Charcoal · OS',sold:5,remaining:5,revenue:750}]}
+      ]},
+      {name:'Kut from the Kloth',revenue:3800,sold:28,remaining:18,cost:1710,styles:[
+        {name:'Skinny Jean',revenue:2200,sold:16,remaining:8,skus:[{label:'Dark Wash · 27',sold:6,remaining:2,revenue:824},{label:'Dark Wash · 28',sold:6,remaining:3,revenue:824},{label:'Dark Wash · 29',sold:4,remaining:3,revenue:552}]},
+        {name:'Straight Leg',revenue:1600,sold:12,remaining:10,skus:[{label:'Mid Wash · 28',sold:6,remaining:4,revenue:800},{label:'Mid Wash · 29',sold:6,remaining:6,revenue:800}]}
+      ]},
+      {name:'Korner',revenue:2862,sold:18,remaining:14,cost:1145,styles:[
+        {name:'Blazer',revenue:1590,sold:10,remaining:8,skus:[{label:'Navy · S',sold:6,remaining:3,revenue:954},{label:'Black · M',sold:4,remaining:5,revenue:636}]},
+        {name:'Ponte Pant',revenue:1272,sold:8,remaining:6,skus:[{label:'Black · S',sold:4,remaining:3,revenue:636},{label:'Navy · M',sold:4,remaining:3,revenue:636}]}
+      ]}
+    ],
+    storeData:[
+      {store:'Fredericton',revenue:10620,transactions:82,avgTx:129.51,sellThru:62},
+      {store:'Riverview',revenue:7042,transactions:56,avgTx:125.75,sellThru:58}
+    ]
+  }
+};
+
+let currentClient='all';
+function switchClient(){currentClient=document.getElementById('clientSelect').value;renderAll()}
+
+// ─── HELPERS ───
+function fmt(n){return'$'+n.toLocaleString()}
+function pct(sold,total){const t=sold+total;return t?Math.round(sold/t*100):0}
+function velocity(sold){return sold>=20?'🔥 Fast':sold>=10?'Steady':'Slow'}
+function stClass(p){return p>=75?'st-hot':p>=50?'st-good':'st-slow'}
+function weeksSupply(remaining,sold){return sold?Math.round(remaining/sold*4*10)/10:'∞'}
+
+function getClients(){
+  if(currentClient==='all')return Object.values(DATA);
+  return DATA[currentClient]?[DATA[currentClient]]:[];
+}
+
+function aggregateBrands(){
+  const clients=getClients();
+  const map={};
+  clients.forEach(c=>{
+    c.brands.forEach(b=>{
+      if(!map[b.name])map[b.name]={name:b.name,revenue:0,sold:0,remaining:0,cost:0,styles:{}};
+      map[b.name].revenue+=b.revenue;
+      map[b.name].sold+=b.sold;
+      map[b.name].remaining+=b.remaining;
+      map[b.name].cost+=b.cost;
+      b.styles.forEach(s=>{
+        if(!map[b.name].styles[s.name])map[b.name].styles[s.name]={name:s.name,revenue:0,sold:0,remaining:0,skus:{}};
+        const ms=map[b.name].styles[s.name];
+        ms.revenue+=s.revenue;ms.sold+=s.sold;
+        const sRem=s.skus.reduce((a,sk)=>a+sk.remaining,0);
+        ms.remaining+=sRem;
+        s.skus.forEach(sk=>{
+          if(!ms.skus[sk.label])ms.skus[sk.label]={label:sk.label,sold:0,remaining:0,revenue:0};
+          ms.skus[sk.label].sold+=sk.sold;ms.skus[sk.label].remaining+=sk.remaining;ms.skus[sk.label].revenue+=sk.revenue;
+        });
+      });
+    });
+  });
+  return Object.values(map).sort((a,b)=>b.revenue-a.revenue);
+}
+
+// ─── RENDER ───
+function renderAll(){renderKPIs();renderBrandTable();renderDrillDown();renderRecs();renderCompare()}
+
+function renderKPIs(){
+  const brands=aggregateBrands();
+  const rev=brands.reduce((a,b)=>a+b.revenue,0);
+  const sold=brands.reduce((a,b)=>a+b.sold,0);
+  const rem=brands.reduce((a,b)=>a+b.remaining,0);
+  const cost=brands.reduce((a,b)=>a+b.cost,0);
+  const st=pct(sold,rem);
+  const margin=rev?Math.round((rev-cost)/rev*100):0;
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-label">Revenue (30d)</div><div class="kpi-val">${fmt(rev)}</div><div class="kpi-sub kpi-up">↑ 14% vs last month</div></div>
+    <div class="kpi"><div class="kpi-label">Units Sold</div><div class="kpi-val">${sold}</div><div class="kpi-sub">${rem} remaining</div></div>
+    <div class="kpi"><div class="kpi-label">Sell-Through</div><div class="kpi-val">${st}%</div><div class="kpi-sub kpi-${st>=65?'up':'down'}">${st>=65?'On track':'Below target'}</div></div>
+    <div class="kpi"><div class="kpi-label">Blended Margin</div><div class="kpi-val">${margin}%</div><div class="kpi-sub">across all brands</div></div>`;
+}
+
+function renderBrandTable(){
+  const brands=aggregateBrands();
+  let html='';
+  brands.forEach(b=>{
+    const st=pct(b.sold,b.remaining);
+    const ws=weeksSupply(b.remaining,b.sold);
+    const margin=b.revenue?Math.round((b.revenue-b.cost)/b.revenue*100):0;
+    html+=`<tr class="brand-row"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td>${ws}</td><td>${margin}%</td></tr>`;
+  });
+  document.getElementById('brandBody').innerHTML=html;
+}
+
+function renderDrillDown(){
+  const brands=aggregateBrands();
+  let html='';
+  brands.forEach(b=>{
+    const bSt=pct(b.sold,b.remaining);
+    html+=`<tr class="brand-row" data-brand="${b.name}"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${bSt}%"></div></div><span class="st-pct ${stClass(bSt)}">${bSt}%</span></div></td><td>${velocity(b.sold)}</td><td></td></tr>`;
+    Object.values(b.styles).sort((a,c)=>c.revenue-a.revenue).forEach(s=>{
+      const sSt=pct(s.sold,s.remaining);
+      const act=sSt>=80?'<span class="rec-tag rec-reorder">Reorder</span>':sSt<40?'<span class="rec-tag rec-reduce">Markdown</span>':'';
+      html+=`<tr class="style-row hidden-row" data-parent="${b.name}" data-style="${s.name}"><td><span class="expand-icon">▶</span>${s.name}</td><td>${fmt(s.revenue)}</td><td>${s.sold}</td><td>${s.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${sSt}%"></div></div><span class="st-pct ${stClass(sSt)}">${sSt}%</span></div></td><td>${velocity(s.sold)}</td><td>${act}</td></tr>`;
+      Object.values(s.skus).sort((a,c)=>c.sold-a.sold).forEach(sk=>{
+        const skSt=pct(sk.sold,sk.remaining);
+        const skAct=sk.remaining===0?'<span class="rec-tag rec-hold">Sold Out</span>':skSt>=85?'<span class="rec-tag rec-reorder">Reorder</span>':'';
+        html+=`<tr class="sku-row hidden-row" data-parent="${b.name}:${s.name}"><td>${sk.label}</td><td>${fmt(sk.revenue)}</td><td>${sk.sold}</td><td>${sk.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${skSt}%"></div></div><span class="st-pct ${stClass(skSt)}">${skSt}%</span></div></td><td></td><td>${skAct}</td></tr>`;
+      });
+    });
+  });
+  document.getElementById('drillBody').innerHTML=html;
+  // Toggle expand
+  document.querySelectorAll('#drillBody .brand-row').forEach(r=>{
+    r.addEventListener('click',()=>{
+      const brand=r.dataset.brand;
+      const icon=r.querySelector('.expand-icon');
+      const open=icon.classList.toggle('open');
+      document.querySelectorAll(`[data-parent="${brand}"]`).forEach(sr=>{
+        sr.classList.toggle('hidden-row',!open);
+        if(!open){const si=sr.querySelector('.expand-icon');if(si)si.classList.remove('open');
+          document.querySelectorAll(`[data-parent="${brand}:${sr.dataset.style}"]`).forEach(sk=>sk.classList.add('hidden-row'));
+        }
+      });
+    });
+  });
+  document.querySelectorAll('#drillBody .style-row').forEach(r=>{
+    r.addEventListener('click',e=>{
+      e.stopPropagation();
+      const parent=r.dataset.parent+':'+r.dataset.style;
+      const icon=r.querySelector('.expand-icon');
+      const open=icon.classList.toggle('open');
+      document.querySelectorAll(`[data-parent="${parent}"]`).forEach(sk=>sk.classList.toggle('hidden-row',!open));
+    });
+  });
+}
+
+function renderRecs(){
+  const brands=aggregateBrands();
+  let recs=[];
+  brands.forEach(b=>{
+    Object.values(b.styles).forEach(s=>{
+      const st=pct(s.sold,s.remaining);
+      if(st>=80)recs.push({icon:'🔥',title:`Reorder: ${b.name} ${s.name}`,desc:`${st}% sell-through with only ${s.remaining} units left. At current velocity, you'll be out in ${weeksSupply(s.remaining,s.sold)} weeks. Recommend reorder of ${Math.ceil(s.sold*0.6)} units.`,tag:'reorder'});
+      else if(st<35&&s.remaining>10)recs.push({icon:'⚠️',title:`Markdown: ${b.name} ${s.name}`,desc:`Only ${st}% sell-through with ${s.remaining} units remaining. Consider 20-30% markdown to move inventory before season end.`,tag:'reduce'});
+      Object.values(s.skus).forEach(sk=>{
+        if(sk.remaining===0&&sk.sold>=5)recs.push({icon:'🚨',title:`Sold Out: ${b.name} ${s.name} — ${sk.label}`,desc:`This SKU sold ${sk.sold} units and is completely gone. Fast reorder recommended — lost sales likely.`,tag:'reorder'});
+      });
+    });
+  });
+  recs.sort((a,b)=>a.tag==='reorder'?-1:1);
+  document.getElementById('recCards').innerHTML=recs.slice(0,12).map(r=>`
+    <div class="rec-card"><div class="rec-icon">${r.icon}</div><div class="rec-body"><h4>${r.title}</h4><p>${r.desc}</p><span class="rec-tag rec-${r.tag}">${r.tag==='reorder'?'Reorder Now':r.tag==='reduce'?'Consider Markdown':'Review'}</span></div></div>`).join('');
+  document.getElementById('reorderCount').textContent=recs.filter(r=>r.tag==='reorder').length;
+  document.getElementById('overstockCount').textContent=recs.filter(r=>r.tag==='reduce').length;
+}
+
+function renderCompare(){
+  const clients=getClients();
+  if(clients.length===1&&clients[0].storeData.length===1){
+    document.getElementById('compGrid').innerHTML='<p style="color:var(--text2);padding:20px">Select "All Clients" or a multi-location store to compare.</p>';return;
+  }
+  let cards=[];
+  clients.forEach(c=>{
+    c.storeData.forEach(s=>{
+      const topBrand=c.brands.sort((a,b)=>b.revenue-a.revenue)[0];
+      cards.push(`<div class="comp-card"><h4>${s.store}</h4><div class="comp-loc">${c.name}</div>
+        <div class="comp-stat"><span class="comp-stat-label">Revenue</span><span class="comp-stat-val">${fmt(s.revenue)}</span></div>
+        <div class="comp-stat"><span class="comp-stat-label">Transactions</span><span class="comp-stat-val">${s.transactions}</span></div>
+        <div class="comp-stat"><span class="comp-stat-label">Avg Transaction</span><span class="comp-stat-val">${fmt(Math.round(s.avgTx))}</span></div>
+        <div class="comp-stat"><span class="comp-stat-label">Sell-Through</span><span class="comp-stat-val ${s.sellThru>=65?'kpi-up':'kpi-down'}">${s.sellThru}%</span></div>
+        <div class="comp-stat"><span class="comp-stat-label">Top Brand</span><span class="comp-stat-val">${topBrand?topBrand.name:'-'}</span></div>
+      </div>`);
+    });
+  });
+  document.getElementById('compGrid').innerHTML=cards.join('');
+}
+
+// ─── TABS ───
+function showTab(id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab-content#tab-${id}`).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>
