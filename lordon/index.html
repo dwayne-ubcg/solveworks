@@ -1875,6 +1875,48 @@ function renderDashboard(){
     });
   }
 
+  // === BUY PLANNING ===
+  const bpStats=document.querySelectorAll('#page-buyplan .stat-card');
+  if(bpStats[0]&&inv.totalValue){bpStats[0].querySelector('.value').textContent=fmtC(inv.totalValue);bpStats[0].querySelector('.label').textContent='Inventory at Cost';}
+  if(bpStats[1]){bpStats[1].querySelector('.value').textContent=fmtC((inv.brandBreakdown||[]).reduce((a,b)=>a+b.retail,0));bpStats[1].querySelector('.label').textContent='Retail Value';}
+  if(bpStats[2]){const margin=inv.totalValue&&(inv.brandBreakdown||[]).length?Math.round((1-inv.totalValue/(inv.brandBreakdown||[]).reduce((a,b)=>a+b.retail,0))*100):0;bpStats[2].querySelector('.value').textContent=margin+'%';bpStats[2].querySelector('.label').textContent='Blended Margin';}
+
+  // Buy plan brand allocation bars
+  const brandAlloc=document.querySelector('#page-buyplan .bar-chart');
+  if(brandAlloc&&inv.brandBreakdown&&inv.brandBreakdown.length){
+    const maxCost=Math.max(...inv.brandBreakdown.map(b=>b.cost),1);
+    brandAlloc.innerHTML=inv.brandBreakdown.slice(0,10).map(b=>{
+      const pct=Math.round(b.cost/maxCost*100);
+      const color=b.margin>=55?'var(--accent-sage)':b.margin>=45?'var(--accent)':b.margin>=35?'var(--yellow)':'var(--red)';
+      return`<div class="bar-row"><div class="bar-label">${b.name}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color};">${fmtC(b.cost)} (${b.margin}%)</div></div></div>`;
+    }).join('');
+  }
+
+  // === SELL-THROUGH ===
+  const stTable=document.querySelector('#page-sellthrough table tbody');
+  if(stTable&&inv.typeBreakdown&&inv.typeBreakdown.length){
+    stTable.innerHTML=inv.typeBreakdown.slice(0,12).map(t=>{
+      const margin=t.retail?Math.round((1-t.cost/t.retail)*100):0;
+      const badge=margin>=50?'<span style="color:var(--green)">●</span>':margin>=35?'<span style="color:var(--yellow)">●</span>':'<span style="color:var(--red)">●</span>';
+      return`<tr><td><strong>${t.name}</strong></td><td>${t.count}</td><td>${fmtC(t.cost)}</td><td>${fmtC(t.retail)}</td><td>${badge} ${margin}%</td></tr>`;
+    }).join('');
+  }
+
+  // === MULTI-STORE comparison table ===
+  const msTable=document.querySelector('#page-multistore table tbody');
+  if(msTable&&db.locations&&db.locations.length){
+    const locs=db.locations;
+    const getLoc=name=>locs.find(l=>l.name===name)||{count:0,revenue:0,todayCount:0,todayRev:0};
+    const sj=getLoc('Saint John'),mc=getLoc('Moncton'),hx=getLoc('Halifax');
+    msTable.innerHTML=[
+      ['Revenue',fmtC(sj.revenue),fmtC(mc.revenue),fmtC(hx.revenue)],
+      ['Transactions',sj.count,mc.count,hx.count],
+      ['Today Revenue',fmtC(sj.todayRev),fmtC(mc.todayRev),fmtC(hx.todayRev)],
+      ['Today Sales',sj.todayCount,mc.todayCount,hx.todayCount],
+      ['Avg Sale',fmtC(sj.count?sj.revenue/sj.count:0),fmtC(mc.count?mc.revenue/mc.count:0),fmtC(hx.count?hx.revenue/hx.count:0)]
+    ].map(r=>`<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+  }
+
   console.log('Dashboard rendered with real data');
 }
 // Navigation
