@@ -134,6 +134,7 @@ tr:hover{background:var(--surface2)}
   <div class="header">
     <h1><img src="icon.jpg" alt="7 Cellars" style="width:32px;height:32px;border-radius:6px"> 7 Cellars</h1>
     <div class="header-right">
+      <button class="btn-logout" onclick="refreshData()" id="refreshBtn">↻ Refresh</button>
       <button class="btn-logout" onclick="logout()">Sign Out</button>
     </div>
   </div>
@@ -276,7 +277,20 @@ let shopifyOrders=[],cin7Orders=[],inventory=[],shopifyInv=[],tasks=[],customers
 const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtInt=n=>'$'+Number(n||0).toLocaleString();
 
-async function loadJSON(p){try{const r=await fetch('../7cellars/'+p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+async function loadJSON(p){try{const r=await fetch('data/'+p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+
+async function refreshData(){
+  const btn=document.getElementById('refreshBtn');
+  btn.textContent='⟳ Loading...';btn.disabled=true;
+  await init();
+  btn.textContent='↻ Refresh';btn.disabled=false;
+}
+
+// Pull-to-refresh
+let pullStart=0,pulling=false;
+document.addEventListener('touchstart',e=>{if(window.scrollY===0){pullStart=e.touches[0].clientY;pulling=true}});
+document.addEventListener('touchmove',e=>{if(!pulling)return;const d=e.touches[0].clientY-pullStart;if(d>120){pulling=false;refreshData()}});
+document.addEventListener('touchend',()=>{pulling=false});
 
 async function init(){
   const [so,co,si,ci,t,c,a]=await Promise.all([
