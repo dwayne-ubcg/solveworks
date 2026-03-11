@@ -334,6 +334,7 @@ a{color:var(--blue);text-decoration:none}
     <div class="nav-item" data-section="activity" onclick="showSection('activity',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       AI Activity
+      <span class="nav-badge" id="activity-count">0</span>
     </div>
     <div class="nav-item" data-section="calls" onclick="showSection('calls',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
@@ -585,7 +586,13 @@ function startClock(){
 function updateCounts(){
   const cards=(DATA.leads.boards||[])[0]?.cards||[];
   document.getElementById('pipeline-count').textContent=cards.length;
-  document.getElementById('calls-count').textContent=(DATA.calls.analyses||[]).length;
+  // Call Monitor: count from call-analyses recentCalls or call-scores scoredCalls
+  const scoredCalls=(DATA.callScores||{}).scoredCalls||[];
+  const totalCalls=(DATA.calls.recentCalls||[]).length||scoredCalls.length;
+  document.getElementById('calls-count').textContent=totalCalls;
+  // AI Activity: count recent entries
+  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.entries||[]);
+  document.getElementById('activity-count').textContent=entries.length;
 }
 
 // ─── Stats ────────────────────────────────────────────
