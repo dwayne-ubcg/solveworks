@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finch &amp; Sparrow — Get Started</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF8F5;
+  --accent: #C4A882;
+  --sage: #8FA387;
+  --rose: #D4A0A0;
+  --warm: #E8D5C0;
+  --text: #3D3D3D;
+  --text-light: #7A7A7A;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  min-height: 100vh;
+}
+h1, h2, h3, .brand-heading { font-family: 'Playfair Display', serif; }
+
+/* Progress bar */
+.progress-track {
+  height: 4px;
+  background: var(--warm);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+/* Step cards */
+.step-card {
+  background: #fff;
+  border: 1px solid #E8E4DF;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin-bottom: 16px;
+}
+.step-header {
+  padding: 20px 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  user-select: none;
+}
+.step-header:hover { background: rgba(200, 168, 130, 0.04); }
+.step-number {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+.step-number.pending { background: var(--warm); color: var(--text-light); }
+.step-number.active { background: var(--accent); color: #fff; }
+.step-number.complete { background: var(--sage); color: #fff; }
+.step-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 500;
+}
+.step-chevron {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  color: var(--text-light);
+}
+.step-chevron.open { transform: rotate(180deg); }
+.step-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.3s ease;
+}
+.step-body.open {
+  max-height: 2000px;
+  padding: 0 24px 24px 24px;
+}
+
+/* Form elements */
+.field-label {
+  display: block;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.field-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #D9D4CE;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s;
+  outline: none;
+}
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: #B5AFA7; }
+select.field-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%237A7A7A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+.field-group { margin-bottom: 18px; }
+
+/* Radio / Checkbox custom */
+.choice-group { display: flex; flex-wrap: wrap; gap: 10px; }
+.choice-pill {
+  position: relative;
+  cursor: pointer;
+}
+.choice-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+.choice-pill span {
+  display: inline-block;
+  padding: 8px 18px;
+  border: 1px solid #D9D4CE;
+  border-radius: 24px;
+  font-size: 14px;
+  transition: all 0.2s;
+  background: #fff;
+}
+.choice-pill input:checked + span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.choice-pill:hover span { border-color: var(--accent); }
+
+/* Checkbox list */
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 15px;
+}
+.check-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Buttons */
+.btn-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.btn-next:hover { background: #B89A74; }
+.btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  background: transparent;
+  color: var(--text-light);
+  border: 1px solid #D9D4CE;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+.btn-back:hover { border-color: var(--accent); color: var(--text); }
+
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: var(--sage);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 8px;
+}
+.btn-submit:hover { background: #7D9375; }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Summary */
+.summary-section { margin-bottom: 16px; }
+.summary-section h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  color: var(--accent);
+  margin: 0 0 6px 0;
+}
+.summary-section p {
+  margin: 2px 0;
+  font-size: 14px;
+  color: var(--text-light);
+}
+.summary-divider {
+  border: none;
+  border-top: 1px solid var(--warm);
+  margin: 12px 0;
+}
+
+/* Telegram hint */
+.hint-box {
+  background: rgba(143, 163, 135, 0.1);
+  border-left: 3px solid var(--sage);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+  color: var(--text);
+  margin-top: 8px;
+  display: none;
+}
+.hint-box.visible { display: block; }
+
+/* Success */
+.success-screen {
+  text-align: center;
+  padding: 48px 24px;
+  display: none;
+}
+.success-screen.visible { display: block; }
+.success-icon {
+  width: 72px;
+  height: 72px;
+  background: var(--sage);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 36px;
+  color: #fff;
+}
+
+/* Conditional fields */
+.conditional { display: none; }
+.conditional.visible { display: block; }
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error */
+.error-banner {
+  background: rgba(212, 160, 160, 0.15);
+  border: 1px solid var(--rose);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #8B4545;
+  margin-top: 12px;
+  display: none;
+}
+.error-banner.visible { display: block; }
+
+/* Validation */
+.field-input.invalid { border-color: var(--rose); }
+.validation-msg {
+  color: var(--rose);
+  font-size: 12px;
+  margin-top: 4px;
+  display: none;
+}
+.validation-msg.visible { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-track">
+  <div class="progress-fill" id="progressBar" style="width: 20%"></div>
+</div>
+
+<!-- Header -->
+<header class="text-center pt-10 pb-6 px-4">
+  <h1 class="text-3xl md:text-4xl mb-1" style="color: var(--text);">Finch &amp; Sparrow</h1>
+  <p class="text-sm tracking-wide mb-1" style="color: var(--accent); font-weight: 500;">by SolveWorks</p>
+  <p class="text-xs" style="color: var(--text-light);">AI-powered intelligence for boutique retail</p>
+</header>
+
+<!-- Form Container -->
+<main class="max-w-2xl mx-auto px-4 pb-16" id="formContainer">
+
+  <!-- Step 1: Your Boutique -->
+  <div class="step-card" data-step="1">
+    <div class="step-header" onclick="toggleStep(1)">
+      <div class="step-number active" id="stepNum1">1</div>
+      <div class="step-title">Your Boutique</div>
+      <svg class="step-chevron open" id="chevron1" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body open" id="stepBody1">
+      <div class="field-group">
+        <label class="field-label" for="storeName">Store Name *</label>
+        <input type="text" id="storeName" class="field-input" placeholder="e.g. The Painted Fox Boutique" required>
+        <div class="validation-msg" id="storeName-err">Please enter your store name</div>
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="ownerName">Owner Name *</label>
+        <input type="text" id="ownerName" class="field-input" placeholder="Your full name" required>
+        <div class="validation-msg" id="ownerName-err">Please enter your name</div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="field-group">
+          <label class="field-label" for="email">Email *</label>
+          <input type="email" id="email" class="field-input" placeholder="you@yourboutique.com" required>
+          <div class="validation-msg" id="email-err">Please enter a valid email</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="phone">Phone *</label>
+          <input type="tel" id="phone" class="field-input" placeholder="(555) 123-4567" required>
+          <div class="validation-msg" id="phone-err">Please enter your phone number</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="field-group">
+          <label class="field-label" for="city">City *</label>
+          <input type="text" id="city" class="field-input" placeholder="City" required>
+          <div class="validation-msg" id="city-err">Please enter your city</div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="province">Province / State *</label>
+          <input type="text" id="province" class="field-input" placeholder="Province or State" required>
+          <div class="validation-msg" id="province-err">Please enter your province/state</div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Number of Locations</label>
+        <div class="choice-group">
+          <label class="choice-pill"><input type="radio" name="locations" value="1" checked><span>1</span></label>
+          <label class="choice-pill"><input type="radio" name="locations" value="2-3"><span>2–3</span></label>
+          <label class="choice-pill"><input type="radio" name="locations" value="4+"><span>4+</span></label>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-next" onclick="goToStep(2)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Your POS System -->
+  <div class="step-card" data-step="2">
+    <div class="step-header" onclick="toggleStep(2)">
+      <div class="step-number pending" id="stepNum2">2</div>
+      <div class="step-title">Your POS System</div>
+      <svg class="step-chevron" id="chevron2" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body" id="stepBody2">
+      <div class="field-group">
+        <label class="field-label">Which POS do you use? *</label>
+        <div class="choice-group">
+          <label class="choice-pill"><input type="radio" name="pos" value="Shopify" onchange="onPosChange()"><span>Shopify</span></label>
+          <label class="choice-pill"><input type="radio" name="pos" value="Square" onchange="onPosChange()"><span>Square</span></label>
+          <label class="choice-pill"><input type="radio" name="pos" value="Lightspeed" onchange="onPosChange()"><span>Lightspeed</span></label>
+          <label class="choice-pill"><input type="radio" name="pos" value="Other" onchange="onPosChange()"><span>Other</span></label>
+        </div>
+        <div class="validation-msg" id="pos-err">Please select your POS system</div>
+      </div>
+      <div class="field-group conditional" id="posOtherField">
+        <label class="field-label" for="posOther">Which POS?</label>
+        <input type="text" id="posOther" class="field-input" placeholder="Your POS system">
+      </div>
+      <div class="field-group conditional" id="shopifyUrlField">
+        <label class="field-label" for="shopifyUrl">Store URL</label>
+        <input type="url" id="shopifyUrl" class="field-input" placeholder="https://yourstore.myshopify.com">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Do you use any other tools?</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1">
+          <label class="check-item"><input type="checkbox" name="tools" value="QuickBooks"> QuickBooks</label>
+          <label class="check-item"><input type="checkbox" name="tools" value="Xero"> Xero</label>
+          <label class="check-item"><input type="checkbox" name="tools" value="Mailchimp"> Mailchimp</label>
+          <label class="check-item"><input type="checkbox" name="tools" value="Klaviyo"> Klaviyo</label>
+          <label class="check-item"><input type="checkbox" name="tools" value="Instagram Shopping"> Instagram Shopping</label>
+          <label class="check-item"><input type="checkbox" name="tools" value="Other"> Other</label>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-back" onclick="goToStep(1)">← Back</button>
+        <button class="btn-next" onclick="goToStep(3)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: What Matters Most -->
+  <div class="step-card" data-step="3">
+    <div class="step-header" onclick="toggleStep(3)">
+      <div class="step-number pending" id="stepNum3">3</div>
+      <div class="step-title">What Matters Most</div>
+      <svg class="step-chevron" id="chevron3" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body" id="stepBody3">
+      <p class="text-sm mb-4" style="color: var(--text-light);">Select everything you'd like help with — we'll tailor your dashboard.</p>
+      <div class="field-group">
+        <label class="check-item"><input type="checkbox" name="needs" value="Daily sales briefing"> Daily sales briefing</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Inventory alerts (low stock, overstock)"> Inventory alerts (low stock, overstock)</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Buy planning & reorder suggestions"> Buy planning &amp; reorder suggestions</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Sell-through analysis"> Sell-through analysis</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Customer insights & clienteling"> Customer insights &amp; clienteling</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Social media content"> Social media content</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Multi-store comparison"> Multi-store comparison</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Vendor management"> Vendor management</label>
+        <label class="check-item"><input type="checkbox" name="needs" value="Something else"> Something else</label>
+      </div>
+      <div class="field-group conditional" id="needsOtherField">
+        <label class="field-label" for="needsOther">Tell us more</label>
+        <input type="text" id="needsOther" class="field-input" placeholder="What else would be helpful?">
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-back" onclick="goToStep(2)">← Back</button>
+        <button class="btn-next" onclick="goToStep(4)">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Communication -->
+  <div class="step-card" data-step="4">
+    <div class="step-header" onclick="toggleStep(4)">
+      <div class="step-number pending" id="stepNum4">4</div>
+      <div class="step-title">Communication</div>
+      <svg class="step-chevron" id="chevron4" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body" id="stepBody4">
+      <div class="field-group">
+        <label class="field-label">How should your AI assistant reach you? *</label>
+        <label class="check-item"><input type="checkbox" name="channels" value="Telegram" onchange="onChannelChange()"> Telegram</label>
+        <label class="check-item"><input type="checkbox" name="channels" value="SMS" onchange="onChannelChange()"> SMS</label>
+        <label class="check-item"><input type="checkbox" name="channels" value="Email" onchange="onChannelChange()"> Email</label>
+        <div class="validation-msg" id="channels-err">Please select at least one channel</div>
+      </div>
+      <div class="hint-box" id="telegramHint">
+        📱 Download <a href="https://telegram.org" target="_blank" style="color: var(--sage); font-weight: 600;">Telegram</a> if you don't have it. We'll send setup instructions after you submit.
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="field-group">
+          <label class="field-label" for="briefingTime">Preferred Briefing Time</label>
+          <select id="briefingTime" class="field-input">
+            <option value="7:00 AM">7:00 AM</option>
+            <option value="8:00 AM" selected>8:00 AM</option>
+            <option value="9:00 AM">9:00 AM</option>
+            <option value="10:00 AM">10:00 AM</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="timezone">Timezone</label>
+          <select id="timezone" class="field-input">
+            <option value="America/St_Johns">Newfoundland (NT)</option>
+            <option value="America/Halifax" selected>Atlantic (AT)</option>
+            <option value="America/Toronto">Eastern (ET)</option>
+            <option value="America/Chicago">Central (CT)</option>
+            <option value="America/Denver">Mountain (MT)</option>
+            <option value="America/Los_Angeles">Pacific (PT)</option>
+            <option value="America/Anchorage">Alaska (AKT)</option>
+            <option value="Pacific/Honolulu">Hawaii (HT)</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button class="btn-back" onclick="goToStep(3)">← Back</button>
+        <button class="btn-next" onclick="goToStep(5)">Review &amp; Submit →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5: Review & Submit -->
+  <div class="step-card" data-step="5">
+    <div class="step-header" onclick="toggleStep(5)">
+      <div class="step-number pending" id="stepNum5">5</div>
+      <div class="step-title">Review &amp; Submit</div>
+      <svg class="step-chevron" id="chevron5" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="step-body" id="stepBody5">
+      <div id="summaryContent"></div>
+      <div class="error-banner" id="submitError">Something went wrong. Please try again or email us at hello@solveworks.io</div>
+      <div class="flex gap-3">
+        <button class="btn-back" onclick="goToStep(4)">← Back</button>
+        <button class="btn-submit" id="submitBtn" onclick="submitForm()">
+          Get Started — We'll be in touch within 24 hours
+        </button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Success Screen -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">✓</div>
+  <h2 class="text-2xl mb-3" style="color: var(--text);">Welcome to Finch &amp; Sparrow!</h2>
+  <p class="text-base mb-2" style="color: var(--text-light); max-width: 400px; margin: 0 auto 12px;">
+    We'll reach out within 24 hours to get your dashboard live.
+  </p>
+  <p class="text-sm" style="color: var(--text-light);">
+    Questions in the meantime? <a href="mailto:hello@solveworks.io" style="color: var(--accent); font-weight: 500;">hello@solveworks.io</a>
+  </p>
+</div>
+
+<!-- Footer -->
+<footer class="text-center py-8 px-4" style="color: var(--text-light); font-size: 13px;">
+  <p>Questions? <a href="mailto:hello@solveworks.io" style="color: var(--accent);">hello@solveworks.io</a></p>
+  <p class="mt-1">Finch &amp; Sparrow by SolveWorks</p>
+</footer>
+
+<script>
+let currentStep = 1;
+const totalSteps = 5;
+
+function getVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function getRadio(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; }
+function getChecked(name) { return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value); }
+
+function updateProgress() {
+  document.getElementById('progressBar').style.width = `${(currentStep / totalSteps) * 100}%`;
+}
+
+function setStepState(n, state) {
+  const num = document.getElementById(`stepNum${n}`);
+  num.className = `step-number ${state}`;
+  if (state === 'complete') num.innerHTML = '✓';
+}
+
+function openStepBody(n) {
+  document.getElementById(`stepBody${n}`).classList.add('open');
+  document.getElementById(`chevron${n}`).classList.add('open');
+}
+
+function closeStepBody(n) {
+  document.getElementById(`stepBody${n}`).classList.remove('open');
+  document.getElementById(`chevron${n}`).classList.remove('open');
+}
+
+function toggleStep(n) {
+  // Allow clicking to completed or current step
+  if (n > currentStep) return;
+  const body = document.getElementById(`stepBody${n}`);
+  if (body.classList.contains('open')) {
+    closeStepBody(n);
+  } else {
+    openStepBody(n);
+  }
+}
+
+function validateStep(n) {
+  let valid = true;
+  const show = (id) => {
+    const el = document.getElementById(id);
+    const input = document.getElementById(id.replace('-err', ''));
+    if (el) el.classList.add('visible');
+    if (input) input.classList.add('invalid');
+    valid = false;
+  };
+  const clear = (id) => {
+    const el = document.getElementById(id);
+    const input = document.getElementById(id.replace('-err', ''));
+    if (el) el.classList.remove('visible');
+    if (input) input.classList.remove('invalid');
+  };
+
+  if (n === 1) {
+    ['storeName', 'ownerName', 'city', 'province', 'phone'].forEach(f => {
+      clear(f + '-err');
+      if (!getVal(f)) show(f + '-err');
+    });
+    clear('email-err');
+    const emailVal = getVal('email');
+    if (!emailVal || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) show('email-err');
+  }
+  if (n === 2) {
+    clear('pos-err');
+    if (!getRadio('pos')) show('pos-err');
+  }
+  if (n === 4) {
+    clear('channels-err');
+    if (getChecked('channels').length === 0) show('channels-err');
+  }
+  return valid;
+}
+
+function goToStep(n) {
+  // Validate current step before advancing
+  if (n > currentStep && !validateStep(currentStep)) return;
+
+  // Mark completed steps
+  for (let i = 1; i < n; i++) {
+    setStepState(i, 'complete');
+    closeStepBody(i);
+  }
+
+  // Set current
+  setStepState(n, 'active');
+  openStepBody(n);
+
+  // Pending for future
+  for (let i = n + 1; i <= totalSteps; i++) {
+    setStepState(i, 'pending');
+    closeStepBody(i);
+  }
+
+  currentStep = n;
+  updateProgress();
+
+  // Build summary on step 5
+  if (n === 5) buildSummary();
+
+  // Scroll to step
+  setTimeout(() => {
+    document.querySelector(`[data-step="${n}"]`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function onPosChange() {
+  const pos = getRadio('pos');
+  document.getElementById('posOtherField').classList.toggle('visible', pos === 'Other');
+  document.getElementById('shopifyUrlField').classList.toggle('visible', pos === 'Shopify');
+}
+
+function onChannelChange() {
+  const channels = getChecked('channels');
+  document.getElementById('telegramHint').classList.toggle('visible', channels.includes('Telegram'));
+}
+
+// Show/hide "something else" text field
+document.addEventListener('change', (e) => {
+  if (e.target.name === 'needs' && e.target.value === 'Something else') {
+    document.getElementById('needsOtherField').classList.toggle('visible', e.target.checked);
+  }
+});
+
+function buildSummary() {
+  const data = gatherData();
+  let html = '';
+
+  html += `<div class="summary-section">
+    <h4>Your Boutique</h4>
+    <p><strong>${data.storeName}</strong></p>
+    <p>${data.ownerName} · ${data.email} · ${data.phone}</p>
+    <p>${data.city}, ${data.province} · ${data.locations} location(s)</p>
+  </div><hr class="summary-divider">`;
+
+  html += `<div class="summary-section">
+    <h4>POS System</h4>
+    <p>${data.pos}${data.posOther ? ' — ' + data.posOther : ''}${data.shopifyUrl ? ' · ' + data.shopifyUrl : ''}</p>
+    ${data.tools.length ? '<p>Also using: ' + data.tools.join(', ') + '</p>' : ''}
+  </div><hr class="summary-divider">`;
+
+  html += `<div class="summary-section">
+    <h4>What Matters Most</h4>
+    <p>${data.needs.length ? data.needs.join(', ') : 'None selected'}${data.needsOther ? ' · ' + data.needsOther : ''}</p>
+  </div><hr class="summary-divider">`;
+
+  html += `<div class="summary-section">
+    <h4>Communication</h4>
+    <p>Channels: ${data.channels.join(', ')}</p>
+    <p>Briefing: ${data.briefingTime} (${data.timezone})</p>
+  </div>`;
+
+  document.getElementById('summaryContent').innerHTML = html;
+}
+
+function gatherData() {
+  return {
+    storeName: getVal('storeName'),
+    ownerName: getVal('ownerName'),
+    email: getVal('email'),
+    phone: getVal('phone'),
+    city: getVal('city'),
+    province: getVal('province'),
+    locations: getRadio('locations') || '1',
+    pos: getRadio('pos'),
+    posOther: getVal('posOther'),
+    shopifyUrl: getVal('shopifyUrl'),
+    tools: getChecked('tools'),
+    needs: getChecked('needs').filter(n => n !== 'Something else'),
+    needsOther: getVal('needsOther'),
+    channels: getChecked('channels'),
+    briefingTime: getVal('briefingTime'),
+    timezone: document.getElementById('timezone').options[document.getElementById('timezone').selectedIndex].text +
+      ' (' + getVal('timezone') + ')'
+  };
+}
+
+function formatTelegramMessage(data) {
+  let msg = `🪶 *NEW FINCH & SPARROW ONBOARDING*\n\n`;
+  msg += `*Boutique:* ${data.storeName}\n`;
+  msg += `*Owner:* ${data.ownerName}\n`;
+  msg += `*Email:* ${data.email}\n`;
+  msg += `*Phone:* ${data.phone}\n`;
+  msg += `*Location:* ${data.city}, ${data.province}\n`;
+  msg += `*Locations:* ${data.locations}\n\n`;
+
+  msg += `*POS:* ${data.pos}`;
+  if (data.posOther) msg += ` — ${data.posOther}`;
+  msg += `\n`;
+  if (data.shopifyUrl) msg += `*Shopify URL:* ${data.shopifyUrl}\n`;
+  if (data.tools.length) msg += `*Other Tools:* ${data.tools.join(', ')}\n`;
+  msg += `\n`;
+
+  if (data.needs.length) msg += `*Needs:* ${data.needs.join(', ')}\n`;
+  if (data.needsOther) msg += `*Other Need:* ${data.needsOther}\n`;
+  msg += `\n`;
+
+  msg += `*Channels:* ${data.channels.join(', ')}\n`;
+  msg += `*Briefing:* ${data.briefingTime} ${data.timezone}\n`;
+
+  return msg;
+}
+
+async function sendToTelegram(text, chatId) {
+  const token = '8621807541:AAF29AfiOgjVW7K_3oydLZC-jiohldNvB-g';
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'Markdown'
+    })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Telegram API error (${chatId}): ${res.status} ${err}`);
+  }
+  return res.json();
+}
+
+async function submitForm() {
+  const btn = document.getElementById('submitBtn');
+  const errBanner = document.getElementById('submitError');
+  errBanner.classList.remove('visible');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  try {
+    const data = gatherData();
+    const msg = formatTelegramMessage(data);
+
+    // Send to both targets
+    await Promise.all([
+      sendToTelegram(msg, '-5116168213'),
+      sendToTelegram(msg, '8383876737')
+    ]);
+
+    // Show success
+    document.getElementById('formContainer').style.display = 'none';
+    document.getElementById('successScreen').classList.add('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    console.error('Submit error:', err);
+    errBanner.textContent = 'Something went wrong: ' + err.message + '. Please try again or email hello@solveworks.io';
+    errBanner.classList.add('visible');
+    btn.disabled = false;
+    btn.innerHTML = 'Get Started — We\'ll be in touch within 24 hours';
+  }
+}
+</script>
+</body>
+</html>
