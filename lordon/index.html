@@ -886,15 +886,8 @@ tr:hover td { background: var(--bg); }
     </div>
 
     <div class="card">
-      <div class="card-title">📊 Inventory Value by Brand</div>
-      <div class="bar-chart">
-        <div class="bar-row"><div class="bar-label">FREE PEOPLE</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent-sage);">$13,346</div></div></div>
-        <div class="bar-row"><div class="bar-label">ICHI</div><div class="bar-track"><div class="bar-fill" style="width:37%;background:var(--accent-sage);">$4,982</div></div></div>
-        <div class="bar-row"><div class="bar-label">BB DAKOTA</div><div class="bar-track"><div class="bar-fill" style="width:17%;background:var(--accent-sage);">$2,268</div></div></div>
-        <div class="bar-row"><div class="bar-label">GENTLE FAWN</div><div class="bar-track"><div class="bar-fill" style="width:14%;background:var(--accent-sage);">$1,827</div></div></div>
-        <div class="bar-row"><div class="bar-label">Amuse Society</div><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--accent-sage);">$1,737</div></div></div>
-        <div class="bar-row"><div class="bar-label">B YOUNG</div><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--accent-sage);">$1,561</div></div></div>
-        <div class="bar-row"><div class="bar-label">LEVIS</div><div class="bar-track"><div class="bar-fill" style="width:10%;background:var(--accent-sage);">$1,383</div></div></div>
+      <div class="card-title">📊 Inventory Value by Brand — All <span id="inv-brand-count">65</span> Brands</div>
+      <div id="inv-brand-bars" class="bar-chart" style="max-height:600px;overflow-y:auto;">
       </div>
       <div class="ai-rec" style="margin-top:12px;padding:10px;">
         <div class="ai-icon" style="width:24px;height:24px;font-size:12px;">💡</div>
@@ -1838,6 +1831,18 @@ function renderDashboard(){
     invTable.innerHTML=inv.brandBreakdown.map(b=>`<tr><td><strong>${b.name}</strong></td><td>${b.count}</td><td>${fmtC(b.cost)}</td><td>${fmtC(b.retail)}</td><td>${b.margin}%</td><td>${b.margin>=55?'⭐ Grow':b.margin>=45?'✅ Keep':b.margin>=35?'👁️ Watch':'🔻 Cut'}</td></tr>`).join('');
   }
 
+  // Inventory brand bars - all brands
+  const invBars=document.getElementById('inv-brand-bars');
+  const invCount=document.getElementById('inv-brand-count');
+  if(invBars&&inv.brandBreakdown&&inv.brandBreakdown.length){
+    if(invCount)invCount.textContent=inv.brandBreakdown.length;
+    const maxCost=Math.max(...inv.brandBreakdown.map(b=>b.cost),1);
+    invBars.innerHTML=inv.brandBreakdown.map(b=>{
+      const pct=Math.max(Math.round(b.cost/maxCost*100),2);
+      return`<div class="bar-row"><div class="bar-label">${b.name}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--accent-sage);">${fmtC(b.cost)}</div></div></div>`;
+    }).join('');
+  }
+
   // === CUSTOMERS ===
   const custStats=document.querySelectorAll('#page-clienteling .stat-card');
   if(custStats[0]){custStats[0].querySelector('.value').textContent=fmtN(cust.total);}
@@ -1877,7 +1882,7 @@ function renderDashboard(){
   const brandAlloc=document.querySelector('#page-buyplan .bar-chart');
   if(brandAlloc&&inv.brandBreakdown&&inv.brandBreakdown.length){
     const maxCost=Math.max(...inv.brandBreakdown.map(b=>b.cost),1);
-    brandAlloc.innerHTML=inv.brandBreakdown.slice(0,10).map(b=>{
+    brandAlloc.innerHTML=inv.brandBreakdown.map(b=>{
       const pct=Math.round(b.cost/maxCost*100);
       const color=b.margin>=55?'var(--accent-sage)':b.margin>=45?'var(--accent)':b.margin>=35?'var(--yellow)':'var(--red)';
       return`<div class="bar-row"><div class="bar-label">${b.name}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color};">${fmtC(b.cost)} (${b.margin}%)</div></div></div>`;
