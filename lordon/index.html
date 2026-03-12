@@ -572,6 +572,25 @@ tr:hover td { background: var(--bg); }
       </div>
     </div>
   </div>
+
+  <!-- ═══ BRIEFING INTELLIGENCE ═══ -->
+  <div id="briefing-intel" style="display:none;">
+    <!-- 1. Business Health Snapshot -->
+    <div style="margin-bottom:8px;">
+      <div class="card-title" style="margin:16px 0 12px;font-size:15px;">📊 Business Health Snapshot</div>
+      <div class="grid-4" id="intel-health-cards" style="margin-bottom:16px;"></div>
+    </div>
+    <!-- 2. Action Items -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">🚨 Action Items</div>
+      <div id="intel-action-items" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+    <!-- 3. This Season at a Glance -->
+    <div class="card">
+      <div class="card-title">📈 This Season at a Glance</div>
+      <div id="intel-season-glance"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
@@ -2369,7 +2388,169 @@ function renderDashboard(){
     }
   }
 
+  // === MORNING BRIEFING INTELLIGENCE ===
+  renderBriefingIntel();
+
   console.log('Dashboard rendered with real data');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MORNING BRIEFING INTELLIGENCE
+// ═══════════════════════════════════════════════════════════════
+function renderBriefingIntel(){
+  const st=window._ld&&window._ld.sellThrough;
+  if(!st)return;
+  const intelEl=document.getElementById('briefing-intel');
+  if(!intelEl)return;
+  intelEl.style.display='';
+
+  const cats=st.byCategory||[];
+  const brands=st.byBrand||[];
+  const deadStock=st.deadStock||[];
+  const summary=st.summary||{};
+
+  // ── 1. Business Health Snapshot ──────────────────────────────
+  // Weighted sell-through (by revenue)
+  const totalRev=cats.reduce((s,c)=>s+(c.revenue||0),0);
+  const weightedST=totalRev>0
+    ?Math.round(cats.reduce((s,c)=>s+(c.sellThrough||0)*(c.revenue||0),0)/totalRev)
+    :(cats.length?Math.round(cats.reduce((s,c)=>s+(c.sellThrough||0),0)/cats.length):0);
+
+  // Dead stock
+  const dsCount=deadStock.length;
+  const dsCost=deadStock.reduce((s,d)=>s+(d.totalCost||d.cost||0),0);
+  const dsAlert=dsCount>20;
+
+  // Inventory days (avg weeks of supply × 7)
+  const avgWeeks=cats.length?cats.reduce((s,c)=>s+(c.weeksOfSupply||0),0)/cats.length:0;
+  const invDays=Math.round(avgWeeks*7);
+  const invHealthy=invDays>=30&&invDays<=90;
+  const invDaysColor=invHealthy?'var(--green)':'var(--yellow)';
+  const invDaysNote=invHealthy?'✓ Healthy range':invDays>90?'⚠ Excess stock':'⚠ Running lean';
+
+  // Active brands
+  const activeBrands=brands.filter(b=>b.rating==='grow'||b.rating==='keep').length;
+
+  const healthEl=document.getElementById('intel-health-cards');
+  if(healthEl){
+    const stColor=weightedST>=60?'var(--green)':weightedST<40?'var(--red)':'var(--yellow)';
+    const stNote=weightedST>=60?'↑ Strong performance':weightedST<40?'↓ Needs attention':'→ Moderate';
+    healthEl.innerHTML=`
+      <div class="stat-card">
+        <div class="value" style="color:${stColor};">${weightedST}%</div>
+        <div class="label">Sell-Through Rate</div>
+        <div class="change" style="color:${stColor};">${stNote}</div>
+      </div>
+      <div class="stat-card" style="${dsAlert?'background:var(--red-light);border:1px solid var(--red);':''}">
+        <div class="value" style="color:${dsAlert?'var(--red)':'var(--text)'};">${dsCount}</div>
+        <div class="label">Dead Stock Items</div>
+        <div class="change ${dsAlert?'down':''}" style="${dsAlert?'color:var(--red);':''}">${fmtC(dsCost)} tied up</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" style="color:${invDaysColor};">${invDays} <span style="font-size:14px;font-weight:400;">days</span></div>
+        <div class="label">Inventory Days</div>
+        <div class="change" style="color:${invDaysColor};">${invDaysNote}</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">${activeBrands}<span style="font-size:14px;font-weight:400;color:var(--text-secondary);">/${brands.length}</span></div>
+        <div class="label">Active Brands</div>
+        <div class="change up">Grow + Keep rated</div>
+      </div>`;
+  }
+
+  // ── 2. Action Items ──────────────────────────────────────────
+  const items=[];
+
+  // Dead stock >90 days
+  const old90=deadStock.filter(d=>(d.daysInStock||d.days||0)>90);
+  if(old90.length>0){
+    const top=[...old90].sort((a,b)=>(b.daysInStock||b.days||0)-(a.daysInStock||a.days||0))[0];
+    const topName=top.productName||top.name||'Unknown';
+    const topDays=top.daysInStock||top.days||0;
+    const costTied=old90.reduce((s,d)=>s+(d.totalCost||d.cost||0),0);
+    items.push({icon:'⚠️',text:`Review ${old90.length} dead stock items (${fmtC(costTied)} at cost) for markdown. Top: <strong>${topName}</strong> at ${topDays} days.`,badge:'badge-red',badgeText:'Urgent'});
+  }
+
+  // Low supply (<6 weeks)
+  const lowSup=cats.filter(c=>(c.weeksOfSupply||0)>0&&(c.weeksOfSupply||0)<6);
+  lowSup.forEach(c=>items.push({icon:'⚠️',text:`<strong>${c.category||c.name}</strong> running low — only ${c.weeksOfSupply} wks of supply. Consider reorder.`,badge:'badge-yellow',badgeText:'Reorder'}));
+
+  // Overstocked (>20 weeks) - top 2
+  const over20=[...cats].filter(c=>(c.weeksOfSupply||0)>20).sort((a,b)=>b.weeksOfSupply-a.weeksOfSupply).slice(0,2);
+  over20.forEach(c=>items.push({icon:'📦',text:`<strong>${c.category||c.name}</strong> overstocked at ${c.weeksOfSupply} wks. Hold buying.`,badge:'badge-blue',badgeText:'Hold'}));
+
+  // Top performing brand
+  const topBrand=[...brands].sort((a,b)=>b.sellThrough-a.sellThrough)[0];
+  if(topBrand)items.push({icon:'🏆',text:`<strong>${topBrand.brand}</strong> leading at ${topBrand.sellThrough}% sell-through — maintain current allocation.`,badge:'badge-green',badgeText:'Top Brand'});
+
+  // Cut brands
+  brands.filter(b=>b.rating==='cut').slice(0,2).forEach(b=>{
+    items.push({icon:'❌',text:`Consider discontinuing <strong>${b.brand}</strong> — ${b.sellThrough}% sell-through, ${b.grossMargin||'—'}% margin.`,badge:'badge-red',badgeText:'Discontinue'});
+  });
+
+  // OTB summary
+  const otb=st.otb||[];
+  const openCats=otb.filter(o=>o.otbAvailable>0);
+  if(openCats.length>0){
+    const totalOTB=openCats.reduce((s,o)=>s+o.otbAvailable,0);
+    items.push({icon:'💰',text:`${fmtC(totalOTB)} available for new purchases across ${openCats.length} open categories.`,badge:'badge-green',badgeText:'Buy Budget'});
+  }
+
+  const actionEl=document.getElementById('intel-action-items');
+  if(actionEl){
+    if(items.length===0){
+      actionEl.innerHTML='<div style="font-size:13px;color:var(--text-secondary);padding:8px 0;">No urgent action items — all metrics look healthy. 👍</div>';
+    } else {
+      actionEl.innerHTML=items.slice(0,6).map(item=>`
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border-light);">
+          <span style="font-size:16px;line-height:1.5;flex-shrink:0;">${item.icon}</span>
+          <span style="font-size:13px;flex:1;line-height:1.5;">${item.text}</span>
+          <span class="badge ${item.badge}" style="white-space:nowrap;flex-shrink:0;margin-top:2px;">${item.badgeText}</span>
+        </div>`).join('');
+    }
+  }
+
+  // ── 3. This Season at a Glance ───────────────────────────────
+  const sc=st.seasonComparison||{};
+  const scSum=sc.summary||{};
+  const scCats=sc.byCategory||[];
+  const rev=summary.totalRevenue||scSum.currentRevenue||0;
+  const prevRev=scSum.priorRevenue||0;
+  const pacingUp=prevRev>0?rev>=prevRev:null;
+  const pacingLabel=pacingUp===true?'↑ Ahead of plan':pacingUp===false?'↓ Behind plan':'— Tracking';
+  const pacingColor=pacingUp===true?'var(--green)':pacingUp===false?'var(--red)':'var(--text-secondary)';
+
+  // Trending: use season comparison if available, else top cats by ST
+  const trending=scCats.length
+    ?[...scCats].sort((a,b)=>Math.abs(b.revenueDelta||0)-Math.abs(a.revenueDelta||0)).slice(0,4)
+    :[...cats].sort((a,b)=>b.sellThrough-a.sellThrough).slice(0,4);
+
+  const trendHtml=trending.map(c=>{
+    const delta=c.revenueDelta!==undefined?c.revenueDelta:null;
+    const stVal=c.sellThrough||0;
+    const arrow=delta!==null?(delta>=0?'↑':'↓'):(stVal>=60?'↑':stVal<40?'↓':'→');
+    const arrowColor=arrow==='↑'?'var(--green)':arrow==='↓'?'var(--red)':'var(--text-secondary)';
+    const name=c.category||c.name||'?';
+    return`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:6px;">
+      <span style="font-size:13px;font-weight:700;color:${arrowColor};">${arrow}</span>
+      <span style="font-size:12px;font-weight:600;">${name}</span>
+      <span style="font-size:11px;color:var(--text-secondary);margin-left:auto;">${stVal}% ST</span>
+    </div>`;
+  }).join('');
+
+  const weeksIn=scSum.weeksIn||'—';
+  const seasonLabel=scSum.season||"Spring '26";
+  const seasonEl=document.getElementById('intel-season-glance');
+  if(seasonEl){
+    seasonEl.innerHTML=`
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border-light);">
+        <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Season</div><div style="font-size:14px;font-weight:700;">${seasonLabel}</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Weeks In</div><div style="font-size:14px;font-weight:700;">${weeksIn}</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Revenue</div><div style="font-size:14px;font-weight:700;">${rev>0?fmtC(rev):'—'}</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">vs Prior Season</div><div style="font-size:14px;font-weight:700;color:${pacingColor};">${pacingLabel}</div></div>
+      </div>
+      ${trendHtml?`<div style="font-size:11px;font-weight:700;color:var(--text-secondary);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Category Trends</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${trendHtml}</div>`:''}`;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
