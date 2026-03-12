@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SolveWorks — Boutique Onboarding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       CSS RESET + BASE
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #FAF7F2;
+      color: #2C2C2C;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ============================================================
+       PALETTE / TOKENS
+    ============================================================ */
+    :root {
+      --sage: #7A8F7A;
+      --sage-dark: #5C705C;
+      --sage-light: #C2D1C2;
+      --sage-pale: #EDF3ED;
+      --cream: #FAF7F2;
+      --cream-dark: #F0EBE3;
+      --rose: #C4897A;
+      --rose-light: #F0DDD9;
+      --rose-dark: #A36857;
+      --text: #2C2C2C;
+      --text-muted: #7A7670;
+      --border: #DDD6CC;
+      --white: #FFFFFF;
+      --shadow: 0 2px 16px rgba(122,143,122,0.10);
+      --shadow-lg: 0 8px 40px rgba(122,143,122,0.15);
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .page-wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 16px 60px;
+    }
+
+    /* ============================================================
+       HEADER / BRANDING
+    ============================================================ */
+    .site-header {
+      text-align: center;
+      padding: 44px 0 32px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      background: var(--sage);
+      border-radius: 14px;
+      margin-bottom: 14px;
+    }
+
+    .logo-mark svg { display: block; }
+
+    .logo-text {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--sage-dark);
+      letter-spacing: -0.5px;
+    }
+
+    .logo-tagline {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    .page-intro {
+      margin-top: 20px;
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ============================================================
+       PROGRESS BAR
+    ============================================================ */
+    .progress-wrap {
+      margin: 28px 0 32px;
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sage-dark);
+      letter-spacing: 0.2px;
+    }
+
+    .progress-fraction {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .progress-track {
+      height: 6px;
+      background: var(--cream-dark);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--sage) 0%, var(--sage-dark) 100%);
+      border-radius: 99px;
+      transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+      width: 16.67%;
+    }
+
+    /* Step dots */
+    .step-dots {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      position: relative;
+    }
+
+    .step-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--cream-dark);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .step-dot.active {
+      background: var(--sage);
+      border-color: var(--sage);
+      color: white;
+      transform: scale(1.15);
+      box-shadow: 0 0 0 4px rgba(122,143,122,0.2);
+    }
+
+    .step-dot.done {
+      background: var(--sage-dark);
+      border-color: var(--sage-dark);
+      color: white;
+    }
+
+    .step-dot.done::after {
+      content: '✓';
+      font-size: 12px;
+    }
+
+    .step-dot.done span { display: none; }
+
+    /* ============================================================
+       CARD / SECTION
+    ============================================================ */
+    .form-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      margin-bottom: 0;
+      border: 1px solid rgba(220,212,204,0.5);
+    }
+
+    @media (max-width: 480px) {
+      .form-card { padding: 24px 18px; }
+    }
+
+    .section-header {
+      margin-bottom: 28px;
+    }
+
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--sage-pale);
+      color: var(--sage-dark);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 99px;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      line-height: 1.6;
+    }
+
+    /* ============================================================
+       FORM FIELDS
+    ============================================================ */
+    .field-group {
+      margin-bottom: 20px;
+    }
+
+    .field-group:last-child { margin-bottom: 0; }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 480px) {
+      .field-row { grid-template-columns: 1fr; gap: 12px; }
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 7px;
+      letter-spacing: 0.1px;
+    }
+
+    label .req {
+      color: var(--rose);
+      margin-left: 2px;
+    }
+
+    label .hint {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-left: 4px;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="password"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--cream);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--sage);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(122,143,122,0.15);
+    }
+
+    input.error, textarea.error {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(196,137,122,0.15);
+    }
+
+    .field-error {
+      font-size: 12px;
+      color: var(--rose-dark);
+      margin-top: 5px;
+      display: none;
+    }
+
+    .field-error.visible { display: block; }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.5;
+    }
+
+    /* Password wrapper */
+    .pw-wrap {
+      position: relative;
+    }
+
+    .pw-wrap input {
+      padding-right: 46px;
+    }
+
+    .pw-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .pw-toggle:hover { color: var(--sage); }
+
+    /* ============================================================
+       RADIO / CHECKBOX GROUPS
+    ============================================================ */
+    .choice-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .choice-item {
+      position: relative;
+    }
+
+    .choice-item input[type="radio"],
+    .choice-item input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .choice-item label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 16px;
+      background: var(--cream);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.2s ease;
+      user-select: none;
+      margin-bottom: 0;
+    }
+
+    .choice-item label::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: white;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .choice-item.checkbox label::before {
+      border-radius: 4px;
+    }
+
+    .choice-item input:checked + label {
+      background: var(--sage-pale);
+      border-color: var(--sage);
+      color: var(--sage-dark);
+    }
+
+    .choice-item input:checked + label::before {
+      background: var(--sage);
+      border-color: var(--sage);
+      box-shadow: inset 0 0 0 3px white;
+    }
+
+    .choice-item.checkbox input:checked + label::before {
+      background: var(--sage);
+      border-color: var(--sage);
+      box-shadow: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath d='M1 4l3 3 5-6' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    /* "Other" text field */
+    .other-field {
+      display: none;
+      margin-top: 10px;
+    }
+
+    .other-field.visible { display: block; }
+
+    /* ============================================================
+       OPTION CARDS (for big choices like AI subscription)
+    ============================================================ */
+    .option-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .option-card {
+      position: relative;
+    }
+
+    .option-card input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .option-card label {
+      display: block;
+      padding: 20px 20px 20px 52px;
+      background: var(--cream);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 0;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text);
+      position: relative;
+    }
+
+    .option-card label::before {
+      content: '';
+      position: absolute;
+      left: 18px;
+      top: 21px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: white;
+      transition: all 0.2s;
+    }
+
+    .option-card input:checked + label {
+      background: var(--sage-pale);
+      border-color: var(--sage);
+    }
+
+    .option-card input:checked + label::before {
+      background: var(--sage);
+      border-color: var(--sage);
+      box-shadow: inset 0 0 0 4px white;
+    }
+
+    .option-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--sage-dark);
+      margin-bottom: 6px;
+    }
+
+    .option-badge {
+      display: inline-block;
+      background: var(--rose-light);
+      color: var(--rose-dark);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .option-steps {
+      margin-top: 10px;
+      padding: 12px 14px;
+      background: white;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .option-steps ol {
+      padding-left: 18px;
+      margin: 0;
+    }
+
+    .option-steps li {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .option-steps li strong { color: var(--sage-dark); }
+
+    .option-note {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: var(--rose-light);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--rose-dark);
+      line-height: 1.6;
+    }
+
+    .option-field {
+      margin-top: 14px;
+    }
+
+    /* ============================================================
+       LOCATIONS TABLE
+    ============================================================ */
+    .location-rows { display: flex; flex-direction: column; gap: 12px; }
+
+    .location-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .location-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+      padding-top: 2px;
+    }
+
+    @media (max-width: 480px) {
+      .location-row {
+        grid-template-columns: 20px 1fr;
+        gap: 8px;
+      }
+      .location-row input:last-child {
+        grid-column: 2;
+      }
+    }
+
+    /* ============================================================
+       BRANDS LIST
+    ============================================================ */
+    .brands-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .brand-item {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .brand-num {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--sage);
+      text-align: center;
+    }
+
+    /* ============================================================
+       TELEGRAM SECTION
+    ============================================================ */
+    .telegram-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      background: var(--sage-pale);
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--sage-light);
+      margin-bottom: 20px;
+    }
+
+    .telegram-icon {
+      width: 40px;
+      height: 40px;
+      background: #2AABEE;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .telegram-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+    .telegram-text strong { color: var(--sage-dark); }
+
+    /* ============================================================
+       DIVIDER
+    ============================================================ */
+    .section-divider {
+      height: 1px;
+      background: var(--cream-dark);
+      margin: 24px 0;
+    }
+
+    /* ============================================================
+       NAVIGATION BUTTONS
+    ============================================================ */
+    .nav-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: 99px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-primary {
+      background: var(--sage);
+      color: white;
+      box-shadow: 0 4px 16px rgba(122,143,122,0.3);
+      flex: 1;
+      justify-content: center;
+    }
+
+    .btn-primary:hover {
+      background: var(--sage-dark);
+      box-shadow: 0 6px 20px rgba(92,112,92,0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1.5px solid var(--border);
+      padding: 13px 20px;
+    }
+
+    .btn-secondary:hover {
+      background: var(--cream-dark);
+      color: var(--text);
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+      color: white;
+      box-shadow: 0 4px 20px rgba(92,112,92,0.35);
+      flex: 1;
+      justify-content: center;
+      font-size: 16px;
+      padding: 16px 28px;
+    }
+
+    .btn-submit:hover {
+      box-shadow: 0 6px 28px rgba(92,112,92,0.45);
+      transform: translateY(-2px);
+    }
+
+    /* ============================================================
+       SUCCESS SCREEN
+    ============================================================ */
+    #success-screen {
+      display: none;
+      text-align: center;
+      padding: 48px 24px;
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--sage-pale);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .success-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--sage-dark);
+      margin-bottom: 10px;
+    }
+
+    .success-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 420px;
+      margin: 0 auto 28px;
+    }
+
+    .copy-feedback {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--sage-pale);
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--sage-dark);
+      margin-bottom: 20px;
+    }
+
+    .summary-box {
+      text-align: left;
+      background: var(--cream);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      font-family: 'DM Sans', monospace;
+    }
+
+    .btn-copy-again {
+      background: var(--rose-light);
+      color: var(--rose-dark);
+      border: 1.5px solid #E0C4BE;
+    }
+
+    .btn-copy-again:hover {
+      background: #EBC8C2;
+    }
+
+    /* ============================================================
+       STEP VISIBILITY
+    ============================================================ */
+    .form-step { display: none; }
+    .form-step.active { display: block; }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    .page-footer {
+      text-align: center;
+      padding: 20px 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ============================================================
+       ANIMATIONS
+    ============================================================ */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-step.active {
+      animation: fadeSlideIn 0.35s ease forwards;
+    }
+
+    /* ============================================================
+       UTILITY
+    ============================================================ */
+    .mt-4 { margin-top: 4px; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-20 { margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header">
+    <div class="logo-mark">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="9" height="9" rx="2.5" fill="white" opacity="0.9"/>
+        <rect x="15" y="4" width="9" height="9" rx="2.5" fill="white" opacity="0.55"/>
+        <rect x="4" y="15" width="9" height="9" rx="2.5" fill="white" opacity="0.55"/>
+        <rect x="15" y="15" width="9" height="9" rx="2.5" fill="white" opacity="0.9"/>
+      </svg>
+    </div>
+    <div class="logo-text">SolveWorks</div>
+    <div class="logo-tagline">Your AI. Only yours.</div>
+    <p class="page-intro">Let's get your boutique set up. This takes about 5 minutes — have your login details nearby.</p>
+  </header>
+
+  <!-- ===== PROGRESS ===== -->
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span class="progress-label" id="progress-label">Step 1 — About Your Business</span>
+      <span class="progress-fraction" id="progress-fraction">1 of 6</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <div class="step-dots">
+      <div class="step-dot active" id="dot-1" onclick="goToStep(1)" title="About Your Business"><span>1</span></div>
+      <div class="step-dot" id="dot-2" onclick="goToStep(2)" title="Your Systems"><span>2</span></div>
+      <div class="step-dot" id="dot-3" onclick="goToStep(3)" title="AI Subscription"><span>3</span></div>
+      <div class="step-dot" id="dot-4" onclick="goToStep(4)" title="Telegram"><span>4</span></div>
+      <div class="step-dot" id="dot-5" onclick="goToStep(5)" title="Top Brands"><span>5</span></div>
+      <div class="step-dot" id="dot-6" onclick="goToStep(6)" title="Wrap Up"><span>6</span></div>
+    </div>
+  </div>
+
+  <!-- ===== FORM ===== -->
+  <form id="intake-form" novalidate>
+
+    <!-- ========== STEP 1: About Your Business ========== -->
+    <div class="form-step active" id="step-1">
+      <div class="form-card">
+        <div class="section-header">
+          <div class="section-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#7A8F7A"/></svg>
+            Section 1
+          </div>
+          <h2 class="section-title">About Your Business</h2>
+          <p class="section-desc">Tell us a bit about yourself and your store so we can tailor everything to you.</p>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="your-name">Your Name <span class="req">*</span></label>
+            <input type="text" id="your-name" name="your_name" placeholder="Jane Smith" autocomplete="name" />
+            <div class="field-error" id="err-your-name">Please enter your name</div>
+          </div>
+          <div class="field-group">
+            <label for="biz-name">Business Name <span class="req">*</span></label>
+            <input type="text" id="biz-name" name="biz_name" placeholder="Maison Boutique" />
+            <div class="field-error" id="err-biz-name">Please enter your business name</div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="phone">Phone <span class="req">*</span></label>
+            <input type="tel" id="phone" name="phone" placeholder="+1 (506) 555-0100" autocomplete="tel" />
+            <div class="field-error" id="err-phone">Please enter a phone number</div>
+          </div>
+          <div class="field-group">
+            <label for="email">Email <span class="req">*</span></label>
+            <input type="email" id="email" name="email" placeholder="jane@yourstore.com" autocomplete="email" />
+            <div class="field-error" id="err-email">Please enter a valid email</div>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="website">Website <span class="hint">(optional)</span></label>
+          <input type="url" id="website" name="website" placeholder="https://yourstore.com" autocomplete="url" />
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="field-group">
+          <label>Locations</label>
+          <p class="section-desc" style="margin-bottom:14px;">One location? Just fill in #1. Up to three.</p>
+          <div class="location-rows">
+            <div class="location-row">
+              <div class="location-num">1</div>
+              <input type="text" name="loc_1_name" placeholder="Name or City (e.g. Downtown)" />
+              <input type="text" name="loc_1_addr" placeholder="Address" />
+            </div>
+            <div class="location-row">
+              <div class="location-num">2</div>
+              <input type="text" name="loc_2_name" placeholder="Name or City" />
+              <input type="text" name="loc_2_addr" placeholder="Address" />
+            </div>
+            <div class="location-row">
+              <div class="location-num">3</div>
+              <input type="text" name="loc_3_name" placeholder="Name or City" />
+              <input type="text" name="loc_3_addr" placeholder="Address" />
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-primary" onclick="nextStep(1)">
+            Continue
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 2: Your Systems ========== -->
+    <div class="form-step" id="step-2">
+      <div class="form-card">
+        <div class="section-header">
+          <div class="section-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#7A8F7A"/></svg>
+            Section 2
+          </div>
+          <h2 class="section-title">Your Systems</h2>
+          <p class="section-desc">Your AI will connect to these tools to give you real-time insights. Select what you use.</p>
+        </div>
+
+        <!-- POS -->
+        <div class="field-group">
+          <label>Point of Sale (POS)</label>
+          <div class="choice-group">
+            <div class="choice-item">
+              <input type="radio" name="pos" id="pos-lightspeed" value="Lightspeed" />
+              <label for="pos-lightspeed">Lightspeed</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="pos" id="pos-shopify" value="Shopify POS" />
+              <label for="pos-shopify">Shopify POS</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="pos" id="pos-square" value="Square" />
+              <label for="pos-square">Square</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="pos" id="pos-other" value="Other" />
+              <label for="pos-other">Other</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="pos" id="pos-none" value="None" />
+              <label for="pos-none">None</label>
+            </div>
+          </div>
+          <div class="other-field" id="pos-other-field">
+            <input type="text" name="pos_other" placeholder="Which POS system?" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="pos-email">POS Login Email</label>
+            <input type="email" id="pos-email" name="pos_email" placeholder="login@email.com" />
+          </div>
+          <div class="field-group">
+            <label for="pos-pw">POS Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="pos-pw" name="pos_pw" placeholder="••••••••" />
+              <button type="button" class="pw-toggle" onclick="togglePw('pos-pw', this)" aria-label="Show password">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Online Store -->
+        <div class="field-group">
+          <label>Online Store</label>
+          <div class="choice-group">
+            <div class="choice-item">
+              <input type="radio" name="store" id="store-shopify" value="Shopify" />
+              <label for="store-shopify">Shopify</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="store" id="store-squarespace" value="Squarespace" />
+              <label for="store-squarespace">Squarespace</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="store" id="store-woo" value="WooCommerce" />
+              <label for="store-woo">WooCommerce</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="store" id="store-other" value="Other" />
+              <label for="store-other">Other</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="store" id="store-none" value="None" />
+              <label for="store-none">None</label>
+            </div>
+          </div>
+          <div class="other-field" id="store-other-field">
+            <input type="text" name="store_other" placeholder="Which platform?" />
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="store-url">Store URL <span class="hint">(optional)</span></label>
+          <input type="url" id="store-url" name="store_url" placeholder="https://mystore.myshopify.com" />
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="store-email">Store Login Email</label>
+            <input type="email" id="store-email" name="store_email" placeholder="login@email.com" />
+          </div>
+          <div class="field-group">
+            <label for="store-pw">Store Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="store-pw" name="store_pw" placeholder="••••••••" />
+              <button type="button" class="pw-toggle" onclick="togglePw('store-pw', this)" aria-label="Show password">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Email Marketing -->
+        <div class="field-group">
+          <label>Email Marketing</label>
+          <div class="choice-group">
+            <div class="choice-item">
+              <input type="radio" name="email_mktg" id="em-omnisend" value="Omnisend" />
+              <label for="em-omnisend">Omnisend</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="email_mktg" id="em-klaviyo" value="Klaviyo" />
+              <label for="em-klaviyo">Klaviyo</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="email_mktg" id="em-mailchimp" value="Mailchimp" />
+              <label for="em-mailchimp">Mailchimp</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="email_mktg" id="em-other" value="Other" />
+              <label for="em-other">Other</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="email_mktg" id="em-none" value="None" />
+              <label for="em-none">None</label>
+            </div>
+          </div>
+          <div class="other-field" id="em-other-field">
+            <input type="text" name="em_other" placeholder="Which platform?" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-group">
+            <label for="em-login">Marketing Login</label>
+            <input type="email" id="em-login" name="em_login" placeholder="login@email.com" />
+          </div>
+          <div class="field-group">
+            <label for="em-pw">Marketing Password</label>
+            <div class="pw-wrap">
+              <input type="password" id="em-pw" name="em_pw" placeholder="••••••••" />
+              <button type="button" class="pw-toggle" onclick="togglePw('em-pw', this)" aria-label="Show password">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Social Media -->
+        <div class="field-group">
+          <label>Social Media Handles <span class="hint">(optional)</span></label>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+            <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;">
+              <label style="margin:0;font-size:13px;color:var(--text-muted);font-weight:500;">📸 Instagram</label>
+              <input type="text" name="instagram" placeholder="@yourstore" />
+            </div>
+            <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;">
+              <label style="margin:0;font-size:13px;color:var(--text-muted);font-weight:500;">📘 Facebook</label>
+              <input type="text" name="facebook" placeholder="facebook.com/yourstore" />
+            </div>
+            <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;">
+              <label style="margin:0;font-size:13px;color:var(--text-muted);font-weight:500;">🎵 TikTok</label>
+              <input type="text" name="tiktok" placeholder="@yourstore" />
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(2)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(2)">
+            Continue
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 3: AI Subscription ========== -->
+    <div class="form-step" id="step-3">
+      <div class="form-card">
+        <div class="section-header">
+          <div class="section-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#7A8F7A"/></svg>
+            Section 3
+          </div>
+          <h2 class="section-title">AI Subscription</h2>
+          <p class="section-desc">Your agent needs an AI model to run. Choose one option below and follow the steps.</p>
+        </div>
+
+        <div class="option-cards">
+
+          <!-- Option A: OpenAI -->
+          <div class="option-card">
+            <input type="radio" name="ai_choice" id="ai-openai" value="OpenAI" />
+            <label for="ai-openai">
+              <div class="option-title">
+                Option A — ChatGPT (OpenAI)
+                <span class="option-badge">Recommended</span>
+              </div>
+              <div class="option-steps">
+                <ol>
+                  <li>Go to <strong>platform.openai.com</strong> — not chatgpt.com</li>
+                  <li>Sign in with your OpenAI or ChatGPT account</li>
+                  <li>Click <strong>API Keys</strong> → <strong>Create new secret key</strong></li>
+                  <li>Name it <strong>"SolveWorks"</strong> → copy the key</li>
+                  <li>Go to <strong>Billing</strong> → add a payment method and load $20 credit</li>
+                </ol>
+              </div>
+              <div class="option-note">
+                ⚠️ Your ChatGPT Plus or Pro subscription does <strong>not</strong> cover API usage — API billing is separate. Typical monthly cost: $15–30.
+              </div>
+              <div class="option-field">
+                <label for="openai-key" style="font-size:13px;font-weight:600;color:var(--sage-dark);">Your OpenAI API Key</label>
+                <div class="pw-wrap" style="margin-top:6px;">
+                  <input type="password" id="openai-key" name="openai_key" placeholder="sk-proj-..." />
+                  <button type="button" class="pw-toggle" onclick="togglePw('openai-key', this)" aria-label="Show key">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Option B: Claude -->
+          <div class="option-card">
+            <input type="radio" name="ai_choice" id="ai-claude" value="Claude" />
+            <label for="ai-claude">
+              <div class="option-title">Option B — Claude (Anthropic)</div>
+              <div class="option-steps">
+                <ol>
+                  <li>Go to <strong>claude.ai</strong></li>
+                  <li>Subscribe to <strong>Claude Max</strong> ($100/month, unlimited usage)</li>
+                  <li>Confirm your subscription is active — we handle the rest from there</li>
+                </ol>
+              </div>
+              <div class="option-field mt-16">
+                <label style="font-size:13px;font-weight:600;color:var(--sage-dark);margin-bottom:8px;display:block;">Is your Claude Max subscription active?</label>
+                <div class="choice-group">
+                  <div class="choice-item">
+                    <input type="radio" name="claude_active" id="claude-yes" value="Yes" />
+                    <label for="claude-yes">✅ Yes, active</label>
+                  </div>
+                  <div class="choice-item">
+                    <input type="radio" name="claude_active" id="claude-no" value="No" />
+                    <label for="claude-no">Not yet</label>
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+
+        </div>
+
+        <div class="nav-buttons" style="margin-top:24px;">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(3)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(3)">
+            Continue
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 4: Telegram ========== -->
+    <div class="form-step" id="step-4">
+      <div class="form-card">
+        <div class="section-header">
+          <div class="section-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#7A8F7A"/></svg>
+            Section 4
+          </div>
+          <h2 class="section-title">Telegram Setup</h2>
+          <p class="section-desc">Your AI agent communicates with you through Telegram — it's free, fast, and works great on your phone.</p>
+        </div>
+
+        <div class="telegram-card">
+          <div class="telegram-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+          </div>
+          <div class="telegram-text">
+            <strong>Download Telegram</strong> if you don't have it — it's free at <strong>telegram.org</strong> or in the App Store. Your AI agent will send you daily reports, alerts, and answer your questions right in the app.
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label>Do you have Telegram installed?</label>
+          <div class="choice-group">
+            <div class="choice-item">
+              <input type="radio" name="telegram_installed" id="tg-yes" value="Yes" />
+              <label for="tg-yes">✅ Already installed</label>
+            </div>
+            <div class="choice-item">
+              <input type="radio" name="telegram_installed" id="tg-no" value="No" />
+              <label for="tg-no">I need to install it</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-group mt-16">
+          <label for="tg-phone">Telegram Phone Number <span class="req">*</span></label>
+          <input type="tel" id="tg-phone" name="telegram_phone" placeholder="+1 (506) 555-0100" autocomplete="tel" />
+          <div class="field-error" id="err-tg-phone">Please enter your Telegram phone number</div>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">This is the phone number you signed up to Telegram with — we'll use it to connect your agent.</p>
+        </div>
+
+        <div class="nav-buttons">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(4)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(4)">
+            Continue
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 5: Top Brands ========== -->
+    <div class="form-step" id="step-5">
+      <div class="form-card">
+        <div class="section-header">
+          <div class="section-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#7A8F7A"/></svg>
+            Section 5
+          </div>
+          <h2 class="section-title">Your Top Brands</h2>
+          <p class="section-desc">Which brands drive the most of your business? This helps us prioritize what your AI tracks and reports on first.</p>
+        </div>
+
+        <div class="brands-list">
+          <div class="brand-item">
+            <div class="brand-num">1</div>
+            <input type="text" name="brand_1" placeholder="e.g. Free People" />
+          </div>
+          <div class="brand-item">
+            <div class="brand-num">2</div>
+            <input type="text" name="brand_2" placeholder="e.g. Vince Camuto" />
+          </div>
+          <div class="brand-item">
+            <div class="brand-num">3</div>
+            <input type="text" name="brand_3" placeholder="e.g. Steve Madden" />
+          </div>
+          <div class="brand-item">
+            <div class="brand-num">4</div>
+            <input type="text" name="brand_4" placeholder="e.g. Sanctuary" />
+          </div>
+          <div class="brand-item">
+            <div class="brand-num">5</div>
+            <input type="text" name="brand_5" placeholder="e.g. Tribal" />
+          </div>
+        </div>
+
+        <div class="nav-buttons" style="margin-top:28px;">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(5)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(5)">
+            Continue
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== STEP 6: Wrap Up ========== -->
+    <div class="form-step" id="step-6">
+      <div class="form-card">
+        <div class="section-header">
+          <div class="section-badge">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="#7A8F7A"/></svg>
+            Section 6
+          </div>
+          <h2 class="section-title">Last Question</h2>
+          <p class="section-desc">Almost done! Just one final thing we want to know.</p>
+        </div>
+
+        <div class="field-group">
+          <label for="visibility-question">What's the #1 thing you wish you had better visibility into?</label>
+          <textarea id="visibility-question" name="visibility_question" placeholder="e.g. I never know which brands are actually selling vs just sitting on the floor. I'd love daily sell-through rates per brand…" rows="5"></textarea>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:6px;">There's no wrong answer — this helps us know where to focus first.</p>
+        </div>
+
+        <div class="nav-buttons" style="margin-top:28px;">
+          <button type="button" class="btn btn-secondary" onclick="prevStep(6)">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Back
+          </button>
+          <button type="button" class="btn btn-submit" onclick="submitForm()">
+            Submit & Copy to Clipboard
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- ===== SUCCESS SCREEN ===== -->
+  <div id="success-screen">
+    <div class="form-card">
+      <div class="success-icon">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="18" fill="#EDF3ED"/><path d="M11 18l5 5 9-10" stroke="#5C705C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2 class="success-title">You're all set! 🎉</h2>
+      <p class="success-desc">Your information has been copied to your clipboard. Open Telegram and paste it in a message to your SolveWorks contact — we'll take it from there.</p>
+
+      <div class="copy-feedback" id="copy-feedback">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>
+        Copied to clipboard!
+      </div>
+
+      <pre class="summary-box" id="summary-display"></pre>
+
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-copy-again" onclick="copyToClipboard()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Again
+        </button>
+        <button class="btn" style="background:var(--sage-pale);color:var(--sage-dark);" onclick="startOver()">
+          Start Over
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    SolveWorks &mdash; Your AI. Only yours. &nbsp;·&nbsp; Secure form &mdash; your data stays with you.
+  </footer>
+
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+  // ============================================================
+  // STATE
+  // ============================================================
+  var currentStep = 1;
+  var totalSteps = 6;
+
+  var stepLabels = [
+    'About Your Business',
+    'Your Systems',
+    'AI Subscription',
+    'Telegram Setup',
+    'Top Brands',
+    'Wrap Up'
+  ];
+
+  // ============================================================
+  // NAVIGATION
+  // ============================================================
+  function showStep(n) {
+    // Hide all steps
+    for (var i = 1; i <= totalSteps; i++) {
+      var el = document.getElementById('step-' + i);
+      if (el) el.classList.remove('active');
+    }
+    var target = document.getElementById('step-' + n);
+    if (target) target.classList.add('active');
+
+    // Update progress
+    var pct = Math.round((n / totalSteps) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = 'Step ' + n + ' — ' + stepLabels[n - 1];
+    document.getElementById('progress-fraction').textContent = n + ' of ' + totalSteps;
+
+    // Update dots
+    for (var j = 1; j <= totalSteps; j++) {
+      var dot = document.getElementById('dot-' + j);
+      if (!dot) continue;
+      dot.classList.remove('active', 'done');
+      if (j < n) dot.classList.add('done');
+      else if (j === n) dot.classList.add('active');
+    }
+
+    currentStep = n;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goToStep(n) {
+    // Only allow going back or to already-completed steps
+    if (n < currentStep) {
+      showStep(n);
+    }
+  }
+
+  function nextStep(fromStep) {
+    if (!validateStep(fromStep)) return;
+    if (fromStep < totalSteps) {
+      showStep(fromStep + 1);
+    }
+  }
+
+  function prevStep(fromStep) {
+    if (fromStep > 1) {
+      showStep(fromStep - 1);
+    }
+  }
+
+  // ============================================================
+  // VALIDATION
+  // ============================================================
+  function validateStep(step) {
+    var valid = true;
+
+    if (step === 1) {
+      valid = requireField('your-name', 'err-your-name') && valid;
+      valid = requireField('biz-name', 'err-biz-name') && valid;
+      valid = requireField('phone', 'err-phone') && valid;
+      valid = requireEmail('email', 'err-email') && valid;
+    }
+
+    if (step === 4) {
+      valid = requireField('tg-phone', 'err-tg-phone') && valid;
+    }
+
+    return valid;
+  }
+
+  function requireField(id, errId) {
+    var el = document.getElementById(id);
+    var err = document.getElementById(errId);
+    if (!el || !err) return true;
+    var val = el.value.trim();
+    if (!val) {
+      el.classList.add('error');
+      err.classList.add('visible');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    } else {
+      el.classList.remove('error');
+      err.classList.remove('visible');
+      return true;
+    }
+  }
+
+  function requireEmail(id, errId) {
+    var el = document.getElementById(id);
+    var err = document.getElementById(errId);
+    if (!el || !err) return true;
+    var val = el.value.trim();
+    var ok = val && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    if (!ok) {
+      el.classList.add('error');
+      err.classList.add('visible');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    } else {
+      el.classList.remove('error');
+      err.classList.remove('visible');
+      return true;
+    }
+  }
+
+  // Clear errors on input
+  document.querySelectorAll('input, textarea').forEach(function(el) {
+    el.addEventListener('input', function() {
+      el.classList.remove('error');
+      var errId = 'err-' + el.id;
+      var errEl = document.getElementById(errId);
+      if (errEl) errEl.classList.remove('visible');
+    });
+  });
+
+  // ============================================================
+  // RADIO → "OTHER" FIELD REVEAL
+  // ============================================================
+  function setupOther(radioName, otherId, fieldId) {
+    document.querySelectorAll('input[name="' + radioName + '"]').forEach(function(r) {
+      r.addEventListener('change', function() {
+        var field = document.getElementById(fieldId);
+        if (!field) return;
+        if (document.getElementById(otherId) && document.getElementById(otherId).checked) {
+          field.classList.add('visible');
+        } else {
+          field.classList.remove('visible');
+        }
+      });
+    });
+  }
+
+  setupOther('pos', 'pos-other', 'pos-other-field');
+  setupOther('store', 'store-other', 'store-other-field');
+  setupOther('email_mktg', 'em-other', 'em-other-field');
+
+  // ============================================================
+  // PASSWORD TOGGLE
+  // ============================================================
+  var eyeOpen = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var eyeClosed = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+  function togglePw(inputId, btn) {
+    var input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.innerHTML = eyeClosed;
+      btn.setAttribute('aria-label', 'Hide password');
+    } else {
+      input.type = 'password';
+      btn.innerHTML = eyeOpen;
+      btn.setAttribute('aria-label', 'Show password');
+    }
+  }
+
+  // ============================================================
+  // FORM COLLECTION
+  // ============================================================
+  function getVal(name) {
+    var el = document.querySelector('[name="' + name + '"]');
+    if (!el) return '';
+    return el.value ? el.value.trim() : '';
+  }
+
+  function getRadio(name) {
+    var el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : '(not selected)';
+  }
+
+  function buildSummary() {
+    var lines = [];
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('SOLVEWORKS BOUTIQUE ONBOARDING');
+    lines.push('Submitted: ' + dateStr);
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('');
+
+    lines.push('📋 ABOUT YOUR BUSINESS');
+    lines.push('Name: ' + getVal('your_name'));
+    lines.push('Business: ' + getVal('biz_name'));
+    lines.push('Phone: ' + getVal('phone'));
+    lines.push('Email: ' + getVal('email'));
+    lines.push('Website: ' + (getVal('website') || '—'));
+    lines.push('');
+
+    // Locations
+    var locs = [];
+    for (var i = 1; i <= 3; i++) {
+      var n = getVal('loc_' + i + '_name');
+      var a = getVal('loc_' + i + '_addr');
+      if (n || a) locs.push('  ' + i + '. ' + [n, a].filter(Boolean).join(' — '));
+    }
+    if (locs.length) {
+      lines.push('Locations:');
+      locs.forEach(function(l) { lines.push(l); });
+    }
+    lines.push('');
+
+    lines.push('🖥 YOUR SYSTEMS');
+    var pos = getRadio('pos');
+    if (pos === 'Other') pos = 'Other: ' + (getVal('pos_other') || '?');
+    lines.push('POS: ' + pos);
+    if (getVal('pos_email')) lines.push('POS Login: ' + getVal('pos_email'));
+    if (getVal('pos_pw')) lines.push('POS Password: ' + getVal('pos_pw'));
+    lines.push('');
+
+    var store = getRadio('store');
+    if (store === 'Other') store = 'Other: ' + (getVal('store_other') || '?');
+    lines.push('Online Store: ' + store);
+    if (getVal('store_url')) lines.push('Store URL: ' + getVal('store_url'));
+    if (getVal('store_email')) lines.push('Store Login: ' + getVal('store_email'));
+    if (getVal('store_pw')) lines.push('Store Password: ' + getVal('store_pw'));
+    lines.push('');
+
+    var em = getRadio('email_mktg');
+    if (em === 'Other') em = 'Other: ' + (getVal('em_other') || '?');
+    lines.push('Email Marketing: ' + em);
+    if (getVal('em_login')) lines.push('Email Marketing Login: ' + getVal('em_login'));
+    if (getVal('em_pw')) lines.push('Email Marketing Password: ' + getVal('em_pw'));
+    lines.push('');
+
+    var social = [];
+    if (getVal('instagram')) social.push('Instagram: ' + getVal('instagram'));
+    if (getVal('facebook')) social.push('Facebook: ' + getVal('facebook'));
+    if (getVal('tiktok')) social.push('TikTok: ' + getVal('tiktok'));
+    if (social.length) {
+      lines.push('Social Media:');
+      social.forEach(function(s) { lines.push('  ' + s); });
+      lines.push('');
+    }
+
+    lines.push('🤖 AI SUBSCRIPTION');
+    var aiChoice = getRadio('ai_choice');
+    lines.push('AI Choice: ' + aiChoice);
+    if (aiChoice === 'OpenAI') {
+      lines.push('OpenAI API Key: ' + (getVal('openai_key') || '(not provided)'));
+    } else if (aiChoice === 'Claude') {
+      lines.push('Claude Max Active: ' + getRadio('claude_active'));
+    }
+    lines.push('');
+
+    lines.push('📱 TELEGRAM');
+    lines.push('Telegram Installed: ' + getRadio('telegram_installed'));
+    lines.push('Telegram Phone: ' + getVal('telegram_phone'));
+    lines.push('');
+
+    lines.push('🏷 TOP BRANDS');
+    for (var b = 1; b <= 5; b++) {
+      var brand = getVal('brand_' + b);
+      if (brand) lines.push('  ' + b + '. ' + brand);
+    }
+    lines.push('');
+
+    lines.push('💡 VISIBILITY QUESTION');
+    lines.push(getVal('visibility_question') || '(not answered)');
+    lines.push('');
+    lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    lines.push('SolveWorks — Your AI. Only yours.');
+
+    return lines.join('\n');
+  }
+
+  // ============================================================
+  // CLIPBOARD
+  // ============================================================
+  var summaryText = '';
+
+  function copyToClipboard() {
+    if (!summaryText) summaryText = buildSummary();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(summaryText).then(function() {
+        showCopyFeedback();
+      }).catch(function() {
+        fallbackCopy();
+      });
+    } else {
+      fallbackCopy();
+    }
+  }
+
+  function fallbackCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = summaryText;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    showCopyFeedback();
+  }
+
+  function showCopyFeedback() {
+    var fb = document.getElementById('copy-feedback');
+    if (!fb) return;
+    fb.style.opacity = '1';
+    fb.style.transform = 'scale(1)';
+    setTimeout(function() {
+      fb.style.opacity = '0.6';
+    }, 2000);
+  }
+
+  // ============================================================
+  // SUBMIT
+  // ============================================================
+  function submitForm() {
+    if (!validateStep(6)) return;
+
+    summaryText = buildSummary();
+
+    // Show summary
+    document.getElementById('summary-display').textContent = summaryText;
+
+    // Copy to clipboard
+    copyToClipboard();
+
+    // Hide form, show success
+    document.getElementById('intake-form').style.display = 'none';
+    document.querySelector('.progress-wrap').style.display = 'none';
+    document.getElementById('success-screen').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function startOver() {
+    document.getElementById('intake-form').style.display = 'block';
+    document.querySelector('.progress-wrap').style.display = 'block';
+    document.getElementById('success-screen').style.display = 'none';
+    document.getElementById('intake-form').reset();
+    summaryText = '';
+    showStep(1);
+  }
+</script>
+
+</body>
+</html>
