@@ -2925,23 +2925,37 @@ function renderBriefingIntel(){
 
   // ── 3. This Season at a Glance ───────────────────────────────
   const sc=st.seasonComparison||{};
-  const scSum=sc.summary||{};
   const scCats=sc.byCategory||[];
-  const rev=summary.totalRevenue||scSum.currentRevenue||0;
-  const prevRev=scSum.priorRevenue||0;
-  const pacingUp=prevRev>0?rev>=prevRev:null;
-  const pacingLabel=pacingUp===true?'↑ Ahead of plan':pacingUp===false?'↓ Behind plan':'— Tracking';
+  const seasonal=st.seasonal||{};
+  const ss26=seasonal.ss26||{};
+  const ss25=seasonal.ss25||{};
+
+  // Compute SS26 revenue and weeks
+  const ss26Cats=ss26.byCategory||[];
+  const ss25Cats=ss25.byCategory||[];
+  const ss26Rev=ss26Cats.reduce((a,c)=>a+(c.revenue||0),0);
+  const ss25Rev=ss25Cats.reduce((a,c)=>a+(c.revenue||0),0);
+
+  // SS26 started Feb 1 2026 — calculate weeks from period end
+  const ss26Start=new Date('2026-02-01');
+  const periodEnd=new Date(st.periodEnd||'2026-03-11');
+  const weeksInNum=Math.round((periodEnd-ss26Start)/(7*24*60*60*1000));
+  const weeksIn=weeksInNum>0?weeksInNum:'—';
+
+  // Pacing: compare SS26 weekly rate vs SS25 weekly rate (SS25 was 26 weeks)
+  const ss26WeeklyRate=weeksInNum>0?ss26Rev/weeksInNum:0;
+  const ss25WeeklyRate=ss25Rev/26; // SS25 was ~26 weeks (Feb-Jul)
+  const pacingUp=ss25WeeklyRate>0?ss26WeeklyRate>=ss25WeeklyRate:null;
+  const pacingPct=ss25WeeklyRate>0?Math.round(((ss26WeeklyRate/ss25WeeklyRate)-1)*100):0;
+  const pacingLabel=pacingUp===true?`↑ ${pacingPct}% ahead of SS25`:pacingUp===false?`↓ ${Math.abs(pacingPct)}% behind SS25`:'— Tracking';
   const pacingColor=pacingUp===true?'var(--green)':pacingUp===false?'var(--red)':'var(--text-secondary)';
 
-  // Trending: use season comparison if available, else top cats by ST
-  const trending=scCats.length
-    ?[...scCats].sort((a,b)=>Math.abs(b.revenueDelta||0)-Math.abs(a.revenueDelta||0)).slice(0,4)
-    :[...cats].sort((a,b)=>b.sellThrough-a.sellThrough).slice(0,4);
+  // Trending: use OVERALL sell-through from cats (not seasonal partial)
+  const trending=[...cats].sort((a,b)=>(b.revenue||0)-(a.revenue||0)).slice(0,4);
 
   const trendHtml=trending.map(c=>{
-    const delta=c.revenueDelta!==undefined?c.revenueDelta:null;
     const stVal=c.sellThrough||0;
-    const arrow=delta!==null?(delta>=0?'↑':'↓'):(stVal>=60?'↑':stVal<40?'↓':'→');
+    const arrow=stVal>=65?'↑':stVal<45?'↓':'→';
     const arrowColor=arrow==='↑'?'var(--green)':arrow==='↓'?'var(--red)':'var(--text-secondary)';
     const name=c.category||c.name||'?';
     return`<div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg);border-radius:6px;">
@@ -2951,15 +2965,14 @@ function renderBriefingIntel(){
     </div>`;
   }).join('');
 
-  const weeksIn=scSum.weeksIn||'—';
-  const seasonLabel=scSum.season||"Spring '26";
+  const seasonLabel="Spring '26";
   const seasonEl=document.getElementById('intel-season-glance');
   if(seasonEl){
     seasonEl.innerHTML=`
       <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:12px;padding:12px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border-light);">
         <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Season</div><div style="font-size:14px;font-weight:700;">${seasonLabel}</div></div>
         <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Weeks In</div><div style="font-size:14px;font-weight:700;">${weeksIn}</div></div>
-        <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Revenue</div><div style="font-size:14px;font-weight:700;">${rev>0?fmtC(rev):'—'}</div></div>
+        <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">Revenue</div><div style="font-size:14px;font-weight:700;">${ss26Rev>0?fmtC(ss26Rev):'—'}</div></div>
         <div><div style="font-size:11px;color:var(--text-secondary);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;">vs Prior Season</div><div style="font-size:14px;font-weight:700;color:${pacingColor};">${pacingLabel}</div></div>
       </div>
       ${trendHtml?`<div style="font-size:11px;font-weight:700;color:var(--text-secondary);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;">Category Trends</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${trendHtml}</div>`:''}`;
