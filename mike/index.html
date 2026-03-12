@@ -490,11 +490,18 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
     <button class="mobile-tab" onclick="showSection('pipeline',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Pipeline</button>
     <button class="mobile-tab" onclick="showSection('revenue',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Revenue</button>
     <button class="mobile-tab" onclick="showSection('calls',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Calls</button>
-    <button class="mobile-tab" onclick="showSection('recruiters',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Team</button>
-    <button class="mobile-tab" onclick="showSection('research',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Research</button>
+    <button class="mobile-tab" id="mobileTeamBtn" onclick="toggleMobileTeam()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team</button>
   </div>
 </div>
 
+<div id="mobileTeamSub" style="display:none;position:fixed;bottom:52px;left:0;right:0;background:var(--surface2);border-top:1px solid var(--border);z-index:39;padding:6px 8px;padding-bottom:env(safe-area-inset-bottom,2px);justify-content:space-around;flex-wrap:wrap;gap:4px">
+  <button class="mobile-tab" onclick="showSection('team-overview',this)" style="flex:1;min-width:60px">📊 Overview</button>
+  <button class="mobile-tab" onclick="showSection('team-placements',this)" style="flex:1;min-width:60px">🚀 Placements</button>
+  <button class="mobile-tab" onclick="showSection('team-contractors',this)" style="flex:1;min-width:60px">👷 Contractors</button>
+  <button class="mobile-tab" onclick="showSection('team-revenue',this)" style="flex:1;min-width:60px">💰 Revenue</button>
+  <button class="mobile-tab" onclick="showSection('team-margins',this)" style="flex:1;min-width:60px">📈 Margins</button>
+  <button class="mobile-tab" onclick="showSection('team-projects',this)" style="flex:1;min-width:60px">🧪 Projects</button>
+</div>
 <!-- MAIN CONTENT -->
 <div class="main">
 
@@ -775,6 +782,24 @@ function showSection(id,el){
   if(el)el.classList.add('active');
   document.querySelectorAll('.nav-item[data-section="'+id+'"]').forEach(n=>n.classList.add('active'));
   document.getElementById('sidebar').classList.remove('open');
+  // Hide team sub-nav if switching to a non-team section
+  const teamSub=document.getElementById('mobileTeamSub');
+  if(teamSub && !id.startsWith('team-')){teamSub.style.display='none';document.getElementById('mobileTeamBtn').classList.remove('active');}
+}
+
+function toggleMobileTeam(){
+  const sub=document.getElementById('mobileTeamSub');
+  if(!sub) return;
+  if(sub.style.display==='flex'){
+    sub.style.display='none';
+    document.getElementById('mobileTeamBtn').classList.remove('active');
+  } else {
+    sub.style.display='flex';
+    document.getElementById('mobileTeamBtn').classList.add('active');
+    // Default to team overview
+    showSection('team-overview',null);
+    document.getElementById('mobileTeamBtn').classList.add('active');
+  }
 }
 
 // ═══════════════════════════════════════════════════════
