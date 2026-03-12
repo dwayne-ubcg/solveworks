@@ -1413,322 +1413,85 @@ tr:hover td { background: var(--bg); }
 <div class="page" id="page-multistore">
   <div class="page-header">
     <h2>🏪 Multi-Store Intelligence</h2>
-    <div class="subtitle">3 locations · Real-time inventory sync · AI-powered transfer recommendations</div>
+    <div class="subtitle" id="ms-subtitle">3 locations · Real-time inventory sync · AI-powered transfer recommendations</div>
   </div>
 
-  <!-- Consolidated View -->
-  <div class="grid-4" style="margin-bottom:16px;">
+  <!-- 1. Header Stats grid-4 -->
+  <div class="grid-4" style="margin-bottom:24px;">
     <div class="stat-card">
-      <div class="value">—</div>
+      <div class="value" id="ms-total-inv-value">—</div>
       <div class="label">Total Inventory Value</div>
-      <div class="change" style="color:var(--text-secondary);">across 3 doors</div>
+      <div class="change" style="color:var(--text-secondary);">at cost · all locations</div>
     </div>
     <div class="stat-card">
-      <div class="value" style="color:var(--yellow);">14</div>
-      <div class="label">Items Need Rebalancing</div>
-      <div class="change down">↑ 3 since last week</div>
+      <div class="value" id="ms-total-units">—</div>
+      <div class="label">Total Units</div>
+      <div class="change" style="color:var(--text-secondary);">across all doors</div>
     </div>
     <div class="stat-card">
-      <div class="value" style="color:var(--accent);">4</div>
-      <div class="label">Transfer Suggestions</div>
-      <div class="change" style="color:var(--text-secondary);">pending review</div>
+      <div class="value" id="ms-total-revenue" style="color:var(--accent-sage);">—</div>
+      <div class="label">Total Revenue</div>
+      <div class="change" style="color:var(--text-secondary);">sell-through period</div>
     </div>
     <div class="stat-card">
-      <div class="value" style="color:var(--red);">12d</div>
-      <div class="label">Last Rebalanced</div>
-      <div class="change down">⚠️ overdue — review now</div>
+      <div class="value" id="ms-stores-active" style="color:var(--accent);">3</div>
+      <div class="label">Stores Active</div>
+      <div class="change" style="color:var(--green);">● All systems live</div>
     </div>
   </div>
 
-  <!-- Stock Overview by Door -->
-  <div class="card">
-    <div class="card-title">📊 Stock Overview by Door <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data</span></div>
+  <!-- 2. Location Cards (hero) — dynamically rendered -->
+  <div class="grid-3" style="margin-bottom:24px;" id="ms-location-cards"></div>
+
+  <!-- 3. Revenue Comparison Table -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title">📊 Location Performance Comparison</div>
     <div style="overflow-x:auto;">
       <table>
         <thead>
           <tr>
-            <th>Product</th>
-            <th style="text-align:center;">Halifax</th>
+            <th>Metric</th>
+            <th style="text-align:right;">Saint John</th>
+            <th style="text-align:right;">Moncton</th>
+            <th style="text-align:right;">Halifax</th>
+          </tr>
+        </thead>
+        <tbody id="ms-comparison-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. AI Transfer Recommendations -->
+  <div class="card" style="background:linear-gradient(135deg,#FFF9F0,#FFF5E8);border-color:#E8D5C0;margin-bottom:24px;">
+    <div class="card-title">🤖 AI Transfer Recommendations</div>
+    <div id="ms-transfer-recs" style="display:flex;flex-direction:column;gap:14px;"></div>
+  </div>
+
+  <!-- 5. Stock Overview by Door -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="card-title">📦 Stock Overview by Door <span id="ms-est-badge" style="display:none;font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Estimated Distribution</span></div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Brand</th>
             <th style="text-align:center;">Saint John</th>
             <th style="text-align:center;">Moncton</th>
-            <th style="text-align:center;">Total</th>
+            <th style="text-align:center;">Halifax</th>
+            <th style="text-align:center;">Total Units</th>
             <th style="text-align:center;">Velocity</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td><strong>Second Skin Smoothing Tank</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">0 · 5/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">8 · 1/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 2/wk</span></td>
-            <td style="text-align:center;font-weight:600;">12</td>
-            <td style="text-align:center;"><span class="badge badge-green">🔥 High</span></td>
-          </tr>
-          <tr>
-            <td><strong>Z Supply Cloud Tank</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">2 · 4/wk</span></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">6 · 3/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">12 · 1/wk</span></td>
-            <td style="text-align:center;font-weight:600;">20</td>
-            <td style="text-align:center;"><span class="badge badge-green">🔥 High</span></td>
-          </tr>
-          <tr>
-            <td><strong>Gentle Fawn Knit Dress</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 3/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">5 · 0/wk</span></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">2 · 2/wk</span></td>
-            <td style="text-align:center;font-weight:600;">10</td>
-            <td style="text-align:center;"><span class="badge badge-yellow">⚡ Medium</span></td>
-          </tr>
-          <tr>
-            <td><strong>Free People Skinny Crop</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">5 · 3/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">7 · 2/wk</span></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 3/wk</span></td>
-            <td style="text-align:center;font-weight:600;">16</td>
-            <td style="text-align:center;"><span class="badge badge-green">🔥 High</span></td>
-          </tr>
-          <tr>
-            <td><strong>Culture Midi Dress</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 2/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 1/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">6 · 1/wk</span></td>
-            <td style="text-align:center;font-weight:600;">13</td>
-            <td style="text-align:center;"><span class="badge badge-yellow">⚡ Medium</span></td>
-          </tr>
-          <tr>
-            <td><strong>Culture Midi Dress</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">1 · 2/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">5 · 1/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 1/wk</span></td>
-            <td style="text-align:center;font-weight:600;">9</td>
-            <td style="text-align:center;"><span class="badge badge-yellow">⚡ Medium</span></td>
-          </tr>
-          <tr>
-            <td><strong>Liverpool Pull-On Trouser</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 3/wk</span></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 2/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">5 · 1/wk</span></td>
-            <td style="text-align:center;font-weight:600;">12</td>
-            <td style="text-align:center;"><span class="badge badge-green">🔥 High</span></td>
-          </tr>
-          <tr>
-            <td><strong>Daze Denim Wide Leg</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">6 · 4/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 1/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 1/wk</span></td>
-            <td style="text-align:center;font-weight:600;">13</td>
-            <td style="text-align:center;"><span class="badge badge-yellow">⚡ Medium</span></td>
-          </tr>
-          <tr>
-            <td><strong>Levis Wide Leg Crop</strong></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">2 · 2/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FFF8E1;color:var(--yellow);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 1/wk</span></td>
-            <td style="text-align:center;"><span style="background:#EAF2EA;color:var(--green);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 2/wk</span></td>
-            <td style="text-align:center;font-weight:600;">9</td>
-            <td style="text-align:center;"><span class="badge badge-green">🔥 High</span></td>
-          </tr>
-          <tr>
-            <td style="color:var(--text-secondary);">Amuse Society Kimono</td>
-            <td style="text-align:center;"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">3 · 0/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">4 · 0/wk</span></td>
-            <td style="text-align:center;"><span style="background:#FDE8E8;color:var(--red);padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">5 · 0/wk</span></td>
-            <td style="text-align:center;font-weight:600;">12</td>
-            <td style="text-align:center;"><span class="badge badge-red">🐌 Stale</span></td>
-          </tr>
+        <tbody id="ms-stock-door-tbody">
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- AI Transfer Recommendations -->
-  <div class="card" style="background:linear-gradient(135deg, #FFF9F0, #FFF5E8);border-color:#E8D5C0;">
-    <div class="card-title">🤖 AI Transfer Recommendations</div>
-    <div style="display:flex;flex-direction:column;gap:14px;">
-
-      <!-- Transfer 1 -->
-      <div style="background:#FFFFFF;border:1px solid var(--border);border-radius:12px;padding:16px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-sage);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">↗️</div>
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:14px;margin-bottom:6px;">Second Skin Smoothing Tank</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">
-              <strong style="color:var(--text);">Saint John</strong> has 8 units (2 sold in 14 days) — <strong style="color:var(--text);">Halifax</strong> is sold out with <span style="color:var(--accent-rose);font-weight:600;">6 customer requests</span> logged.
-            </div>
-            <div style="margin-top:8px;padding:8px 12px;background:var(--accent-sage-light);border-radius:8px;font-size:12px;font-weight:600;color:var(--accent-sage);">
-              💡 Recommendation: Transfer 4 units Saint John → Halifax
-            </div>
-            <div style="margin-top:12px;display:flex;gap:8px;">
-              <button class="btn btn-sage" onclick="this.parentElement.parentElement.parentElement.parentElement.style.opacity='0.5';this.textContent='✓ Approved';" style="padding:8px 20px;font-size:13px;">✓ Approve Transfer</button>
-              <button class="btn btn-outline" onclick="this.parentElement.parentElement.parentElement.parentElement.style.display='none';" style="padding:8px 20px;font-size:13px;">✕ Dismiss</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Transfer 2 -->
-      <div style="background:#FFFFFF;border:1px solid var(--border);border-radius:12px;padding:16px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-sage);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">↗️</div>
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:14px;margin-bottom:6px;">Z Supply Cloud Tank</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">
-              <strong style="color:var(--text);">Moncton</strong> has 12 units (1 sold/week) — <strong style="color:var(--text);">Halifax</strong> has only 2 left and sells <span style="color:var(--green);font-weight:600;">4/week</span>.
-            </div>
-            <div style="margin-top:8px;padding:8px 12px;background:var(--accent-sage-light);border-radius:8px;font-size:12px;font-weight:600;color:var(--accent-sage);">
-              💡 Recommendation: Transfer 6 units Moncton → Halifax
-            </div>
-            <div style="margin-top:12px;display:flex;gap:8px;">
-              <button class="btn btn-sage" onclick="this.parentElement.parentElement.parentElement.parentElement.style.opacity='0.5';this.textContent='✓ Approved';" style="padding:8px 20px;font-size:13px;">✓ Approve Transfer</button>
-              <button class="btn btn-outline" onclick="this.parentElement.parentElement.parentElement.parentElement.style.display='none';" style="padding:8px 20px;font-size:13px;">✕ Dismiss</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Transfer 3 -->
-      <div style="background:#FFFFFF;border:1px solid var(--border);border-radius:12px;padding:16px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:8px;background:var(--yellow);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🔄</div>
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:14px;margin-bottom:6px;">Gentle Fawn Knit Dress</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">
-              Dead stock in <strong style="color:var(--text);">Saint John</strong> (0 sold in 30 days) — try <strong style="color:var(--text);">Moncton</strong>? Similar demographic, and Halifax sold 3 last month.
-            </div>
-            <div style="margin-top:8px;padding:8px 12px;background:#FFF8E1;border-radius:8px;font-size:12px;font-weight:600;color:var(--yellow);">
-              💡 Recommendation: Transfer 3 units Saint John → Moncton
-            </div>
-            <div style="margin-top:12px;display:flex;gap:8px;">
-              <button class="btn btn-sage" onclick="this.parentElement.parentElement.parentElement.parentElement.style.opacity='0.5';this.textContent='✓ Approved';" style="padding:8px 20px;font-size:13px;">✓ Approve Transfer</button>
-              <button class="btn btn-outline" onclick="this.parentElement.parentElement.parentElement.parentElement.style.display='none';" style="padding:8px 20px;font-size:13px;">✕ Dismiss</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Transfer 4 — Markdown/Return -->
-      <div style="background:#FFFFFF;border:1px solid var(--red);border-radius:12px;padding:16px;">
-        <div style="display:flex;align-items:flex-start;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:8px;background:var(--red);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⚠️</div>
-          <div style="flex:1;">
-            <div style="font-weight:600;font-size:14px;margin-bottom:6px;color:var(--red);">Amuse Society Kimono — Stale Across All Doors</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">
-              Only <strong style="color:var(--red);">Sales velocity analysis will identify dead stock once transaction history is analyzed.
-            </div>
-            <div style="margin-top:8px;padding:8px 12px;background:#FDE8E8;border-radius:8px;font-size:12px;font-weight:600;color:var(--red);">
-              💡 Recommendation: Markdown 30% or initiate return to vendor
-            </div>
-            <div style="margin-top:12px;display:flex;gap:8px;">
-              <button class="btn btn-red" onclick="this.parentElement.parentElement.parentElement.parentElement.style.opacity='0.5';this.textContent='✓ Markdown Applied';" style="padding:8px 20px;font-size:13px;">📉 Markdown 30%</button>
-              <button class="btn btn-accent" onclick="this.parentElement.parentElement.parentElement.parentElement.style.opacity='0.5';this.textContent='✓ Return Initiated';" style="padding:8px 20px;font-size:13px;">📦 Return to Vendor</button>
-              <button class="btn btn-outline" onclick="this.parentElement.parentElement.parentElement.parentElement.style.display='none';" style="padding:8px 20px;font-size:13px;">✕ Dismiss</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Door Performance Comparison -->
-  <div class="grid-3" style="margin-top:0;">
-    <!-- Halifax -->
-    <div class="card" id="ms-card-halifax" style="border-top:3px solid var(--accent-sage);">
-      <div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px;">📍 Halifax <span style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif;">Birmingham St · Flagship</span></div>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Revenue (this month)</span>
-          <span style="font-size:16px;font-weight:700;">—</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Avg Transaction</span>
-          <span style="font-size:14px;font-weight:600;">$142.80</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Units Sold</span>
-          <span style="font-size:14px;font-weight:600;">148</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Best Brand</span>
-          <span class="badge badge-green">ICHI</span>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-            <span style="color:var(--text-secondary);">Sell-Through Rate</span>
-            <span style="font-weight:600;color:var(--green);">72%</span>
-          </div>
-          <div class="progress-bar"><div class="fill" style="width:72%;background:var(--accent-sage);"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Saint John -->
-    <div class="card" id="ms-card-saintjohn" style="border-top:3px solid var(--accent);">
-      <div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px;">📍 Saint John <span style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif;">Canterbury St · Original</span></div>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Revenue (this month)</span>
-          <span style="font-size:16px;font-weight:700;">$12,380</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Avg Transaction</span>
-          <span style="font-size:14px;font-weight:600;">$118.40</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Units Sold</span>
-          <span style="font-size:14px;font-weight:600;">98</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Best Brand</span>
-          <span class="badge badge-green">Gentle Fawn</span>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-            <span style="color:var(--text-secondary);">Sell-Through Rate</span>
-            <span style="font-weight:600;color:var(--yellow);">54%</span>
-          </div>
-          <div class="progress-bar"><div class="fill" style="width:54%;background:var(--accent);"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Moncton -->
-    <div class="card" id="ms-card-moncton" style="border-top:3px solid var(--accent-rose);">
-      <div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px;">📍 Moncton <span style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif;">Mountain Rd · Newest</span></div>
-      <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Revenue (this month)</span>
-          <span style="font-size:16px;font-weight:700;">$9,840</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Avg Transaction</span>
-          <span style="font-size:14px;font-weight:600;">$108.20</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Units Sold</span>
-          <span style="font-size:14px;font-weight:600;">82</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:12px;color:var(--text-secondary);">Best Brand</span>
-          <span class="badge badge-green">ICHI</span>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-            <span style="color:var(--text-secondary);">Sell-Through Rate</span>
-            <span style="font-weight:600;color:var(--yellow);">48%</span>
-          </div>
-          <div class="progress-bar"><div class="fill" style="width:48%;background:var(--accent-rose);"></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- AI Insight -->
-  <div class="ai-rec" style="margin-top:0;">
+  <!-- 6. AI Insight Box -->
+  <div class="ai-rec" id="ms-ai-insight" style="margin-top:0;">
     <div class="ai-icon">🦊</div>
-    <div class="ai-text">
-      <strong>Multi-Store Insight:</strong> Store-level performance insights will generate from sales data across all 3 locations.
-    </div>
+    <div class="ai-text">Loading multi-store insights…</div>
   </div>
 
 </div>
@@ -1909,35 +1672,7 @@ function renderDashboard(){
   }
 
   // === MULTI-STORE ===
-  // Wire top stat cards from real inventory data
-  const msStats=document.querySelectorAll('#page-multistore .stat-card');
-  if(msStats[0]){msStats[0].querySelector('.value').textContent=fmtC(inv.totalValue);msStats[0].querySelector('.label').textContent='Total Inventory Value';}
-  if(msStats[1]){msStats[1].querySelector('.value').textContent=fmtN(inv.totalUnits);msStats[1].querySelector('.label').textContent='Total Units';}
-  if(msStats[2]){msStats[2].querySelector('.value').textContent=fmtN(inv.totalBrands);msStats[2].querySelector('.label').textContent='Brands Carried';}
-  if(msStats[3]){msStats[3].querySelector('.value').textContent=db.locations?db.locations.length:3;msStats[3].querySelector('.label').textContent='Stores Active';}
-  // Wire byLocation data into door cards
-  if(inv.byLocation){
-    const locData={
-      'Halifax': inv.byLocation['Halifax']||inv.byLocation['020b2c2a-4675-11ef-e88b-6d58ba838307']||null,
-      'Saint John': inv.byLocation['Saint John']||inv.byLocation['02dcd191-ae2b-11e6-f485-a12b75d1d2bd']||null,
-      'Moncton': inv.byLocation['Moncton']||inv.byLocation['0a91b764-1c75-11ec-e0eb-20b4fab32baf']||null
-    };
-    [['ms-card-halifax','Halifax'],['ms-card-saintjohn','Saint John'],['ms-card-moncton','Moncton']].forEach(([id,name])=>{
-      const card=document.getElementById(id);
-      const loc=locData[name];
-      if(card&&loc&&loc.units){
-        let invRow=card.querySelector('.inv-loc-row');
-        if(!invRow){
-          invRow=document.createElement('div');
-          invRow.className='inv-loc-row';
-          invRow.style.cssText='display:flex;justify-content:space-between;align-items:center;';
-          const col=card.querySelector('[style*="flex-direction:column"]');
-          if(col)col.appendChild(invRow);
-        }
-        invRow.innerHTML=`<span style="font-size:12px;color:var(--text-secondary);">Inventory Units</span><span style="font-size:14px;font-weight:600;">${fmtN(loc.units)}</span>`;
-      }
-    });
-  }
+  renderMultiStore();
 
   // === BUY PLANNING ===
   const bpStats=document.querySelectorAll('#page-buyplan .stat-card');
@@ -1959,20 +1694,7 @@ function renderDashboard(){
   // === SELL-THROUGH ===
   renderSellThrough();
 
-  // === MULTI-STORE comparison table ===
-  const msTable=document.querySelector('#page-multistore table tbody');
-  if(msTable&&db.locations&&db.locations.length){
-    const locs=db.locations;
-    const getLoc=name=>locs.find(l=>l.name===name)||{count:0,revenue:0,todayCount:0,todayRev:0};
-    const sj=getLoc('Saint John'),mc=getLoc('Moncton'),hx=getLoc('Halifax');
-    msTable.innerHTML=[
-      ['Revenue',fmtC(sj.revenue),fmtC(mc.revenue),fmtC(hx.revenue)],
-      ['Transactions',sj.count,mc.count,hx.count],
-      ['Today Revenue',fmtC(sj.todayRev),fmtC(mc.todayRev),fmtC(hx.todayRev)],
-      ['Today Sales',sj.todayCount,mc.todayCount,hx.todayCount],
-      ['Avg Sale',fmtC(sj.count?sj.revenue/sj.count:0),fmtC(mc.count?mc.revenue/mc.count:0),fmtC(hx.count?hx.revenue/hx.count:0)]
-    ].map(r=>`<tr><td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
-  }
+  // Multi-store table handled in renderMultiStore()
 
   // === CATEGORY TABLE (Buy Planning) ===
   if(inv.typeBreakdown&&inv.typeBreakdown.length){
@@ -2069,6 +1791,226 @@ function renderDashboard(){
   }
 
   console.log('Dashboard rendered with real data');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MULTI-STORE INTELLIGENCE — Full render
+// ═══════════════════════════════════════════════════════════════
+function renderMultiStore(){
+  const d=window._ld;
+  if(!d||!d.dashboard)return;
+  const db=d.dashboard,inv=db.inventory||{},st=d.sellThrough||{};
+
+  // === Resolve location inventory by name or UUID ===
+  const byLoc=inv.byLocation||{};
+  const uuidMap={'Saint John':'02dcd191-ae2b-11e6-f485-a12b75d1d2bd','Moncton':'0a91b764-1c75-11ec-e0eb-20b4fab32baf','Halifax':'020b2c2a-4675-11ef-e88b-6d58ba838307'};
+  const resolveInv=name=>byLoc[name]||byLoc[uuidMap[name]]||{units:0,cost:0,retail:0};
+
+  // Sell-through by location
+  const stLocs=st.byLocation||[];
+  const getST=name=>stLocs.find(l=>l.location===name)||{location:name,transactions:0,unitsSold:0,revenue:0,cogs:0,grossMargin:0,avgTransactionValue:0};
+
+  // Location definitions (Saint John = sage, Moncton = accent, Halifax = rose)
+  const locDefs=[
+    {name:'Saint John',label:'Saint John',sub:'King St · Flagship',color:'var(--accent-sage)',colorHex:'#8FA387'},
+    {name:'Moncton',   label:'Moncton',   sub:'Mountain Rd · Downtown',color:'var(--accent)',colorHex:'#C4A882'},
+    {name:'Halifax',   label:'Halifax',   sub:'Birmingham St · Newest',color:'var(--accent-rose)',colorHex:'#D4A0A0'}
+  ];
+
+  const locData=locDefs.map(l=>({...l,inv:resolveInv(l.name),st:getST(l.name)}));
+
+  // === 1. Header Stats ===
+  const totalCost=locData.reduce((s,l)=>s+(l.inv.cost||0),0);
+  const totalUnits=locData.reduce((s,l)=>s+(l.inv.units||0),0);
+  const totalRev=locData.reduce((s,l)=>s+(l.st.revenue||0),0);
+  const el=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  el('ms-total-inv-value',fmtC(totalCost));
+  el('ms-total-units',fmtN(totalUnits));
+  el('ms-total-revenue',fmtC(totalRev));
+  el('ms-stores-active',locData.length||3);
+
+  // === 2. Location Cards (hero) ===
+  const leaderOf=fn=>locData.reduce((a,b)=>fn(b)>fn(a)?b:a,locData[0]).name;
+  const leaderRev=leaderOf(l=>l.st.revenue||0);
+  const leaderAvg=leaderOf(l=>l.st.avgTransactionValue||0);
+  const leaderTx=leaderOf(l=>l.st.transactions||0);
+  const leaderBadge=`<span style="background:var(--green);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;margin-left:6px;vertical-align:middle;">★ #1</span>`;
+
+  const locCardsEl=document.getElementById('ms-location-cards');
+  if(locCardsEl){
+    locCardsEl.innerHTML=locData.map(l=>{
+      const revShare=totalRev?Math.round(l.st.revenue/totalRev*100):0;
+      const margin=l.st.grossMargin||0;
+      const inv=l.inv;
+      const invBlock=inv.units?`
+        <div style="padding:8px 10px;background:var(--bg);border-radius:8px;border:1px solid var(--border-light);font-size:12px;">
+          <div style="font-weight:600;margin-bottom:3px;">📦 Inventory</div>
+          <div style="color:var(--text-secondary);">${fmtN(inv.units)} units · ${fmtC(inv.cost)} cost / ${fmtC(inv.retail)} retail</div>
+        </div>`:'';
+      return`<div class="card" style="border-top:3px solid ${l.color};">
+        <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600;margin-bottom:12px;">
+          📍 ${l.label}
+          <div style="font-size:11px;font-weight:400;color:var(--text-secondary);font-family:'DM Sans',sans-serif;margin-top:2px;">${l.sub}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-secondary);">Revenue</span>
+            <span style="font-size:16px;font-weight:700;">${fmtC(l.st.revenue)}${l.name===leaderRev?leaderBadge:''}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-secondary);">Avg Transaction</span>
+            <span style="font-size:14px;font-weight:600;">${fmtC(l.st.avgTransactionValue)}${l.name===leaderAvg?leaderBadge:''}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-secondary);">Transactions</span>
+            <span style="font-size:14px;font-weight:600;">${fmtN(l.st.transactions)}${l.name===leaderTx?leaderBadge:''}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-secondary);">Units Sold</span>
+            <span style="font-size:14px;font-weight:600;">${fmtN(l.st.unitsSold)}</span>
+          </div>
+          ${invBlock}
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+              <span style="color:var(--text-secondary);">Gross Margin</span>
+              <span style="font-weight:600;color:${margin>=50?'var(--green)':margin>=40?'var(--yellow)':'var(--red)'};">${margin}%</span>
+            </div>
+            <div class="progress-bar"><div class="fill" style="width:${Math.min(margin,100)}%;background:${l.color};"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+              <span style="color:var(--text-secondary);">Revenue Share</span>
+              <span style="font-weight:600;">${revShare}%</span>
+            </div>
+            <div class="progress-bar"><div class="fill" style="width:${revShare}%;background:${l.color};opacity:0.65;"></div></div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // === 3. Revenue Comparison Table ===
+  const compTbody=document.getElementById('ms-comparison-tbody');
+  if(compTbody&&locData.length===3){
+    const [sjD,mcD,hxD]=locData;
+    const highlightMax=(vals,fmt)=>{
+      const max=Math.max(...vals.map(v=>parseFloat(v)||0));
+      return vals.map(v=>{
+        const n=parseFloat(v)||0;
+        return(n===max&&max>0)?`<strong style="color:var(--accent-sage);">${fmt(n)}</strong>`:fmt(n);
+      });
+    };
+    const rows=[
+      {label:'Revenue',       vals:[sjD.st.revenue,mcD.st.revenue,hxD.st.revenue],fmt:fmtC},
+      {label:'Transactions',  vals:[sjD.st.transactions,mcD.st.transactions,hxD.st.transactions],fmt:fmtN},
+      {label:'Units Sold',    vals:[sjD.st.unitsSold,mcD.st.unitsSold,hxD.st.unitsSold],fmt:fmtN},
+      {label:'Avg Transaction',vals:[sjD.st.avgTransactionValue,mcD.st.avgTransactionValue,hxD.st.avgTransactionValue],fmt:fmtC},
+      {label:'Gross Margin',  vals:[sjD.st.grossMargin,mcD.st.grossMargin,hxD.st.grossMargin],fmt:v=>v+'%'},
+      {label:'Inventory Units',vals:[sjD.inv.units,mcD.inv.units,hxD.inv.units],fmt:fmtN},
+      {label:'Inventory Cost', vals:[sjD.inv.cost,mcD.inv.cost,hxD.inv.cost],fmt:fmtC},
+    ];
+    compTbody.innerHTML=rows.map(r=>{
+      const [v1,v2,v3]=highlightMax(r.vals,r.fmt);
+      return`<tr><td><strong>${r.label}</strong></td><td style="text-align:right;">${v1}</td><td style="text-align:right;">${v2}</td><td style="text-align:right;">${v3}</td></tr>`;
+    }).join('');
+  }
+
+  // === 4. AI Transfer Recommendations ===
+  const recsEl=document.getElementById('ms-transfer-recs');
+  if(recsEl){
+    const totalInvU=Math.max(totalUnits,1);
+    const invPcts=locData.map(l=>totalInvU>0?Math.round((l.inv.units||0)/totalInvU*100):0);
+    const revPcts=locData.map(l=>totalRev>0?Math.round((l.st.revenue||0)/totalRev*100):0);
+
+    const recs=[];
+    for(let i=0;i<locData.length;i++){
+      for(let j=0;j<locData.length;j++){
+        if(i===j)continue;
+        const excess=invPcts[i]-revPcts[i];   // positive = over-stocked vs revenue
+        const deficit=revPcts[j]-invPcts[j];  // positive = under-stocked vs revenue
+        if(excess>=15&&deficit>=10&&recs.length<3){
+          const estUnlock=Math.round((locData[j].st.avgTransactionValue||0)*(locData[i].inv.units||0)*0.04);
+          recs.push({from:locData[i],to:locData[j],fromInvPct:invPcts[i],fromRevPct:revPcts[i],toInvPct:invPcts[j],toRevPct:revPcts[j],estUnlock,idx:recs.length});
+        }
+      }
+    }
+
+    if(recs.length>0){
+      recsEl.innerHTML=recs.map(r=>`
+        <div style="background:#FFFFFF;border:1px solid var(--border);border-left:4px solid var(--accent-sage);border-radius:12px;padding:16px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-sage);color:white;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">↗️</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:14px;margin-bottom:6px;">${r.from.name} → ${r.to.name} Stock Transfer</div>
+              <div style="font-size:13px;line-height:1.6;color:var(--text-secondary);">
+                <strong style="color:var(--text);">${r.from.name}</strong> holds <strong>${r.fromInvPct}%</strong> of total inventory but drives only <strong>${r.fromRevPct}%</strong> of revenue.
+                <strong style="color:var(--text);">${r.to.name}</strong> generates <strong>${r.toRevPct}%</strong> of revenue with only <strong>${r.toInvPct}%</strong> of stock — demand is outpacing supply.
+              </div>
+              <div style="margin-top:8px;padding:8px 12px;background:var(--accent-sage-light);border-radius:8px;font-size:12px;font-weight:600;color:var(--accent-sage);">
+                💡 Rebalance stock from ${r.from.name} → ${r.to.name}${r.estUnlock>0?' · Est. revenue unlock: '+fmtC(r.estUnlock):''}
+              </div>
+              <div style="margin-top:12px;display:flex;gap:8px;">
+                <button class="btn btn-sage" onclick="this.textContent='✓ Approved';this.disabled=true;this.style.opacity='0.7';" style="padding:8px 20px;font-size:13px;background:var(--green);border-color:var(--green);color:#fff;">✓ Approve Transfer</button>
+                <button class="btn btn-outline" onclick="this.closest('[style*=border-left]').style.opacity='0.4';" style="padding:8px 20px;font-size:13px;">✕ Dismiss</button>
+              </div>
+            </div>
+          </div>
+        </div>`).join('');
+    } else {
+      recsEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:14px;">✅ Inventory is well-balanced across all doors — no urgent transfers needed at this time.</div>`;
+    }
+  }
+
+  // === 5. Stock Overview by Door (brand-level, estimated distribution) ===
+  const stockTbody=document.getElementById('ms-stock-door-tbody');
+  const estBadge=document.getElementById('ms-est-badge');
+  if(stockTbody&&inv.brandBreakdown&&inv.brandBreakdown.length){
+    const brands=[...inv.brandBreakdown].sort((a,b)=>b.cost-a.cost).slice(0,10);
+    const locWeights=locData.map(l=>(l.inv.units||0)/Math.max(totalUnits,1));
+    if(estBadge)estBadge.style.display='inline';
+
+    // Brand sell-through lookup for velocity
+    const brandST=(st.byBrand||[]).reduce((m,b)=>(m[b.brand]=b,m),{});
+
+    stockTbody.innerHTML=brands.map(b=>{
+      const stData=brandST[b.name]||{};
+      const stPct=stData.sellThrough||0;
+      const velBadge=stPct>=60?'<span class="badge badge-green">🔥 High</span>':stPct>=35?'<span class="badge badge-yellow">⚡ Med</span>':'<span class="badge badge-red">🐌 Stale</span>';
+      const cells=locData.map((l,i)=>{
+        const est=Math.round(b.count*(locWeights[i]||0));
+        const pct=locWeights[i]||0;
+        const bg=pct>0.4?'#FFF8E1':pct>0.28?'#EAF2EA':'#F5F2EE';
+        const col=pct>0.4?'var(--yellow)':pct>0.28?'var(--green)':'var(--text-secondary)';
+        return`<td style="text-align:center;"><span style="background:${bg};color:${col};padding:3px 8px;border-radius:6px;font-weight:600;font-size:12px;">~${est}</span></td>`;
+      }).join('');
+      return`<tr>
+        <td><strong>${b.name}</strong><div style="font-size:11px;color:var(--text-secondary);">${b.count} total · ${b.margin}% margin</div></td>
+        ${cells}
+        <td style="text-align:center;font-weight:600;">${b.count}</td>
+        <td style="text-align:center;">${velBadge}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // === 6. AI Insight Box ===
+  const aiInsight=document.getElementById('ms-ai-insight');
+  if(aiInsight&&locData.length>0&&totalRev>0){
+    const topRevLoc=locData.reduce((a,b)=>(b.st.revenue||0)>(a.st.revenue||0)?b:a,locData[0]);
+    const topAvgLoc=locData.reduce((a,b)=>(b.st.avgTransactionValue||0)>(a.st.avgTransactionValue||0)?b:a,locData[0]);
+    const topRevShare=totalRev?Math.round(topRevLoc.st.revenue/totalRev*100):0;
+    const invPcts2=locData.map(l=>totalUnits?Math.round((l.inv.units||0)/totalUnits*100):0);
+    const invBalanced=(Math.max(...invPcts2)-Math.min(...invPcts2))<25;
+    const aiText=aiInsight.querySelector('.ai-text');
+    if(aiText)aiText.innerHTML=`<strong>Multi-Store Insight:</strong>
+      <strong>${topRevLoc.name}</strong> leads revenue at <strong>${fmtC(topRevLoc.st.revenue)}</strong> (${topRevShare}% of network total).
+      <strong>${topAvgLoc.name}</strong> has the highest avg transaction at <strong>${fmtC(topAvgLoc.st.avgTransactionValue)}</strong> — shoppers there buy more per visit, making it the most efficient door per transaction.
+      ${invBalanced
+        ?'Inventory distribution looks reasonably balanced. Minor rebalancing may still improve sell-through at lower-velocity doors.'
+        :`Inventory is unevenly distributed: ${locData.map((l,i)=>`${l.name} ${invPcts2[i]}%`).join(' · ')} of total stock. Transfer opportunities exist — review AI recommendations above.`
+      }`;
+  }
+
+  console.log('Multi-store rendered');
 }
 
 // ═══════════════════════════════════════════════════════════════
