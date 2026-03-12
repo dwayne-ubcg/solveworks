@@ -325,6 +325,23 @@ tr:hover td { background: var(--bg); }
 .btn-outline { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
 .btn-outline:hover { background: var(--bg-card-hover); }
 
+/* ═══════════ TOGGLE SWITCH ═══════════ */
+.toggle {
+  display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+}
+.toggle-track {
+  width: 40px; height: 22px; border-radius: 11px; background: #D0CCC8;
+  position: relative; transition: background 0.25s; flex-shrink: 0;
+}
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18); transition: left 0.25s;
+}
+.toggle.on .toggle-track { background: var(--accent-sage); }
+.toggle.on .toggle-thumb { left: 21px; }
+.toggle-label { font-size: 13px; font-weight: 500; }
+
 /* ═══════════ RESPONSIVE ═══════════ */
 @media (max-width: 1024px) {
   .grid-2, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
@@ -412,6 +429,12 @@ tr:hover td { background: var(--bg); }
       <span class="nav-icon">👑</span> Clienteling & CRM
       <span class="nav-badge" style="background:var(--yellow);">2</span>
     </div>
+    <div class="nav-item" onclick="navigateTo('receipts')">
+      <span class="nav-icon">🧾</span> Receipts
+    </div>
+    <div class="nav-item" onclick="navigateTo('documents')">
+      <span class="nav-icon">📁</span> Documents
+    </div>
   </div>
   <div class="sidebar-section">
     <div class="sidebar-label">Growth</div>
@@ -420,6 +443,12 @@ tr:hover td { background: var(--bg); }
     </div>
     <div class="nav-item" onclick="navigateTo('chat')">
       <span class="nav-icon">💬</span> Shopify Chat
+    </div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Account</div>
+    <div class="nav-item" onclick="navigateTo('settings')">
+      <span class="nav-icon">⚙️</span> Settings
     </div>
   </div>
   <div style="padding:16px;margin-top:auto;">
@@ -998,120 +1027,121 @@ tr:hover td { background: var(--bg); }
 <!-- ═══════════════════════════════════════════ -->
 <div class="page" id="page-vendor">
   <div class="page-header">
-    <h2>📅 Vendor & Buy Calendar</h2>
-    <div class="subtitle">Order tracking · Payment schedule · Rep notes · Market dates</div>
+    <h2>🤝 Vendor Relationships</h2>
+    <div class="subtitle">Brand portfolio health · Sell-through · Margin · Strategy</div>
   </div>
 
-  <div class="grid-2">
-    <!-- Order Tracking -->
-    <div>
-      <div class="card">
-        <div class="card-title">📦 Order Tracking</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px;">
-            <span class="status-dot status-shipped"></span>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:600;">ICHI — Spring Collection</div><div style="font-size:11px;color:var(--text-secondary);">36 units · Shipped Mar 5 · Arrives Mar 12</div></div>
-            <span class="badge badge-green">In Transit</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px;">
-            <span class="status-dot status-shipped"></span>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:600;">FREE PEOPLE — Movement & Spring</div><div style="font-size:11px;color:var(--text-secondary);">28 units · Shipped Mar 7 · Arrives Mar 14</div></div>
-            <span class="badge badge-green">In Transit</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
-            <span class="status-dot status-processing"></span>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:600;">GENTLE FAWN — Spring Basics</div><div style="font-size:11px;color:var(--text-secondary);">24 units · Processing · ETA Mar 18-22</div></div>
-            <span class="badge badge-yellow">Processing</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
-            <span class="status-dot status-processing"></span>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:600;">LEVIS — Spring Denim</div><div style="font-size:11px;color:var(--text-secondary);">18 units · Processing · ETA Mar 20</div></div>
-            <span class="badge badge-yellow">Processing</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
-            <span class="status-dot status-processing"></span>
-            <div style="flex:1;"><div style="font-size:13px;font-weight:600;">B YOUNG — Spring Prints</div><div style="font-size:11px;color:var(--text-secondary);">18 units · Processing · ETA Mar 21</div></div>
-            <span class="badge badge-yellow">Processing</span>
-          </div>
-        </div>
-      </div>
+  <!-- Header Stats -->
+  <div class="grid-4" style="margin-bottom:16px;" id="vendor-header-stats">
+    <div class="stat-card">
+      <div class="value" id="vendor-total-brands">—</div>
+      <div class="label">Total Brands</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="vendor-avg-margin">—</div>
+      <div class="label">Avg Brand Margin</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="vendor-top-brand">—</div>
+      <div class="label">Top Brand Revenue</div>
+    </div>
+    <div class="stat-card">
+      <div class="value" id="vendor-watch-count" style="color:var(--yellow);">—</div>
+      <div class="label">Brands to Watch</div>
+    </div>
+  </div>
 
-      <div class="card">
-        <div class="card-title">🔄 Reorder Alerts — Tied to Sell-Through</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px;">
-            <div><div style="font-size:13px;font-weight:600;">SECOND SKIN Smoothing Tank</div><div style="font-size:11px;color:var(--text-secondary);">3 left · Sells 4/week · 5 days of supply</div></div>
-            <button class="btn btn-red" style="font-size:11px;">Urgent Reorder →</button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px;">
-            <div><div style="font-size:13px;font-weight:600;">FREE PEOPLE Movement Legging</div><div style="font-size:11px;color:var(--text-secondary);">1 left · Sells 3/week · 2 days of supply</div></div>
-            <button class="btn btn-red" style="font-size:11px;">Urgent Reorder →</button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px;">
-            <div><div style="font-size:13px;font-weight:600;">LEVIS 501 Original Straight</div><div style="font-size:11px;color:var(--text-secondary);">4 left · Sells 2/week · 14 days of supply</div></div>
-            <button class="btn btn-sage" style="font-size:11px;">Reorder →</button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:8px;">
-            <div><div style="font-size:13px;font-weight:600;">ICHI Smock Blouse</div><div style="font-size:11px;color:var(--text-secondary);">5 left · Sells 4/week · 9 days of supply</div></div>
-            <button class="btn btn-sage" style="font-size:11px;">Reorder →</button>
-          </div>
-        </div>
+  <!-- Brand Relationship Cards -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">🏷️ Brand Relationships — Sorted by Revenue</div>
+    <div id="vendor-brand-cards" style="display:flex;flex-direction:column;gap:10px;max-height:560px;overflow-y:auto;padding-right:4px;"></div>
+  </div>
+
+  <!-- Brand Performance Table -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">📊 Brand Performance Comparison</div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Brand</th>
+            <th style="text-align:right;">Revenue</th>
+            <th style="text-align:right;">Units Sold</th>
+            <th style="text-align:right;">ST%</th>
+            <th style="text-align:right;">Margin</th>
+            <th style="text-align:right;">Stock</th>
+            <th style="text-align:center;">Rating</th>
+          </tr>
+        </thead>
+        <tbody id="vendor-perf-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI Brand Strategy -->
+  <div class="ai-rec" id="vendor-ai-rec" style="margin-bottom:16px;">
+    <div class="ai-icon">🤖</div>
+    <div class="ai-text" id="vendor-ai-text">Loading brand strategy…</div>
+  </div>
+
+  <!-- Order Tracking (demo) -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">📦 Order Tracking <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data — will populate from purchase order integration</span></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px;">
+        <span class="status-dot status-shipped"></span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">ICHI — Spring Collection</div><div style="font-size:11px;color:var(--text-secondary);">36 units · Shipped Mar 5 · Arrives Mar 12</div></div>
+        <span class="badge badge-green">In Transit</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px;">
+        <span class="status-dot status-shipped"></span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">FREE PEOPLE — Movement & Spring</div><div style="font-size:11px;color:var(--text-secondary);">28 units · Shipped Mar 7 · Arrives Mar 14</div></div>
+        <span class="badge badge-green">In Transit</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
+        <span class="status-dot status-processing"></span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">GENTLE FAWN — Spring Basics</div><div style="font-size:11px;color:var(--text-secondary);">24 units · Processing · ETA Mar 18-22</div></div>
+        <span class="badge badge-yellow">Processing</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
+        <span class="status-dot status-processing"></span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">LEVIS — Spring Denim</div><div style="font-size:11px;color:var(--text-secondary);">18 units · Processing · ETA Mar 20</div></div>
+        <span class="badge badge-yellow">Processing</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
+        <span class="status-dot status-processing"></span>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">B YOUNG — Spring Prints</div><div style="font-size:11px;color:var(--text-secondary);">18 units · Processing · ETA Mar 21</div></div>
+        <span class="badge badge-yellow">Processing</span>
       </div>
     </div>
+  </div>
 
-    <!-- Calendar & Payments -->
-    <div>
-      <div class="card">
-        <div class="card-title">📅 Upcoming Market & Appointments</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="padding:10px;background:var(--accent-warm);border-radius:8px;border-left:3px solid var(--accent);">
-            <div style="font-size:13px;font-weight:600;">Today — GENTLE FAWN Spring Reorder</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Brand appointment data will populate from calendar</div>
-          </div>
-          <div style="padding:10px;background:var(--accent-sage-light);border-radius:8px;border-left:3px solid var(--accent-sage);">
-            <div style="font-size:13px;font-weight:600;">Mar 14 — FREE PEOPLE FW26 Preview</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Virtual · Mike (rep) · Notes: Negotiate better terms, review Movement performance data</div>
-          </div>
-          <div style="padding:10px;background:var(--accent-sage-light);border-radius:8px;border-left:3px solid var(--accent-sage);">
-            <div style="font-size:13px;font-weight:600;">Mar 19 — LEVIS Reorder</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Phone · Angela (rep) · Review spring denim performance</div>
-          </div>
-          <div style="padding:10px;background:#F5E0E0;border-radius:8px;border-left:3px solid var(--accent-rose);">
-            <div style="font-size:13px;font-weight:600;">Mar 24-27 — Atlanta Apparel Market</div>
-            <div style="font-size:11px;color:var(--text-secondary);">Calendar integration coming soon</div>
-          </div>
-        </div>
+  <!-- Payment Schedule (demo) -->
+  <div class="card">
+    <div class="card-title">💰 Payment Schedule — Cash Flow View <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data — will populate from purchase order integration</span></div>
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
+        <div><div style="font-weight:600;">GENTLE FAWN</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #GF-2847 · Net 30</div></div>
+        <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
       </div>
-
-      <div class="card">
-        <div class="card-title">💰 Payment Schedule — Cash Flow View</div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-            <div><div style="font-weight:600;">GENTLE FAWN</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #GF-2847 · Net 30</div></div>
-            <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-            <div><div style="font-weight:600;">ICHI</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #IC-1193 · Net 30</div></div>
-            <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
-            <div><div style="font-weight:600;">FREE PEOPLE</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #FP-4401 · Net 45</div></div>
-            <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13px;">
-            <div><div style="font-weight:600;">LEVIS</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #LE-0892 · Net 30</div></div>
-            <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
-          </div>
-        </div>
-        <div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;text-align:center;">
-          <span style="font-size:13px;color:var(--text-secondary);">Next 30 days payable:</span>
-          <span style="font-size:18px;font-weight:700;margin-left:8px;">—</span>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
+        <div><div style="font-weight:600;">ICHI</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #IC-1193 · Net 30</div></div>
+        <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
       </div>
-<div class="card">
-        <div class="card-title">📦 Top Brands in Inventory</div>
-        <div id="vendor-brand-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-light);font-size:13px;">
+        <div><div style="font-weight:600;">FREE PEOPLE</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #FP-4401 · Net 45</div></div>
+        <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
       </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13px;">
+        <div><div style="font-weight:600;">LEVIS</div><div style="font-size:11px;color:var(--text-secondary);">Invoice #LE-0892 · Net 30</div></div>
+        <div style="text-align:right;"><div style="font-weight:600;">—</div><div style="font-size:11px;color:var(--text-secondary);">Invoice data pending</div></div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:12px;background:var(--bg);border-radius:8px;text-align:center;">
+      <span style="font-size:13px;color:var(--text-secondary);">Next 30 days payable:</span>
+      <span style="font-size:18px;font-weight:700;margin-left:8px;">—</span>
     </div>
   </div>
 </div>
@@ -1121,14 +1151,6 @@ tr:hover td { background: var(--bg); }
 
 
 
-
-
-
-
-
-
-  </div>
-</div>
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- PAGE 7: CLIENTELING & CRM                   -->
@@ -1580,6 +1602,446 @@ tr:hover td { background: var(--bg); }
     <div class="ai-text">Loading multi-store insights…</div>
   </div>
 
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE: RECEIPTS / EXPENSE TRACKING           -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page" id="page-receipts">
+  <div class="page-header">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h2>🧾 Expense Tracking</h2>
+        <div class="subtitle">Track receipts, categorize expenses, capture photos</div>
+      </div>
+      <button class="btn btn-sage" onclick="alert('Coming soon: log expenses via chat')" style="padding:10px 20px;font-size:13px;">+ Add Expense</button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="card" style="padding:14px 20px;margin-bottom:16px;">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <select style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);">
+        <option>All Categories</option>
+        <option>Inventory / Stock</option>
+        <option>Shipping</option>
+        <option>Marketing</option>
+        <option>Rent</option>
+        <option>Utilities</option>
+        <option>Supplies</option>
+        <option>Professional</option>
+        <option>Other</option>
+      </select>
+      <select style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);">
+        <option>All Months</option>
+        <option>March 2026</option>
+        <option>February 2026</option>
+        <option>January 2026</option>
+        <option>December 2025</option>
+        <option>November 2025</option>
+        <option>October 2025</option>
+      </select>
+      <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">Connect accounting to activate filters</span>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="grid-4" style="margin-bottom:16px;">
+    <div class="stat-card">
+      <div class="value">—</div>
+      <div class="label">Total Expenses</div>
+      <div class="change" style="color:var(--text-muted);font-size:11px;">Connect accounting to populate</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">—</div>
+      <div class="label">This Month</div>
+      <div class="change" style="color:var(--text-muted);font-size:11px;">Connect accounting to populate</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">—</div>
+      <div class="label">Avg Monthly</div>
+      <div class="change" style="color:var(--text-muted);font-size:11px;">Connect accounting to populate</div>
+    </div>
+    <div class="stat-card">
+      <div class="value">—</div>
+      <div class="label">Top Category</div>
+      <div class="change" style="color:var(--text-muted);font-size:11px;">Connect accounting to populate</div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="card" style="text-align:center;padding:48px 32px;">
+    <div style="font-size:48px;margin-bottom:16px;">📊</div>
+    <h3 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:10px;">No Expense Data Yet</h3>
+    <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;max-width:480px;margin:0 auto 24px;">
+      Expense data will populate when accounting integration is connected (QuickBooks, Xero, or Wave). For now, expenses can be logged manually via chat.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-sage" onclick="alert('Coming soon: log expenses via chat')" style="padding:10px 24px;font-size:13px;">💬 Log via Chat</button>
+      <button class="btn btn-outline" style="padding:10px 24px;font-size:13px;">🔗 Connect QuickBooks</button>
+      <button class="btn btn-outline" style="padding:10px 24px;font-size:13px;">🔗 Connect Xero</button>
+    </div>
+  </div>
+
+  <!-- Category Breakdown placeholder -->
+  <div class="grid-2" style="margin-top:16px;">
+    <div class="card" style="opacity:0.55;">
+      <div class="card-title">📈 Expenses by Category</div>
+      <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">Chart will populate once accounting is connected</div>
+    </div>
+    <div class="card" style="opacity:0.55;">
+      <div class="card-title">📅 Monthly Expense Trend</div>
+      <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">Trend chart will populate once accounting is connected</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE: DOCUMENTS / DOCUMENT HUB             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page" id="page-documents">
+  <div class="page-header">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <h2>📁 Document Hub</h2>
+        <div class="subtitle">Purchase orders, invoices, contracts, lookbooks & planograms</div>
+      </div>
+      <button class="btn btn-sage" onclick="alert('Coming soon: document upload')" style="padding:10px 20px;font-size:13px;">⬆️ Upload</button>
+    </div>
+  </div>
+
+  <!-- Search + Filter Bar -->
+  <div class="card" style="padding:14px 20px;margin-bottom:16px;">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <input type="text" placeholder="🔍 Search documents…" style="flex:1;min-width:200px;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);">
+      <select style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);">
+        <option>All Categories</option>
+        <option>Purchase Orders</option>
+        <option>Invoices</option>
+        <option>Contracts</option>
+        <option>Lookbooks</option>
+        <option>Planograms</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Document Cards Grid -->
+  <div class="grid-2">
+    <!-- Purchase Orders -->
+    <div class="card">
+      <div class="card-title">📋 Purchase Orders <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data</span></div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">PO-2026-047 · ICHI Spring Collection</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Mar 5, 2026 · 36 units · $4,820 cost</div>
+          </div>
+          <span class="badge badge-green">In Transit</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">PO-2026-046 · FREE PEOPLE Movement</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Mar 3, 2026 · 28 units · $3,640 cost</div>
+          </div>
+          <span class="badge badge-yellow">Processing</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+          <div>
+            <div style="font-size:13px;font-weight:600;">PO-2026-044 · GENTLE FAWN Spring Basics</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Feb 28, 2026 · 24 units · $2,880 cost</div>
+          </div>
+          <span class="badge badge-sage">Received</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoices -->
+    <div class="card">
+      <div class="card-title">📄 Invoices <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data</span></div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">INV-IC-1193 · ICHI</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Due Apr 5, 2026 · Net 30</div>
+          </div>
+          <span class="badge badge-yellow">Pending</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">INV-FP-4401 · FREE PEOPLE</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Due Apr 17, 2026 · Net 45</div>
+          </div>
+          <span class="badge badge-yellow">Pending</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+          <div>
+            <div style="font-size:13px;font-weight:600;">INV-GF-2847 · GENTLE FAWN</div>
+            <div style="font-size:11px;color:var(--text-secondary);">Paid Mar 28, 2026</div>
+          </div>
+          <span class="badge badge-green">Paid</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contracts -->
+    <div class="card">
+      <div class="card-title">📝 Contracts — Lease Agreements</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">LORDON Saint John — Lease</div>
+            <div style="font-size:11px;color:var(--text-secondary);">77 King St · Flagship · Expires Dec 2027</div>
+          </div>
+          <span class="badge badge-green">Active</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">LORDON Moncton — Lease</div>
+            <div style="font-size:11px;color:var(--text-secondary);">377 Elmwood Dr, Unit C1 · Expires Jun 2026</div>
+          </div>
+          <span class="badge badge-yellow">Renewing Soon</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+          <div>
+            <div style="font-size:13px;font-weight:600;">LORDON Halifax — Lease</div>
+            <div style="font-size:11px;color:var(--text-secondary);">5657 Spring Garden Rd · Expires Sep 2027</div>
+          </div>
+          <span class="badge badge-green">Active</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lookbooks & Planograms -->
+    <div class="card">
+      <div class="card-title">📚 Lookbooks & Planograms <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data</span></div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">ICHI Spring/Summer 2026 Lookbook</div>
+            <div style="font-size:11px;color:var(--text-secondary);">PDF · 48 pages · Received Feb 2026</div>
+          </div>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">View</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13px;font-weight:600;">Saint John — Floor Planogram Q1 2026</div>
+            <div style="font-size:11px;color:var(--text-secondary);">PDF · Current floor layout</div>
+          </div>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">View</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
+          <div>
+            <div style="font-size:13px;font-weight:600;">FREE PEOPLE Spring 2026 Lookbook</div>
+            <div style="font-size:11px;color:var(--text-secondary);">PDF · 36 pages · Received Jan 2026</div>
+          </div>
+          <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">View</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE: SETTINGS                              -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page" id="page-settings">
+  <div class="page-header">
+    <h2>⚙️ Store Settings</h2>
+    <div class="subtitle">Manage your store information, staff, and integrations</div>
+  </div>
+
+  <div class="grid-2">
+    <!-- LEFT COLUMN -->
+    <div>
+      <!-- Store Information -->
+      <div class="card">
+        <div class="card-title">🏬 Store Information</div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Store Name</label>
+            <input type="text" value="Lordon" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Email</label>
+            <input type="email" placeholder="hello@lordoncanada.com" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Phone</label>
+            <input type="tel" placeholder="+1 (506) 555-0100" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);">
+          </div>
+          <button class="btn btn-sage" style="align-self:flex-start;padding:9px 20px;">Save Changes</button>
+        </div>
+      </div>
+
+      <!-- Locations -->
+      <div class="card">
+        <div class="card-title">📍 Locations</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border-light);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+              <div style="font-size:14px;font-weight:600;">Saint John</div>
+              <span class="badge badge-sage">Flagship</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">
+              77 King St, Saint John, NB<br>
+              Mon–Sat 10:00 AM – 6:00 PM · Sun 12:00 PM – 5:00 PM
+            </div>
+          </div>
+          <div style="padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border-light);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+              <div style="font-size:14px;font-weight:600;">Moncton</div>
+              <span class="badge badge-blue">Active</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">
+              377 Elmwood Dr, Unit C1, Moncton, NB<br>
+              Mon–Sat 10:00 AM – 6:00 PM · Sun 12:00 PM – 5:00 PM
+            </div>
+          </div>
+          <div style="padding:14px;background:var(--bg);border-radius:10px;border:1px solid var(--border-light);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+              <div style="font-size:14px;font-weight:600;">Halifax</div>
+              <span class="badge badge-blue">Active</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.5;">
+              5657 Spring Garden Rd, Halifax, NS<br>
+              Mon–Sat 10:00 AM – 6:00 PM · Sun 12:00 PM – 5:00 PM
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Staff -->
+      <div class="card">
+        <div class="card-title">👥 Staff Directory</div>
+        <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;line-height:1.6;">
+          Staff directory will populate from POS employee data.<br>
+          <span style="font-size:12px;color:var(--text-muted);">Connect Lightspeed employee data to activate.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+      <!-- Connected Integrations -->
+      <div class="card">
+        <div class="card-title">🔌 Connected Integrations</div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Lightspeed POS</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Primary point-of-sale · 3 locations synced</div>
+            </div>
+            <div class="toggle on" title="Connected">
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Shopify</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Online store · lordoncanada.myshopify.com</div>
+            </div>
+            <div class="toggle on" title="Connected">
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Omnisend</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Email marketing · 7,296 subscribers</div>
+            </div>
+            <div class="toggle on" title="Connected">
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Instagram Shopping</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Product tagging</div>
+            </div>
+            <div class="toggle" title="Not connected">
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">QuickBooks</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Accounting</div>
+            </div>
+            <div class="toggle" title="Not connected">
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Google Analytics</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Website analytics</div>
+            </div>
+            <div class="toggle" title="Not connected">
+              <div class="toggle-track"><div class="toggle-thumb"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="card">
+        <div class="card-title">🔔 Notification Preferences</div>
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Morning Briefing</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Daily summary at 6:00 AM</div>
+            </div>
+            <div class="toggle on"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Low Stock Alerts</div>
+              <div style="font-size:11px;color:var(--text-secondary);">When items drop below threshold</div>
+            </div>
+            <div class="toggle on"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Dead Stock Alerts</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Items with no sales activity</div>
+            </div>
+            <div class="toggle on"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-light);">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Sales Milestones</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Revenue goals and records</div>
+            </div>
+            <div class="toggle on"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+            <div>
+              <div style="font-size:13px;font-weight:600;">Weekly Report</div>
+              <div style="font-size:11px;color:var(--text-secondary);">Every Monday morning</div>
+            </div>
+            <div class="toggle on"><div class="toggle-track"><div class="toggle-thumb"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data & Privacy -->
+      <div class="card" style="background:linear-gradient(135deg,#F0F8F0,#E8F5E8);border-color:#C8E0C8;">
+        <div class="card-title" style="color:var(--green);">🛡️ Data & Privacy</div>
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+          <div style="font-size:40px;flex-shrink:0;">🛡️</div>
+          <div>
+            <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px;">Your data stays on your hardware.</p>
+            <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">No cloud storage. No third-party data access. All your sales, customer, and inventory data lives locally on your machine. SolveWorks never stores or transmits your business data.</p>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+              <span class="badge badge-green">✓ Local Storage</span>
+              <span class="badge badge-green">✓ No Cloud Upload</span>
+              <span class="badge badge-green">✓ End-to-End Encrypted</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </div><!-- end .main -->
@@ -1820,13 +2282,8 @@ function renderDashboard(){
     }
   }
 
-  // === VENDOR BRAND LIST ===
-  if(inv.brandBreakdown){
-    const vbEl=document.getElementById('vendor-brand-list');
-    if(vbEl){
-      vbEl.innerHTML=inv.brandBreakdown.slice(0,15).map(b=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-light);"><span><strong>${b.name}</strong></span><span style="color:var(--text-secondary);">${b.count} items · ${fmtC(b.cost)} cost · ${b.margin}% margin</span></div>`).join('');
-    }
-  }
+  // === VENDOR TAB — data-driven ===
+  renderVendor();
 
   // === SIZE DISTRIBUTION ===
   if(db.sizeDistribution&&db.sizeDistribution.length){
@@ -2436,6 +2893,104 @@ function renderSellThroughDeadstock(){
   }).join('');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// VENDOR RELATIONSHIPS — Full render
+// ═══════════════════════════════════════════════════════════════
+function renderVendor(){
+  const d=window._ld;
+  if(!d||!d.dashboard)return;
+  const inv=d.dashboard.inventory||{};
+  const bb=inv.brandBreakdown||[];
+  const st=d.sellThrough||{};
+  const byBrand=[...(st.byBrand||[])].sort((a,b)=>b.revenue-a.revenue);
+
+  // Header stats
+  const el=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  el('vendor-total-brands', bb.length||byBrand.length||'—');
+  if(bb.length){
+    const avgMargin=Math.round(bb.reduce((s,b)=>s+b.margin,0)/bb.length);
+    el('vendor-avg-margin', avgMargin+'%');
+  }
+  if(byBrand.length){
+    el('vendor-top-brand', byBrand[0].brand);
+    const watchCut=byBrand.filter(b=>b.rating==='watch'||b.rating==='cut').length;
+    el('vendor-watch-count', watchCut);
+  }
+
+  // Brand relationship cards
+  const cardsEl=document.getElementById('vendor-brand-cards');
+  if(cardsEl&&byBrand.length){
+    const ratingColor={grow:'#2D8A2D',keep:'#5A7A5A',watch:'#C9A94E',cut:'#C47070'};
+    const ratingBorder={grow:'var(--green)',keep:'var(--accent-sage)',watch:'var(--yellow)',cut:'var(--red)'};
+    const ratingBg={grow:'#EAF5EA',keep:'var(--accent-sage-light)',watch:'#FFF8E1',cut:'#F5EAEA'};
+    const ratingEmoji={grow:'🟢',keep:'🟡',watch:'🟠',cut:'🔴'};
+    const ratingLabel={grow:'Grow',keep:'Keep',watch:'Watch',cut:'Cut'};
+    // Merge margin from brandBreakdown
+    const marginMap=bb.reduce((m,b)=>(m[b.name]=b.margin,m),{});
+    cardsEl.innerHTML=byBrand.map(b=>{
+      const rc=ratingColor[b.rating]||'var(--text-secondary)';
+      const rb=ratingBorder[b.rating]||'var(--border)';
+      const rbg=ratingBg[b.rating]||'var(--bg)';
+      const re=ratingEmoji[b.rating]||'⚪';
+      const rl=ratingLabel[b.rating]||b.rating;
+      const margin=marginMap[b.brand]||b.grossMargin||'—';
+      return`<div style="border:1px solid var(--border);border-left:4px solid ${rb};border-radius:10px;padding:14px 16px;background:${rbg};">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:600;">${b.brand}</div>
+          <span style="font-size:13px;font-weight:700;color:${rc};">${re} ${rl}</span>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary);margin-bottom:6px;">
+          <span><strong style="color:var(--text);">Revenue:</strong> ${fmtC(b.revenue)}</span>
+          <span><strong style="color:var(--text);">Units Sold:</strong> ${fmtN(b.unitsSold)}</span>
+          <span><strong style="color:var(--text);">Margin:</strong> ${margin}%</span>
+          <span><strong style="color:var(--text);">Sell-Through:</strong> ${b.sellThrough}%</span>
+          <span><strong style="color:var(--text);">Stock:</strong> ${fmtN(b.currentStock)} units</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);font-style:italic;">${b.ratingReason||''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Brand performance table
+  const tbody=document.getElementById('vendor-perf-tbody');
+  if(tbody&&byBrand.length){
+    const ratingBadge={grow:'badge-green',keep:'badge-sage',watch:'badge-yellow',cut:'badge-red'};
+    const ratingLabel={grow:'Grow',keep:'Keep',watch:'Watch',cut:'Cut'};
+    const marginMap=bb.reduce((m,b)=>(m[b.name]=b.margin,m),{});
+    tbody.innerHTML=byBrand.map(b=>{
+      const badge=ratingBadge[b.rating]||'badge-sage';
+      const label=ratingLabel[b.rating]||b.rating;
+      const margin=marginMap[b.brand]||b.grossMargin||'—';
+      return`<tr>
+        <td><strong>${b.brand}</strong></td>
+        <td style="text-align:right;font-weight:600;">${fmtC(b.revenue)}</td>
+        <td style="text-align:right;">${fmtN(b.unitsSold)}</td>
+        <td style="text-align:right;">${b.sellThrough}%</td>
+        <td style="text-align:right;">${margin}%</td>
+        <td style="text-align:right;">${fmtN(b.currentStock)}</td>
+        <td style="text-align:center;"><span class="badge ${badge}">${label}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // AI Strategy
+  const aiEl=document.getElementById('vendor-ai-text');
+  if(aiEl&&byBrand.length){
+    const grow=byBrand.filter(b=>b.rating==='grow');
+    const cut=byBrand.filter(b=>b.rating==='cut');
+    const watch=byBrand.filter(b=>b.rating==='watch');
+    const keep=byBrand.filter(b=>b.rating==='keep');
+    const topRev=byBrand[0];
+    let msg=`<strong>Portfolio Overview:</strong> ${byBrand.length} active brands — `;
+    if(grow.length)msg+=`<strong style="color:var(--green);">Grow (${grow.length}): ${grow.map(b=>b.brand).join(', ')}</strong> show strong sell-through and margins; prioritize these in your next buy. `;
+    if(keep.length)msg+=`<strong>Keep (${keep.length}): ${keep.map(b=>b.brand).join(', ')}</strong> are steady performers. `;
+    if(watch.length)msg+=`<strong style="color:var(--yellow);">Watch (${watch.length}): ${watch.map(b=>b.brand).join(', ')}</strong> need 90-day performance targets before next buy. `;
+    if(cut.length)msg+=`<strong style="color:var(--red);">Cut (${cut.length}): ${cut.map(b=>b.brand).join(', ')}</strong> — underperforming; negotiate exit terms or sunset next season. `;
+    msg+=`Top revenue driver is <strong>${topRev.brand}</strong> at ${fmtC(topRev.revenue)}.`;
+    aiEl.innerHTML=msg;
+  }
+}
+
 // Navigation
 function navigateTo(page) {
   // Deactivate all
@@ -2454,7 +3009,8 @@ function navigateTo(page) {
   const navItems = document.querySelectorAll('.nav-item');
   const pageMap = {
     'briefing': 0, 'analytics': 1, 'buyplan': 2, 'sellthrough': 3,
-    'inventory': 4, 'multistore': 5, 'vendor': 6, 'clienteling': 7, 'social': 8, 'chat': 9
+    'inventory': 4, 'multistore': 5, 'vendor': 6, 'clienteling': 7,
+    'receipts': 8, 'documents': 9, 'social': 10, 'chat': 11, 'settings': 12
   };
   const idx = pageMap[page];
   if (idx !== undefined && navItems[idx]) {
