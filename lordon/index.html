@@ -3155,11 +3155,11 @@ function renderMultiStore(){
     const locWeights=locData.map(l=>(l.inv.units||0)/Math.max(totalUnits,1));
     if(estBadge)estBadge.style.display='inline';
 
-    // Brand sell-through lookup for velocity
-    const brandST=(st.byBrand||[]).reduce((m,b)=>(m[b.brand]=b,m),{});
+    // Brand sell-through lookup for velocity (case-insensitive)
+    const brandST=(st.byBrand||[]).reduce((m,b)=>(m[b.brand.toUpperCase()]=b,m),{});
 
     stockTbody.innerHTML=brands.map(b=>{
-      const stData=brandST[b.name]||{};
+      const stData=brandST[(b.name||'').toUpperCase()]||{};
       const stPct=stData.sellThrough||0;
       const velBadge=stPct>=60?'<span class="badge badge-green">🔥 High</span>':stPct>=35?'<span class="badge badge-yellow">⚡ Med</span>':'<span class="badge badge-red">🐌 Stale</span>';
       const cells=locData.map((l,i)=>{
