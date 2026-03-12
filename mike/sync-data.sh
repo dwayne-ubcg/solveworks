@@ -4,7 +4,7 @@ REMOTE="mikedades@100.92.185.73"
 LOCAL="$HOME/clawd/solveworks-site/mike/data"
 
 # Sync all JSON data files
-for f in dashboard.json financials.json leads.json tasks.json jobs.json recruiters.json team-data.json security.json memory-recent.json; do
+for f in dashboard.json financials.json leads.json tasks.json jobs.json recruiters.json team-data.json security.json memory-recent.json projects.json; do
     scp -q -o ConnectTimeout=10 $REMOTE:~/clawd/data/$f "$LOCAL/$f" 2>/dev/null
 done
 
