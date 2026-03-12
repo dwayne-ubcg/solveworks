@@ -836,6 +836,92 @@ tr:hover td { background: var(--bg); }
     <div class="grid-2" id="st-location-cards" style="gap:16px;"></div>
   </div>
 
+  <!-- ⑧ SEASON-OVER-SEASON COMPARISON BY CATEGORY -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">📅 Spring '25 vs Spring '26</div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">6 weeks into SS26 — projections based on current pace</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align:right;">SS25 Units</th>
+            <th style="text-align:right;">SS25 Revenue</th>
+            <th style="text-align:right;">SS26 Units</th>
+            <th style="text-align:right;">SS26 Projected</th>
+            <th style="text-align:center;">Trend</th>
+            <th>Recommendation</th>
+          </tr>
+        </thead>
+        <tbody id="st-season-cat-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ⑨ BRAND SEASON COMPARISON -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">🏷️ Brand Performance: Spring '25 vs Spring '26</div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Top brands ranked by SS25 revenue — 6 weeks of SS26 data</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Brand</th>
+            <th style="text-align:right;">SS25 Revenue</th>
+            <th style="text-align:right;">SS25 Margin</th>
+            <th style="text-align:right;">SS26 Revenue</th>
+            <th style="text-align:right;">SS26 Projected</th>
+            <th style="text-align:center;">Trend</th>
+            <th style="text-align:center;">Rating</th>
+          </tr>
+        </thead>
+        <tbody id="st-season-brand-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ⑩ OPEN-TO-BUY CALCULATOR -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-title">🧮 Open-to-Buy by Category</div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">How much budget is available for new inventory purchases</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="text-align:right;">Current Inventory (Cost)</th>
+            <th style="text-align:right;">Weekly Run Rate</th>
+            <th style="text-align:right;">Target EOM</th>
+            <th style="text-align:right;">OTB Available</th>
+            <th style="text-align:center;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="st-otb-tbody">
+          <tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ai-rec" id="st-otb-ai" style="margin-top:16px;">
+      <span class="ai-icon">🤖</span>
+      <span class="ai-text" id="st-otb-ai-text">Loading OTB insights…</span>
+    </div>
+  </div>
+
+  <!-- ⑪ PRE-MARKET BUYING GUIDE -->
+  <div class="card" style="margin-bottom:20px;background:linear-gradient(135deg,var(--accent-warm) 0%,var(--bg-card) 60%);border:1.5px solid var(--accent-warm-deep);">
+    <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+      <span>📋 Pre-Market Buying Guide</span>
+    </div>
+    <div class="ai-rec" style="background:rgba(255,255,255,0.75);border:1px solid var(--accent-warm-deep);margin-top:4px;">
+      <span class="ai-icon">🪶</span>
+      <span class="ai-text" id="st-market-guide-text" style="font-size:14px;line-height:1.75;white-space:pre-line;">Loading buying guide…</span>
+    </div>
+  </div>
+
 
 
 
@@ -2216,6 +2302,109 @@ function renderSellThrough(){
         </div>
       </div>`;
     }).join('');
+  }
+
+  // ⑧–⑪ Season comparison, OTB, market guide
+  renderSeasonComparison();
+}
+
+function renderSeasonComparison(){
+  const st=window._ld&&window._ld.sellThrough;
+  if(!st)return;
+  const sc=st.seasonComparison;
+  const ratingBadge={grow:'badge-green',keep:'badge-sage',watch:'badge-yellow',cut:'badge-red'};
+  const ratingLabel={grow:'Grow',keep:'Keep',watch:'Watch',cut:'Cut'};
+  const trendArrow=t=>t==='up'
+    ?'<span style="color:var(--green);font-size:18px;font-weight:700;">↑</span>'
+    :t==='down'
+      ?'<span style="color:var(--red);font-size:18px;font-weight:700;">↓</span>'
+      :'<span style="color:var(--yellow);font-size:18px;font-weight:700;">→</span>';
+
+  // ⑧ Category Season Comparison
+  const catEl=document.getElementById('st-season-cat-tbody');
+  if(catEl&&sc&&sc.byCategory&&sc.byCategory.length){
+    const sorted=[...sc.byCategory]
+      .filter(c=>c.ss25&&c.ss25.revenue>0)
+      .sort((a,b)=>b.ss25.revenue-a.ss25.revenue);
+    if(sorted.length){
+      catEl.innerHTML=sorted.map(c=>`<tr>
+        <td><strong>${c.category}</strong></td>
+        <td style="text-align:right;">${fmtN(c.ss25.unitsSold)}</td>
+        <td style="text-align:right;">${fmtC(c.ss25.revenue)}</td>
+        <td style="text-align:right;">${fmtN(c.ss26.unitsSold)}</td>
+        <td style="text-align:right;">${fmtC(c.ss26Projected.revenue)}<br><span style="font-size:10px;color:var(--text-muted);">${c.ss26Projected.note||''}</span></td>
+        <td style="text-align:center;">${trendArrow(c.trend)}</td>
+        <td style="font-size:12px;color:var(--text-secondary);">${c.recommendation||'—'}</td>
+      </tr>`).join('');
+    } else {
+      catEl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No season comparison data available.</td></tr>';
+    }
+  }
+
+  // ⑨ Brand Season Comparison
+  const brandEl=document.getElementById('st-season-brand-tbody');
+  if(brandEl&&sc&&sc.byBrand&&sc.byBrand.length){
+    const mainBrands=(st.byBrand||[]).reduce((m,b)=>{m[b.brand]=b;return m;},{});
+    const sorted=[...sc.byBrand]
+      .filter(b=>b.ss25&&b.ss25.revenue>0)
+      .sort((a,b)=>b.ss25.revenue-a.ss25.revenue)
+      .slice(0,20);
+    if(sorted.length){
+      brandEl.innerHTML=sorted.map(b=>{
+        const mb=mainBrands[b.brand]||{};
+        const badge=ratingBadge[mb.rating]||'badge-sage';
+        const label=ratingLabel[mb.rating]||mb.rating||'—';
+        return`<tr>
+          <td><strong>${b.brand}</strong></td>
+          <td style="text-align:right;">${fmtC(b.ss25.revenue)}</td>
+          <td style="text-align:right;">${b.ss25.margin!=null?b.ss25.margin+'%':'—'}</td>
+          <td style="text-align:right;">${fmtC(b.ss26.revenue)}</td>
+          <td style="text-align:right;">${fmtC(b.ss26Projected.revenue)}</td>
+          <td style="text-align:center;">${trendArrow(b.trend)}</td>
+          <td style="text-align:center;"><span class="badge ${badge}">${label}</span></td>
+        </tr>`;
+      }).join('');
+    } else {
+      brandEl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No brand comparison data available.</td></tr>';
+    }
+  }
+
+  // ⑩ Open-to-Buy Calculator
+  const otbEl=document.getElementById('st-otb-tbody');
+  if(otbEl&&st.otb&&st.otb.length){
+    const statusBadge={healthy:'badge-green',understocked:'badge-sage',overstocked:'badge-red',critical:'badge-red'};
+    const statusLabel={healthy:'Healthy',understocked:'Understocked',overstocked:'Overstocked',critical:'Critical'};
+    otbEl.innerHTML=st.otb.map(o=>{
+      const pos=o.otbAvailable>=0;
+      const otbStyle=pos?'color:var(--green);font-weight:700;':'color:var(--red);font-weight:700;';
+      const badge=statusBadge[o.status]||'badge-sage';
+      const label=statusLabel[o.status]||o.status;
+      const critStyle=o.status==='critical'?'background:var(--red);color:#fff;border-color:var(--red);':'';
+      return`<tr>
+        <td><strong>${o.category}</strong></td>
+        <td style="text-align:right;">${fmtC(o.currentInventoryCost)}</td>
+        <td style="text-align:right;">${fmtC(o.weeklyRunRate)}/wk</td>
+        <td style="text-align:right;">${fmtC(o.plannedEOM)}</td>
+        <td style="text-align:right;${otbStyle}">${pos?'+':''}${fmtC(o.otbAvailable)}</td>
+        <td style="text-align:center;"><span class="badge ${badge}" style="${critStyle}">${label}</span></td>
+      </tr>`;
+    }).join('');
+    // OTB AI insight
+    const open=st.otb.filter(o=>o.otbAvailable>0).sort((a,b)=>b.otbAvailable-a.otbAvailable);
+    const over=st.otb.filter(o=>o.status==='overstocked'||o.status==='critical');
+    const aiEl=document.getElementById('st-otb-ai-text');
+    if(aiEl){
+      let msg='';
+      if(open.length)msg+=`<strong>Open budget (${open.length}): ${open.map(o=>o.category).join(', ')}</strong> — total available: ${fmtC(open.reduce((s,o)=>s+o.otbAvailable,0))}. Focus new buys here. `;
+      if(over.length)msg+=`<strong>Overstocked (${over.length}): ${over.map(o=>o.category).join(', ')}</strong> — hold off on new purchases until inventory clears. Consider markdowns to accelerate sell-through.`;
+      aiEl.innerHTML=msg||'OTB positions look balanced across categories.';
+    }
+  }
+
+  // ⑪ Pre-Market Buying Guide
+  const guideEl=document.getElementById('st-market-guide-text');
+  if(guideEl&&st.marketGuide){
+    guideEl.textContent=st.marketGuide;
   }
 }
 
