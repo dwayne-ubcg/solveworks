@@ -1316,31 +1316,19 @@ tr:hover td { background: var(--bg); }
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">⚠️ Lapsed Customer Alerts <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data</span></div>
+      <div class="card" id="lapsed-customers-card">
+        <div class="card-title">🔴 Lapsed VIP Customers</div>
         <div style="padding:12px;background:#FFF8E1;border-radius:8px;font-size:13px;">
-          <strong>12 customers</strong> haven't visited in 60+ days. Top recovery targets:
-          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
-            <div>• Win-back targets will populate from customer purchase history</div>
-            <div>• Birthday outreach will populate from customer data</div>
-            <div>• Lapsed customer alerts will populate from purchase velocity</div>
-          </div>
+          <div id="lapsed-customers-body">Loading lapsed customer data…</div>
         </div>
       </div>
     </div>
 
     <!-- Actions & Automation -->
     <div>
-      <div style="background:linear-gradient(135deg,#F5F0FF,#F0E8FF);border:1px solid #E0D4F0;border-radius:12px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:15px;margin-bottom:8px;">🤖 <strong>AI Re-Engagement Suggestion</strong></div>
-        <div style="font-size:13px;line-height:1.6;">
-          AI-generated outreach suggestions will appear here once customer purchase history is analyzed.<br><br>
-          <em>Send her a personalized message?</em>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px;">
-          <button class="btn btn-sage">📱 Draft Text</button>
-          <button class="btn btn-accent">📧 Draft Email</button>
-        </div>
+      <div id="vip-action-list-section" style="background:linear-gradient(135deg,#FFF5F5,#FFF0F0);border:1px solid #F0D4D4;border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:15px;margin-bottom:8px;">🚨 <strong>VIP Action List</strong></div>
+        <div id="vip-action-list-body" style="font-size:13px;line-height:1.6;">Loading action list…</div>
       </div>
 
       <div class="card">
@@ -1376,10 +1364,11 @@ tr:hover td { background: var(--bg); }
       <div class="card">
         <div class="card-title">📊 CRM Metrics</div>
         <div class="grid-2" style="gap:10px;">
-          <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">342</div><div class="label">Total Customers</div></div>
-          <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">48</div><div class="label">VIP Clients</div></div>
-          <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">34%</div><div class="label">Repeat Rate</div></div>
+          <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">—</div><div class="label">Total Customers</div></div>
+          <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">—</div><div class="label">VIP Tracked</div></div>
+          <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">—</div><div class="label">Repeat Rate</div></div>
           <div class="stat-card" style="padding:10px;"><div class="value" style="font-size:22px;">—</div><div class="label">Avg LTV</div></div>
+          <div class="stat-card" style="padding:10px;background:var(--red-light);" id="at-risk-stat"><div class="value" style="font-size:22px;color:var(--red);">—</div><div class="label">At Risk (60d+)</div></div>
         </div>
       </div>
     </div>
@@ -2296,34 +2285,145 @@ function renderDashboard(){
   }
 
   // === CUSTOMERS ===
-  // Wire all 4 CRM Metrics stat cards
+  const topC=cust.topCustomers||[];
+  const atRiskCount=topC.filter(c=>c.daysSinceLastOrder>60).length;
+
+  // CRM Metrics stat cards
   const custStats=document.querySelectorAll('#page-clienteling .stat-card');
   if(custStats[0]){custStats[0].querySelector('.value').textContent=fmtN(cust.total);custStats[0].querySelector('.label').textContent='Total Customers';}
-  if(custStats[1]){custStats[1].querySelector('.value').textContent=fmtN(cust.totalOrders);custStats[1].querySelector('.label').textContent='Total Orders';}
+  if(custStats[1]){custStats[1].querySelector('.value').textContent=fmtN(topC.length);custStats[1].querySelector('.label').textContent='VIP Tracked';}
   if(custStats[2]){
-    const repeatRate=cust.total?Math.round((cust.withOrders||0)/cust.total*100):0;
+    const repeatRate=topC.length?Math.round(topC.filter(c=>c.orders>=2).length/topC.length*100):(cust.total?Math.round((cust.withOrders||0)/cust.total*100):0);
     custStats[2].querySelector('.value').textContent=repeatRate+'%';
     custStats[2].querySelector('.label').textContent='Repeat Rate';
   }
   if(custStats[3]){
-    const avgLTV=(cust.withOrders&&cust.totalSpent)?cust.totalSpent/cust.withOrders:0;
+    const avgLTV=topC.length?Math.round(topC.reduce((s,c)=>s+c.spent,0)/topC.length):(cust.withOrders&&cust.totalSpent?cust.totalSpent/cust.withOrders:0);
     custStats[3].querySelector('.value').textContent=fmtC(avgLTV);
     custStats[3].querySelector('.label').textContent='Avg LTV';
   }
+  const atRiskEl=document.getElementById('at-risk-stat');
+  if(atRiskEl){atRiskEl.querySelector('.value').textContent=atRiskCount;}
 
-  // VIP cards - render dynamically from topCustomers
-  if(cust.topCustomers&&cust.topCustomers.length){
+  // VIP cards - render dynamically from topCustomers with enriched data
+  if(topC.length){
     const vipCard=document.getElementById('vip-clients-card');
     if(vipCard){
-      const sorted=[...cust.topCustomers].sort((a,b)=>b.spent-a.spent).slice(0,8);
-      const avatarColors=['var(--accent-rose)','var(--accent-sage)','var(--accent)','#7B98B8','var(--purple)','var(--accent-dark)','var(--green)','var(--yellow)'];
+      const sorted=[...topC].sort((a,b)=>b.spent-a.spent).slice(0,10);
+      const avatarColors=['var(--accent-rose)','var(--accent-sage)','var(--accent)','#7B98B8','var(--purple)','var(--accent-dark)','var(--green)','var(--yellow)','#C9874A','#8B7BA8'];
       vipCard.innerHTML='<div class="card-title">👑 Top VIP Clients</div>'+sorted.map((c,i)=>{
         const parts=(c.name||'').split(' ').filter(Boolean);
         const initials=(parts.map(p=>p[0]).join('').substring(0,2)||'??').toUpperCase();
         const color=avatarColors[i%avatarColors.length];
         const location=[c.city,c.province].filter(Boolean).join(', ');
-        return`<div class="client-card"><div class="client-avatar" style="background:${color};">${initials}</div><div class="client-info"><div class="client-name">${c.name}</div><div class="client-detail">${c.orders} orders · ${fmtC(c.spent)} lifetime${location?' · '+location:''}</div></div><span class="badge badge-sage">VIP ★</span></div>`;
+        const days=c.daysSinceLastOrder||0;
+        const daysBadgeClass=days<14?'badge-green':days<=60?'badge-yellow':'badge-red';
+        const daysLabel=days?`${days}d ago`:'recent';
+        const lastBought=c.lastItems&&c.lastItems.length?`<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Last bought: ${c.lastItems.slice(0,2).join(', ')}</div>`:'';
+        const since=c.customerSince?`<div style="font-size:11px;color:var(--text-secondary);margin-top:1px;">Customer since ${c.customerSince.substring(0,7)}</div>`:'';
+        const actionText=c.action?`<div style="font-size:11px;color:var(--accent-dark);margin-top:3px;font-style:italic;">"${c.action}"</div>`:'';
+        const cNameEsc=(c.name||'').replace(/'/g,'\u2019');
+        return`<div class="client-card" style="flex-direction:column;align-items:flex-start;padding:12px;gap:6px;">
+          <div style="display:flex;align-items:center;gap:10px;width:100%;">
+            <div class="client-avatar" style="background:${color};flex-shrink:0;">${initials}</div>
+            <div class="client-info" style="flex:1;min-width:0;">
+              <div class="client-name">${c.name}</div>
+              <div class="client-detail">${c.orders} orders · ${fmtC(c.spent)} lifetime${location?' · '+location:''}</div>
+              ${since}
+            </div>
+            <span class="badge ${daysBadgeClass}" style="flex-shrink:0;">⏱ ${daysLabel}</span>
+          </div>
+          ${lastBought}${actionText}
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <button class="btn btn-sage" style="font-size:11px;padding:4px 10px;" onclick="alert('Draft text for ${cNameEsc}')">📱 Draft Text</button>
+            <button class="btn btn-accent" style="font-size:11px;padding:4px 10px;" onclick="alert('Draft email for ${cNameEsc}')">📧 Draft Email</button>
+          </div>
+        </div>`;
       }).join('');
+    }
+  }
+
+  // VIP Action List — grouped by actionType
+  const actionListEl=document.getElementById('vip-action-list-body');
+  if(actionListEl&&topC.length){
+    const typeConfig={
+      're-engage':{label:'Re-Engage',color:'var(--red)',bg:'var(--red-light)',icon:'🔴'},
+      'thank-you':{label:'Thank You',color:'var(--green)',bg:'var(--green-light)',icon:'💚'},
+      'vip-tier':{label:'VIP Tier',color:'#C9A94E',bg:'#FFF8E1',icon:'⭐'},
+      'high-value':{label:'High Value',color:'var(--purple)',bg:'var(--purple-light)',icon:'💜'},
+      'local-vip':{label:'Local VIP',color:'var(--accent-sage)',bg:'var(--accent-sage-light)',icon:'📍'}
+    };
+    const typeOrder=['re-engage','thank-you','vip-tier','high-value','local-vip'];
+    // Count badges
+    const counts={};
+    topC.forEach(c=>{const t=c.actionType||'vip-tier';counts[t]=(counts[t]||0)+1;});
+    const badgeParts=[];
+    if(counts['re-engage'])badgeParts.push(`${counts['re-engage']} re-engagement${counts['re-engage']>1?'s':''}`);
+    if(counts['vip-tier'])badgeParts.push(`${counts['vip-tier']} VIP tier`);
+    if(counts['high-value'])badgeParts.push(`${counts['high-value']} high-value`);
+    if(counts['thank-you'])badgeParts.push(`${counts['thank-you']} thank-you`);
+    if(counts['local-vip'])badgeParts.push(`${counts['local-vip']} local VIP`);
+    let html=`<div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">${badgeParts.join(' · ')}</div>`;
+    typeOrder.forEach(type=>{
+      const group=topC.filter(c=>c.actionType===type);
+      if(!group.length)return;
+      const cfg=typeConfig[type]||{label:type,color:'var(--text)',bg:'var(--bg)',icon:'•'};
+      // Sort re-engage by spent desc, others by name
+      const sorted=type==='re-engage'?[...group].sort((a,b)=>b.spent-a.spent):[...group].sort((a,b)=>b.spent-a.spent);
+      html+=`<div style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:${cfg.color};margin-bottom:6px;letter-spacing:0.5px;">${cfg.icon} ${cfg.label.toUpperCase()} (${group.length})</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${sorted.map(c=>{
+            const days=c.daysSinceLastOrder||0;
+            const loc=[c.city,c.province].filter(Boolean).join(', ');
+            const name=c.name||'Unknown';
+            const nameEsc=name.replace(/'/g,"\\'");
+            return`<div style="background:${cfg.bg};border:1px solid ${cfg.color}22;border-radius:8px;padding:10px 12px;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-weight:600;font-size:13px;">${name}${loc?' <span style="font-weight:400;font-size:12px;color:var(--text-secondary);">· '+loc+'</span>':''}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${days?days+'d since last order · ':''}${fmtC(c.spent)} over ${c.orders} order${c.orders>1?'s':''}</div>
+                  ${c.action?`<div style="font-size:12px;color:${cfg.color};margin-top:3px;font-style:italic;">"${c.action}"</div>`:''}
+                </div>
+                <div style="display:flex;gap:4px;flex-shrink:0;">
+                  <button class="btn btn-sage" style="font-size:10px;padding:3px 8px;" onclick="alert('Text ${nameEsc}')">📱 Text</button>
+                  <button class="btn btn-accent" style="font-size:10px;padding:3px 8px;" onclick="alert('Email ${nameEsc}')">📧 Email</button>
+                  <button class="btn" style="font-size:10px;padding:3px 8px;background:#eee;color:#555;" onclick="alert('Note for ${nameEsc}')">📝 Note</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    });
+    actionListEl.innerHTML=html;
+  }
+
+  // Lapsed Customers — re-engage group, sorted by spend desc
+  const lapsedBodyEl=document.getElementById('lapsed-customers-body');
+  if(lapsedBodyEl&&topC.length){
+    const lapsed=[...topC.filter(c=>c.daysSinceLastOrder>60)].sort((a,b)=>b.spent-a.spent);
+    if(lapsed.length){
+      const lapsedCard=document.getElementById('lapsed-customers-card');
+      if(lapsedCard){
+        lapsedCard.querySelector('.card-title').textContent=`🔴 Lapsed VIP Customers (${lapsed.length})`;
+      }
+      lapsedBodyEl.innerHTML=`<div style="font-weight:600;margin-bottom:8px;color:var(--red);">${lapsed.length} VIP customers gone 60+ days</div>`+
+        lapsed.map(c=>{
+          const days=c.daysSinceLastOrder||0;
+          const daysClass=days>180?'color:var(--red);font-weight:700;':days>90?'color:var(--red);':'color:var(--yellow);font-weight:600;';
+          return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0E0D0;font-size:12px;">
+            <div>
+              <div style="font-weight:600;font-size:13px;">${c.name}</div>
+              <div style="color:var(--text-secondary);">Last order: ${c.lastOrderDate||'—'} · ${c.orders} orders · ${fmtC(c.spent)} lifetime</div>
+            </div>
+            <span style="${daysClass}margin-left:8px;white-space:nowrap;">${days}d ago</span>
+          </div>`;
+        }).join('');
+    } else {
+      lapsedBodyEl.innerHTML='<div style="color:var(--green);">✅ No lapsed VIP customers — great retention!</div>';
+      const lapsedCard=document.getElementById('lapsed-customers-card');
+      if(lapsedCard)lapsedCard.querySelector('.card-title').textContent='🟢 Lapsed VIP Customers';
     }
   }
 
