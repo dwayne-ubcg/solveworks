@@ -215,7 +215,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg)}
 <div style="width:48px;height:2px;background:var(--accent);margin:0 auto 24px;border-radius:1px"></div>
 <div class="login-store">Welcome back, <strong>Lordon</strong></div>
 <p style="font-size:13px;color:var(--text-muted);margin-bottom:28px;line-height:1.5">Your morning briefing is ready.<br>3 locations · 1,247 SKUs · AI monitoring active</p>
+<input id="pw" type="password" placeholder="Password" style="width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:#fff;margin-bottom:12px;" onkeydown="if(event.key==='Enter')doLogin()">
 <button class="login-btn" onclick="doLogin()">Enter Dashboard →</button>
+<p id="login-error" style="display:none;color:#c0392b;font-size:12px;margin-top:8px;">Incorrect password</p>
 <div class="login-powered">Powered by Finch & Sparrow × SolveWorks</div>
 </div>
 </div>
@@ -1050,7 +1052,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg)}
 
 <script>
 // ═══ AUTH ═══
-function doLogin(){localStorage.setItem('fs_auth','lordon');document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='block'}
+async function doLogin(){const p=document.getElementById('pw').value;const b=new TextEncoder().encode(p);const h=await crypto.subtle.digest('SHA-256',b);const hex=Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('');if(hex==='5276d13f8d503a5d4ebdcb4e002c1fa245934140524671040f87391f68142ab2'){localStorage.setItem('fs_auth','lordon');document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='block'}else{document.getElementById('login-error').style.display='block'}}
 function checkAuth(){if(localStorage.getItem('fs_auth')){document.getElementById('loginScreen').style.display='none';document.getElementById('appShell').style.display='block'}}
 checkAuth();
 
