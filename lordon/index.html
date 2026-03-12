@@ -3114,7 +3114,7 @@ function renderMultiStore(){
         if(i===j)continue;
         const excess=invPcts[i]-revPcts[i];   // positive = over-stocked vs revenue
         const deficit=revPcts[j]-invPcts[j];  // positive = under-stocked vs revenue
-        if(excess>=15&&deficit>=10&&recs.length<3){
+        if(excess>=5&&deficit>=5&&recs.length<3){
           const estUnlock=Math.round((locData[j].st.avgTransactionValue||0)*(locData[i].inv.units||0)*0.04);
           recs.push({from:locData[i],to:locData[j],fromInvPct:invPcts[i],fromRevPct:revPcts[i],toInvPct:invPcts[j],toRevPct:revPcts[j],estUnlock,idx:recs.length});
         }
@@ -3143,7 +3143,11 @@ function renderMultiStore(){
           </div>
         </div>`).join('');
     } else {
-      recsEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:14px;">✅ Inventory is well-balanced across all doors — no urgent transfers needed at this time.</div>`;
+      const maxInvPct=Math.max(...invPcts), minInvPct=Math.min(...invPcts);
+      const spread=maxInvPct-minInvPct;
+      recsEl.innerHTML=spread>20
+        ?`<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:14px;">⚠️ Inventory is unevenly distributed (${invPcts.map((p,i)=>locData[i].name+' '+p+'%').join(' · ')}) but no single brand-level transfer meets the threshold. Consider a broader rebalance.</div>`
+        :`<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:14px;">✅ Inventory is well-balanced across all doors — no urgent transfers needed at this time.</div>`;
     }
   }
 
