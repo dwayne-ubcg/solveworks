@@ -342,10 +342,66 @@ tr:hover td { background: var(--bg); }
 .toggle.on .toggle-thumb { left: 21px; }
 .toggle-label { font-size: 13px; font-weight: 500; }
 
+/* ═══════════ UPLOAD / EXPENSE MODALS ═══════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  background: rgba(45,42,38,0.45); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 16px;
+}
+.modal-overlay.open { display: flex; animation: fadeIn 0.18s ease; }
+.modal-box {
+  background: var(--bg-card); border-radius: 16px; box-shadow: var(--shadow-lg);
+  width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto;
+  padding: 28px; position: relative;
+}
+.modal-box h3 { font-family: 'Playfair Display',serif; font-size: 20px; margin-bottom: 20px; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+  border-radius: 8px; border: 1px solid var(--border); background: var(--bg);
+  cursor: pointer; font-size: 16px; display: flex; align-items: center;
+  justify-content: center; color: var(--text-secondary); transition: var(--transition);
+}
+.modal-close:hover { background: var(--bg-card-hover); color: var(--text); }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; font-family: 'DM Sans', sans-serif; color: var(--text);
+  background: var(--bg); transition: border-color 0.2s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: var(--accent-sage);
+}
+.upload-dropzone {
+  border: 2px dashed var(--border); border-radius: 10px; padding: 28px 20px;
+  text-align: center; cursor: pointer; transition: all 0.2s; background: var(--bg);
+}
+.upload-dropzone:hover, .upload-dropzone.dragover { border-color: var(--accent-sage); background: var(--accent-sage-light); }
+.upload-dropzone .dz-icon { font-size: 32px; margin-bottom: 8px; }
+.upload-dropzone p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+.upload-dropzone small { font-size: 11px; color: var(--text-muted); }
+.upload-preview { margin-top: 10px; padding: 10px 12px; background: var(--accent-sage-light); border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-light); }
+.doc-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border-light); }
+.doc-row:last-child { border-bottom: none; }
+.doc-row-info { flex: 1; min-width: 0; }
+.doc-row-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-row-meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.doc-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.expense-table { width: 100%; border-collapse: collapse; }
+.expense-table th { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+.expense-table td { font-size: 13px; padding: 10px 10px; border-bottom: 1px solid var(--border-light); }
+.expense-table tr:last-child td { border-bottom: none; }
+.expense-total-row { background: var(--bg); border-radius: 8px; padding: 12px 16px; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.cat-count-badge { font-size: 10px; background: var(--accent-sage-light); color: var(--accent-sage); border-radius: 20px; padding: 1px 7px; font-weight: 600; margin-left: 4px; }
+
 /* ═══════════ RESPONSIVE ═══════════ */
 @media (max-width: 1024px) {
   .grid-2, .grid-2-1, .grid-1-2 { grid-template-columns: 1fr; }
   .grid-4 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .modal-box { padding: 20px 16px; }
 }
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
@@ -1188,35 +1244,11 @@ tr:hover td { background: var(--bg); }
     <div class="ai-text" id="vendor-ai-text">Loading brand strategy…</div>
   </div>
 
-  <!-- Order Tracking (demo) -->
+  <!-- Order Tracking (live from uploaded POs) -->
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">📦 Order Tracking <span style="font-size:10px;background:#FFF8E1;color:#C9A94E;border:1px solid #E8D5A0;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">🧪 Demo Data — will populate from purchase order integration</span></div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px;">
-        <span class="status-dot status-shipped"></span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">ICHI — Spring Collection</div><div style="font-size:11px;color:var(--text-secondary);">36 units · Shipped Mar 5 · Arrives Mar 12</div></div>
-        <span class="badge badge-green">In Transit</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#E8F5E8;border-radius:8px;">
-        <span class="status-dot status-shipped"></span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">FREE PEOPLE — Movement & Spring</div><div style="font-size:11px;color:var(--text-secondary);">28 units · Shipped Mar 7 · Arrives Mar 14</div></div>
-        <span class="badge badge-green">In Transit</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
-        <span class="status-dot status-processing"></span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">GENTLE FAWN — Spring Basics</div><div style="font-size:11px;color:var(--text-secondary);">24 units · Processing · ETA Mar 18-22</div></div>
-        <span class="badge badge-yellow">Processing</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
-        <span class="status-dot status-processing"></span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">LEVIS — Spring Denim</div><div style="font-size:11px;color:var(--text-secondary);">18 units · Processing · ETA Mar 20</div></div>
-        <span class="badge badge-yellow">Processing</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:#FFF8E1;border-radius:8px;">
-        <span class="status-dot status-processing"></span>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">B YOUNG — Spring Prints</div><div style="font-size:11px;color:var(--text-secondary);">18 units · Processing · ETA Mar 21</div></div>
-        <span class="badge badge-yellow">Processing</span>
-      </div>
+    <div class="card-title">📦 Order Tracking <span style="font-size:10px;background:#E8F5E8;color:#2E7D32;border:1px solid #A5D6A7;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">✅ Live</span></div>
+    <div id="order-tracking-list" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px 0;">No purchase orders uploaded yet. Upload a PO in the <a href="#" onclick="navigateTo('documents');return false;" style="color:var(--accent-dark);">Document Hub</a>.</div>
     </div>
   </div>
 
@@ -1704,7 +1736,7 @@ tr:hover td { background: var(--bg); }
         <h2>🧾 Expense Tracking</h2>
         <div class="subtitle">Track receipts, categorize expenses, capture photos</div>
       </div>
-      <button class="btn btn-sage" onclick="alert('Coming soon: log expenses via chat')" style="padding:10px 20px;font-size:13px;">+ Add Expense</button>
+      <button class="btn btn-sage" onclick="openExpenseModal()" style="padding:10px 20px;font-size:13px;">+ Add Expense</button>
     </div>
   </div>
 
@@ -1767,7 +1799,7 @@ tr:hover td { background: var(--bg); }
       Expense data will populate when accounting integration is connected (QuickBooks, Xero, or Wave). For now, expenses can be logged manually via chat.
     </p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <button class="btn btn-sage" onclick="alert('Coming soon: log expenses via chat')" style="padding:10px 24px;font-size:13px;">💬 Log via Chat</button>
+      <button class="btn btn-sage" onclick="openExpenseModal()" style="padding:10px 24px;font-size:13px;">+ Log Expense</button>
       <button class="btn btn-outline" style="padding:10px 24px;font-size:13px;">🔗 Connect QuickBooks</button>
       <button class="btn btn-outline" style="padding:10px 24px;font-size:13px;">🔗 Connect Xero</button>
     </div>
@@ -1796,7 +1828,7 @@ tr:hover td { background: var(--bg); }
         <h2>📁 Document Hub</h2>
         <div class="subtitle">Purchase orders, invoices, contracts, lookbooks & planograms</div>
       </div>
-      <button class="btn btn-sage" onclick="alert('Coming soon: document upload')" style="padding:10px 20px;font-size:13px;">⬆️ Upload</button>
+      <button class="btn btn-sage" onclick="openDocUpload()" style="padding:10px 20px;font-size:13px;">⬆️ Upload</button>
     </div>
   </div>
 
@@ -1932,6 +1964,99 @@ tr:hover td { background: var(--bg); }
 </div>
 
 </div><!-- end .main -->
+
+<!-- ═══ DOCUMENT UPLOAD MODAL ═══ -->
+<div class="modal-overlay" id="doc-upload-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeDocUpload()">✕</button>
+    <h3>⬆️ Upload Document</h3>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="doc-category">
+        <option value="Purchase Orders">Purchase Orders</option>
+        <option value="Invoices">Invoices</option>
+        <option value="Contracts">Contracts</option>
+        <option value="Lookbooks">Lookbooks</option>
+        <option value="Planograms">Planograms</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>File</label>
+      <div class="upload-dropzone" id="doc-dropzone" onclick="document.getElementById('doc-file-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDocDrop(event)">
+        <div class="dz-icon">📎</div>
+        <p>Click to browse or drag & drop</p>
+        <small>PDF, JPG, PNG, DOC, DOCX — max 20 MB</small>
+      </div>
+      <input type="file" id="doc-file-input" style="display:none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" onchange="handleDocFile(this.files[0])">
+      <div id="doc-preview" style="display:none;" class="upload-preview">
+        <span id="doc-preview-icon">📄</span>
+        <span id="doc-preview-name" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+        <span id="doc-preview-size" style="font-size:11px;color:var(--text-muted);"></span>
+        <button onclick="clearDocFile()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;">✕</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="doc-notes" rows="2" placeholder="e.g. Spring collection PO, vendor ICHI…" style="resize:vertical;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDocUpload()">Cancel</button>
+      <button class="btn btn-sage" onclick="saveDocument()">Save Document</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EXPENSE ENTRY MODAL ═══ -->
+<div class="modal-overlay" id="expense-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeExpenseModal()">✕</button>
+    <h3>💸 Add Expense</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="form-group">
+        <label>Amount ($)</label>
+        <input type="number" id="exp-amount" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="exp-date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Vendor / Description</label>
+      <input type="text" id="exp-vendor" placeholder="e.g. Canada Post, ICHI Invoice…">
+    </div>
+    <div class="form-group">
+      <label>Category</label>
+      <select id="exp-category">
+        <option value="Inventory / Stock">Inventory / Stock</option>
+        <option value="Shipping">Shipping</option>
+        <option value="Marketing">Marketing</option>
+        <option value="Rent">Rent</option>
+        <option value="Utilities">Utilities</option>
+        <option value="Supplies">Supplies</option>
+        <option value="Professional">Professional</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Receipt Photo (optional)</label>
+      <div class="upload-dropzone" onclick="document.getElementById('exp-receipt-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleExpDrop(event)" style="padding:16px;">
+        <p style="margin:0;">📷 Click to attach receipt photo</p>
+        <small>JPG, PNG — optional</small>
+      </div>
+      <input type="file" id="exp-receipt-input" style="display:none;" accept="image/*" onchange="handleExpReceipt(this.files[0])">
+      <div id="exp-receipt-preview" style="display:none;" class="upload-preview">
+        <span>🧾</span>
+        <span id="exp-receipt-name" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+        <button onclick="clearExpReceipt()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;">✕</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeExpenseModal()">Cancel</button>
+      <button class="btn btn-sage" onclick="saveExpense()">Save Expense</button>
+    </div>
+  </div>
+</div>
 
 <div style="text-align:center;padding:40px 0 20px;font-size:12px;color:var(--text-muted);">
   Powered by <a href="https://solveworks.io" style="color:var(--accent-dark);text-decoration:none;font-weight:600;">solveworks.io</a>
@@ -3647,6 +3772,445 @@ if (window.innerWidth <= 768) {
     });
   });
 }
+
+/* ═══════════════════════════════════════
+   DOCUMENT HUB — localStorage CRUD
+   ═══════════════════════════════════════ */
+const DOC_KEY = 'lordon_documents';
+let _docFileData = null; // { name, size, type, base64 }
+
+function getDocuments() {
+  try { return JSON.parse(localStorage.getItem(DOC_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveDocuments(docs) {
+  localStorage.setItem(DOC_KEY, JSON.stringify(docs));
+}
+
+function openDocUpload() {
+  clearDocFile();
+  document.getElementById('doc-notes').value = '';
+  document.getElementById('doc-upload-modal').classList.add('open');
+}
+function closeDocUpload() {
+  document.getElementById('doc-upload-modal').classList.remove('open');
+  _docFileData = null;
+}
+
+function handleDocFile(file) {
+  if (!file) return;
+  const maxMB = 20;
+  if (file.size > maxMB * 1024 * 1024) { alert('File too large. Max 20 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _docFileData = { name: file.name, size: file.size, type: file.type, base64: e.target.result };
+    const icons = { pdf: '📄', image: '🖼️', doc: '📝', xls: '📊', default: '📎' };
+    let icon = icons.default;
+    if (file.type === 'application/pdf') icon = icons.pdf;
+    else if (file.type.startsWith('image/')) icon = icons.image;
+    else if (file.type.includes('word') || file.name.match(/\.docx?$/i)) icon = icons.doc;
+    else if (file.type.includes('sheet') || file.name.match(/\.xlsx?$/i)) icon = icons.xls;
+    document.getElementById('doc-preview-icon').textContent = icon;
+    document.getElementById('doc-preview-name').textContent = file.name;
+    document.getElementById('doc-preview-size').textContent = formatBytes(file.size);
+    document.getElementById('doc-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+function handleDocDrop(e) {
+  e.preventDefault();
+  document.getElementById('doc-dropzone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) handleDocFile(file);
+}
+function clearDocFile() {
+  _docFileData = null;
+  document.getElementById('doc-file-input').value = '';
+  document.getElementById('doc-preview').style.display = 'none';
+}
+
+function saveDocument() {
+  if (!_docFileData) { alert('Please select a file first.'); return; }
+  const docs = getDocuments();
+  const doc = {
+    id: Date.now().toString(),
+    name: _docFileData.name,
+    size: _docFileData.size,
+    type: _docFileData.type,
+    base64: _docFileData.base64,
+    category: document.getElementById('doc-category').value,
+    notes: document.getElementById('doc-notes').value.trim(),
+    uploadDate: new Date().toISOString(),
+  };
+  docs.unshift(doc);
+  saveDocuments(docs);
+  closeDocUpload();
+  renderDocumentsPage();
+  renderOrderTracking();
+}
+
+function deleteDocument(id) {
+  if (!confirm('Delete this document?')) return;
+  const docs = getDocuments().filter(d => d.id !== id);
+  saveDocuments(docs);
+  renderDocumentsPage();
+  renderOrderTracking();
+}
+
+function downloadDocument(id) {
+  const doc = getDocuments().find(d => d.id === id);
+  if (!doc) return;
+  const a = document.createElement('a');
+  a.href = doc.base64;
+  a.download = doc.name;
+  a.click();
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch(e) { return iso; }
+}
+
+const CATEGORY_ICONS = {
+  'Purchase Orders': '📋',
+  'Invoices': '📄',
+  'Contracts': '📝',
+  'Lookbooks': '📚',
+  'Planograms': '🗺️',
+};
+
+function renderDocumentsPage() {
+  const docs = getDocuments();
+  const categories = ['Purchase Orders', 'Invoices', 'Contracts', 'Lookbooks', 'Planograms'];
+
+  // Update category filter counts
+  const filterSelect = document.querySelector('#page-documents select');
+  if (filterSelect) {
+    const counts = {};
+    docs.forEach(d => { counts[d.category] = (counts[d.category] || 0) + 1; });
+    // Rebuild options
+    filterSelect.innerHTML = `<option value="">All Categories (${docs.length})</option>` +
+      categories.map(c => `<option value="${c}">${CATEGORY_ICONS[c] || ''} ${c}${counts[c] ? ' (' + counts[c] + ')' : ''}</option>`).join('');
+    // Re-attach filter listener
+    filterSelect.onchange = function() { renderDocumentsPage(); };
+  }
+
+  const selectedCat = filterSelect ? filterSelect.value : '';
+
+  // Build document grid — replace the existing static .grid-2 content
+  const grid = document.querySelector('#page-documents .grid-2');
+  if (!grid) return;
+
+  // Group by category
+  const byCat = {};
+  categories.forEach(c => byCat[c] = []);
+  docs.forEach(d => {
+    if (byCat[d.category]) byCat[d.category].push(d);
+  });
+
+  const catsToShow = selectedCat ? [selectedCat] : categories;
+  grid.innerHTML = catsToShow.map(cat => {
+    const catDocs = byCat[cat] || [];
+    const icon = CATEGORY_ICONS[cat] || '📁';
+    const liveOrDemo = catDocs.length > 0
+      ? `<span style="font-size:10px;background:#E8F5E8;color:#2E7D32;border:1px solid #A5D6A7;border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">✅ ${catDocs.length} file${catDocs.length !== 1 ? 's' : ''}</span>`
+      : `<span style="font-size:10px;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);border-radius:8px;padding:2px 8px;font-weight:500;margin-left:6px;">Empty</span>`;
+
+    const rows = catDocs.length === 0
+      ? `<div style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:13px;">No ${cat} uploaded yet</div>`
+      : catDocs.map(doc => `
+        <div class="doc-row">
+          <span style="font-size:20px;">${fileIcon(doc.type, doc.name)}</span>
+          <div class="doc-row-info">
+            <div class="doc-row-name">${escHtml(doc.name)}</div>
+            <div class="doc-row-meta">${formatDate(doc.uploadDate)} · ${formatBytes(doc.size)}${doc.notes ? ' · ' + escHtml(doc.notes) : ''}</div>
+          </div>
+          <div class="doc-row-actions">
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 9px;" onclick="downloadDocument('${doc.id}')">⬇ Download</button>
+            <button class="btn btn-red" style="font-size:11px;padding:4px 9px;" onclick="deleteDocument('${doc.id}')">🗑</button>
+          </div>
+        </div>`).join('');
+
+    return `<div class="card">
+      <div class="card-title">${icon} ${cat} ${liveOrDemo}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+function fileIcon(mimeType, name) {
+  if (mimeType === 'application/pdf' || name.match(/\.pdf$/i)) return '📄';
+  if (mimeType && mimeType.startsWith('image/')) return '🖼️';
+  if (name.match(/\.docx?$/i)) return '📝';
+  if (name.match(/\.xlsx?$/i)) return '📊';
+  return '📎';
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderOrderTracking() {
+  const el = document.getElementById('order-tracking-list');
+  if (!el) return;
+  const docs = getDocuments().filter(d => d.category === 'Purchase Orders');
+  if (docs.length === 0) {
+    el.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:20px 0;">No purchase orders uploaded yet. Upload a PO in the <a href="#" onclick="navigateTo('documents');return false;" style="color:var(--accent-dark);">Document Hub</a>.</div>`;
+    return;
+  }
+  el.innerHTML = docs.map(doc => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border-light);">
+      <span style="font-size:20px;">📋</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(doc.name)}</div>
+        <div style="font-size:11px;color:var(--text-secondary);">Uploaded ${formatDate(doc.uploadDate)} · ${formatBytes(doc.size)}</div>
+      </div>
+      <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;flex-shrink:0;" onclick="downloadDocument('${doc.id}')">View</button>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════
+   EXPENSE TRACKING — localStorage CRUD
+   ═══════════════════════════════════════ */
+const EXP_KEY = 'lordon_expenses';
+let _expReceiptData = null;
+
+function getExpenses() {
+  try { return JSON.parse(localStorage.getItem(EXP_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveExpenses(exps) {
+  localStorage.setItem(EXP_KEY, JSON.stringify(exps));
+}
+
+function openExpenseModal() {
+  clearExpReceipt();
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-vendor').value = '';
+  document.getElementById('exp-category').value = 'Inventory / Stock';
+  document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('expense-modal').classList.add('open');
+}
+function closeExpenseModal() {
+  document.getElementById('expense-modal').classList.remove('open');
+  _expReceiptData = null;
+}
+
+function handleExpReceipt(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _expReceiptData = { name: file.name, base64: e.target.result };
+    document.getElementById('exp-receipt-name').textContent = file.name;
+    document.getElementById('exp-receipt-preview').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+function handleExpDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) handleExpReceipt(file);
+}
+function clearExpReceipt() {
+  _expReceiptData = null;
+  document.getElementById('exp-receipt-input').value = '';
+  document.getElementById('exp-receipt-preview').style.display = 'none';
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const vendor = document.getElementById('exp-vendor').value.trim();
+  const date = document.getElementById('exp-date').value;
+  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!vendor) { alert('Please enter a vendor or description.'); return; }
+  if (!date) { alert('Please select a date.'); return; }
+
+  const exps = getExpenses();
+  const exp = {
+    id: Date.now().toString(),
+    amount: amount,
+    vendor: vendor,
+    category: document.getElementById('exp-category').value,
+    date: date,
+    receipt: _expReceiptData ? { name: _expReceiptData.name, base64: _expReceiptData.base64 } : null,
+    createdAt: new Date().toISOString(),
+  };
+  exps.unshift(exp);
+  saveExpenses(exps);
+  closeExpenseModal();
+  renderExpensesPage();
+}
+
+function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  saveExpenses(getExpenses().filter(e => e.id !== id));
+  renderExpensesPage();
+}
+
+function renderExpensesPage() {
+  const exps = getExpenses();
+  const page = document.getElementById('page-receipts');
+  if (!page) return;
+
+  // ── Stat cards ──
+  const stats = page.querySelectorAll('.stat-card');
+  if (stats.length >= 4) {
+    const total = exps.reduce((s, e) => s + e.amount, 0);
+    const now = new Date();
+    const thisMonth = exps.filter(e => e.date.slice(0, 7) === now.toISOString().slice(0, 7));
+    const monthTotal = thisMonth.reduce((s, e) => s + e.amount, 0);
+    // avg monthly across distinct months
+    const months = [...new Set(exps.map(e => e.date.slice(0, 7)))];
+    const avgMonthly = months.length ? total / months.length : 0;
+    // top category
+    const catTotals = {};
+    exps.forEach(e => catTotals[e.category] = (catTotals[e.category] || 0) + e.amount);
+    const topCat = Object.entries(catTotals).sort((a,b) => b[1]-a[1])[0];
+
+    stats[0].querySelector('.value').textContent = '$' + total.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2});
+    stats[0].querySelector('.label').textContent = 'Total Expenses';
+    const changeEl0 = stats[0].querySelector('.change');
+    if (changeEl0) changeEl0.textContent = exps.length + ' records';
+
+    stats[1].querySelector('.value').textContent = '$' + monthTotal.toLocaleString('en-CA', {minimumFractionDigits:2,maximumFractionDigits:2});
+    stats[1].querySelector('.label').textContent = 'This Month';
+    const changeEl1 = stats[1].querySelector('.change');
+    if (changeEl1) changeEl1.textContent = thisMonth.length + ' expenses';
+
+    stats[2].querySelector('.value').textContent = '$' + avgMonthly.toLocaleString('en-CA', {minimumFractionDigits:0,maximumFractionDigits:0});
+    stats[2].querySelector('.label').textContent = 'Avg Monthly';
+    const changeEl2 = stats[2].querySelector('.change');
+    if (changeEl2) changeEl2.textContent = months.length + ' month' + (months.length !== 1 ? 's' : '') + ' tracked';
+
+    stats[3].querySelector('.value').textContent = topCat ? topCat[0].split('/')[0].trim() : '—';
+    stats[3].querySelector('.label').textContent = 'Top Category';
+    const changeEl3 = stats[3].querySelector('.change');
+    if (changeEl3) changeEl3.textContent = topCat ? '$' + topCat[1].toLocaleString('en-CA', {minimumFractionDigits:0,maximumFractionDigits:0}) : '';
+  }
+
+  // ── Month filter options ──
+  const months = [...new Set(exps.map(e => e.date.slice(0, 7)))].sort().reverse();
+  const monthSelect = page.querySelectorAll('select')[1];
+  if (monthSelect) {
+    const prevVal = monthSelect.value;
+    monthSelect.innerHTML = '<option value="">All Months</option>' +
+      months.map(m => {
+        const d = new Date(m + '-01');
+        const label = d.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+        return `<option value="${m}">${label}</option>`;
+      }).join('');
+    if (prevVal) monthSelect.value = prevVal;
+    monthSelect.onchange = renderExpensesPage;
+  }
+
+  // ── Category filter ──
+  const catSelect = page.querySelectorAll('select')[0];
+  if (catSelect) catSelect.onchange = renderExpensesPage;
+
+  const selectedMonth = monthSelect ? monthSelect.value : '';
+  const selectedCatFilter = catSelect ? catSelect.value : '';
+
+  let filtered = exps;
+  if (selectedMonth) filtered = filtered.filter(e => e.date.slice(0, 7) === selectedMonth);
+  if (selectedCatFilter && selectedCatFilter !== 'All Categories') filtered = filtered.filter(e => e.category === selectedCatFilter);
+
+  // ── Replace the empty state card with expense table ──
+  // Find the empty state card or existing expense-table-card
+  let tableCard = page.querySelector('#expense-table-card');
+  if (!tableCard) {
+    // Replace the empty state card
+    const emptyCard = page.querySelector('.card[style*="text-align:center"][style*="padding:48px"]') ||
+      [...page.querySelectorAll('.card')].find(c => c.textContent.includes('No Expense Data Yet'));
+    if (emptyCard) {
+      emptyCard.id = 'expense-table-card';
+      tableCard = emptyCard;
+    } else {
+      // Just update the first big card after stats
+      const cards = page.querySelectorAll('.card');
+      if (cards.length >= 2) { cards[1].id = 'expense-table-card'; tableCard = cards[1]; }
+    }
+  }
+
+  if (!tableCard) return;
+
+  if (filtered.length === 0) {
+    tableCard.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:40px;margin-bottom:12px;">🧾</div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:18px;margin-bottom:8px;">No Expenses Yet</h3>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;">Track your first expense to get started.</p>
+        <button class="btn btn-sage" onclick="openExpenseModal()" style="padding:10px 20px;font-size:13px;">+ Add First Expense</button>
+      </div>`;
+    return;
+  }
+
+  const runningTotal = filtered.reduce((s, e) => s + e.amount, 0);
+  tableCard.innerHTML = `
+    <div style="overflow-x:auto;">
+      <table class="expense-table">
+        <thead><tr>
+          <th>Date</th><th>Vendor / Description</th><th>Category</th>
+          <th style="text-align:right;">Amount</th><th style="text-align:center;">Receipt</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${filtered.map(exp => `
+            <tr>
+              <td style="white-space:nowrap;">${exp.date}</td>
+              <td>${escHtml(exp.vendor)}</td>
+              <td><span style="font-size:11px;background:var(--accent-sage-light);color:var(--accent-sage);border-radius:20px;padding:2px 8px;">${escHtml(exp.category)}</span></td>
+              <td style="text-align:right;font-weight:600;">$${exp.amount.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
+              <td style="text-align:center;">
+                ${exp.receipt
+                  ? `<a href="${exp.receipt.base64}" download="${escHtml(exp.receipt.name)}" style="text-decoration:none;" title="Download receipt">🧾</a>`
+                  : '<span style="color:var(--text-muted);">—</span>'}
+              </td>
+              <td><button class="btn btn-outline" style="font-size:11px;padding:3px 8px;color:var(--red);" onclick="deleteExpense('${exp.id}')">🗑</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="expense-total-row">
+      <span>${filtered.length} expense${filtered.length !== 1 ? 's' : ''}${selectedMonth ? ' · ' + new Date(selectedMonth+'-01').toLocaleDateString('en-CA',{month:'long',year:'numeric'}) : ''}</span>
+      <span>Total: <span style="color:var(--accent-sage);">$${runningTotal.toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></span>
+    </div>`;
+}
+
+// Close modals on overlay click
+document.getElementById('doc-upload-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDocUpload();
+});
+document.getElementById('expense-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeExpenseModal();
+});
+
+// Render local-storage-backed pages once DOM+auth is ready
+// We hook into DOMContentLoaded to catch the "already authed" path
+// and also patch renderDashboard to call them on every refresh.
+(function patchRenderDashboard() {
+  const _orig = window.renderDashboard;
+  window.renderDashboard = function() {
+    if (_orig) _orig.apply(this, arguments);
+    renderDocumentsPage();
+    renderExpensesPage();
+    renderOrderTracking();
+  };
+})();
+
+// For the case where auth is already set on load (initData fires before our patch above)
+window.addEventListener('DOMContentLoaded', function() {
+  if (localStorage.getItem('mc_auth_lordon')) {
+    // Small delay to ensure initData/renderDashboard has run first
+    setTimeout(function() {
+      renderDocumentsPage();
+      renderExpensesPage();
+      renderOrderTracking();
+    }, 500);
+  }
+});
 </script>
 </body>
 </html>
