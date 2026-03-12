@@ -942,26 +942,26 @@ tr:hover td { background: var(--bg); }
   <div id="st-deadstock-banner" style="background:var(--red-light);border:1.5px solid var(--red);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;margin-bottom:12px;">
     <span style="font-size:28px;flex-shrink:0;">🚨</span>
     <div>
-      <strong style="color:var(--red);font-size:15px;" id="st-deadstock-headline">Dead Stock Alert: — units · — at cost tied up</strong>
+      <strong style="color:var(--red);font-size:15px;" id="st-deadstock-headline">🐌 Slow Movers: Loading…</strong>
       <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Items with no sales activity — act now to recover cash</div>
     </div>
   </div>
   <div class="card" style="margin-bottom:20px;">
     <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
-      <span>☠️ Dead Stock — Cash Recovery Opportunities</span>
+      <span>🐌 Slow Movers — Recent Arrivals Underperforming vs Category</span>
       <button class="btn btn-sage" id="st-deadstock-toggle" onclick="stToggleDeadstock()" style="font-size:11px;padding:4px 12px;">Show All 50</button>
     </div>
     <div style="overflow-x:auto;">
       <table>
         <thead>
           <tr>
-            <th>Product</th>
-            <th>Brand</th>
-            <th style="text-align:right;">Days Since Sale</th>
-            <th style="text-align:right;">Units</th>
+            <th>Product / Brand</th>
+            <th style="text-align:center;">In Store</th>
+            <th style="text-align:right;">Velocity</th>
+            <th style="text-align:right;">vs Avg</th>
+            <th style="text-align:right;">Stock</th>
             <th style="text-align:right;">Cost Tied Up</th>
-            <th style="text-align:right;">ST%</th>
-            <th>Recommendation</th>
+            <th style="text-align:right;">Action</th>
           </tr>
         </thead>
         <tbody id="st-deadstock-tbody">
@@ -2773,7 +2773,7 @@ function renderBriefingIntel(){
 
   const cats=st.byCategory||[];
   const brands=st.byBrand||[];
-  const deadStock=st.deadStock||[];
+  const deadStock=st.slowMovers||st.deadStock||[];
   const summary=st.summary||{};
 
   // ── 1. Business Health Snapshot ──────────────────────────────
@@ -3604,30 +3604,49 @@ function renderSeasonComparison(){
 
 function renderSellThroughDeadstock(){
   const st=window._ld&&window._ld.sellThrough;
-  if(!st||!st.deadStock)return;
-  const ds=st.deadStock;
+  const ds=st&&st.slowMovers?st.slowMovers:(st&&st.deadStock?st.deadStock:[]);
+  if(!ds.length)return;
+  const isSlowMovers=!!(st&&st.slowMovers);
 
   // Banner totals
-  const totalUnits=ds.reduce((acc,d)=>acc+(d.unitsSold||0),0);
   const totalCost=ds.reduce((acc,d)=>acc+(d.costTiedUp||0),0);
+  const urgentCount=ds.filter(d=>d.recommendation&&d.recommendation.includes('30-40%')).length;
+  const markdownCount=ds.filter(d=>d.recommendation&&d.recommendation.includes('20-30%')).length;
+  const monitorCount=ds.filter(d=>d.recommendation&&d.recommendation.includes('Monitor')).length;
   const hEl=document.getElementById('st-deadstock-headline');
-  if(hEl)hEl.textContent=`🚨 Dead Stock Alert: ${fmtN(ds.length)} products · ${fmtC(totalCost)} at cost tied up`;
+  if(hEl){
+    if(isSlowMovers){
+      hEl.innerHTML=`🐌 Slow Movers: <strong>${ds.length}</strong> items selling below category avg · <strong>${fmtC(totalCost)}</strong> at cost · <span style="color:var(--red);">${urgentCount} markdown</span> · <span style="color:var(--yellow);">${markdownCount} consider</span> · <span style="color:var(--text-secondary);">${monitorCount} monitor</span>`;
+    } else {
+      hEl.textContent='🚨 Dead Stock Alert: '+fmtN(ds.length)+' products · '+fmtC(totalCost)+' at cost tied up';
+    }
+  }
 
   const limit=_stDeadstockShowAll?ds.length:15;
   const tbodyEl=document.getElementById('st-deadstock-tbody');
   if(!tbodyEl)return;
-  tbodyEl.innerHTML=ds.slice(0,limit).map(d=>{
-    const daysStyle=d.daysSinceLastSale>90?'color:var(--red);font-weight:700;':'color:var(--yellow);font-weight:600;';
-    return`<tr>
-      <td><strong style="font-size:12px;">${d.name}</strong></td>
-      <td style="font-size:12px;">${d.brand}</td>
-      <td style="text-align:right;${daysStyle}">${d.daysSinceLastSale}d</td>
-      <td style="text-align:right;">${d.unitsSold||0}</td>
-      <td style="text-align:right;">${fmtC(d.costTiedUp)}</td>
-      <td style="text-align:right;"><span class="badge badge-red">${d.sellThrough}%</span></td>
-      <td style="font-size:12px;color:var(--text-secondary);">${d.markdownRecommendation||'—'}</td>
-    </tr>`;
-  }).join('');
+  if(isSlowMovers){
+    tbodyEl.innerHTML=ds.slice(0,limit).map(d=>{
+      const velPct=d.categoryAvgVelocity>0?Math.round((1-d.velocityPerWeek/d.categoryAvgVelocity)*100):100;
+      const recColor=d.recommendation&&d.recommendation.includes('30-40%')?'var(--red)':d.recommendation&&d.recommendation.includes('20-30%')?'var(--yellow)':'var(--text-secondary)';
+      const recBadge=d.recommendation&&d.recommendation.includes('30-40%')?'badge-red':d.recommendation&&d.recommendation.includes('20-30%')?'badge-yellow':'badge-blue';
+      const recLabel=d.recommendation&&d.recommendation.includes('30-40%')?'Markdown':d.recommendation&&d.recommendation.includes('20-30%')?'Consider':'Monitor';
+      return'<tr>'+
+        '<td><strong style="font-size:12px;">'+d.name+'</strong><br><span style="font-size:11px;color:var(--text-secondary);">'+d.brand+'</span></td>'+
+        '<td style="text-align:center;font-size:12px;">'+Math.round(d.weeksInStore||0)+'w</td>'+
+        '<td style="text-align:right;">'+Math.round(d.velocityPerWeek*10)/10+'/wk</td>'+
+        '<td style="text-align:right;color:var(--text-secondary);font-size:11px;">vs '+Math.round((d.categoryAvgVelocity||0)*10)/10+'/wk</td>'+
+        '<td style="text-align:right;">'+(d.currentStock||0)+'</td>'+
+        '<td style="text-align:right;">'+fmtC(d.costTiedUp)+'</td>'+
+        '<td style="text-align:right;"><span class="badge '+recBadge+'">'+recLabel+'</span></td>'+
+        '</tr>';
+    }).join('');
+  } else {
+    tbodyEl.innerHTML=ds.slice(0,limit).map(d=>{
+      const daysStyle=d.daysSinceLastSale>90?'color:var(--red);font-weight:700;':'color:var(--yellow);font-weight:600;';
+      return'<tr><td><strong style="font-size:12px;">'+d.name+'</strong></td><td style="font-size:12px;">'+d.brand+'</td><td style="text-align:right;'+daysStyle+'">'+d.daysSinceLastSale+'d</td><td style="text-align:right;">'+(d.unitsSold||0)+'</td><td style="text-align:right;">'+fmtC(d.costTiedUp)+'</td><td style="text-align:right;"><span class="badge badge-red">'+d.sellThrough+'%</span></td><td style="font-size:12px;color:var(--text-secondary);">'+(d.markdownRecommendation||'—')+'</td></tr>';
+    }).join('');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
