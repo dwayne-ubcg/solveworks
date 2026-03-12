@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolveWorks — AI Sales Engine for Collage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & PRINT === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @page { 
+            size: letter; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: white;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page {
+            width: 8.5in;
+            min-height: 11in;
+            padding: 0;
+            page-break-after: always;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page:last-child {
+            page-break-after: auto;
+        }
+
+        @media print {
+            .page {
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+                height: 11in !important;
+                overflow: hidden !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            h2, h3, .section-subtitle {
+                break-after: avoid;
+                page-break-after: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+            .solution-card,
+            .package-card,
+            .roi-card,
+            .roi-grid,
+            .timeline-item,
+            .bonus-card,
+            .packages-grid {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                orphans: 3;
+                widows: 3;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3in 1.2in;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 60%;
+            height: 80%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 20%;
+            width: 40%;
+            height: 50%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            position: relative;
+            z-index: 1;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 2;
+        }
+
+        .cover-meta strong {
+            color: #94a3b8;
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1);
+        }
+
+        /* === CONTENT PAGES === */
+        .content {
+            padding: 0.8in 1.0in;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+        }
+
+        .page-header-logo {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-title {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        h2 span {
+            color: #0ea5e9;
+        }
+
+        .section-subtitle {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0a0a1a;
+            margin-bottom: 6px;
+        }
+
+        p {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .intro-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 25px;
+        }
+
+        /* === SOLUTION CARDS === */
+        .solution-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px 22px;
+            margin-bottom: 14px;
+            page-break-inside: avoid;
+        }
+
+        .solution-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .solution-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .solution-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .solution-card h3 {
+            margin-bottom: 0;
+            font-size: 15px;
+        }
+
+        .solution-card-desc {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .solution-card p {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 8px;
+        }
+
+        .solution-benefits {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .benefit-tag {
+            background: #ecfdf5;
+            color: #047857;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        /* === PACKAGES === */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .package-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 28px 24px;
+            text-align: center;
+            position: relative;
+            page-break-inside: avoid;
+        }
+
+        .package-card.featured {
+            border: 2px solid #0ea5e9;
+            background: linear-gradient(180deg, #f0f9ff 0%, white 30%);
+        }
+
+        .package-badge {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+
+        .package-name {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #64748b;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .package-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #0a0a1a;
+            line-height: 1;
+        }
+
+        .package-price sup {
+            font-size: 16px;
+            font-weight: 600;
+            top: -10px;
+        }
+
+        .package-period {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .package-setup {
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 14px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .package-features {
+            list-style: none;
+            text-align: left;
+            padding: 0;
+        }
+
+        .package-features li {
+            font-size: 11px;
+            color: #374151;
+            padding: 4px 0;
+            padding-left: 18px;
+            position: relative;
+        }
+
+        .package-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .package-tagline {
+            font-size: 11px;
+            color: #0ea5e9;
+            font-style: italic;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        /* === ROI SECTION === */
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .roi-card {
+            background: linear-gradient(135deg, #050507, #0d1528);
+            color: white;
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+        }
+
+        .roi-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #0ea5e9;
+            line-height: 1.1;
+        }
+
+        .roi-label {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* === TIMELINE === */
+        .timeline {
+            margin-top: 20px;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            page-break-inside: avoid;
+        }
+
+        .timeline-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .timeline-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .timeline-line {
+            width: 2px;
+            flex: 1;
+            background: #e2e8f0;
+            margin-top: 6px;
+        }
+
+        .timeline-content h3 {
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .timeline-content p {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 0;
+        }
+
+        .timeline-week {
+            font-size: 10px;
+            color: #0ea5e9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* === BONUS CARDS === */
+        .bonus-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+        }
+
+        .bonus-card h3 {
+            font-size: 14px;
+            color: #0369a1;
+            margin-bottom: 4px;
+        }
+
+        .bonus-card p {
+            font-size: 11.5px;
+            color: #1e3a5f;
+            margin-bottom: 0;
+            line-height: 1.6;
+        }
+
+        /* === CTA PAGE === */
+        .cta-page {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2in 1.2in;
+            position: relative;
+        }
+
+        .cta-page::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            height: 40%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.06), transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cta-page h2 {
+            color: white;
+            font-size: 36px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-page p {
+            color: #94a3b8;
+            font-size: 15px;
+            max-width: 450px;
+            margin-bottom: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: white;
+            color: #0a0a1a;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 14px 40px;
+            border-radius: 50px;
+            text-decoration: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact {
+            margin-top: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-contact p {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        .cta-contact a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 30px;
+            left: 1.0in;
+            right: 1.0in;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+        }
+
+        .disclaimer {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+
+        /* === HOW YOU'LL USE IT — CHAT MOCK === */
+        .chat-mock {
+            background: #0a0a1a;
+            border-radius: 16px;
+            padding: 20px 18px;
+            margin-bottom: 20px;
+        }
+
+        .chat-mock-header {
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-bubble {
+            max-width: 78%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+            clear: both;
+        }
+
+        .chat-bubble.user {
+            background: #0ea5e9;
+            color: white;
+            float: right;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-bubble.agent {
+            background: #1e293b;
+            color: #e2e8f0;
+            float: left;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-bubble .chat-name {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            opacity: 0.7;
+        }
+
+        .chat-clear { clear: both; }
+
+        .chat-time {
+            text-align: center;
+            font-size: 9px;
+            color: #475569;
+            margin: 10px 0;
+            clear: both;
+        }
+
+        .usage-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .usage-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .usage-point-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            line-height: 1.3;
+        }
+
+        .usage-point-text {
+            font-size: 11.5px;
+            color: #374151;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .usage-point-desc {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        /* === INVESTMENT === */
+        .investment-setup {
+            text-align: center;
+            background: linear-gradient(135deg, #050507, #0d1528);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .investment-note {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.7;
+            margin-top: 20px;
+        }
+
+        /* === HERO BADGE === */
+        .hero-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PAGE 1: COVER -->
+    <div class="page cover">
+        <div class="cover-logo">SolveWorks</div>
+        <h1>An AI Sales Engine<br>for <span>Collage</span></h1>
+        <div class="cover-subtitle">Outbound on autopilot. Every call coached. Follow-ups sent.<br>You review — agents do the rest.</div>
+        <div class="cover-meta">
+            <strong>Prepared:</strong> March 2026<br>
+            <strong>Valid through:</strong> April 2026<br>
+            <strong>Prepared for:</strong> Louis — Head of Sales, Collage<br>
+            <strong>Prepared by:</strong> SolveWorks | solveworks.io
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+    <!-- PAGE 2: PERSONAL LETTER -->
+    <div class="page">
+        <div class="content" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">A Note from Dwayne</div>
+            </div>
+
+            <div style="max-width: 560px; margin: 40px auto 0; padding: 0 10px;">
+                <p style="font-size: 15px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    Louis,
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    You painted the picture clearly on our call. Small team — 2 AEs, 2 partnership reps, 1 marketing person — going up against Rippling, BambooHR, and Employment Hero every single day. Bigger teams, bigger budgets, more SDRs. And Collage's biggest competitive advantage — being the only Canadian HR and payroll software in the market — isn't consistently reaching the people it should.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    You've tried outbound before. The sequences didn't work. Nobody's running pre-call research consistently. Follow-ups aren't getting sent. And you're personally watching call recordings every week — manually coaching — because there's no system doing it for you. Meanwhile, Avoma's AI features are sitting completely unused.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 22px;">
+                    What I showed you in our demo — the outbound engine Drew is already running — is built exactly for this situation. A small, underdogged sales team that needs to punch well above its weight. Not more tools. Not more manual work. An AI system that finds prospects, drafts outreach, coaches your AEs on every call, writes the follow-up emails, and lets you review from a single dashboard instead of living inside every step of the process.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 40px;">
+                    This proposal is built around exactly what you told me. Take a read. I'm happy to jump on a call to walk through any of it.
+                </p>
+
+                <p style="font-size: 14px; color: #374151; line-height: 1.9; margin-bottom: 40px;">
+                    — Dwayne<br>
+                    <span style="font-size: 12px; color: #94a3b8;">SolveWorks | dwayne@solveworks.io</span>
+                </p>
+
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <p style="font-size: 11.5px; color: #94a3b8; line-height: 1.7; margin-bottom: 0; font-style: italic;">
+                        "I want agents doing the reports, the coaching, the outbound — so I'm just reviewing the output."<br>
+                        <strong style="color: #64748b;">— Louis, Head of Sales, Collage</strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 3: THE PROBLEM -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Confidential Proposal</div>
+            </div>
+
+            <h2>The <span>Sales Team Problem</span></h2>
+            <div class="section-subtitle">What running a lean sales team against well-funded competitors actually looks like</div>
+
+            <p class="intro-text">
+                Collage has a genuine competitive moat — the only Canadian HR and payroll software on the market. That's a story that should be writing itself. But Rippling and BambooHR have SDRs making hundreds of calls a week while your team of 5 is handling everything manually. No outbound engine. No consistent pre-call research. Follow-ups that depend on individual AE discipline rather than a system.
+            </p>
+
+            <p class="intro-text">
+                You tried email sequences before. They didn't land. The problem wasn't the idea — it was the execution. Generic sequences without real personalization fail because buyers can smell automation that doesn't know them. <strong>The outbound engine we build for Collage is different: it researches each prospect, drafts outreach that reflects what that company actually does, and adjusts based on what's working.</strong>
+            </p>
+
+            <p class="intro-text">
+                Meanwhile, every call your AEs take is a coaching opportunity that mostly goes to waste. You're watching recordings yourself. Avoma is recording everything but its AI features are untouched. One AE is consistently not sending follow-ups. CRM deals are created too late, making your close-time metrics unreliable. These aren't people problems — they're system problems.
+            </p>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">0</div>
+                    <div class="roi-label">SDRs or BDRs on<br>the Collage sales team</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">5</div>
+                    <div class="roi-label">Sales team members covering<br>outbound, inbound, partnerships, marketing</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">1</div>
+                    <div class="roi-label">Canadian HR/payroll platform —<br>a story that needs to reach buyers</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 4: HERO — OUTBOUND ENGINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">The Hero Feature</div>
+            </div>
+
+            <div style="margin-bottom: 8px;">
+                <span class="hero-badge">⭐ Top Priority</span>
+            </div>
+            <h2>The <span>Outbound Engine</span></h2>
+            <div class="section-subtitle">The SDR you don't have — finding prospects, drafting outreach, booking calls. You just approve.</div>
+
+            <p class="intro-text">
+                You saw this live in our demo — Drew's already running it. It finds qualified prospects, researches them, drafts personalized outreach that reflects their actual company situation, and tracks replies. <strong>Collage's "Canadian-only" angle is a natural hook that most of your competitors can't use.</strong> The agent makes sure that story reaches the right inboxes.
+            </p>
+
+            <div class="solution-card" style="border: 2px solid #0ea5e9; background: linear-gradient(180deg, #f0f9ff 0%, #f8fafc 100%);">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🚀</div>
+                        <div>
+                            <h3>Outbound Engine — Your AI SDR</h3>
+                            <div class="solution-card-desc">Prospect → research → draft → send → track. Every day, without you thinking about it.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>The engine identifies Canadian companies in your ICP — by industry, headcount, hiring activity, or any profile you define. It researches each prospect (what they do, what HR pain they likely have, whether they're growing), drafts a personalized first-touch email that leads with Collage's Canadian advantage, and queues it for your review before sending. As replies come in, it surfaces warm leads directly to the right AE in Pipedrive and drafts the response. <strong>You went from "no outbound" to a consistent daily pipeline-building operation — without adding headcount.</strong></p>
+                <p style="color: #0369a1; font-weight: 600; font-size: 11.5px;">Drew saw this exact system in his onboarding and went live within his first two weeks. The outbound engine is the reason he said yes.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">ICP-targeted prospect lists</span>
+                    <span class="benefit-tag">Per-prospect research</span>
+                    <span class="benefit-tag">Personalized first-touch drafts</span>
+                    <span class="benefit-tag">Canadian angle built in</span>
+                    <span class="benefit-tag">Reply handling + warm lead routing</span>
+                    <span class="benefit-tag">Pipedrive integration</span>
+                    <span class="benefit-tag">You approve before send</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 16px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">💡 Why This Outbound Works (When Sequences Didn't)</h3>
+                <p style="font-size: 12px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">The sequences you ran before were generic — same message to everyone. This engine researches each prospect before drafting. It knows if they just hired 30 people, if they're using a US-based payroll platform, if they're in a regulated Canadian industry. That research becomes the email. <strong style="color: #e2e8f0;">Buyers respond to outreach that knows them. Generic cadences go to trash.</strong></p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 5: SOLUTIONS (CALL COACHING + FOLLOW-UPS) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions</div>
+            </div>
+
+            <h2>Fixing What's <span>Breaking</span></h2>
+            <div class="section-subtitle">Automated call coaching, consistent follow-ups, and pre-call research — without adding headcount</div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📞</div>
+                        <div>
+                            <h3>Automated Call Analysis &amp; Coaching Scores</h3>
+                            <div class="solution-card-desc">Every call reviewed, scored, highlights pushed to you. Stop watching recordings yourself.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>After every Zoom call, the agent pulls the recording (via Avoma — finally putting it to use), analyzes it against your coaching criteria, and produces a score with specific highlights: what the AE did well, where they lost momentum, whether they missed a key objection, how their talk-to-listen ratio compared. You get a coaching report pushed directly to you — not a recording to sit through. <strong>From "Louis watches every call himself" to "Louis reviews a one-page coaching brief per rep, per week."</strong></p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Avoma integration (finally used)</span>
+                    <span class="benefit-tag">Per-call scoring</span>
+                    <span class="benefit-tag">Talk/listen ratio tracking</span>
+                    <span class="benefit-tag">Objection handling flags</span>
+                    <span class="benefit-tag">Weekly coaching briefs pushed to Louis</span>
+                    <span class="benefit-tag">Rep-by-rep performance trends</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">✉️</div>
+                        <div>
+                            <h3>Post-Call Follow-Up Drafts</h3>
+                            <div class="solution-card-desc">Follow-ups written and queued in Gmail/Pipedrive — AE hits send, not write.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>Within minutes of a call ending, the agent drafts a personalized follow-up email — referencing what was discussed, the prospect's specific pain points, next steps agreed on, and relevant Collage positioning — and pushes it directly into the AE's Gmail draft folder and Pipedrive activity log. The AE reads it, edits if needed, and hits send. <strong>The rep who "never sends follow-ups" now just needs to approve, not write.</strong> Consistency goes from variable to near-100%.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Auto-drafted post-call</span>
+                    <span class="benefit-tag">Pushed to Gmail drafts</span>
+                    <span class="benefit-tag">Logged in Pipedrive</span>
+                    <span class="benefit-tag">Personalized per conversation</span>
+                    <span class="benefit-tag">AE approves, not writes</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🔍</div>
+                        <div>
+                            <h3>Pre-Call Research Briefs</h3>
+                            <div class="solution-card-desc">AEs walk into every demo prepared — brief delivered automatically before the call.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>One hour before every Calendly-booked demo, the agent automatically researches the prospect — company size, industry, current HR/payroll setup (if discoverable), recent hiring activity, LinkedIn presence — and delivers a one-page brief to the AE's inbox. Company background, likely pain points, suggested opening questions, competitive context (are they on Rippling? BambooHR?). <strong>AEs show up informed, not scrambling to Google the company on the Zoom waiting screen.</strong></p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Triggered by Calendly booking</span>
+                    <span class="benefit-tag">Delivered 1hr before call</span>
+                    <span class="benefit-tag">Company + prospect research</span>
+                    <span class="benefit-tag">Likely pain points surfaced</span>
+                    <span class="benefit-tag">Competitor context included</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 6: SOLUTIONS (PIPELINE + MISSION CONTROL) -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Proposed Solutions (continued)</div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📋</div>
+                        <div>
+                            <h3>Pipeline Board</h3>
+                            <div class="solution-card-desc">Team-wide pipeline visibility — browser access, no login required.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>A visual pipeline board that mirrors (and can eventually supplement) Pipedrive — accessible to the whole team via a password-protected browser link. Every deal is tracked from first contact to close, with accurate entry timestamps that finally fix your close-time metric problem. Deals get created at first contact, not when the AE gets around to it. <strong>Louis gets a master view. AEs see their own pipeline. The data actually reflects reality.</strong></p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Syncs with Pipedrive</span>
+                    <span class="benefit-tag">Accurate deal timestamps</span>
+                    <span class="benefit-tag">Real close-time metrics</span>
+                    <span class="benefit-tag">Team browser access</span>
+                    <span class="benefit-tag">Louis master view</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">📬</div>
+                        <div>
+                            <h3>Email Triage</h3>
+                            <div class="solution-card-desc">Urgency-ranked inbox — hot leads surface, noise sinks.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>The agent monitors incoming email and ranks messages by urgency and deal relevance. A prospect replying to an outbound touch gets flagged immediately. A renewal question from an existing customer gets routed to the right person. Administrative noise gets deprioritized. <strong>The first thing you see in the morning is what actually matters today.</strong></p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Priority-ranked inbox</span>
+                    <span class="benefit-tag">Hot leads surfaced first</span>
+                    <span class="benefit-tag">Gmail integration</span>
+                    <span class="benefit-tag">Deal-relevant flagging</span>
+                </div>
+            </div>
+
+            <div class="solution-card">
+                <div class="solution-card-header">
+                    <div class="solution-card-title">
+                        <div class="solution-icon">🖥️</div>
+                        <div>
+                            <h3>Mission Control Dashboard</h3>
+                            <div class="solution-card-desc">Your entire sales operation on one screen. Louis sees everything.</div>
+                        </div>
+                    </div>
+                </div>
+                <p>One private, password-protected dashboard that gives Louis a bird's-eye view of the entire sales team: outbound activity (emails sent, replies, meetings booked), pipeline health (deals by stage, close-time trends), AE performance (calls this week, follow-up rates, coaching scores), and upcoming demos. Every rep's task queue is visible. <strong>You stop chasing status updates and start managing by exception.</strong> Open it on your phone or laptop — no app required.</p>
+                <div class="solution-benefits">
+                    <span class="benefit-tag">Outbound activity tracking</span>
+                    <span class="benefit-tag">Pipeline health at a glance</span>
+                    <span class="benefit-tag">Per-rep performance data</span>
+                    <span class="benefit-tag">Coaching scores visible</span>
+                    <span class="benefit-tag">Demo queue</span>
+                    <span class="benefit-tag">Mobile-accessible</span>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 7: HOW YOU'LL USE IT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">A Day With the System</div>
+            </div>
+
+            <h2>Louis's Day <span>With the Agent</span></h2>
+            <div class="section-subtitle">What running on the system actually looks like — morning to close of business</div>
+
+            <div class="chat-mock">
+                <div class="chat-mock-header">Tuesday Morning &nbsp;·&nbsp; Mission Control + Telegram</div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent — 7:58 AM</div>
+                    Good morning, Louis. Here's today's rundown:<br><br>
+                    📤 <strong>Outbound:</strong> 14 new outreach drafts queued for your approval. 3 replies came in overnight — 1 interested, 2 out-of-office. Warm lead (Maple HR, 85 employees, currently on a US platform) routed to Sarah in Pipedrive.<br><br>
+                    📞 <strong>Yesterday's calls:</strong> 4 demos completed. Coaching briefs ready. Marcus scored 74 — missed the ROI pivot on two calls. Jordan scored 88.<br><br>
+                    📬 <strong>Email triage:</strong> 2 urgent (prospect reply + renewal question). 18 non-urgent.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Louis</div>
+                    Send me Marcus's coaching brief.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    <strong>Marcus — Tuesday Coaching Brief</strong><br><br>
+                    Score: 74/100. Talk ratio: 68% (target: &lt;55%). Strong on discovery, weak on ROI framing.<br><br>
+                    ⚠️ <strong>Missed pivot (2x):</strong> When prospect raised "we already have a US system," Marcus acknowledged but didn't pivot to the Canadian compliance angle. Suggest drilling this objection this week.<br><br>
+                    ✅ <strong>Strong:</strong> Discovery questions, rapport, clear next-step close on both calls.
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble user">
+                    <div class="chat-name">Louis</div>
+                    Good. Approve all 14 outbound drafts — looks solid. What's the pipeline looking like?
+                </div>
+                <div class="chat-clear"></div>
+
+                <div class="chat-bubble agent">
+                    <div class="chat-name">Your Agent</div>
+                    Pipeline: 22 active deals. 8 in demo stage, 6 in proposal, 4 in negotiation, 4 in discovery. Avg close time this month: 28 days (vs. 47 days last month — the CRM entry fix is working). Total pipeline value: $186K ARR.
+                </div>
+                <div class="chat-clear"></div>
+            </div>
+
+            <div class="usage-points">
+                <div class="usage-point">
+                    <div class="usage-point-icon">☀️</div>
+                    <div>
+                        <div class="usage-point-text">Start the day in 5 minutes</div>
+                        <div class="usage-point-desc">Outbound queue, coaching flags, pipeline health — all in one brief</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">📞</div>
+                    <div>
+                        <div class="usage-point-text">Every call auto-reviewed</div>
+                        <div class="usage-point-desc">No more watching recordings — just read the brief</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">✉️</div>
+                    <div>
+                        <div class="usage-point-text">Follow-ups always go out</div>
+                        <div class="usage-point-desc">Drafted immediately post-call, queued in Gmail — AE just sends</div>
+                    </div>
+                </div>
+                <div class="usage-point">
+                    <div class="usage-point-icon">🚀</div>
+                    <div>
+                        <div class="usage-point-text">Outbound runs daily</div>
+                        <div class="usage-point-desc">Prospects found, emails drafted, warm replies routed — you approve</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 8: THE MATH -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">The Numbers</div>
+            </div>
+
+            <h2>What This Is <span>Worth</span></h2>
+            <div class="section-subtitle">A lean team competing with larger ones needs every advantage compounded — here's the math.</div>
+
+            <p class="intro-text">
+                A junior SDR in Canada costs $55,000–$70,000 per year loaded. They work 8 hours a day. They get sick. They need management. They take 3 months to ramp. An AI outbound engine runs 24/7, never needs onboarding, and drafts personalized outreach for your review every morning before you've had coffee. That's not a replacement for great salespeople — it's the leverage that makes your current team operate like a team twice its size.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #dc2626; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">❌ Today — Manual Everything</div>
+                    <p style="font-size: 11.5px; color: #374151; line-height: 1.8; margin-bottom: 0;">
+                        No outbound. Inconsistent pre-call research. Follow-up emails hit-or-miss. Louis watches recordings himself weekly. Avoma paid for but unused. CRM data unreliable. Louis doing the work of 3 roles.
+                    </p>
+                </div>
+                <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; border-radius: 10px; padding: 18px 20px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">✓ With Your AI Sales Engine</div>
+                    <p style="font-size: 11.5px; color: #1e3a5f; line-height: 1.8; margin-bottom: 0;">
+                        Daily outbound running. Every AE coached on every call. Follow-ups drafted and sent consistently. Avoma finally earning its keep. Pipeline data accurate. <strong>Louis manages by exception instead of by hand.</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="roi-grid">
+                <div class="roi-card">
+                    <div class="roi-number">$250</div>
+                    <div class="roi-label">Per month — vs. $55K+/yr<br>for a junior SDR doing<br>fraction of the output</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">1 deal</div>
+                    <div class="roi-label">One extra closed deal per quarter<br>from consistent outbound pays<br>for a full year of the system</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">5→10</div>
+                    <div class="roi-label">Same team, double the output<br>when every touchpoint<br>is automated and consistent</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 20px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 8px;">🇨🇦 The Canadian Advantage — Finally Reaching Buyers</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; margin-bottom: 0; line-height: 1.7;">Rippling and BambooHR can't claim what Collage can: built for Canadian payroll and HR compliance from the ground up. The outbound engine leads with this in every first-touch message — tailored to Canadian businesses who are currently paying for a US platform that doesn't fully understand Quebec tax rules, T4s, or ROE filings. <strong style="color: #e2e8f0;">That angle is a genuine door-opener. The system makes sure it's being used every single day.</strong></p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 9: FAQ -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Questions &amp; Answers</div>
+            </div>
+
+            <h2>Common <span>Questions</span></h2>
+            <div class="section-subtitle">Straight answers — no pitch</div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🚀 "We tried outbound before and it didn't work — why is this different?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">The sequences you ran were generic cadences — same message to everyone. This system researches each prospect individually before drafting. It knows what they do, how big they are, what HR system they're likely on, and whether they'd care about Canadian payroll compliance. That research becomes the email. Personalization at scale beats generic automation every time.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🔌 "Does it integrate with Pipedrive, Gmail, and Avoma?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">Yes. Pipedrive is the deal record — the system creates and updates deals automatically. Gmail is where follow-up drafts land and where email triage runs. Avoma is the call recording source — the agent pulls recordings post-call and analyzes them. Calendly triggers the pre-call research brief. Everything plugs into the tools you're already using.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">✍️ "Do the AEs lose control over their own outreach?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">No. Nothing sends without approval. The outbound queue is a draft list that you or the AE reviews before anything goes out. Post-call follow-ups land in Gmail drafts — the rep reads it, edits if needed, and hits send. The agent removes the "writing from scratch" problem, not the human judgment. Your team stays in control of their relationships.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">⏱️ "How long until we're live?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">Three to four weeks from kickoff to full deployment. Week one: tool integrations (Pipedrive, Gmail, Avoma, Calendly) and ICP definition. Weeks two to three: build and test with real calls and real prospect lists. Week four: go live with outbound engine running, coaching live, and dashboard active. We're on standby during go-live week.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🔒 "Where does our data live?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">The system runs on a dedicated Mac Mini in your environment. Your call recordings, prospect data, and pipeline details stay in your infrastructure — not on shared cloud servers. The AI models process data in transit (via your own Anthropic API key, which you control), but persistent storage stays with you.</p>
+            </div>
+
+            <div class="solution-card" style="padding: 16px 20px; margin-bottom: 10px;">
+                <h3 style="font-size: 13px; margin-bottom: 4px;">🚪 "What if we cancel?"</h3>
+                <p style="font-size: 11.5px; color: #475569; margin-bottom: 0; line-height: 1.7;">No long-term contracts. Month-to-month. If you cancel, the automations stop and you keep the Mac Mini hardware. All data — prospect lists, call analyses, pipeline records — is always yours. We'd rather earn your business every month than lock you in.</p>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 10: TIMELINE -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Implementation</div>
+            </div>
+
+            <h2>From Kickoff to <span>Live Outbound</span></h2>
+            <div class="section-subtitle">Four weeks. No disruption to your current team workflows.</div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">1</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 1 — Integrations &amp; ICP</div>
+                        <h3>Connect the Stack, Define Your Buyer</h3>
+                        <p>Connect Pipedrive, Gmail, Avoma, and Calendly. Define Collage's ICP — company size, industry verticals, signals that suggest a Canadian HR need, and the messaging angles that resonate. We load your existing deal history to calibrate close-time baselines and coaching criteria against your best AE calls.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">2</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Weeks 2–3 — Build &amp; Test</div>
+                        <h3>Run Against Real Calls and Real Prospects</h3>
+                        <p>We run the outbound engine against a prospect list you've already worked — so you can verify the research quality and draft quality before anything goes live. We pull 5–10 recorded calls from Avoma and run the coaching analysis — you compare the scores and highlights to your own assessment and we calibrate. Mission Control dashboard goes live with your pipeline loaded.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">3</div>
+                        <div class="timeline-line"></div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Week 4 — Go Live</div>
+                        <h3>Outbound Running. Coaching Active. Follow-Ups Flowing.</h3>
+                        <p>Full deployment. The outbound engine starts producing daily queues for your review. Pre-call briefs fire before every Calendly demo. Post-call follow-up drafts land in Gmail immediately after calls. Coaching reports are produced for every recording. We're on standby all week to handle edge cases and tune the system based on real-world feedback.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-marker">
+                        <div class="timeline-dot">4</div>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-week">Ongoing — Optimize</div>
+                        <h3>System Gets Smarter Over Time</h3>
+                        <p>As you approve or reject outbound drafts, the agent learns your tone preferences and which angles convert. Coaching criteria evolves as you build in new skills to develop. When you add a new AE or change your ICP focus, we update the system. Monthly check-ins to review what's working and where to tune.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="roi-grid" style="margin-top: 30px;">
+                <div class="roi-card">
+                    <div class="roi-number">4 wks</div>
+                    <div class="roi-label">From kickoff to<br>live outbound engine</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">Zero</div>
+                    <div class="roi-label">New tools for your team<br>to learn — works with<br>Gmail, Pipedrive, Avoma</div>
+                </div>
+                <div class="roi-card">
+                    <div class="roi-number">Real</div>
+                    <div class="roi-label">Calibrated against<br>your actual calls and<br>existing pipeline data</div>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 11: INVESTMENT -->
+    <div class="page">
+        <div class="content">
+            <div class="page-header">
+                <div class="page-header-logo">SolveWorks</div>
+                <div class="page-header-title">Investment</div>
+            </div>
+
+            <h2>Your <span>Investment</span></h2>
+            <div class="section-subtitle">All pricing in USD. No surprises. Cancel anytime.</div>
+
+            <div class="investment-setup" style="margin-top: 20px;">
+                <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px;">
+                    <div class="roi-number" style="font-size: 42px; font-weight: 800; color: #0ea5e9;">$2,500</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #64748b;">USD</div>
+                </div>
+                <div class="roi-label" style="font-size: 13px; margin-top: 6px;">One-time setup — integrations, ICP definition, outbound engine build, coaching system, dashboard, and full onboarding</div>
+                <div style="margin-top: 8px; font-size: 11px; color: #475569;">Covers discovery, tool connections, calibration, and deployment across all features</div>
+            </div>
+
+            <div class="packages-grid" style="grid-template-columns: 1fr;">
+                <div class="package-card featured" style="max-width: 480px; margin: 0 auto;">
+                    <div class="package-badge">Full Sales Engine</div>
+                    <div class="package-name">Monthly Service</div>
+                    <div style="display: flex; align-items: baseline; justify-content: center; gap: 6px;">
+                        <div class="package-price"><sup>$</sup>250</div>
+                        <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 4px;">USD</div>
+                    </div>
+                    <div class="package-period">starting at /month</div>
+                    <div class="package-setup">You manage your own Anthropic account — full transparency on AI usage costs</div>
+                    <ul class="package-features">
+                        <li>Outbound engine — daily prospect research + personalized drafts</li>
+                        <li>Automated call analysis + per-rep coaching scores (via Avoma)</li>
+                        <li>Post-call follow-up drafts → Gmail + Pipedrive</li>
+                        <li>Pre-call research briefs → triggered by Calendly</li>
+                        <li>Pipeline board with accurate deal timestamps</li>
+                        <li>Email triage — urgency-ranked inbox</li>
+                        <li>Mission Control Dashboard — Louis's master view</li>
+                        <li>Ongoing optimization, model tuning, and support</li>
+                    </ul>
+                    <div class="package-tagline">Built for Collage's sales team. Not generic AI.</div>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #050507, #0d1528); border-radius: 12px; padding: 22px 24px; margin-top: 24px;">
+                <h3 style="font-size: 14px; color: #0ea5e9; margin-bottom: 10px;">🖥️ Hardware — Your Agent Needs a Home</h3>
+                <p style="font-size: 12.5px; color: #94a3b8; line-height: 1.7; margin-bottom: 12px;">Your AI system runs on a dedicated Mac Mini — a small, silent computer that powers everything 24/7. Delivered pre-configured and ready to plug in. Your data stays in your environment, not shared cloud infrastructure.</p>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 16px; max-width: 320px; margin: 0 auto;">
+                    <div style="font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px;">Mac Mini — Pre-Configured &amp; Delivered</div>
+                    <p style="font-size: 12px; color: #94a3b8; line-height: 1.6;">We supply, configure, and ship. Plug in, connect to WiFi, done.</p>
+                    <div style="margin-top: 10px;">
+                        <div style="font-size: 18px; font-weight: 700; color: #0ea5e9; line-height: 1;">~$600 <span style="font-size: 11px; font-weight: 600; color: #64748b;">USD</span></div>
+                        <div style="font-size: 12px; color: #475569; margin-top: 3px;">One-time hardware cost</div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="investment-note" style="margin-top: 20px;">
+                <strong>No long-term contracts. Cancel anytime.</strong><br>
+                All SolveWorks pricing in USD. Anthropic AI usage billed directly through your own account — fully transparent, no markups.<br>
+                We recommend the <strong style="color: #374151;">Anthropic Max plan ($100 USD/month)</strong> — we set it up during onboarding.
+            </p>
+        </div>
+        <div class="page-footer">
+            <span>SolveWorks | solveworks.io</span>
+            <span>Confidential — Prepared for Louis at Collage</span>
+        </div>
+    </div>
+
+    <!-- PAGE 12: CTA -->
+    <div class="page cta-page">
+        <div class="cover-logo" style="margin-bottom: 50px;">SolveWorks</div>
+        <h2>Collage has the<br>competitive advantage.<br>Now you'll have the<br><span style="color: #0ea5e9;">engine to use it every day.</span></h2>
+        <p>The only Canadian HR and payroll platform — reaching the right buyers, consistently, with a sales team that runs smarter than any team twice your size.</p>
+        <a href="mailto:dwayne@solveworks.io" class="cta-button">Let's Get Started →</a>
+        <div class="cta-contact">
+            <p><a href="mailto:dwayne@solveworks.io">dwayne@solveworks.io</a></p>
+            <p style="margin-top: 10px;"><a href="https://solveworks.io">solveworks.io</a> | <a href="mailto:info@solveworks.io">info@solveworks.io</a></p>
+            <p style="margin-top: 14px; font-size: 11px; color: #334155;">This proposal is valid through April 2026.</p>
+        </div>
+        <div class="cover-bar"></div>
+    </div>
+
+</body>
+</html>
