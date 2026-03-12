@@ -2226,8 +2226,11 @@ function renderDashboard(){
 
   // Top brands table
   const brandsTable=document.querySelector('#page-analytics table tbody');
-  if(brandsTable&&a.topBrands&&a.topBrands.length){
-    brandsTable.innerHTML=a.topBrands.map(b=>`<tr><td><strong>${b.name}</strong></td><td style="font-weight:700;">${fmtC(b.revenue)}</td><td>${b.units}</td><td>${fmtC(b.aov)}</td></tr>`).join('');
+  // Prefer sell-through brand data (Lightspeed, has real brands) over Shopify (often "Other")
+  const stBrands=(d.sellThrough&&d.sellThrough.byBrand||[]).filter(b=>b.brand&&b.brand!=='UNKNOWN').sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+  const topBrandsData=stBrands.length?stBrands.map(b=>({name:b.brand,revenue:b.revenue,units:b.unitsSold,aov:b.unitsSold?b.revenue/b.unitsSold:0})):(a.topBrands||[]);
+  if(brandsTable&&topBrandsData.length){
+    brandsTable.innerHTML=topBrandsData.map(b=>`<tr><td><strong>${b.name}</strong></td><td style="font-weight:700;">${fmtC(b.revenue)}</td><td>${b.units}</td><td>${fmtC(b.aov)}</td></tr>`).join('');
   }
 
   // Channel breakdown
