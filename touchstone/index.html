@@ -523,94 +523,24 @@
   <main class="main" id="main-content">
 
     <div class="panel" id="p-overview">
-      <div class="panel-title">📊 Overview</div>
-      <div class="panel-sub">Here's what matters today</div>
-      <div class="panel-placeholder">Loading...</div>
+      <div class="panel-placeholder">Loading overview…</div>
     </div>
 
-    <div class="panel" id="p-messages">
-      <div class="panel-title">💬 Messages</div>
-      <div class="panel-sub">iMessage Intelligence — auto-extracted tasks &amp; context</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
+    <div class="panel" id="p-messages"></div>
+    <div class="panel" id="p-transcripts"></div>
+    <div class="panel" id="p-recordings"></div>
 
-    <div class="panel" id="p-transcripts">
-      <div class="panel-title">🎙️ Transcripts</div>
-      <div class="panel-sub">Call recordings with AI-extracted commitments</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-recordings">
-      <div class="panel-title">📤 Recordings</div>
-      <div class="panel-sub">Upload and manage audio recordings</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-tasks">
-      <div class="panel-title">📋 Tasks</div>
-      <div class="panel-sub">Auto-generated from messages, transcripts &amp; audits</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-projects">
-      <div class="panel-title">🏗️ Projects</div>
-      <div class="panel-sub">Active jobs and Livingstone integration audit</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-pipeline">
-      <div class="panel-title">📈 Pipeline</div>
-      <div class="panel-sub">Tyler's Sales Command Center</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-invoices">
-      <div class="panel-title">💰 Invoices</div>
-      <div class="panel-sub">Receivables, leakage detection &amp; cash flow</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-receipts">
-      <div class="panel-title">🧾 Receipts</div>
-      <div class="panel-sub">Team expense tracking</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-fabrication">
-      <div class="panel-title">⚙️ Fabrication</div>
-      <div class="panel-sub">Drawing → Slab → Remnant → Install</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-documents">
-      <div class="panel-title">📁 Documents</div>
-      <div class="panel-sub">Central document hub</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-flooring">
-      <div class="panel-title">🏠 Flooring</div>
-      <div class="panel-sub">Compass Project Partners — flooring division</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-agents">
-      <div class="panel-title">🤖 Agents</div>
-      <div class="panel-sub">AI agent status and integrations</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-security">
-      <div class="panel-title">🔒 Security</div>
-      <div class="panel-sub">Access control and monitoring</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
-
-    <div class="panel" id="p-meetings">
-      <div class="panel-title">📅 Meetings</div>
-      <div class="panel-sub">Schedule and AI-generated meeting summaries</div>
-      <div class="panel-placeholder">Loading...</div>
-    </div>
+    <div class="panel" id="p-tasks"></div>
+    <div class="panel" id="p-projects"></div>
+    <div class="panel" id="p-pipeline"></div>
+    <div class="panel" id="p-invoices"></div>
+    <div class="panel" id="p-receipts"></div>
+    <div class="panel" id="p-fabrication"></div>
+    <div class="panel" id="p-documents"></div>
+    <div class="panel" id="p-flooring"></div>
+    <div class="panel" id="p-agents"></div>
+    <div class="panel" id="p-security"></div>
+    <div class="panel" id="p-meetings"></div>
 
   </main>
 </div>
@@ -694,6 +624,579 @@
       return null;
     }
   }
+  // ── OVERVIEW PANEL ──
+  async function loadOverview() {
+    const panel = document.getElementById('p-overview');
+    if (!panel) return;
+
+    panel.innerHTML = '<div class="panel-placeholder">Loading overview…</div>';
+
+    const [dashboard, schedule, followups, tasksData] = await Promise.all([
+      loadJSON('dashboard'),
+      loadJSON('schedule'),
+      loadJSON('followups'),
+      loadJSON('tasks')
+    ]);
+
+    const escapeHtml = (value = '') => String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+    const formatCompactMoney = (value) => {
+      const num = Number(value) || 0;
+      return num >= 1000 ? `$${Math.round(num / 1000)}K` : `$${num.toLocaleString('en-US')}`;
+    };
+
+    const formatCurrency = (value) => `$${(Number(value) || 0).toLocaleString('en-US')}`;
+
+    const dateSource = dashboard?.date || schedule?.date;
+    const dateObj = dateSource ? new Date(`${dateSource}T12:00:00`) : new Date();
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const greeting = (dashboard?.greeting || '').trim() || 'Good Morning, Craig 📊';
+    const weather = dashboard?.weather || {};
+    const stats = dashboard?.stats || {};
+    const leakageAlerts = Array.isArray(dashboard?.leakageAlerts) ? dashboard.leakageAlerts : [];
+    const installs = Array.isArray(schedule?.installs) ? schedule.installs : [];
+    const stale = Array.isArray(followups?.stale) ? followups.stale : [];
+    const pending = Array.isArray(followups?.pending) ? followups.pending : [];
+    const expiringQuotes = Array.isArray(followups?.expiringQuotes) ? followups.expiringQuotes : [];
+    const urgentTasks = Array.isArray(tasksData?.tasks)
+      ? tasksData.tasks.filter(task => ['critical', 'high'].includes(String(task.priority || '').toLowerCase()))
+      : [];
+
+    const leakageHtml = leakageAlerts.length
+      ? `
+        <div class="section-label">Leakage Alerts</div>
+        ${leakageAlerts.map(alert => {
+          const severity = String(alert?.severity || alert?.level || '').toLowerCase();
+          const rowClass = severity === 'critical' || severity === 'high' || severity === 'red' ? 'alert-red' : 'alert-orange';
+          const title = alert?.title || alert?.label || alert?.name || 'Leakage alert';
+          const detail = alert?.detail || alert?.message || alert?.context || alert?.description || '';
+          const amount = alert?.amount ? ` · ${formatCurrency(alert.amount)}` : '';
+          return `
+            <div class="alert-row ${rowClass}">
+              <div>
+                <div style="font-weight:600; margin-bottom:4px;">${escapeHtml(title)}${escapeHtml(amount)}</div>
+                <div style="color: var(--text2);">${escapeHtml(detail || 'Review this issue today.')}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `
+      : '';
+
+    const installsHtml = installs.length
+      ? installs.map(install => {
+          const status = String(install.status || 'scheduled').toLowerCase();
+          const statusClass = status === 'confirmed' ? 'badge-green' : status === 'pending' ? 'badge-orange' : 'badge-blue';
+          const company = install.company ? ` · ${escapeHtml(install.company)}` : '';
+          const crew = Array.isArray(install.crew) && install.crew.length ? install.crew.join(', ') : 'Unassigned';
+          return `
+            <div class="list-item">
+              <div style="min-width:72px;"><span class="badge badge-accent">${escapeHtml(install.time || 'TBD')}</span></div>
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
+                  <div style="font-weight:600; color:var(--text);">${escapeHtml(install.client || 'Install')}${company}</div>
+                  <span class="badge ${statusClass}">${escapeHtml(status)}</span>
+                </div>
+                <div style="font-size:13px; color:var(--text2);">${escapeHtml(install.location || 'Location TBD')} · ${escapeHtml(install.type || 'Install')}</div>
+                <div style="font-size:12px; color:var(--text3); margin-top:4px;">Crew: ${escapeHtml(crew)}</div>
+              </div>
+            </div>
+          `;
+        }).join('')
+      : '<div class="panel-placeholder" style="padding:0;">No installs scheduled for today.</div>';
+
+    const staleHtml = stale.length
+      ? `
+        <div class="section-label">Stale</div>
+        ${stale.map(item => {
+          const staleClass = Number(item.staleDays) >= 5 ? 'badge-red' : 'badge-orange';
+          return `
+            <div class="list-item">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
+                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.person || 'Follow-up')}</div>
+                  <span class="badge ${staleClass}">${escapeHtml(item.staleDays || 0)}d stale</span>
+                </div>
+                <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.action || '')}</div>
+                <div style="font-size:12px; color:var(--text3); margin-top:4px;">Owner: ${escapeHtml(item.owner || 'Unassigned')}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `
+      : '';
+
+    const pendingHtml = pending.length
+      ? `
+        <div class="section-label">Pending</div>
+        ${pending.map(item => `
+          <div class="list-item">
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
+                <div style="font-weight:600; color:var(--text);">${escapeHtml(item.person || 'Pending item')}</div>
+                <span class="badge badge-blue">Due ${escapeHtml(item.dueDate || 'TBD')}</span>
+              </div>
+              <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.action || '')}</div>
+              <div style="font-size:12px; color:var(--text3); margin-top:4px;">Owner: ${escapeHtml(item.owner || 'Unassigned')}</div>
+            </div>
+          </div>
+        `).join('')}
+      `
+      : '';
+
+    const expiringHtml = expiringQuotes.length
+      ? `
+        <div class="section-label">Expiring Quotes</div>
+        ${expiringQuotes.map(item => {
+          const expiresClass = Number(item.expiresIn) <= 3 ? 'badge-red' : 'badge-orange';
+          return `
+            <div class="list-item">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
+                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.client || 'Quote')}</div>
+                  <span class="badge ${expiresClass}">${escapeHtml(item.expiresIn || 0)}d left</span>
+                </div>
+                <div style="font-size:13px; color:var(--text2);">${formatCurrency(item.value)} · Owner: ${escapeHtml(item.owner || 'Unassigned')}</div>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      `
+      : '';
+
+    const followupsHtml = (staleHtml || pendingHtml || expiringHtml)
+      ? `${staleHtml}${pendingHtml}${expiringHtml}`
+      : '<div class="panel-placeholder" style="padding:0;">No follow-ups need attention.</div>';
+
+    const urgentTasksHtml = urgentTasks.length
+      ? urgentTasks.map(task => {
+          const priority = String(task.priority || '').toLowerCase();
+          const priorityClass = priority === 'critical' ? 'badge-red' : 'badge-orange';
+          return `
+            <div class="list-item">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
+                  <div style="font-weight:600; color:var(--text);">${escapeHtml(task.title || 'Task')}</div>
+                  <span class="badge ${priorityClass}">${escapeHtml(priority)}</span>
+                </div>
+                <div style="font-size:13px; color:var(--text2); margin-bottom:6px;">${escapeHtml(task.context || '')}</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <span class="badge badge-accent">${escapeHtml(task.source || 'source')}</span>
+                  <span class="badge badge-blue">${escapeHtml(task.assignee || 'Unassigned')}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('')
+      : '<div class="panel-placeholder" style="padding:0;">No high-priority tasks right now.</div>';
+
+    panel.innerHTML = `
+      <div class="panel-title">${escapeHtml(greeting)}</div>
+      <div class="panel-sub">${escapeHtml(formattedDate)} — Here's what matters today</div>
+
+      <div class="weather-bar">
+        <div class="temp">${escapeHtml(weather.temp || '—')}</div>
+        <div>${escapeHtml(weather.condition || 'Weather unavailable')}</div>
+        <div>Roads: ${escapeHtml(weather.roads || '—')}</div>
+        <div>Wind: ${escapeHtml(weather.wind || '—')}</div>
+      </div>
+
+      <div class="grid4" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-val">${escapeHtml(stats.activeJobs ?? 0)}</div>
+          <div class="stat-label">Active Jobs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${escapeHtml(formatCompactMoney(stats.pipeline))}</div>
+          <div class="stat-label">Pipeline</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${escapeHtml(stats.slabs ?? 0)}</div>
+          <div class="stat-label">Slabs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${escapeHtml(stats.remnants ?? 0)}</div>
+          <div class="stat-label">Remnants</div>
+        </div>
+      </div>
+
+      ${leakageHtml}
+
+      <div class="grid2" style="margin-top:20px;">
+        <div class="card">
+          <div class="card-title">Today's Installs</div>
+          ${installsHtml}
+        </div>
+        <div class="card">
+          <div class="card-title">Follow-ups</div>
+          ${followupsHtml}
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Urgent Tasks</div>
+        ${urgentTasksHtml}
+      </div>
+    `;
+  }
+  loadOverview();
+
+  // ── MESSAGES PANEL ──
+  async function loadMessages() {
+    const data = await loadJSON('messages');
+    const msgs = data?.messages || [];
+    let html = `<div class="panel-title">💬 Messages</div><div class="panel-sub">iMessage Intelligence — auto-extracted tasks & context</div>`;
+    html += `<div class="filter-row"><input class="search-input" placeholder="Search messages..." id="msg-search"><button class="filter-btn active" data-filter="all">All</button><button class="filter-btn" data-filter="task">Has Task</button></div>`;
+    if (msgs.length) {
+      msgs.forEach(m => {
+        const initials = (m.from||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+        const color = {'Craig':'var(--accent)','Tyler':'var(--green)','Shelley':'var(--purple)','Jason':'var(--orange)','Lenore':'var(--cyan)'}[m.from?.split(' ')[0]] || 'var(--text3)';
+        html += `<div class="msg-bubble"><div class="msg-avatar" style="background:${color}">${initials}</div><div class="msg-body"><div class="msg-name">${m.from||'Unknown'} <span style="color:var(--text3);font-size:11px">${m.time||''}</span></div><div class="msg-text">${m.text||''}</div>`;
+        if (m.autoTask) html += `<div class="msg-tag">→ ${m.autoTask}</div>`;
+        html += `</div></div>`;
+      });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">💬</div><div style="color:var(--text2)">No messages yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Messages will appear here when the iMessage listener is connected</div></div>`;
+    }
+    document.getElementById('p-messages').innerHTML = html;
+  }
+  loadMessages();
+
+  // ── TRANSCRIPTS PANEL ──
+  async function loadTranscripts() {
+    const data = await loadJSON('transcripts');
+    const txs = data?.transcripts || [];
+    let html = `<div class="panel-title">🎙️ Transcripts</div><div class="panel-sub">Call recordings with AI-extracted commitments</div>`;
+    if (txs.length) {
+      txs.forEach(t => {
+        html += `<div class="card" style="margin-bottom:12px"><div class="card-title">${t.title||'Untitled'}</div><div style="color:var(--text2);font-size:12px;margin-bottom:8px">${t.date||''} · ${t.duration||''} · ${(t.participants||[]).join(', ')}</div>`;
+        if (t.commitments?.length) { html += `<div class="section-label">Commitments</div>`; t.commitments.forEach(c => { html += `<div class="list-item"><strong>${c.who||'--'}:</strong> ${c.action||''}</div>`; }); }
+        if (t.keyDecisions?.length) { html += `<div class="section-label">Key Decisions</div>`; t.keyDecisions.forEach(d => { html += `<div class="list-item">${d}</div>`; }); }
+        html += `</div>`;
+      });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🎙️</div><div style="color:var(--text2)">No transcripts yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Upload call recordings to get AI-extracted commitments and action items</div></div>`;
+    }
+    document.getElementById('p-transcripts').innerHTML = html;
+  }
+  loadTranscripts();
+
+  // ── RECORDINGS PANEL ──
+  async function loadRecordings() {
+    let html = `<div class="panel-title">📤 Recordings</div><div class="panel-sub">Upload and manage audio recordings</div>`;
+    html += `<div class="card" style="text-align:center;padding:40px;border:2px dashed var(--border2)"><div style="font-size:40px;margin-bottom:12px">📤</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">Drop audio files here</div><div style="color:var(--text3);font-size:13px;margin-bottom:16px">MP3, WAV, M4A — up to 100MB</div><button class="btn btn-primary">Choose File</button></div>`;
+    html += `<div class="section-label" style="margin-top:24px">Recent Uploads</div>`;
+    html += `<div class="list-item" style="color:var(--text3)">No recordings uploaded yet</div>`;
+    document.getElementById('p-recordings').innerHTML = html;
+  }
+  loadRecordings();
+
+  // ── TASKS PANEL ──
+  async function loadTasks() {
+    const data = await loadJSON('tasks');
+    const tasks = data?.tasks || [];
+    let html = `<div class="panel-title">📋 Tasks</div><div class="panel-sub">Auto-generated from messages, transcripts & audits</div>`;
+    html += `<div class="filter-row"><button class="filter-btn active" data-filter="all">All</button><button class="filter-btn" data-filter="critical">🔴 Critical</button><button class="filter-btn" data-filter="high">🟠 High</button><button class="filter-btn" data-filter="normal">🔵 Normal</button></div>`;
+    if (tasks.length) {
+      tasks.forEach(tk => {
+        const pBadge = {critical:'badge-red',high:'badge-orange',normal:'badge-blue',low:'badge-accent'}[tk.priority] || 'badge-accent';
+        const sBadge = {open:'badge-blue','in-progress':'badge-accent',done:'badge-green'}[tk.status] || 'badge-accent';
+        html += `<div class="list-item"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${pBadge}">${tk.priority||'normal'}</span><strong>${tk.title||tk.description||''}</strong><span class="badge ${sBadge}">${tk.status||'open'}</span></div><div style="color:var(--text2);font-size:12px;margin-top:4px">Source: ${tk.source||'manual'} · Assigned: ${tk.assignee||'unassigned'} · Due: ${tk.dueDate||'--'}</div></div>`;
+      });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="color:var(--text2)">No tasks yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Tasks auto-generate from messages, transcripts, and audit findings</div></div>`;
+    }
+    document.getElementById('p-tasks').innerHTML = html;
+  }
+  loadTasks();
+
+  // ── PROJECTS PANEL ──
+  async function loadProjects() {
+    const [proj, audit, compass, ls] = await Promise.all([
+      loadJSON('projects'), loadJSON('audit'), loadJSON('compass-crm'), loadJSON('livingstone-crm')
+    ]);
+    const projects = proj?.projects || [];
+    const audits = audit?.comparisons || [];
+    const alerts = audit?.alerts || [];
+    let html = `<div class="panel-title">🏗️ Projects</div><div class="panel-sub">Active jobs and Livingstone integration audit</div>`;
+
+    // Audit summary
+    const sum = audit?.summary || {};
+    html += `<div class="grid3" style="margin-bottom:20px">`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalJobs||0}</div><div style="color:var(--text2);font-size:12px">Audited Jobs</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--green)">${sum.matched||0}</div><div style="color:var(--text2);font-size:12px">Matched</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--red)">${sum.discrepancies||0}</div><div style="color:var(--text2);font-size:12px">Discrepancies</div></div>`;
+    html += `</div>`;
+
+    // Discrepancy alerts
+    if (alerts.length) {
+      html += `<div class="section-label">⚠️ Audit Alerts — Compass vs Livingstone</div>`;
+      alerts.forEach(a => {
+        const cls = a.severity === 'critical' ? 'alert-red' : 'alert-orange';
+        html += `<div class="alert-row ${cls}"><div><strong>${a.client||''}</strong> — ${a.message||''}</div><div style="font-size:12px;margin-top:4px;display:flex;gap:16px"><span>Compass: ${a.compassValue||'--'}</span><span>Livingstone: ${a.livingstoneValue||'--'}</span></div></div>`;
+      });
+    }
+
+    // Projects list
+    html += `<div class="section-label" style="margin-top:24px">Active Projects</div>`;
+    if (projects.length) {
+      projects.forEach(p => {
+        const sBadge = {early:'badge-blue','in-progress':'badge-accent',completed:'badge-green','on-hold':'badge-orange'}[p.status] || 'badge-accent';
+        const entBadge = p.entity === 'Livingstone' ? 'badge-purple' : 'badge-cyan';
+        html += `<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><strong>${p.client||'TBD'}</strong><div><span class="badge ${entBadge}">${p.entity||'--'}</span> <span class="badge ${sBadge}">${p.status||'--'}</span></div></div><div style="color:var(--text2);font-size:12px;margin-top:6px">${p.type||''} · ${p.location||''}</div>`;
+        // Checklist
+        const checks = [
+          {label:'Drawings sent', ok: p.drawingsSent},
+          {label:'Material ordered', ok: p.materialOrdered},
+          {label:'Sink needed', ok: p.sinkOrdered !== undefined ? p.sinkOrdered : null},
+          {label:'Invoiced', ok: p.invoiced},
+          {label:'Paid', ok: p.paid}
+        ];
+        html += `<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">`;
+        checks.forEach(c => {
+          if (c.ok === null) return;
+          const icon = c.ok ? '✅' : '⬜';
+          html += `<span class="${c.ok?'check-ok':'check-warn'}" style="font-size:12px">${icon} ${c.label}</span>`;
+        });
+        html += `</div></div>`;
+      });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🏗️</div><div style="color:var(--text2)">No projects yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Projects populate from Compass and Livingstone CRM databases</div></div>`;
+    }
+    document.getElementById('p-projects').innerHTML = html;
+  }
+  loadProjects();
+
+  // ── PIPELINE PANEL ──
+  async function loadPipeline() {
+    const data = await loadJSON('pipeline');
+    const cols = data?.columns || [];
+    const stats = data?.stats || {};
+    let html = `<div class="panel-title">📈 Pipeline</div><div class="panel-sub">Tyler's Sales Command Center</div>`;
+    html += `<div class="grid3" style="margin-bottom:20px"><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.totalLeads||0}</div><div style="color:var(--text2);font-size:12px">Total Leads</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.totalValue ? '$'+(stats.totalValue/1000).toFixed(0)+'K' : '$0'}</div><div style="color:var(--text2);font-size:12px">Total Value</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.conversionRate||0}%</div><div style="color:var(--text2);font-size:12px">Win Rate</div></div></div>`;
+    html += `<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:12px">`;
+    const colColors = {new:'var(--blue)',contacted:'var(--accent)',quoted:'var(--orange)',won:'var(--green)',lost:'var(--red)'};
+    if (cols.length) {
+      cols.forEach(col => {
+        html += `<div style="min-width:200px;flex:1;background:var(--bg2);border-radius:var(--radius);padding:12px"><div style="font-weight:600;margin-bottom:8px;padding-bottom:8px;border-bottom:2px solid ${colColors[col.id]||'var(--border)'}">${col.title} <span class="badge" style="background:var(--surface2)">${(col.cards||[]).length}</span></div>`;
+        if (col.cards?.length) {
+          col.cards.forEach(c => {
+            html += `<div class="card" style="margin-bottom:8px;padding:10px"><div style="font-weight:600;font-size:13px">${c.name||c.client||'TBD'}</div><div style="color:var(--text2);font-size:12px">${c.description||c.type||''}</div>${c.value ? `<div style="color:var(--green);font-size:13px;font-weight:600;margin-top:4px">$${(c.value||0).toLocaleString()}</div>` : ''}</div>`;
+          });
+        } else {
+          html += `<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Empty</div>`;
+        }
+        html += `</div>`;
+      });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px;width:100%"><div style="font-size:32px;margin-bottom:12px">📈</div><div style="color:var(--text2)">Pipeline not connected</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Sales leads will populate from CRM data</div></div>`;
+    }
+    html += `</div>`;
+    document.getElementById('p-pipeline').innerHTML = html;
+  }
+  loadPipeline();
+
+  // ── INVOICES PANEL ──
+  async function loadInvoices() {
+    const data = await loadJSON('invoices');
+    const invs = data?.invoices || [];
+    const leaks = data?.leakageAlerts || [];
+    const sum = data?.summary || {};
+    let html = `<div class="panel-title">💰 Invoices</div><div class="panel-sub">Receivables, leakage detection & cash flow</div>`;
+    html += `<div class="grid4" style="margin-bottom:20px">`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700">$${(sum.outstanding||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Outstanding</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--red)">$${(sum.overdue||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Overdue</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--orange)">$${(sum.leakageRisk||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Leakage Risk</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--green)">$${(sum.collected30d||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Collected (30d)</div></div>`;
+    html += `</div>`;
+    if (leaks.length) {
+      html += `<div class="section-label">🚩 Leakage Alerts</div>`;
+      leaks.forEach(l => { html += `<div class="alert-row alert-red">${l.message||l}</div>`; });
+    }
+    html += `<div class="section-label" style="margin-top:16px">Recent Invoices</div>`;
+    if (invs.length) {
+      invs.forEach(inv => {
+        const sBadge = {paid:'badge-green',sent:'badge-blue',overdue:'badge-red','not-invoiced':'badge-orange'}[inv.status] || 'badge-accent';
+        html += `<div class="list-item"><div style="display:flex;justify-content:space-between"><strong>${inv.client||'--'} — ${inv.id||''}</strong><span class="badge ${sBadge}">${inv.status||'--'}</span></div><div style="color:var(--text2);font-size:12px">${inv.date||''} · $${(inv.amount||0).toLocaleString()}</div></div>`;
+      });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No invoices — QuickBooks not connected</div>`;
+    }
+    document.getElementById('p-invoices').innerHTML = html;
+  }
+  loadInvoices();
+
+  // ── RECEIPTS PANEL ──
+  async function loadReceipts() {
+    const data = await loadJSON('receipts');
+    const rcpts = data?.receipts || [];
+    let html = `<div class="panel-title">🧾 Receipts</div><div class="panel-sub">Team expense tracking</div>`;
+    html += `<div class="card" style="text-align:center;padding:24px;border:2px dashed var(--border2);margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">📸</div><div style="font-size:14px;font-weight:500">Snap & Upload Receipt</div><div style="color:var(--text3);font-size:12px;margin-top:4px">Take a photo or upload — AI extracts the details</div><button class="btn btn-primary btn-sm" style="margin-top:12px">Upload Receipt</button></div>`;
+    if (rcpts.length) {
+      rcpts.forEach(r => {
+        html += `<div class="list-item"><div style="display:flex;justify-content:space-between"><strong>${r.vendor||'--'}</strong><span style="font-weight:600">$${(r.amount||0).toFixed(2)}</span></div><div style="color:var(--text2);font-size:12px">${r.date||''} · ${r.paidBy||'--'} · ${r.category||''}</div></div>`;
+      });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No receipts uploaded yet</div>`;
+    }
+    document.getElementById('p-receipts').innerHTML = html;
+  }
+  loadReceipts();
+
+  // ── FABRICATION PANEL ──
+  async function loadFabrication() {
+    const [fab, inv] = await Promise.all([loadJSON('fabrication'), loadJSON('inventory')]);
+    const jobs = fab?.activeJobs || [];
+    const slabs = inv?.slabs || [];
+    const rems = inv?.remnants || [];
+    const sum = inv?.summary || {};
+    let html = `<div class="panel-title">⚙️ Fabrication</div><div class="panel-sub">Drawing → Slab → Remnant → Install</div>`;
+    // Workflow steps
+    html += `<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap">`;
+    ['📐 Drawing','🪨 Slab Selection','✂️ Cutting','🔧 Fabrication','📦 Remnant','🏗️ Install'].forEach((s,i) => {
+      html += `<div class="step-box">${s}</div>`;
+      if (i < 5) html += `<div class="step-arrow">→</div>`;
+    });
+    html += `</div>`;
+    html += `<div class="grid3" style="margin-bottom:20px"><div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalSlabs||0}</div><div style="color:var(--text2);font-size:12px">Slabs in Stock</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalRemnants||0}</div><div style="color:var(--text2);font-size:12px">Usable Remnants</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalValue ? '$'+(sum.totalValue/1000).toFixed(0)+'K' : '$0'}</div><div style="color:var(--text2);font-size:12px">Inventory Value</div></div></div>`;
+    html += `<div class="section-label">Active Fabrication Jobs</div>`;
+    if (jobs.length) {
+      jobs.forEach(j => { html += `<div class="list-item"><strong>${j.client||'--'}</strong> — ${j.product||''} · Stage: ${j.stage||'--'}</div>`; });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No active fabrication jobs — CRM not connected</div>`;
+    }
+    html += `<div class="section-label" style="margin-top:16px">Remnant Inventory (≥22" usable)</div>`;
+    if (rems.length) {
+      rems.forEach(r => { html += `<div class="list-item">${r.product||'--'} — ${r.dimensions||''} · Value: $${(r.value||0).toLocaleString()}</div>`; });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No remnants tracked yet</div>`;
+    }
+    document.getElementById('p-fabrication').innerHTML = html;
+  }
+  loadFabrication();
+
+  // ── DOCUMENTS PANEL ──
+  async function loadDocuments() {
+    const data = await loadJSON('documents');
+    const docs = data?.documents || [];
+    const cats = data?.categories || [];
+    let html = `<div class="panel-title">📁 Documents</div><div class="panel-sub">Central document hub</div>`;
+    html += `<div class="filter-row"><input class="search-input" placeholder="Search documents...">`;
+    cats.forEach(c => { html += `<button class="filter-btn">${c}</button>`; });
+    html += `</div>`;
+    html += `<div class="card" style="text-align:center;padding:24px;border:2px dashed var(--border2);margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">📁</div><div style="font-size:14px;font-weight:500">Upload Document</div><button class="btn btn-primary btn-sm" style="margin-top:12px">Choose File</button></div>`;
+    if (docs.length) {
+      docs.forEach(d => { html += `<div class="list-item"><div style="display:flex;justify-content:space-between"><strong>${d.name||'--'}</strong><span class="badge">${d.category||''}</span></div><div style="color:var(--text2);font-size:12px">${d.date||''} · ${d.project||''}</div></div>`; });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No documents uploaded yet</div>`;
+    }
+    document.getElementById('p-documents').innerHTML = html;
+  }
+  loadDocuments();
+
+  // ── FLOORING PANEL ──
+  async function loadFlooring() {
+    const data = await loadJSON('flooring');
+    const clients = data?.clients || [];
+    const stats = data?.stats || {};
+    let html = `<div class="panel-title">🏠 Flooring</div><div class="panel-sub">Compass Project Partners — flooring division</div>`;
+    html += `<div class="grid3" style="margin-bottom:20px"><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.totalClients||0}</div><div style="color:var(--text2);font-size:12px">Clients</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.activeQuotes||0}</div><div style="color:var(--text2);font-size:12px">Active Quotes</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.revenueThisMonth ? '$'+(stats.revenueThisMonth/1000).toFixed(0)+'K' : '$0'}</div><div style="color:var(--text2);font-size:12px">Revenue (Month)</div></div></div>`;
+    html += `<div class="section-label">Suppliers: Tega · Goodfellow</div>`;
+    html += `<div class="section-label" style="margin-top:16px">Client Database</div>`;
+    if (clients.length) {
+      clients.forEach(c => { html += `<div class="list-item"><strong>${c.name||'--'}</strong> — ${c.type||''} · ${c.status||''}</div>`; });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🏠</div><div style="color:var(--text2)">No flooring clients yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">7,500+ past countertop clients available for flooring upsell</div></div>`;
+    }
+    document.getElementById('p-flooring').innerHTML = html;
+  }
+  loadFlooring();
+
+  // ── AGENTS PANEL ──
+  async function loadAgents() {
+    const data = await loadJSON('agents');
+    const agents = data?.agents || [];
+    let html = `<div class="panel-title">🤖 Agents</div><div class="panel-sub">AI agent status and integrations</div>`;
+    const defaultAgents = [
+      {name:'Messenger',desc:'iMessage listener — extracts tasks from texts',icon:'💬',status:'pending'},
+      {name:'Listener',desc:'Call recording transcription & analysis',icon:'🎙️',status:'pending'},
+      {name:'Estimator',desc:'Drawing analysis, slab calc, auto-quoting',icon:'📐',status:'pending'},
+      {name:'Watchdog',desc:'Invoice leakage detection, audit alerts',icon:'🔍',status:'pending'},
+      {name:'Closer',desc:'Follow-up automation, pipeline management',icon:'📈',status:'pending'}
+    ];
+    const display = agents.length ? agents : defaultAgents;
+    display.forEach(a => {
+      const sColor = {active:'var(--green)',pending:'var(--orange)',error:'var(--red)'}[a.status] || 'var(--text3)';
+      const sBadge = {active:'badge-green',pending:'badge-orange',error:'badge-red'}[a.status] || 'badge-accent';
+      html += `<div class="card" style="margin-bottom:10px;display:flex;align-items:center;gap:16px"><div style="font-size:28px;width:40px;text-align:center">${a.icon||'🤖'}</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="color:var(--text2);font-size:12px">${a.desc||a.description||''}</div></div><span class="badge ${sBadge}">${a.status}</span></div>`;
+    });
+    // Permissions table
+    html += `<div class="section-label" style="margin-top:24px">Agent Permissions</div>`;
+    html += `<div class="card"><div style="font-size:12px;overflow-x:auto"><div style="display:grid;grid-template-columns:1fr repeat(4,50px);gap:4px;text-align:center"><div style="text-align:left;font-weight:600;color:var(--text3)">Agent</div><div style="font-weight:600;color:var(--text3)">Read</div><div style="font-weight:600;color:var(--text3)">Write</div><div style="font-weight:600;color:var(--text3)">Send</div><div style="font-weight:600;color:var(--text3)">Delete</div>`;
+    [{n:'Messenger',r:1,w:1,s:0,d:0},{n:'Listener',r:1,w:1,s:0,d:0},{n:'Estimator',r:1,w:1,s:0,d:0},{n:'Watchdog',r:1,w:0,s:1,d:0},{n:'Closer',r:1,w:1,s:1,d:0}].forEach(p => {
+      html += `<div style="text-align:left">${p.n}</div><div>${p.r?'✅':'❌'}</div><div>${p.w?'✅':'❌'}</div><div>${p.s?'✅':'❌'}</div><div>${p.d?'✅':'❌'}</div>`;
+    });
+    html += `</div></div></div>`;
+    document.getElementById('p-agents').innerHTML = html;
+  }
+  loadAgents();
+
+  // ── SECURITY PANEL ──
+  async function loadSecurity() {
+    const data = await loadJSON('security');
+    const log = data?.accessLog || [];
+    const perms = data?.permissions || [];
+    let html = `<div class="panel-title">🔒 Security</div><div class="panel-sub">Access control and monitoring</div>`;
+    html += `<div class="card" style="margin-bottom:16px"><div class="card-title">📋 Access Log</div>`;
+    if (log.length) {
+      log.forEach(l => {
+        const badge = l.status === 'authorized' ? 'badge-green' : 'badge-red';
+        html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><span>${l.time||''}</span><span>${l.ip||''}</span><span class="badge ${badge}">${l.status||''}</span></div>`;
+      });
+    } else {
+      html += `<div style="color:var(--text3);font-size:13px;padding:12px 0">No access log entries yet</div>`;
+    }
+    html += `</div>`;
+    html += `<div class="card"><div class="card-title">🔐 Security Status</div><div style="color:var(--text2);font-size:13px;padding:12px 0">Agent deployed on private Tailscale network. All connections authenticated. No public API exposure.</div></div>`;
+    document.getElementById('p-security').innerHTML = html;
+  }
+  loadSecurity();
+
+  // ── MEETINGS PANEL ──
+  async function loadMeetings() {
+    const data = await loadJSON('meetings');
+    const upcoming = data?.upcoming || [];
+    const past = data?.past || [];
+    let html = `<div class="panel-title">📅 Meetings</div><div class="panel-sub">Schedule and AI-generated meeting summaries</div>`;
+    html += `<div class="section-label">Upcoming</div>`;
+    if (upcoming.length) {
+      upcoming.forEach(m => {
+        html += `<div class="meeting-card" style="border-left:3px solid var(--accent)"><div class="meet-title">${m.title||'Untitled'}</div><div class="meet-meta">${m.date||''} · ${m.time||''} · ${m.location||''} · ${(m.attendees||[]).join(', ')}</div><div class="meet-body">${m.notes||''}</div></div>`;
+      });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No upcoming meetings — calendar not connected</div>`;
+    }
+    html += `<div class="section-label" style="margin-top:24px">Past Meetings (AI Summaries)</div>`;
+    if (past.length) {
+      past.forEach(m => {
+        html += `<div class="meeting-card" style="opacity:0.85;border-left:3px solid var(--text3)"><div class="meet-title">${m.title||'Untitled'}</div><div class="meet-meta">${m.date||''}</div><div class="meet-body">${m.summary||''}</div></div>`;
+      });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No meeting summaries yet — upload recordings to generate</div>`;
+    }
+    document.getElementById('p-meetings').innerHTML = html;
+  }
+  loadMeetings();
 </script>
 </body>
 </html>
