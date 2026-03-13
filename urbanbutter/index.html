@@ -202,20 +202,39 @@ tr:hover{background:var(--cream)}
 
     <!-- BUY PLANNING TAB -->
     <div class="tab-content" id="tab-buyrec">
-      <h3 id="buyTitle" style="font-size:18px;margin-bottom:16px">Buy Planning — Season Over Season by Brand</h3>
-      <p id="buySubtitle" style="color:var(--text2);font-size:13px;margin-bottom:20px">Click a brand to see style-level performance across seasons. Use this to steer what to increase, maintain, or drop.</p>
-      <div class="card">
+      <h3 style="font-size:18px;margin-bottom:16px">Buy Planning — Sell-Through Comparison</h3>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:20px">Comparing sell-through % season over season. Click a brand to drill into categories and styles.</p>
+      <!-- SPRING VS SPRING -->
+      <div class="card" style="margin-bottom:24px">
+        <h4 id="springTitle" style="font-size:15px;margin-bottom:12px;color:var(--accent)"></h4>
         <div style="overflow-x:auto">
           <table>
             <thead>
               <tr>
                 <th>Brand</th>
-                <th id="buyCol1"></th>
-                <th id="buyCol2"></th>
+                <th id="spCol1"></th>
+                <th id="spCol2"></th>
                 <th>Trend</th>
               </tr>
             </thead>
-            <tbody id="buyBrandBody"></tbody>
+            <tbody id="springBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- FALL VS FALL -->
+      <div class="card">
+        <h4 id="fallTitle" style="font-size:15px;margin-bottom:12px;color:var(--accent)"></h4>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th id="faCol1"></th>
+                <th id="faCol2"></th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody id="fallBody"></tbody>
           </table>
         </div>
       </div>
@@ -393,61 +412,89 @@ function renderDrillDown(){
   });
 }
 
-function getSeasonConfig(){
-  const m=new Date().getMonth();// 0-indexed
-  const y=new Date().getFullYear();
-  const yShort=String(y).slice(-2);
-  const prevShort=String(y-1).slice(-2);
-  const nextShort=String(y+1).slice(-2);
-  // Spring = Jan-Jun (months 0-5), Fall = Jul-Dec (months 6-11)
-  if(m<6){
-    return{
-      season:'Spring',
-      col1Label:`Spring '${prevShort}`,col2Label:`Spring '${yShort}`,
-      b1s:'sp'+prevShort+'_sold',b1r:'sp'+prevShort+'_rev',b2s:'sp'+yShort+'_sold',b2r:'sp'+yShort+'_rev',
-      c1:'sp'+prevShort,c1r:'sp'+prevShort+'r',c2:'sp'+yShort,c2r:'sp'+yShort+'r',
-      s1:'sp'+prevShort,s2:'sp'+yShort,
-      planLabel:`Planning Spring '${nextShort} Buy`
-    };
-  }else{
-    return{
-      season:'Fall',
-      col1Label:`Fall '${prevShort}`,col2Label:`Fall '${yShort}`,
-      b1s:'fa'+prevShort+'_sold',b1r:'fa'+prevShort+'_rev',b2s:'fa'+yShort+'_sold',b2r:'fa'+yShort+'_rev',
-      c1:'fa'+prevShort,c1r:'fa'+prevShort+'r',c2:'fa'+yShort,c2r:'fa'+yShort+'r',
-      s1:'fa'+prevShort,s2:'fa'+yShort,
-      planLabel:`Planning Fall '${nextShort} Buy`
-    };
-  }
+// Build style→remaining lookup from DATA for sell-through calculation
+function buildRemainingLookup(){
+  const lookup={};
+  const client=DATA[currentClient];
+  if(!client||!client.stores||!client.stores.all) return lookup;
+  client.stores.all.forEach(brand=>{
+    (brand.styles||[]).forEach(s=>{
+      lookup[s.name.toUpperCase()]=(lookup[s.name.toUpperCase()]||0)+s.remaining;
+    });
+  });
+  return lookup;
 }
-function renderRecs(){
-  const sc=getSeasonConfig();
-  document.getElementById('buyTitle').textContent=`Buy Planning — ${sc.season} vs ${sc.season} by Brand`;
-  document.getElementById('buySubtitle').textContent=`${sc.planLabel}. Click a brand to see style-level performance.`;
-  document.getElementById('buyCol1').textContent=sc.col1Label;
-  document.getElementById('buyCol2').textContent=sc.col2Label;
+// Compute sell-through % for a season: sold / (sold + remaining attributed to that season)
+function computeSeasonST(styles, soldKey, remainLookup, seasonPriority){
+  let totalSold=0, totalBought=0;
+  styles.forEach(s=>{
+    const sold=s[soldKey]||0;
+    totalSold+=sold;
+    // Attribute remaining to most recent season with sales
+    const rem=remainLookup[s.name.toUpperCase()]||0;
+    const mostRecent=seasonPriority.find(k=>s[k]>0);
+    if(mostRecent===soldKey){
+      totalBought+=sold+rem;
+    }else{
+      totalBought+=sold;// fully sold through for this season
+    }
+  });
+  return totalBought>0?Math.round(totalSold/totalBought*100):0;
+}
+function renderSeasonTable(bodyId,brands,s1Key,s1rKey,s2Key,s2rKey,seasonPriority,prefix){
+  const remainLookup=buildRemainingLookup();
   let html='';
-  BUY_PLAN.forEach((b,bi)=>{
-    const s1=b[sc.b1s]||0,r1=b[sc.b1r]||0,s2=b[sc.b2s]||0,r2=b[sc.b2r]||0;
-    const changePct=s1>0?Math.round((s2-s1)/s1*100):(s2>0?999:0);
-    const arrow=changePct>0?'↑':'↓';
-    const cls=changePct>20?'kpi-up':changePct<-20?'kpi-down':'';
-    html+=`<tr class="brand-row buy-brand-row" data-bidx="${bi}" style="cursor:pointer"><td><span class="expand-icon">▶</span><strong>${b.brand}</strong></td><td>${s1} units<br><span style="color:var(--text2);font-size:12px">${fmt(r1)}</span></td><td>${s2} units<br><span style="color:var(--text2);font-size:12px">${fmt(r2)}</span></td><td class="${cls}" style="font-weight:600">${arrow} ${Math.abs(changePct)}%</td></tr>`;
+  brands.forEach((b,bi)=>{
+    // Brand-level sell-through
+    const allStyles=[];
+    b.categories.forEach(c=>(c.styles||[]).forEach(s=>allStyles.push(s)));
+    const st1=computeSeasonST(allStyles,s1Key,remainLookup,seasonPriority);
+    const st2=computeSeasonST(allStyles,s2Key,remainLookup,seasonPriority);
+    const s1sold=b[s1Key+'_sold']||0,s1rev=b[s1Key+'_rev']||0;
+    const s2sold=b[s2Key+'_sold']||0,s2rev=b[s2Key+'_rev']||0;
+    const trendPts=st2-st1;
+    const arrow=trendPts>=0?'↑':'↓';
+    const cls=trendPts>5?'kpi-up':trendPts<-5?'kpi-down':'';
+    html+=`<tr class="brand-row buy-brand-row" data-bidx="${prefix}${bi}" style="cursor:pointer"><td><span class="expand-icon">▶</span><strong>${b.brand}</strong></td><td><strong>${st1}%</strong><br><span style="color:var(--text2);font-size:11px">${s1sold} sold · ${fmt(s1rev)}</span></td><td><strong>${st2}%</strong><br><span style="color:var(--text2);font-size:11px">${s2sold} sold · ${fmt(s2rev)}</span></td><td class="${cls}" style="font-weight:600">${arrow} ${Math.abs(trendPts)}pts</td></tr>`;
     b.categories.forEach((c,ci)=>{
-      const cv1=c[sc.c1]||0,cv1r=c[sc.c1r]||0,cv2=c[sc.c2]||0,cv2r=c[sc.c2r]||0;
-      const cChange=cv1>0?Math.round((cv2-cv1)/cv1*100):(cv2>0?999:0);
-      const cArrow=cChange>0?'↑':'↓';
-      const cCls=cChange>20?'kpi-up':cChange<-20?'kpi-down':'';
+      const catStyles=c.styles||[];
+      const cst1=computeSeasonST(catStyles,s1Key,remainLookup,seasonPriority);
+      const cst2=computeSeasonST(catStyles,s2Key,remainLookup,seasonPriority);
+      const cTrend=cst2-cst1;
+      const cArrow=cTrend>=0?'↑':'↓';
+      const cCls=cTrend>5?'kpi-up':cTrend<-5?'kpi-down':'';
       const recTag=c.rec==='Grow'?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080;font-size:11px">📈 Grow</span>':c.rec==='Reduce'?'<span class="rec-tag rec-reduce" style="font-size:11px">📉 Reduce</span>':'<span class="rec-tag" style="background:#f5f5f5;color:#666;font-size:11px">➡️ Maintain</span>';
-      html+=`<tr class="style-row hidden-row buy-cat-row" data-buy-brand="${bi}" data-buy-cat="${bi}-${ci}" style="cursor:pointer;background:var(--cream)"><td style="padding-left:28px"><span class="expand-icon">▶</span><strong>${c.category}</strong></td><td style="font-size:13px">${cv1}<br><span style="color:var(--text2);font-size:11px">${fmt(cv1r)}</span></td><td style="font-size:13px">${cv2}<br><span style="color:var(--text2);font-size:11px">${fmt(cv2r)}</span></td><td><span class="${cCls}" style="font-weight:600;font-size:12px">${cArrow} ${Math.abs(cChange)}%</span> ${recTag}</td></tr>`;
-      c.styles.forEach(s=>{
-        const sv1=s[sc.s1]||'-',sv2=s[sc.s2]||'-';
+      html+=`<tr class="style-row hidden-row buy-cat-row" data-buy-brand="${prefix}${bi}" data-buy-cat="${prefix}${bi}-${ci}" style="cursor:pointer;background:var(--cream)"><td style="padding-left:28px"><span class="expand-icon">▶</span><strong>${c.category}</strong></td><td style="font-size:13px"><strong>${cst1}%</strong><br><span style="color:var(--text2);font-size:11px">${c[s1Key]||0} sold</span></td><td style="font-size:13px"><strong>${cst2}%</strong><br><span style="color:var(--text2);font-size:11px">${c[s2Key]||0} sold</span></td><td><span class="${cCls}" style="font-weight:600;font-size:12px">${cArrow} ${Math.abs(cTrend)}pts</span> ${recTag}</td></tr>`;
+      catStyles.forEach(s=>{
+        const sv1=s[s1Key]||0,sv2=s[s2Key]||0;
+        const rem=remainLookup[s.name.toUpperCase()]||0;
+        const mostRecent=seasonPriority.find(k=>s[k]>0);
+        const sRem=(mostRecent===s2Key)?rem:0;
+        const sST1=sv1>0?'100%':'-';// past season = fully sold through or no data
+        const sST2=(sv2+sRem)>0?Math.round(sv2/(sv2+sRem)*100)+'%':(sv2>0?'100%':'-');
         const sTag=s.rec==='Rebuy'?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080;font-size:10px">🔄 Rebuy</span>':'<span class="rec-tag" style="background:#f5f5f5;color:#999;font-size:10px">👀 Watch</span>';
-        html+=`<tr class="sku-row hidden-row" data-buy-style="${bi}-${ci}"><td style="padding-left:52px;font-size:12px">${s.name}</td><td style="font-size:12px">${sv1}</td><td style="font-size:12px">${sv2}</td><td>${sTag}</td></tr>`;
+        html+=`<tr class="sku-row hidden-row" data-buy-style="${prefix}${bi}-${ci}"><td style="padding-left:52px;font-size:12px">${s.name}</td><td style="font-size:12px">${sv1} sold</td><td style="font-size:12px">${sv2} sold${sRem>0?' · '+sRem+' left':''}</td><td>${sTag}</td></tr>`;
       });
     });
   });
-  document.getElementById('buyBrandBody').innerHTML=html;
+  document.getElementById(bodyId).innerHTML=html;
+}
+function renderRecs(){
+  const y=new Date().getFullYear();
+  const ps=String(y-1).slice(-2),cs=String(y).slice(-2);
+  // Spring headers
+  document.getElementById('springTitle').textContent=`🌸 Spring '${ps} vs Spring '${cs} — Planning Spring '${String(y+1).slice(-2)} Buy`;
+  document.getElementById('spCol1').textContent=`Spring '${ps}`;
+  document.getElementById('spCol2').textContent=`Spring '${cs}`;
+  // Fall headers
+  document.getElementById('fallTitle').textContent=`🍂 Fall '${ps} vs Fall '${cs}`;
+  document.getElementById('faCol1').textContent=`Fall '${ps}`;
+  document.getElementById('faCol2').textContent=`Fall '${cs}`;
+  // Render both tables
+  const spPriority=['sp'+cs,'fa'+ps,'sp'+ps];
+  const faPriority=['fa'+cs,'sp'+cs,'fa'+ps,'sp'+ps];
+  renderSeasonTable('springBody',BUY_PLAN,'sp'+ps,'sp'+ps+'r','sp'+cs,'sp'+cs+'r',spPriority,'sp');
+  renderSeasonTable('fallBody',BUY_PLAN,'fa'+ps,'fa'+ps+'r','fa'+cs,'fa'+cs+'r',faPriority,'fa');
   // Brand click → show categories
   document.querySelectorAll('.buy-brand-row').forEach(r=>{
     r.addEventListener('click',()=>{
