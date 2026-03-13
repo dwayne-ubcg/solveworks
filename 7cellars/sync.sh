@@ -294,7 +294,7 @@ for i, sale in enumerate(all_sales):
 
     order_date = sale.get('OrderDate', '')[:10]
     month_key = order_date[:7] if order_date else 'unknown'
-    is_retail = 'shopify' in sale.get('Customer', '').lower() or detail.get('SourceChannel', '').lower() == 'shopify'
+    is_retail = 'shopify' in (sale.get('Customer') or '').lower() or (detail.get('SourceChannel') or '').lower() == 'shopify'
 
     # Check Order first, fall back to Quote (ESTIMATED sales have data in Quote only)
     order = detail.get('Order', {})
