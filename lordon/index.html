@@ -3541,26 +3541,34 @@ function renderProperOTB() {
   const locationRevenue = locSales.totalRevenue || 0;
   const plannedMonthlySales = locationRevenue > 0 ? locationRevenue / periodMonths : 0;
 
-  // Inventory from dashboard.json brandBreakdown (actual Lightspeed inventory values)
-  const db = window._ld && window._ld.dashboard && window._ld.dashboard.inventory || {};
-  const dbBrands = db.brandBreakdown || [];
-  const totalInventoryCost = dbBrands.length > 0 ? dbBrands.reduce((s,b) => s + (b.cost||0), 0) : (st.otb || []).reduce((s,o) => s + (o.currentInventoryCost||0), 0);
-  const totalInventoryRetail = dbBrands.length > 0 ? dbBrands.reduce((s,b) => s + (b.retail||0), 0) : totalInventoryCost / costMultiplier;
+  // Inventory — use st.otb aggregation (matches what's on the floor now)
+  const totalInventoryCost = (st.otb || []).reduce((s,o) => s + (o.currentInventoryCost||0), 0);
   const beginningInventoryCost = multiStore ? totalInventoryCost : (numLocs > 0 ? totalInventoryCost / numLocs : totalInventoryCost);
-  const beginningInventoryRetail = multiStore ? totalInventoryRetail : (numLocs > 0 ? totalInventoryRetail / numLocs : totalInventoryRetail);
+  const beginningInventoryRetail = beginningInventoryCost / costMultiplier;
 
-  const plannedEndingInventory = plannedMonthlySales * 2.25; // Target 2.25 months of supply
+  // Planned ending inventory: target 2.25 months of supply
+  // When viewing all locations combined, this naturally scales because plannedMonthlySales includes all stores
+  // The key insight: OTB should be calculated PER STORE then summed, or equivalently,
+  // use per-store metrics throughout. We calculate per-store to get accurate benchmarks.
+  const perStoreSales = multiStore ? plannedMonthlySales / numLocs : plannedMonthlySales;
+  const perStoreInvRetail = multiStore ? beginningInventoryRetail / numLocs : beginningInventoryRetail;
+  const perStoreEndingInv = perStoreSales * 2.25;
+  // OTB per store, then scale back up
+  const plannedEndingInventory = perStoreEndingInv * (multiStore ? numLocs : 1);
   const onOrderInput = document.getElementById('bp-on-order-input');
   const onOrder = onOrderInput ? parseFloat(onOrderInput.value) || 0 : 0;
 
   // OTB = Planned Sales + Planned Ending Inventory − Beginning Inventory − On-Order
   const netOTB = plannedMonthlySales + plannedEndingInventory - beginningInventoryRetail - onOrder;
 
-  // --- Inventory Health Metrics ---
+  // --- Inventory Health Metrics (per-store for accurate benchmarking) ---
+  const perStoreAnnualSales = perStoreSales * 12;
+  const turnover = perStoreInvRetail > 0 ? perStoreAnnualSales / perStoreInvRetail : 0;
+  const monthsOfSupply = perStoreSales > 0 ? perStoreInvRetail / perStoreSales : 0;
+  const perStoreInvCost = multiStore ? beginningInventoryCost / numLocs : beginningInventoryCost;
+  const buyRatio = perStoreSales > 0 ? perStoreInvCost / perStoreSales : 0;
+  // Combined totals for display
   const annualSales = plannedMonthlySales * 12;
-  const turnover = beginningInventoryRetail > 0 ? annualSales / beginningInventoryRetail : 0;
-  const monthsOfSupply = plannedMonthlySales > 0 ? beginningInventoryRetail / plannedMonthlySales : 0;
-  const buyRatio = plannedMonthlySales > 0 ? beginningInventoryCost / plannedMonthlySales : 0;
 
   // --- Benchmark targets (adjust for multi-store context) ---
   const turnoverTarget = getTurnoverTarget(); // {low, high}
