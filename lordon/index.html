@@ -410,6 +410,34 @@ tr:hover td { background: var(--bg); }
   .hamburger { display: flex; }
   .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
 }
+
+/* ═══ REPEAT-BUY DRILL-DOWN ═══ */
+.rbd-table { width:100%; border-collapse:collapse; font-size:13px; }
+.rbd-table th { text-align:left; padding:9px 12px; border-bottom:2px solid var(--border); font-weight:600; color:var(--text-secondary); font-size:11px; text-transform:uppercase; letter-spacing:0.5px; }
+.rbd-table td { padding:9px 12px; border-bottom:1px solid var(--border-light); vertical-align:middle; }
+.rbd-brand-row { cursor:pointer; transition:background 0.15s; }
+.rbd-brand-row:hover td { background:var(--bg-card-hover); }
+.rbd-brand-row td:first-child { font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
+.rbd-expand { font-size:11px; color:var(--text-muted); transition:transform 0.2s; display:inline-block; flex-shrink:0; }
+.rbd-expand.open { transform:rotate(90deg); }
+.rbd-style-row { background:var(--bg) !important; }
+.rbd-style-row td:first-child { padding-left:36px; font-weight:500; }
+.rbd-sku-row { background:#F5F2EE !important; }
+.rbd-sku-row td:first-child { padding-left:60px; font-size:12px; color:var(--text-secondary); }
+.rbd-hidden { display:none; }
+.rbd-alert { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:5px; font-size:10px; font-weight:700; letter-spacing:0.3px; white-space:nowrap; }
+.rbd-alert-reorder { background:#FDE8E8; color:var(--red); }
+.rbd-alert-repeat  { background:#FFF3E0; color:#C98000; }
+.rbd-alert-watch   { background:#FFF8E1; color:var(--yellow); }
+.rbd-alert-new     { background:var(--blue-light); color:var(--blue); }
+.rbd-alert-ok      { background:var(--green-light); color:var(--green); }
+.rbd-sku-tag { display:inline-block; font-size:11px; font-weight:600; }
+.rbd-filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.rbd-filter-btn { padding:6px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--bg); font-size:12px; font-weight:600; cursor:pointer; color:var(--text-secondary); font-family:inherit; transition:all 0.15s; }
+.rbd-filter-btn:hover { border-color:var(--accent); color:var(--text); }
+.rbd-filter-btn.active { background:linear-gradient(135deg,var(--accent-warm),#F0E4D4); border-color:var(--accent); color:var(--text); }
+.rbd-summary-pills { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.rbd-pill { padding:5px 14px; border-radius:20px; font-size:12px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -1097,8 +1125,53 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
+  <!-- ⑫ BRAND → STYLE → SKU REPEAT-BUY DRILL-DOWN -->
+  <div class="card" style="margin-bottom:20px;" id="rbd-card">
+    <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <span>🔁 Repeat-Buy Intelligence — Brand → Style → SKU</span>
+      <span id="rbd-last-updated" style="font-size:11px;font-weight:400;color:var(--text-muted);"></span>
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
+      Velocity and weeks of supply calculated from each product's floor date. Flag items before they run out.
+    </p>
 
+    <!-- Summary pills -->
+    <div class="rbd-summary-pills" id="rbd-pills">
+      <span class="rbd-pill" style="background:var(--red-light);color:var(--red);" id="rbd-pill-reorder">— Reorder Now</span>
+      <span class="rbd-pill" style="background:#FFF3E0;color:#C98000;" id="rbd-pill-repeat">— Repeat Worthy</span>
+      <span class="rbd-pill" style="background:var(--yellow-light);color:var(--yellow);" id="rbd-pill-watch">— Watch</span>
+      <span class="rbd-pill" style="background:var(--green-light);color:var(--green);" id="rbd-pill-ok">— Healthy</span>
+    </div>
 
+    <!-- Filter bar -->
+    <div class="rbd-filter-bar" id="rbd-filters">
+      <button class="rbd-filter-btn active" onclick="rbdSetFilter('ALL',this)">All Brands</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('REORDER_NOW',this)">🔴 Reorder Now</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('REPEAT_WORTHY',this)">🟡 Repeat Worthy</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('WATCH',this)">👁 Watch</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('NEW',this)">🆕 New</button>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="rbd-table">
+        <thead>
+          <tr>
+            <th style="min-width:220px;">Brand / Style / Size</th>
+            <th style="text-align:right;">Revenue</th>
+            <th style="text-align:right;">Sold</th>
+            <th style="text-align:right;">Remaining</th>
+            <th style="text-align:right;">Sell-Through</th>
+            <th style="text-align:right;">Velocity</th>
+            <th style="text-align:right;">Wks of Supply</th>
+            <th style="text-align:center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="rbd-tbody">
+          <tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:24px;">Loading repeat-buy data…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
 
 
@@ -2067,13 +2140,14 @@ async function loadJSON(path){
   catch(e){console.warn('Load failed:'+path,e);return null;}
 }
 async function initData(){
-  const [orders,products,customers,sales,summary,dashboard,omnisend,sellThrough]=await Promise.all([
+  const [orders,products,customers,sales,summary,dashboard,omnisend,sellThrough,sellThroughDetail]=await Promise.all([
     loadJSON('data/shopify-orders.json'),loadJSON('data/shopify-products.json'),
     loadJSON('data/shopify-customers.json'),loadJSON('data/lightspeed-sales.json'),
     loadJSON('data/summary.json'),loadJSON('data/dashboard.json'),loadJSON('data/omnisend.json'),
-    loadJSON('data/sell-through.json?v=' + Date.now())
+    loadJSON('data/sell-through.json?v=' + Date.now()),
+    loadJSON('data/sell-through-detail.json?v=' + Date.now())
   ]);
-  window._ld={orders:orders||[],products:products||[],customers:customers||[],sales:sales||[],summary:summary||{},dashboard:dashboard||{},omnisend:omnisend||{},sellThrough:sellThrough||{}};
+  window._ld={orders:orders||[],products:products||[],customers:customers||[],sales:sales||[],summary:summary||{},dashboard:dashboard||{},omnisend:omnisend||{},sellThrough:sellThrough||{},sellThroughDetail:sellThroughDetail||null};
   console.log('Lordon data loaded:',Object.fromEntries(Object.entries(window._ld).map(([k,v])=>[k,Array.isArray(v)?v.length:'obj'])));
   renderDashboard();
 }
@@ -3501,6 +3575,193 @@ function renderSellThrough(){
 
   // ⑧–⑪ Season comparison, OTB, market guide
   renderSeasonComparison();
+  // ⑫ Repeat-buy drill-down
+  renderSellThroughDetail();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ⑫ REPEAT-BUY INTELLIGENCE — BRAND → STYLE → SKU DRILL-DOWN
+// ═══════════════════════════════════════════════════════════════
+
+window._rbdFilter = 'ALL';
+
+function rbdSetFilter(f, btn) {
+  window._rbdFilter = f;
+  document.querySelectorAll('.rbd-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderSellThroughDetail();
+}
+
+function renderSellThroughDetail() {
+  const detail = window._ld && window._ld.sellThroughDetail;
+  const tbody = document.getElementById('rbd-tbody');
+  if (!tbody) return;
+  if (!detail || !detail.brands || !detail.brands.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:24px;">No repeat-buy data — run <code>build-lordon-sell-through-detail.js</code> to generate.</td></tr>';
+    return;
+  }
+
+  // Update summary pills
+  const elR = document.getElementById('rbd-pill-reorder');
+  const elRW = document.getElementById('rbd-pill-repeat');
+  const elW = document.getElementById('rbd-pill-watch');
+  const elO = document.getElementById('rbd-pill-ok');
+  if (elR) elR.textContent = detail.reorderNow + ' Reorder Now';
+  if (elRW) elRW.textContent = detail.repeatWorthy + ' Repeat Worthy';
+  let watchCount = 0, okCount = 0;
+  for (const b of detail.brands) {
+    for (const s of b.styles) {
+      if (s.alert === 'WATCH') watchCount++;
+      else if (s.alert === 'OK' || s.alert === 'NEW') okCount++;
+    }
+  }
+  if (elW) elW.textContent = watchCount + ' Watch';
+  if (elO) elO.textContent = okCount + ' OK / New';
+
+  // Update last-updated
+  const luEl = document.getElementById('rbd-last-updated');
+  if (luEl && detail.generatedAt) {
+    luEl.textContent = 'Data as of ' + new Date(detail.generatedAt).toLocaleDateString('en-CA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  const filter = window._rbdFilter || 'ALL';
+
+  // Alert config
+  const alertCfg = {
+    REORDER_NOW:   { cls:'rbd-alert-reorder', label:'🔴 Reorder Now' },
+    REPEAT_WORTHY: { cls:'rbd-alert-repeat',  label:'🟡 Repeat Worthy' },
+    WATCH:         { cls:'rbd-alert-watch',   label:'👁 Watch' },
+    NEW:           { cls:'rbd-alert-new',     label:'🆕 New' },
+    OK:            { cls:'rbd-alert-ok',      label:'✅ OK' },
+  };
+
+  function skuTag(sk, styleWeeks) {
+    const skVel = styleWeeks > 0 ? sk.sold / styleWeeks : 0;
+    const skWos = skVel > 0 ? Math.min(sk.remaining / skVel, 12) : (sk.remaining > 0 ? 99 : 0);
+    const lowQty = sk.remaining <= 3 && skVel > 0;
+    if (sk.sold === 0 && sk.remaining === 0) return '';
+    if (sk.sold === 0) return '<span class="rbd-sku-tag" style="color:var(--text-muted);">🆕 New</span>';
+    if (sk.remaining === 0) return '<span class="rbd-sku-tag" style="color:var(--red);font-weight:700;">⚠️ Sold Out — Reorder</span>';
+    if (skWos <= 3) return '<span class="rbd-sku-tag" style="color:var(--red);">🔴 Reorder <span style="font-weight:400;font-size:10px;">(' + skWos.toFixed(1) + 'w)</span></span>';
+    if (lowQty || skWos <= 5) return '<span class="rbd-sku-tag" style="color:var(--yellow);">🟡 Low Stock <span style="font-weight:400;font-size:10px;">(' + (skWos < 99 ? skWos.toFixed(1) + 'w' : sk.remaining + ' left') + ')</span></span>';
+    return '<span class="rbd-sku-tag" style="color:var(--text-muted);">✅ <span style="font-weight:400;">' + sk.remaining + ' left</span></span>';
+  }
+
+  const rows = [];
+
+  for (const brand of detail.brands) {
+    // Determine if brand passes the filter
+    const brandStyles = filter === 'ALL'
+      ? brand.styles
+      : brand.styles.filter(s => s.alert === filter);
+    if (brandStyles.length === 0) continue;
+
+    // Compute brand-level alert (worst of its styles)
+    const alertPriority = { REORDER_NOW:0, REPEAT_WORTHY:1, WATCH:2, NEW:3, OK:4 };
+    const worstAlert = brandStyles.reduce((worst, s) => {
+      const ap = alertPriority[s.alert] ?? 5;
+      return ap < alertPriority[worst] ? s.alert : worst;
+    }, 'OK');
+    const bCfg = alertCfg[worstAlert] || alertCfg.OK;
+
+    const brandId = 'rbd-brand-' + brand.brand.replace(/[^a-z0-9]/gi, '_');
+    const stPct = brand.sold + brand.remaining > 0
+      ? Math.round(brand.sold / (brand.sold + brand.remaining) * 100)
+      : 0;
+
+    rows.push(`<tr class="rbd-brand-row" data-brand-id="${brandId}" onclick="rbdToggleBrand('${brandId}')">
+      <td><span class="rbd-expand" id="${brandId}-icon">▶</span><span>${brand.brand}</span><span class="rbd-alert ${bCfg.cls}" style="margin-left:4px;">${bCfg.label}</span></td>
+      <td style="text-align:right;">${fmtC(brand.revenue)}</td>
+      <td style="text-align:right;">${fmtN(brand.sold)}</td>
+      <td style="text-align:right;">${fmtN(brand.remaining)}</td>
+      <td style="text-align:right;">${stPct}%</td>
+      <td style="text-align:right;color:var(--text-muted);">—</td>
+      <td style="text-align:right;color:var(--text-muted);">—</td>
+      <td style="text-align:center;font-size:12px;color:var(--text-muted);">${brandStyles.length} styles</td>
+    </tr>`);
+
+    for (const style of brandStyles) {
+      const styleId = brandId + '_' + style.name.replace(/[^a-z0-9]/gi, '_');
+      const sCfg = alertCfg[style.alert] || alertCfg.OK;
+      const wosDisplay = style.wos >= 99 ? '—' : style.wos + 'w';
+      const wosStyle = style.wos <= 3 && style.wos > 0 ? 'color:var(--red);font-weight:700;'
+                     : style.wos <= 5 ? 'color:var(--yellow);font-weight:600;' : '';
+      const velDisplay = style.vel >= 0.05 ? style.vel.toFixed(2) + '/wk' : '&lt;0.1/wk';
+      const floorNote = style.weeks < 2 ? ' <span style="font-size:10px;color:var(--blue);">(new)</span>' : '';
+      const stBar = style.sellThrough > 0
+        ? `<span style="display:inline-block;width:${Math.min(style.sellThrough,100)*0.5}px;height:6px;background:var(--accent);border-radius:3px;margin-right:4px;vertical-align:middle;"></span>`
+        : '';
+
+      rows.push(`<tr class="rbd-style-row rbd-hidden" data-parent="${brandId}" id="${styleId}-row">
+        <td onclick="rbdToggleStyle('${styleId}')" style="cursor:pointer;">
+          <span class="rbd-expand" id="${styleId}-icon">▶</span>
+          <span>${style.name}${floorNote}</span>
+          <span class="rbd-alert ${sCfg.cls}" style="margin-left:6px;font-size:9px;">${sCfg.label}</span>
+        </td>
+        <td style="text-align:right;">${fmtC(style.revenue)}</td>
+        <td style="text-align:right;">${style.sold}</td>
+        <td style="text-align:right;">${style.remaining}</td>
+        <td style="text-align:right;">${stBar}${style.sellThrough}%</td>
+        <td style="text-align:right;font-size:12px;">${velDisplay}</td>
+        <td style="text-align:right;${wosStyle}">${wosDisplay}</td>
+        <td style="text-align:center;font-size:12px;color:var(--text-muted);">${style.skus.length} sizes</td>
+      </tr>`);
+
+      for (const sku of style.skus) {
+        if (sku.sold === 0 && sku.remaining === 0) continue; // skip phantom SKUs
+        const tag = skuTag(sku, style.weeks);
+        rows.push(`<tr class="rbd-sku-row rbd-hidden" data-style="${styleId}">
+          <td>${sku.label}</td>
+          <td style="text-align:right;">${fmtC(sku.revenue)}</td>
+          <td style="text-align:right;">${sku.sold}</td>
+          <td style="text-align:right;">${sku.remaining}</td>
+          <td style="text-align:right;color:var(--text-muted);">—</td>
+          <td style="text-align:right;color:var(--text-muted);">—</td>
+          <td style="text-align:right;color:var(--text-muted);">—</td>
+          <td style="text-align:center;">${tag}</td>
+        </tr>`);
+      }
+    }
+  }
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:24px;">No items match this filter.</td></tr>';
+  } else {
+    tbody.innerHTML = rows.join('');
+  }
+}
+
+function rbdToggleBrand(brandId) {
+  const icon = document.getElementById(brandId + '-icon');
+  const isOpen = icon && icon.classList.contains('open');
+
+  // Collapse all brands and their children
+  document.querySelectorAll('.rbd-brand-row[data-brand-id]').forEach(r => {
+    const id = r.dataset.brandId;
+    const ic = document.getElementById(id + '-icon');
+    if (ic) ic.classList.remove('open');
+  });
+  document.querySelectorAll('.rbd-style-row, .rbd-sku-row').forEach(r => r.classList.add('rbd-hidden'));
+  document.querySelectorAll('.rbd-expand[id]').forEach(ic => {
+    if (ic.id.includes('_')) ic.classList.remove('open'); // style expand icons
+  });
+
+  // If it was closed, open this brand
+  if (!isOpen) {
+    if (icon) icon.classList.add('open');
+    document.querySelectorAll(`[data-parent="${brandId}"]`).forEach(r => {
+      r.classList.remove('rbd-hidden');
+    });
+  }
+}
+
+function rbdToggleStyle(styleId) {
+  const icon = document.getElementById(styleId + '-icon');
+  const isOpen = icon && icon.classList.contains('open');
+  if (icon) icon.classList.toggle('open', !isOpen);
+  document.querySelectorAll(`[data-style="${styleId}"]`).forEach(r => {
+    r.classList.toggle('rbd-hidden', isOpen);
+  });
 }
 
 function renderSeasonComparison(){
