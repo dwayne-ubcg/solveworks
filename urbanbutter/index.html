@@ -366,10 +366,11 @@ function renderDrillDown(){
       html+=`<tr class="style-row hidden-row" data-parent="${b.name}" data-style="${s.name}"><td><span class="expand-icon">▶</span>${act?`<span style="margin:0 5px 0 2px;vertical-align:middle">${act}</span>`:''}<span style="font-weight:500">${s.name}</span></td><td>${fmt(s.revenue)}</td><td>${s.sold}</td><td>${s.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${sSt}%"></div></div><span class="st-pct ${stClass(sSt)}">${sSt}%</span></div></td><td style="font-size:12px;color:var(--text2)">${velInfo2}<br>${wosInfo2}</td><td>${act}</td></tr>`;
       Object.values(s.skus).sort((a,c)=>c.sold-a.sold).forEach(sk=>{
         const skSt=pct(sk.sold,sk.remaining);
-        const skVel=(s.sold>0&&s.vel>0)?(sk.sold/s.sold)*s.vel:0;
-        const skWos=(sk.remaining>0&&skVel>0)?Math.round(sk.remaining/skVel):null;
-        const skWosLabel=skWos?` (${skWos}w left)`:'';
-        const skAct=sk.remaining===0&&sk.sold>0?'<span class="rec-tag rec-hold" style="font-size:11px;font-weight:700">⚠️ Sold Out — Reorder</span>':sk.sold===0?'<span class="rec-tag" style="background:#E3F2FD;color:#1976D2;font-size:11px">🆕 New</span>':skSt>=70?`<span class="rec-tag rec-reorder" style="font-size:11px;font-weight:700">🔴 Reorder${skWosLabel}</span>`:skSt>=50?`<span class="rec-tag" style="background:#FFF3E0;color:#E6A23C;font-size:11px;font-weight:600">🟡 Low Stock${skWosLabel}</span>`:`<span class="rec-tag" style="background:#E8F5E8;color:#2e7d32;font-size:11px">✅ OK${skWosLabel}</span>`;
+        const skVel=(s.weeks>0&&sk.sold>0)?(sk.sold/s.weeks):0;
+        const skWosRaw=(sk.remaining>0&&skVel>0)?Math.round(sk.remaining/skVel):null;
+        const skWosLabel=skWosRaw?(skWosRaw>12?' (>12w)':` (${skWosRaw}w left)`):'';
+        const lowQty=sk.remaining>0&&sk.remaining<=3&&sk.sold>0;
+        const skAct=sk.remaining===0&&sk.sold>0?'<span class="rec-tag rec-hold" style="font-size:11px;font-weight:700">⚠️ Sold Out — Reorder</span>':sk.sold===0?'<span class="rec-tag" style="background:#E3F2FD;color:#1976D2;font-size:11px">🆕 New</span>':skSt>=70?`<span class="rec-tag rec-reorder" style="font-size:11px;font-weight:700">🔴 Reorder${skWosLabel}</span>`:skSt>=50||lowQty?`<span class="rec-tag" style="background:#FFF3E0;color:#E6A23C;font-size:11px;font-weight:600">🟡 Low Stock${skWosLabel}</span>`:`<span class="rec-tag" style="background:#E8F5E8;color:#2e7d32;font-size:11px">✅ OK${skWosLabel}</span>`;
         html+=`<tr class="sku-row hidden-row" data-parent="${b.name}:${s.name}"><td>${sk.label}</td><td>${fmt(sk.revenue)}</td><td>${sk.sold}</td><td>${sk.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${skSt}%"></div></div><span class="st-pct ${stClass(skSt)}">${skSt}%</span></div></td><td></td><td>${skAct}</td></tr>`;
       });
     });
