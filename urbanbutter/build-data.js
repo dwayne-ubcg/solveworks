@@ -1,24 +1,35 @@
 #!/usr/bin/env node
 /**
- * build-data.js — Converts Lordon sell-through-detail.json into 
- * the urbanbutter dashboard inline DATA format.
+ * build-data.js — Converts Lordon data into urbanbutter dashboard inline DATA format.
  * 
- * Usage: node build-data.js
- * 
- * Reads:  ../lordon/data/sell-through-detail.json
- * Writes: Replaces inline DATA in ./index.html
+ * Sources:
+ *   ../lordon/data/sell-through-detail.json  — brands, styles, SKUs, sales, velocity, WOS
+ *   ../lordon/data/dashboard.json            — brand-level cost/retail/margin
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const DETAIL_PATH = path.join(__dirname, '..', 'lordon', 'data', 'sell-through-detail.json');
+const DASHBOARD_PATH = path.join(__dirname, '..', 'lordon', 'data', 'dashboard.json');
 const HTML_PATH = path.join(__dirname, 'index.html');
 
-// Read source data
 const detail = JSON.parse(fs.readFileSync(DETAIL_PATH, 'utf8'));
+const dashboard = JSON.parse(fs.readFileSync(DASHBOARD_PATH, 'utf8'));
 
-// Transform brands from sell-through-detail format to dashboard DATA format
+// Build brand margin lookup (case-insensitive) from dashboard.json
+const brandMargins = {};
+let totalCost = 0, totalRetail = 0;
+if (dashboard.inventory && dashboard.inventory.brandBreakdown) {
+  dashboard.inventory.brandBreakdown.forEach(b => {
+    brandMargins[b.name.toUpperCase()] = b.margin || 0;
+    totalCost += b.cost || 0;
+    totalRetail += b.retail || 0;
+  });
+}
+const blendedMargin = totalRetail > 0 ? Math.round((totalRetail - totalCost) / totalRetail * 100) : 55;
+
+// Transform brands
 const brands = detail.brands.map(b => {
   const styles = b.styles.map(s => ({
     name: s.name,
@@ -37,13 +48,17 @@ const brands = detail.brands.map(b => {
     }))
   }));
 
-  // Compute brand-level aggregates
   const totalSold = styles.reduce((sum, s) => sum + s.sold, 0);
   const totalRemaining = styles.reduce((sum, s) => sum + s.remaining, 0);
   const totalRevenue = styles.reduce((sum, s) => sum + s.revenue, 0);
   
-  // full_revenue = estimate based on avg price * (sold + remaining)
-  // cost = not available from sell-through, set to 0
+  // Get margin from Lightspeed data (case-insensitive match)
+  const marginPct = brandMargins[b.brand.toUpperCase()] ?? blendedMargin;
+  
+  // Calculate cost from margin: cost = revenue * (1 - margin/100)
+  const cost = Math.round(totalRevenue * (1 - marginPct / 100) * 100) / 100;
+  
+  // Full revenue estimate
   const avgPrice = totalSold > 0 ? totalRevenue / totalSold : 0;
   const fullRevenue = Math.round(avgPrice * (totalSold + totalRemaining) * 100) / 100;
 
@@ -53,31 +68,18 @@ const brands = detail.brands.map(b => {
     full_revenue: fullRevenue,
     sold: totalSold,
     remaining: totalRemaining,
-    cost: 0,
+    cost: cost,
+    margin: marginPct,
     styles: styles
   };
 });
 
-// Sort brands by revenue descending
 brands.sort((a, b) => b.revenue - a.revenue);
 
-// Build the DATA object
-const DATA = {
-  lordon: {
-    stores: {
-      all: brands
-    }
-  }
-};
-
-// Serialize to compact JSON (matches existing inline style)
+const DATA = { lordon: { stores: { all: brands } } };
 const dataStr = 'const DATA = ' + JSON.stringify(DATA) + ';';
 
-// Read existing HTML
 let html = fs.readFileSync(HTML_PATH, 'utf8');
-
-// Find and replace the existing DATA declaration
-// Pattern: const DATA = {...};
 const dataRegex = /const DATA\s*=\s*\{[\s\S]*?\};\s*(?=\n|$)/;
 const match = html.match(dataRegex);
 
@@ -88,17 +90,13 @@ if (!match) {
 
 console.log(`Found DATA block at position ${match.index}, length ${match[0].length}`);
 console.log(`New DATA: ${brands.length} brands, ${brands.reduce((s,b) => s + b.styles.length, 0)} styles`);
+console.log(`Blended margin (from Lightspeed): ${blendedMargin}%\n`);
 
-// Replace
 html = html.slice(0, match.index) + dataStr + html.slice(match.index + match[0].length);
-
-// Write back
 fs.writeFileSync(HTML_PATH, html, 'utf8');
 
-console.log('✅ Dashboard data updated successfully');
-
-// Print summary
-brands.slice(0, 10).forEach(b => {
-  const withSales = b.styles.filter(s => s.sold > 0).length;
-  console.log(`  ${b.name}: $${b.revenue} revenue, ${b.sold} sold, ${b.remaining} remaining (${withSales}/${b.styles.length} styles with sales)`);
+console.log('✅ Dashboard data updated successfully\n');
+brands.forEach(b => {
+  const src = brandMargins[b.name.toUpperCase()] !== undefined ? 'LS' : 'avg';
+  console.log(`  ${b.name}: $${b.revenue} rev, ${b.margin}% margin [${src}], $${b.cost} COGS`);
 });
