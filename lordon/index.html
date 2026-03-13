@@ -885,10 +885,11 @@ tr:hover td { background: var(--bg); }
 
   <!-- Season Comparison -->
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">📅 Season Comparison: Spring '25 → Spring '26</div>
+    <div class="card-title" id="bp-season-comp-title">📅 Season Comparison</div>
+    <p id="bp-season-plan-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"></p>
     <div style="overflow-x:auto;">
       <table>
-        <thead><tr><th>Category</th><th style="text-align:right;">SS25 Revenue</th><th style="text-align:right;">SS26 Actual</th><th style="text-align:right;">SS26 Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr></thead>
+        <thead id="bp-season-thead"><tr><th>Category</th><th style="text-align:right;">Prev Season Revenue</th><th style="text-align:right;">Curr Season Actual</th><th style="text-align:right;">Curr Season Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr></thead>
         <tbody id="bp-season-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading season data…</td></tr></tbody>
       </table>
     </div>
@@ -1041,17 +1042,17 @@ tr:hover td { background: var(--bg); }
 
   <!-- ⑧ SEASON-OVER-SEASON COMPARISON BY CATEGORY -->
   <div class="card" style="margin-bottom:20px;">
-    <div class="card-title">📅 Spring '25 vs Spring '26</div>
-    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">6 weeks into SS26 — projections based on current pace</p>
+    <div class="card-title" id="st-season-cat-title">📅 Season Comparison by Category</div>
+    <p id="st-season-cat-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"></p>
     <div style="overflow-x:auto;">
       <table>
-        <thead>
+        <thead id="st-season-cat-thead">
           <tr>
             <th>Category</th>
-            <th style="text-align:right;">SS25 Units</th>
-            <th style="text-align:right;">SS25 Revenue</th>
-            <th style="text-align:right;">SS26 Units</th>
-            <th style="text-align:right;">SS26 Projected</th>
+            <th style="text-align:right;">Prev Units</th>
+            <th style="text-align:right;">Prev Revenue</th>
+            <th style="text-align:right;">Curr Units</th>
+            <th style="text-align:right;">Curr Projected</th>
             <th style="text-align:center;">Trend</th>
             <th>Recommendation</th>
           </tr>
@@ -1065,17 +1066,17 @@ tr:hover td { background: var(--bg); }
 
   <!-- ⑨ BRAND SEASON COMPARISON -->
   <div class="card" style="margin-bottom:20px;">
-    <div class="card-title">🏷️ Brand Performance: Spring '25 vs Spring '26</div>
-    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Top brands ranked by SS25 revenue — 6 weeks of SS26 data</p>
+    <div class="card-title" id="st-season-brand-title">🏷️ Brand Performance: Season Comparison</div>
+    <p id="st-season-brand-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"></p>
     <div style="overflow-x:auto;">
       <table>
-        <thead>
+        <thead id="st-season-brand-thead">
           <tr>
             <th>Brand</th>
-            <th style="text-align:right;">SS25 Revenue</th>
-            <th style="text-align:right;">SS25 Margin</th>
-            <th style="text-align:right;">SS26 Revenue</th>
-            <th style="text-align:right;">SS26 Projected</th>
+            <th style="text-align:right;">Prev Revenue</th>
+            <th style="text-align:right;">Prev Margin</th>
+            <th style="text-align:right;">Curr Revenue</th>
+            <th style="text-align:right;">Curr Projected</th>
             <th style="text-align:center;">Trend</th>
             <th style="text-align:center;">Rating</th>
           </tr>
@@ -2608,12 +2609,14 @@ function renderAnalyticsDeep(){
   // ─── 1. REVENUE TREND BY SEASON ─────────────────────────────
   const trendEl=document.getElementById('season-trend-bars');
   const trendAI=document.getElementById('season-trend-ai-text');
+  // Dynamic season info for all analytics labels
+  const _asi=getSeasonInfo();
 
   const seasons=[
     {key:'fw24',label:'FW 2024',partial:true,current:false},
-    {key:'ss25',label:'SS 2025',partial:false,current:false},
-    {key:'fw25',label:'FW 2025',partial:false,current:false},
-    {key:'ss26',label:'SS 2026',partial:true,current:true}
+    {key:_asi.prevKey,label:`${_asi.prevShort.slice(0,2)} 20${_asi.prevShort.slice(2)}`,partial:false,current:false},
+    {key:_asi.otherPrevKey,label:`${_asi.otherPrevShort.slice(0,2)} 20${_asi.otherPrevShort.slice(2)}`,partial:false,current:false},
+    {key:_asi.currKey,label:`${_asi.currShort.slice(0,2)} 20${_asi.currShort.slice(2)}`,partial:true,current:true}
   ];
 
   const seasonData=seasons.map(s=>{
@@ -2654,28 +2657,31 @@ function renderAnalyticsDeep(){
       </div>`;
     });
 
-    // Annualized run rate from last 12 months (SS25 + FW25)
-    const ss25=seasonData.find(s=>s.key==='ss25');
-    const fw25=seasonData.find(s=>s.key==='fw25');
+    // Annualized run rate from last 12 months (prevSeason + otherPrevSeason)
+    const _tsi=getSeasonInfo();
+    const ss25=seasonData.find(s=>s.key===_tsi.prevKey);
+    const fw25=seasonData.find(s=>s.key===_tsi.otherPrevKey);
     const last12Rev=(ss25?ss25.rev:0)+(fw25?fw25.rev:0);
     const last12COGS=(ss25?ss25.cogs:0)+(fw25?fw25.cogs:0);
     const annualMargin=last12Rev>0?Math.round((1-last12COGS/last12Rev)*100):0;
 
-    // SS26 pace vs SS25 (annualized scaling)
-    const ss26=seasonData.find(s=>s.key==='ss26');
-    const ss26WeekMatch=/(\d+)\s*week/i.exec((seasonal.ss26||{}).label||'');
+    // Current season pace vs previous season (annualized scaling)
+    const ss26=seasonData.find(s=>s.key===_tsi.currKey);
+    const ss26SeasonObj=seasonal[_tsi.currKey]||{};
+    const ss26WeekMatch=/(\d+)\s*week/i.exec(ss26SeasonObj.label||'');
     const ss26Weeks=ss26WeekMatch?parseInt(ss26WeekMatch[1]):6;
-    const ss25Weeks=26; // full spring season
+    const ss25Weeks=_tsi.seasonWeeks;
     const ss26ProjectedFull=ss26&&ss26.rev>0?(ss26.rev/ss26Weeks*ss25Weeks):0;
+    const last12Label=`${_tsi.prevShort} + ${_tsi.otherPrevShort}`;
 
     html+=`<div style="margin-top:12px;padding:10px 14px;background:var(--bg);border-radius:8px;border:1px solid var(--border-light);">
-      <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📅 Annualized Reference (Last 12 Months: SS25 + FW25)</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📅 Annualized Reference (Last 12 Months: ${last12Label})</div>
       <div style="display:flex;gap:24px;font-size:13px;">
         <div><div style="font-weight:700;">${fC(last12Rev)}</div><div style="color:var(--text-secondary);font-size:11px;">Revenue</div></div>
         <div><div style="font-weight:700;">${fC(last12COGS)}</div><div style="color:var(--text-secondary);font-size:11px;">COGS</div></div>
         <div><div style="font-weight:700;color:var(--green);">${fC(last12Rev-last12COGS)}</div><div style="color:var(--text-secondary);font-size:11px;">Gross Profit</div></div>
         <div><div style="font-weight:700;">${annualMargin}%</div><div style="color:var(--text-secondary);font-size:11px;">Gross Margin</div></div>
-        ${ss26ProjectedFull>0?`<div><div style="font-weight:700;color:var(--accent-dark);">${fC(ss26ProjectedFull)}</div><div style="color:var(--text-secondary);font-size:11px;">SS26 Projected (full)</div></div>`:''}
+        ${ss26ProjectedFull>0?`<div><div style="font-weight:700;color:var(--accent-dark);">${fC(ss26ProjectedFull)}</div><div style="color:var(--text-secondary);font-size:11px;">${_tsi.currShort} Projected (full)</div></div>`:''}
       </div>
     </div>`;
 
@@ -2685,10 +2691,11 @@ function renderAnalyticsDeep(){
     if(trendAI){
       const growthPct=ss25&&ss25.rev>0&&ss26ProjectedFull>0?Math.round((ss26ProjectedFull/ss25.rev-1)*100):null;
       const best=seasonData.filter(s=>!s.partial).sort((a,b)=>b.margin-a.margin)[0];
-      let insight=`Based on 14 months of seasonal data, <strong>FW 2025 was your strongest season</strong> at ${fC(fw25?fw25.rev:0)} revenue with ${fw25?fw25.margin:0}% gross margin.`;
+      const bestSeason=best?best.label.split(' (')[0]:`${_tsi.otherPrevShort} ${_tsi.prevYear}`;
+      let insight=`Based on 14 months of seasonal data, <strong>${bestSeason} was your strongest season</strong> at ${fC(fw25?fw25.rev:0)} revenue with ${fw25?fw25.margin:0}% gross margin.`;
       if(growthPct!==null){
-        if(growthPct>=0){insight+=` SS 2026 is on pace to ${growthPct>0?`grow <strong>+${growthPct}%`:'match SS 2025</strong>'} vs SS 2025${growthPct>0?` to reach ${fC(ss26ProjectedFull)}</strong>`:''}. Strong early momentum.`;}
-        else{insight+=` SS 2026 is currently pacing ${Math.abs(growthPct)}% below SS 2025 — watch sell-through through April to assess if buying was conservative or demand has shifted.`;}
+        if(growthPct>=0){insight+=` ${_tsi.currShort} is on pace to ${growthPct>0?`grow <strong>+${growthPct}%`:`match ${_tsi.prevShort}</strong>`} vs ${_tsi.prevShort}${growthPct>0?` to reach ${fC(ss26ProjectedFull)}</strong>`:''}. Strong early momentum.`;}
+        else{insight+=` ${_tsi.currShort} is currently pacing ${Math.abs(growthPct)}% below ${_tsi.prevShort} — watch sell-through to assess if buying was conservative or demand has shifted.`;}
       }
       trendAI.innerHTML=insight;
     }
@@ -2698,19 +2705,20 @@ function renderAnalyticsDeep(){
   const cfTbody=document.getElementById('cashflow-tbody');
   const cfAI=document.getElementById('cashflow-ai-text');
 
-  if(cfTbody&&seasonal.ss25&&seasonal.fw25){
-    const ss25Rev=seasonRevenue(seasonal.ss25);
-    const ss25COGS=seasonCOGS(seasonal.ss25);
-    const fw25Rev=seasonRevenue(seasonal.fw25);
-    const fw25COGS=seasonCOGS(seasonal.fw25);
-    const ss26Rev=seasonRevenue(seasonal.ss26)||0;
-    const ss26COGSVal=seasonCOGS(seasonal.ss26)||0;
+  const _cfsi=getSeasonInfo();
+  if(cfTbody&&seasonal[_cfsi.prevKey]&&seasonal[_cfsi.otherPrevKey]){
+    const ss25Rev=seasonRevenue(seasonal[_cfsi.prevKey]);
+    const ss25COGS=seasonCOGS(seasonal[_cfsi.prevKey]);
+    const fw25Rev=seasonRevenue(seasonal[_cfsi.otherPrevKey]);
+    const fw25COGS=seasonCOGS(seasonal[_cfsi.otherPrevKey]);
+    const ss26Rev=seasonRevenue(seasonal[_cfsi.currKey])||0;
+    const ss26COGSVal=seasonCOGS(seasonal[_cfsi.currKey])||0;
 
-    // SS26 pace factor vs SS25 (annualized, weeks-adjusted)
-    const ss26WeekMatch2=/(\d+)\s*week/i.exec((seasonal.ss26||{}).label||'');
+    // Current season pace factor vs previous season (annualized, weeks-adjusted)
+    const ss26WeekMatch2=/(\d+)\s*week/i.exec((seasonal[_cfsi.currKey]||{}).label||'');
     const ss26Wks=ss26WeekMatch2?parseInt(ss26WeekMatch2[1]):6;
     const ss26Weekly=ss26Wks>0?(ss26Rev/ss26Wks):0;
-    const ss25Weekly=ss25Rev/26;
+    const ss25Weekly=ss25Rev/_cfsi.seasonWeeks;
     // Growth factor capped (early season may underrepresent full pace)
     const growthFactor=ss25Weekly>0?Math.min(Math.max(ss26Weekly/ss25Weekly,0.7),1.4):1.0;
 
@@ -2796,8 +2804,8 @@ function renderAnalyticsDeep(){
   if(benchEl){
     const actualMargin=summary.grossMargin||Math.round(((summary.grossProfit||0)/(summary.totalRevenue||1))*100)||55;
     const actualAOV=summary.avgTransaction||157;
-    const annualCOGS=(seasonRevenue(seasonal.ss25||{})+seasonRevenue(seasonal.fw25||{}))>0
-      ?(seasonCOGS(seasonal.ss25||{})+seasonCOGS(seasonal.fw25||{})):summary.totalCOGS||0;
+    const annualCOGS=(seasonRevenue(seasonal[_asi.prevKey]||{})+seasonRevenue(seasonal[_asi.otherPrevKey]||{}))>0
+      ?(seasonCOGS(seasonal[_asi.prevKey]||{})+seasonCOGS(seasonal[_asi.otherPrevKey]||{})):summary.totalCOGS||0;
     const inventoryAtCost=inv.totalValue||0;
     const turnover=inventoryAtCost>0?Math.round((annualCOGS/inventoryAtCost)*10)/10:null;
 
@@ -2956,27 +2964,29 @@ function renderBriefingIntel(){
   const sc=st.seasonComparison||{};
   const scCats=sc.byCategory||[];
   const seasonal=st.seasonal||{};
-  const ss26=seasonal.ss26||{};
-  const ss25=seasonal.ss25||{};
+  // Dynamic season info — must be declared before using _si
+  const _si=getSeasonInfo();
+  const ss26=seasonal[_si.currKey]||{};
+  const ss25=seasonal[_si.prevKey]||{};
 
-  // Compute SS26 revenue and weeks
+  // Compute current season revenue and weeks
   const ss26Cats=ss26.byCategory||[];
   const ss25Cats=ss25.byCategory||[];
   const ss26Rev=ss26Cats.reduce((a,c)=>a+(c.revenue||0),0);
   const ss25Rev=ss25Cats.reduce((a,c)=>a+(c.revenue||0),0);
 
-  // SS26 started Feb 1 2026 — calculate weeks from period end
-  const ss26Start=new Date('2026-02-01');
-  const periodEnd=new Date(st.periodEnd||'2026-03-11');
-  const weeksInNum=Math.round((periodEnd-ss26Start)/(7*24*60*60*1000));
+  // Dynamic season start — use getSeasonInfo() for correct boundaries
+  const ss26Start=_si.currStart;
+  const periodEnd=new Date(st.periodEnd||new Date());
+  const weeksInNum=Math.max(0,Math.round((periodEnd-ss26Start)/(7*24*60*60*1000)));
   const weeksIn=weeksInNum>0?weeksInNum:'—';
 
-  // Pacing: compare SS26 weekly rate vs SS25 weekly rate (SS25 was 26 weeks)
+  // Pacing: compare current season weekly rate vs previous season weekly rate
   const ss26WeeklyRate=weeksInNum>0?ss26Rev/weeksInNum:0;
-  const ss25WeeklyRate=ss25Rev/26; // SS25 was ~26 weeks (Feb-Jul)
+  const ss25WeeklyRate=ss25Rev/_si.seasonWeeks;
   const pacingUp=ss25WeeklyRate>0?ss26WeeklyRate>=ss25WeeklyRate:null;
   const pacingPct=ss25WeeklyRate>0?Math.round(((ss26WeeklyRate/ss25WeeklyRate)-1)*100):0;
-  const pacingLabel=pacingUp===true?`↑ ${pacingPct}% ahead of SS25`:pacingUp===false?`↓ ${Math.abs(pacingPct)}% behind SS25`:'— Tracking';
+  const pacingLabel=pacingUp===true?`↑ ${pacingPct}% ahead of ${_si.prevShort}`:pacingUp===false?`↓ ${Math.abs(pacingPct)}% behind ${_si.prevShort}`:'— Tracking';
   const pacingColor=pacingUp===true?'var(--green)':pacingUp===false?'var(--red)':'var(--text-secondary)';
 
   // Trending: use OVERALL sell-through from cats (not seasonal partial)
@@ -2994,7 +3004,7 @@ function renderBriefingIntel(){
     </div>`;
   }).join('');
 
-  const seasonLabel="Spring '26";
+  const seasonLabel=_si.currLabel;
   const seasonEl=document.getElementById('intel-season-glance');
   if(seasonEl){
     seasonEl.innerHTML=`
@@ -3233,6 +3243,46 @@ function renderMultiStore(){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SEASON INFO UTILITY — Dynamic season labels based on current date
+// Spring = Jan 1–Jun 30 | Fall = Jul 1–Dec 31
+// ═══════════════════════════════════════════════════════════════
+function getSeasonInfo() {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1–12
+  const year = now.getFullYear();
+  const isSpring = month <= 6;
+  const seasonName = isSpring ? 'Spring' : 'Fall';
+  const shortPrefix = isSpring ? 'ss' : 'fw';
+  const shortYear2 = String(year).slice(2);           // e.g. "26"
+  const prevYear2  = String(year - 1).slice(2);       // e.g. "25"
+  const nextYear2  = String(year + 1).slice(2);       // e.g. "27"
+  // Other-season prefix (for annualized last-12-months: currSeason-prev + prev other season)
+  const otherPrefix = isSpring ? 'fw' : 'ss';
+  return {
+    seasonName,                                          // "Spring" | "Fall"
+    isSpring,
+    currYear: year,
+    prevYear: year - 1,
+    currLabel:  `${seasonName} '${shortYear2}`,         // "Spring '26"
+    prevLabel:  `${seasonName} '${prevYear2}`,          // "Spring '25"
+    nextLabel:  `${seasonName} '${nextYear2}`,          // "Spring '27"
+    currShort:  `${shortPrefix.toUpperCase()}${shortYear2}`, // "SS26"
+    prevShort:  `${shortPrefix.toUpperCase()}${prevYear2}`,  // "SS25"
+    currKey:    `${shortPrefix}${shortYear2}`,          // "ss26" (data key)
+    prevKey:    `${shortPrefix}${prevYear2}`,           // "ss25" (data key)
+    // The other season that pairs with prevKey for "last 12 months"
+    otherPrevKey:   `${otherPrefix}${prevYear2}`,       // "fw25" (data key)
+    otherPrevShort: `${otherPrefix.toUpperCase()}${prevYear2}`, // "FW25"
+    seasonWeeks: 26,   // both seasons ~26 weeks (Jan–Jun or Jul–Dec)
+    // Current season date boundaries
+    currStart: isSpring ? new Date(year, 0, 1)  : new Date(year, 6, 1),
+    currEnd:   isSpring ? new Date(year, 5, 30) : new Date(year, 11, 31),
+    prevStart: isSpring ? new Date(year-1, 0, 1)  : new Date(year-1, 6, 1),
+    prevEnd:   isSpring ? new Date(year-1, 5, 30) : new Date(year-1, 11, 31),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
 // BUY PLANNING — Enrich tab with OTB, brand scorecard, season comparison
 // ═══════════════════════════════════════════════════════════════
@@ -3299,21 +3349,32 @@ function renderBuyPlan(){
     otbTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">No OTB data available.</td></tr>';
   }
 
-  // ③ Season Comparison (top 10 categories)
+  // ③ Season Comparison (top 10 categories) — dynamic season labels
+  const si=getSeasonInfo();
   const seasonTbody=document.getElementById('bp-season-tbody');
+
+  // Update card title and planning subtitle
+  const bpSeasonTitle=document.getElementById('bp-season-comp-title');
+  if(bpSeasonTitle)bpSeasonTitle.textContent=`📅 Season Comparison: ${si.prevLabel} → ${si.currLabel}`;
+  const bpSeasonSub=document.getElementById('bp-season-plan-subtitle');
+  if(bpSeasonSub)bpSeasonSub.textContent=`Planning ${si.nextLabel} Buy — How ${si.currLabel} compares to ${si.prevLabel}`;
+  const bpSeasonThead=document.getElementById('bp-season-thead');
+  if(bpSeasonThead)bpSeasonThead.innerHTML=`<tr><th>Category</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.currShort} Actual</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr>`;
+
   if(seasonTbody){
     const sc=st.seasonComparison;
     if(sc&&sc.byCategory&&sc.byCategory.length){
+      const pKey=si.prevKey, cKey=si.currKey, cKeyProj=si.currKey+'Projected';
       const sorted=[...sc.byCategory]
-        .filter(c=>c.ss25&&c.ss25.revenue>0)
-        .sort((a,b)=>b.ss25.revenue-a.ss25.revenue)
+        .filter(c=>c[pKey]&&c[pKey].revenue>0)
+        .sort((a,b)=>b[pKey].revenue-a[pKey].revenue)
         .slice(0,10);
       if(sorted.length){
         seasonTbody.innerHTML=sorted.map(c=>`<tr>
           <td><strong>${c.category}</strong></td>
-          <td style="text-align:right;">${fmtC(c.ss25.revenue)}</td>
-          <td style="text-align:right;">${fmtC(c.ss26.revenue)}</td>
-          <td style="text-align:right;">${fmtC(c.ss26Projected.revenue)}<br><span style="font-size:10px;color:var(--text-muted);">${c.ss26Projected.note||''}</span></td>
+          <td style="text-align:right;">${fmtC((c[pKey]||{}).revenue||0)}</td>
+          <td style="text-align:right;">${fmtC((c[cKey]||{}).revenue||0)}</td>
+          <td style="text-align:right;">${fmtC(((c[cKeyProj]||c[cKey]||{}).revenue)||0)}<br><span style="font-size:10px;color:var(--text-muted);">${(c[cKeyProj]||{}).note||''}</span></td>
           <td style="text-align:center;">${trendArrow(c.trend)}</td>
           <td style="font-size:12px;color:var(--text-secondary);">${c.recommendation||'—'}</td>
         </tr>`).join('');
@@ -3768,6 +3829,8 @@ function renderSeasonComparison(){
   const st=window._ld&&window._ld.sellThrough;
   if(!st)return;
   const sc=st.seasonComparison;
+  const si=getSeasonInfo();
+  const pKey=si.prevKey, cKey=si.currKey, cKeyProj=si.currKey+'Projected';
   const ratingBadge={grow:'badge-green',keep:'badge-sage',watch:'badge-yellow',cut:'badge-red'};
   const ratingLabel={grow:'Grow',keep:'Keep',watch:'Watch',cut:'Cut'};
   const trendArrow=t=>t==='up'
@@ -3776,19 +3839,41 @@ function renderSeasonComparison(){
       ?'<span style="color:var(--red);font-size:18px;font-weight:700;">↓</span>'
       :'<span style="color:var(--yellow);font-size:18px;font-weight:700;">→</span>';
 
+  // Update static titles and subtitles dynamically
+  const stCatTitle=document.getElementById('st-season-cat-title');
+  if(stCatTitle)stCatTitle.textContent=`📅 ${si.prevLabel} vs ${si.currLabel}`;
+  const stCatSub=document.getElementById('st-season-cat-subtitle');
+  if(stCatSub){
+    const now=new Date();
+    const weeksIn=Math.round((now-si.currStart)/(7*24*60*60*1000));
+    stCatSub.textContent=`${weeksIn>0?weeksIn+' weeks':'Early days'} into ${si.currShort} — projections based on current pace`;
+  }
+  const stCatThead=document.getElementById('st-season-cat-thead');
+  if(stCatThead)stCatThead.innerHTML=`<tr><th>Category</th><th style="text-align:right;">${si.prevShort} Units</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.currShort} Units</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr>`;
+  const stBrandTitle=document.getElementById('st-season-brand-title');
+  if(stBrandTitle)stBrandTitle.textContent=`🏷️ Brand Performance: ${si.prevLabel} vs ${si.currLabel}`;
+  const stBrandSub=document.getElementById('st-season-brand-subtitle');
+  if(stBrandSub){
+    const now=new Date();
+    const weeksIn=Math.round((now-si.currStart)/(7*24*60*60*1000));
+    stBrandSub.textContent=`Top brands ranked by ${si.prevShort} revenue — ${weeksIn>0?weeksIn+' weeks of '+si.currShort+' data':'early '+si.currShort+' data'}`;
+  }
+  const stBrandThead=document.getElementById('st-season-brand-thead');
+  if(stBrandThead)stBrandThead.innerHTML=`<tr><th>Brand</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.prevShort} Margin</th><th style="text-align:right;">${si.currShort} Revenue</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th style="text-align:center;">Rating</th></tr>`;
+
   // ⑧ Category Season Comparison
   const catEl=document.getElementById('st-season-cat-tbody');
   if(catEl&&sc&&sc.byCategory&&sc.byCategory.length){
     const sorted=[...sc.byCategory]
-      .filter(c=>c.ss25&&c.ss25.revenue>0)
-      .sort((a,b)=>b.ss25.revenue-a.ss25.revenue);
+      .filter(c=>c[pKey]&&c[pKey].revenue>0)
+      .sort((a,b)=>b[pKey].revenue-a[pKey].revenue);
     if(sorted.length){
       catEl.innerHTML=sorted.map(c=>`<tr>
         <td><strong>${c.category}</strong></td>
-        <td style="text-align:right;">${fmtN(c.ss25.unitsSold)}</td>
-        <td style="text-align:right;">${fmtC(c.ss25.revenue)}</td>
-        <td style="text-align:right;">${fmtN(c.ss26.unitsSold)}</td>
-        <td style="text-align:right;">${fmtC(c.ss26Projected.revenue)}<br><span style="font-size:10px;color:var(--text-muted);">${c.ss26Projected.note||''}</span></td>
+        <td style="text-align:right;">${fmtN((c[pKey]||{}).unitsSold||0)}</td>
+        <td style="text-align:right;">${fmtC((c[pKey]||{}).revenue||0)}</td>
+        <td style="text-align:right;">${fmtN((c[cKey]||{}).unitsSold||0)}</td>
+        <td style="text-align:right;">${fmtC(((c[cKeyProj]||c[cKey]||{}).revenue)||0)}<br><span style="font-size:10px;color:var(--text-muted);">${(c[cKeyProj]||{}).note||''}</span></td>
         <td style="text-align:center;">${trendArrow(c.trend)}</td>
         <td style="font-size:12px;color:var(--text-secondary);">${c.recommendation||'—'}</td>
       </tr>`).join('');
@@ -3802,8 +3887,8 @@ function renderSeasonComparison(){
   if(brandEl&&sc&&sc.byBrand&&sc.byBrand.length){
     const mainBrands=(st.byBrand||[]).reduce((m,b)=>{m[b.brand]=b;return m;},{});
     const sorted=[...sc.byBrand]
-      .filter(b=>b.ss25&&b.ss25.revenue>0)
-      .sort((a,b)=>b.ss25.revenue-a.ss25.revenue)
+      .filter(b=>b[pKey]&&b[pKey].revenue>0)
+      .sort((a,b)=>b[pKey].revenue-a[pKey].revenue)
       .slice(0,20);
     if(sorted.length){
       brandEl.innerHTML=sorted.map(b=>{
@@ -3812,10 +3897,10 @@ function renderSeasonComparison(){
         const label=ratingLabel[mb.rating]||mb.rating||'—';
         return`<tr>
           <td><strong>${b.brand}</strong></td>
-          <td style="text-align:right;">${fmtC(b.ss25.revenue)}</td>
-          <td style="text-align:right;">${b.ss25.margin!=null?b.ss25.margin+'%':'—'}</td>
-          <td style="text-align:right;">${fmtC(b.ss26.revenue)}</td>
-          <td style="text-align:right;">${fmtC(b.ss26Projected.revenue)}</td>
+          <td style="text-align:right;">${fmtC((b[pKey]||{}).revenue||0)}</td>
+          <td style="text-align:right;">${(b[pKey]||{}).margin!=null?(b[pKey]||{}).margin+'%':'—'}</td>
+          <td style="text-align:right;">${fmtC((b[cKey]||{}).revenue||0)}</td>
+          <td style="text-align:right;">${fmtC(((b[cKeyProj]||b[cKey]||{}).revenue)||0)}</td>
           <td style="text-align:center;">${trendArrow(b.trend)}</td>
           <td style="text-align:center;"><span class="badge ${badge}">${label}</span></td>
         </tr>`;
