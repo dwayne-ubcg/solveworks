@@ -3367,6 +3367,172 @@ function getSeasonInfo() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// NEW: Proper OTB Calculation & Rendering
+// ═══════════════════════════════════════════════════════════════
+function renderProperOTB() {
+  const st = window._ld && window._ld.sellThrough;
+  if (!st || !st.summary || !st.otb) return;
+
+  const s = st.summary;
+  const periodWeeks = st.periodWeeks || 52;
+  const periodMonths = periodWeeks / 4.333;
+  const avgMargin = (s.grossMargin || 55) / 100;
+  const costMultiplier = 1 - avgMargin;
+
+  // --- Core OTB Calculation ---
+  const plannedMonthlySales = s.totalRevenue > 0 ? s.totalRevenue / periodMonths : 0;
+  const beginningInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  const beginningInventoryRetail = beginningInventoryCost / costMultiplier;
+  const plannedEndingInventory = plannedMonthlySales * 2.25; // Target 2.25 months of supply
+  const onOrderInput = document.getElementById('bp-on-order-input');
+  const onOrder = onOrderInput ? parseFloat(onOrderInput.value) || 0 : 0;
+
+  // OTB = Planned Sales + Planned Ending Inventory − Beginning Inventory − On-Order
+  const netOTB = plannedMonthlySales + plannedEndingInventory - beginningInventoryRetail - onOrder;
+
+  // --- Inventory Health Metrics ---
+  const annualSales = plannedMonthlySales * 12;
+  const avgInventory = beginningInventoryRetail; // Using current as average for this snapshot
+  const turnover = avgInventory > 0 ? annualSales / avgInventory : 0;
+  const monthsOfSupply = plannedMonthlySales > 0 ? beginningInventoryRetail / plannedMonthlySales : 0;
+  const buyRatio = plannedMonthlySales > 0 ? beginningInventoryCost / plannedMonthlySales : 0;
+
+  // --- Update UI: Stat Cards ---
+  document.getElementById('bp-suggested-otb').textContent = fmtC(netOTB);
+  document.getElementById('bp-otb-status-note').textContent = netOTB > 0 ? 'Available to Buy' : 'Overstocked';
+  document.getElementById('bp-suggested-otb').style.color = netOTB > 0 ? 'var(--green)' : 'var(--red)';
+
+  document.getElementById('bp-avg-monthly').textContent = fmtC(plannedMonthlySales);
+  document.getElementById('bp-avg-monthly-note').textContent = `avg over ${Math.round(periodMonths)} months`;
+
+  const turnoverEl = document.getElementById('bp-turnover-value');
+  const mosEl = document.getElementById('bp-mos-value');
+  const buyRatioEl = document.getElementById('bp-buyratio-value');
+
+  turnoverEl.textContent = turnover.toFixed(1) + 'x';
+  mosEl.textContent = monthsOfSupply.toFixed(1) + ' mo';
+  buyRatioEl.textContent = '$' + buyRatio.toFixed(2);
+
+  const setCardState = (cardEl, value, healthy, watch) => {
+    cardEl.style.background = 'var(--bg)';
+    if (healthy) cardEl.style.background = 'var(--green-light)';
+    if (watch) cardEl.style.background = 'var(--yellow-light)';
+  };
+  setCardState(document.getElementById('bp-turnover-card'), turnover, turnover >= 4 && turnover <= 6, turnover < 2 || turnover > 8);
+  setCardState(document.getElementById('bp-mos-card'), monthsOfSupply, monthsOfSupply >= 2 && monthsOfSupply <= 2.5, monthsOfSupply < 1 || monthsOfSupply > 4);
+  setCardState(document.getElementById('bp-buyratio-card'), buyRatio, buyRatio >= 0.35 && buyRatio <= 0.45, buyRatio > 0.6);
+
+  // --- Update UI: OTB Formula Visual ---
+  const formulaEl = document.getElementById('bp-otb-formula-visual');
+  if(formulaEl) formulaEl.innerHTML = `
+    <div style="display:flex; justify-content:space-around; align-items:center; text-align:center; flex-wrap:wrap; gap:8px;">
+      <div><div style="font-size:16px;font-weight:700;">${fmtC(plannedMonthlySales)}</div><div>Planned Sales</div></div>
+      <div style="font-size:18px;">+</div>
+      <div><div style="font-size:16px;font-weight:700;">${fmtC(plannedEndingInventory)}</div><div>Planned EOM Inv.</div></div>
+      <div style="font-size:18px;">-</div>
+      <div><div style="font-size:16px;font-weight:700;">${fmtC(beginningInventoryRetail)}</div><div>Beginning Inv.</div></div>
+      <div style="font-size:18px;">-</div>
+      <div><div style="font-size:16px;font-weight:700;">${fmtC(onOrder)}</div><div>On-Order</div></div>
+      <div style="font-size:18px;margin:0 8px;">=</div>
+      <div style="background:${netOTB > 0 ? 'var(--green-light)' : 'var(--red-light)'}; padding:8px 12px; border-radius:8px;">
+        <div style="font-size:20px;font-weight:700;color:${netOTB > 0 ? 'var(--green)' : 'var(--red)'};">${fmtC(netOTB)}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${netOTB > 0 ? 'Available (Retail)' : 'Overstocked (Retail)'}</div>
+      </div>
+    </div>`;
+
+  // --- Update UI: Budget Split ---
+  const budgetSplitEl = document.getElementById('bp-budget-split-content');
+  if(budgetSplitEl){
+    const totalOTBAtCost = (netOTB > 0) ? netOTB * costMultiplier : 0;
+    const inSeasonOTBMin = totalOTBAtCost * 0.30;
+    const inSeasonOTBMax = totalOTBAtCost * 0.50;
+    const preSeason = totalOTBAtCost * 0.60; // Assume 60-40 split for display
+    if(totalOTBAtCost > 0){
+      budgetSplitEl.innerHTML = `
+        <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;">
+          Split your total OTB of <strong>${fmtC(totalOTBAtCost)} (at cost)</strong> into two buckets. The flexible, in-season portion is key for reacting to trends and maximizing sell-through.
+        </p>
+        <div style="display:flex;gap:16px;">
+          <div style="flex:1;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;">${fmtC(preSeason)}</div>
+            <div style="font-size:12px;">Pre-Season Committed</div>
+          </div>
+          <div style="flex:1;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;background:var(--green-light);">
+            <div style="font-size:18px;font-weight:700;color:var(--green);">${fmtC(inSeasonOTBMin)} – ${fmtC(inSeasonOTBMax)}</div>
+            <div style="font-size:12px;color:var(--text-secondary);">In-Season OTB (Flexible)</div>
+          </div>
+        </div>`;
+    } else {
+      budgetSplitEl.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">No OTB available. Focus on selling existing inventory before planning new budget splits.</div>`;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEW: AI Buying Advisor Insights
+// ═══════════════════════════════════════════════════════════════
+function renderAIBuyingAdvisor(st, periodWeeks) {
+  const aiAdvisorEl = document.getElementById('bp-ai-advisor-content');
+  if (!aiAdvisorEl || !st || !st.summary || !st.otb) {
+    if(aiAdvisorEl) aiAdvisorEl.innerHTML = 'Not enough data to generate insights.';
+    return;
+  }
+
+  const s = st.summary;
+  const periodMonths = periodWeeks / 4.333;
+  const avgMargin = (s.grossMargin || 55) / 100;
+  const costMultiplier = 1 - avgMargin;
+  const plannedMonthlySales = s.totalRevenue > 0 ? s.totalRevenue / periodMonths : 0;
+  const beginningInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  const beginningInventoryRetail = beginningInventoryCost / costMultiplier;
+  const turnover = beginningInventoryRetail > 0 ? (plannedMonthlySales * 12) / beginningInventoryRetail : 0;
+  const monthsOfSupply = plannedMonthlySales > 0 ? beginningInventoryRetail / plannedMonthlySales : 0;
+  const buyRatio = plannedMonthlySales > 0 ? beginningInventoryCost / plannedMonthlySales : 0;
+  const overallST = s.totalUnitsSold > 0 ? s.totalUnitsSold / (s.totalUnitsSold + ((st.byCategory||[]).reduce((sum,c)=>sum+c.currentStock,0))) * 100 : 0;
+
+  let insights = [];
+
+  // Insight 1: Months of Supply
+  let mosInsight = `Your inventory covers <strong>${monthsOfSupply.toFixed(1)} months</strong> of sales. The target is 2–2.5 months. `;
+  if (monthsOfSupply > 3.5) mosInsight += '<span style="color:var(--red);">You are significantly overstocked.</span>';
+  else if (monthsOfSupply > 2.5) mosInsight += '<span style="color:var(--yellow-dark);">You\'re overstocked.</span>';
+  else if (monthsOfSupply < 1.5) mosInsight += '<span style="color:var(--accent-sage);">You have room to buy.</span>';
+  else mosInsight += '<span style="color:var(--green);">You\'re right on target.</span>';
+  insights.push(mosInsight);
+
+  // Insight 2: Turnover Rate
+  let turnoverInsight = `Your turnover rate is <strong>${turnover.toFixed(1)}x/year</strong>. `;
+  if (turnover >= 4 && turnover <= 6) turnoverInsight += '<span style="color:var(--green);">This is healthy for a boutique.</span>';
+  else if (turnover > 6) turnoverInsight += '<span style="color:var(--green);">Excellent — you\'re cycling inventory fast.</span>';
+  else turnoverInsight += '<span style="color:var(--red);">This is below the target of 4-6x. Consider markdowns on slow movers.</span>';
+  insights.push(turnoverInsight);
+
+  // Insight 3: Buy Ratio
+  insights.push(`Industry benchmark: spend ~$0.40 in inventory for every $1 of expected sales. Your current ratio is <strong>$${buyRatio.toFixed(2)}</strong>.`);
+
+  // Insight 4: Overall Sell-Through
+  if (overallST > 0) {
+    let stInsight = `Overall sell-through is <strong>${Math.round(overallST)}%</strong>. `;
+    if (overallST >= 60) stInsight += '<span style="color:var(--green);">Strong performance — your buying decisions are connecting with customers.</span>';
+    else if (overallST < 40) stInsight += '<span style="color:var(--red);">This is below target. Review slow-moving inventory for promotions before committing new dollars.</span>';
+    else stInsight += '<span style="color:var(--yellow-dark);">This is okay, but aim for 60%+ on core items.</span>';
+    insights.push(stInsight);
+  }
+
+  // Insight 5 & 6: Category opportunities
+  const buyCats = (st.otb || []).filter(c => (c.weeksOfSupply||99) < 6).map(c => c.category);
+  const holdCats = (st.otb || []).filter(c => (c.weeksOfSupply||0) > 16).map(c => c.category);
+
+  if (buyCats.length > 0) {
+    insights.push(`<strong>Categories running low:</strong> <span style="color:var(--green);">${buyCats.join(', ')}</span> (WOS < 6 weeks). Prioritize these in your next buy.`);
+  }
+  if (holdCats.length > 0) {
+    insights.push(`<strong>Categories overstocked:</strong> <span style="color:var(--red);">${holdCats.join(', ')}</span> (WOS > 16 weeks). Hold buying and consider promotions here.`);
+  }
+
+  aiAdvisorEl.innerHTML = '<ul>' + insights.map(i => `<li>${i}</li>`).join('') + '</ul>';
+}
+
 // ═══════════════════════════════════════════════════════════════
 // BUY PLANNING — Enrich tab with OTB, brand scorecard, season comparison
 // ═══════════════════════════════════════════════════════════════
