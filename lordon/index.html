@@ -466,6 +466,11 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
   <div class="topbar-right">
+    <div id="location-filter-wrap" style="display:none;align-items:center;gap:8px;">
+      <select id="location-filter" onchange="setLocation(this.value)" style="font-size:12px;border:1px solid var(--border);border-radius:8px;padding:5px 10px;background:var(--bg);color:var(--text);cursor:pointer;outline:none;font-family:'DM Sans',sans-serif;">
+        <option value="all">All Locations</option>
+      </select>
+    </div>
     <div style="display:flex;align-items:center;font-size:12px;color:var(--text-muted);">
       <span class="live-dot"></span> Live — Shopify synced 2 min ago
     </div>
@@ -808,6 +813,9 @@ tr:hover td { background: var(--bg); }
     <div class="subtitle">Open-to-Buy Tracker · Connect budget data to activate</div>
   </div>
 
+  <!-- Location context banner (shown when filtered) -->
+  <div id="loc-context-banner" style="display:none;margin-bottom:12px;"></div>
+
   <!-- Row 1: Core OTB Metrics -->
   <div style="display:flex;gap:16px;margin-bottom:12px;">
     <div class="stat-card" style="flex:1;background:var(--accent-sage-light);">
@@ -836,7 +844,7 @@ tr:hover td { background: var(--bg); }
     <div class="stat-card" id="bp-turnover-card" style="flex:1;">
       <div class="value" id="bp-turnover-value">—</div>
       <div class="label">Inventory Turnover</div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Healthy: 4–6× per year</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" id="bp-turnover-label">Target 4–6× (boutique)</div>
     </div>
     <div class="stat-card" id="bp-mos-card" style="flex:1;">
       <div class="value" id="bp-mos-value">—</div>
@@ -1095,7 +1103,7 @@ tr:hover td { background: var(--bg); }
 
   <!-- ⑥ SIZE CURVE ANALYSIS -->
   <div class="card" style="margin-bottom:20px;">
-    <div class="card-title">📐 Size Curve — Stock vs. Demand</div>
+    <div class="card-title">📐 Size Curve — Stock vs. Demand <span style="font-size:11px;font-weight:400;color:var(--text-muted);margin-left:8px;">📍 all locations combined</span></div>
     <div class="grid-2" style="gap:16px;margin-bottom:12px;">
       <div>
         <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Current Stock Distribution</div>
@@ -1212,6 +1220,7 @@ tr:hover td { background: var(--bg); }
     </div>
     <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
       Velocity and weeks of supply calculated from each product's floor date. Flag items before they run out.
+      <span style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:2px 8px;margin-left:6px;font-size:11px;">📍 Style data shown for all locations combined</span>
     </p>
 
     <!-- Summary pills -->
@@ -2240,8 +2249,9 @@ async function initData(){
   if(window._ld.sellThroughDetail)recalcAlerts(window._ld.sellThroughDetail);
   console.log('Lordon data loaded:',Object.fromEntries(Object.entries(window._ld).map(([k,v])=>[k,Array.isArray(v)?v.length:'obj'])));
   renderDashboard();
+  setupLocationDropdown();
 }
-function refreshData(){initData()}
+function refreshData(){window._selectedLocation='all';initData();}
 
 // ═══════════════════════════════════════════════════════════════
 // SMART ALERT RECALCULATION — override JSON alerts with better rules
@@ -2959,9 +2969,9 @@ function renderAnalyticsDeep(){
       {
         label:'Inventory Turnover',
         lordon:turnover!=null?turnover+'x':'—',
-        industry:'4–6× / year',
-        status:turnover!=null?(turnover>=4&&turnover<=6?'Healthy ✅':turnover>6?'Fast — watch stockouts ⭐':turnover>=2?'Slow — reduce OTB ⚠️':'Very slow — markdown needed ❌'):'—',
-        statusClass:turnover!=null?(turnover>=4&&turnover<=6?'badge-green':turnover>6?'badge-sage':turnover>=2?'badge-yellow':'badge-red'):'badge-sage'
+        industry: (()=>{ const nlocs=(window._ld&&window._ld.sellThrough&&window._ld.sellThrough.byLocation&&window._ld.sellThrough.byLocation.length)||1; return nlocs>1?'2–4× multi-store':'4–6× boutique'; })(),
+        status: (()=>{ const nlocs=(window._ld&&window._ld.sellThrough&&window._ld.sellThrough.byLocation&&window._ld.sellThrough.byLocation.length)||1; const lo=nlocs>1?2:4,hi=nlocs>1?4:6; return turnover!=null?(turnover>=lo&&turnover<=hi?'Healthy ✅':turnover>hi?'Fast — watch stockouts ⭐':turnover>=lo*0.5?'Below target ⚠️':'Low — review inventory ⚠️'):'—'; })(),
+        statusClass:turnover!=null?(()=>{ const nlocs=(window._ld&&window._ld.sellThrough&&window._ld.sellThrough.byLocation&&window._ld.sellThrough.byLocation.length)||1; const lo=nlocs>1?2:4,hi=nlocs>1?4:6; return turnover>=lo&&turnover<=hi?'badge-green':turnover>hi?'badge-sage':turnover>=lo*0.5?'badge-yellow':'badge-yellow'; })():'badge-sage'
       }
     ];
 
@@ -3059,7 +3069,7 @@ function renderBriefingIntel(){
 
   // Overstocked (>20 weeks) - top 2
   const over20=[...cats].filter(c=>(c.weeksOfSupply||0)>20).sort((a,b)=>b.weeksOfSupply-a.weeksOfSupply).slice(0,2);
-  over20.forEach(c=>items.push({icon:'📦',text:`<strong>${c.category||c.name}</strong> overstocked at ${c.weeksOfSupply} wks. Hold buying.`,badge:'badge-blue',badgeText:'Hold'}));
+  over20.forEach(c=>items.push({icon:'📦',text:`<strong>${c.category||c.name}</strong> at ${c.weeksOfSupply} weeks of supply — above target. Hold buying on this category.`,badge:'badge-blue',badgeText:'Hold'}));
 
   // Top performing brand
   const topBrand=[...brands].sort((a,b)=>b.sellThrough-a.sellThrough)[0];
@@ -3417,20 +3427,125 @@ function getSeasonInfo() {
 // ═══════════════════════════════════════════════════════════════
 // NEW: Proper OTB Calculation & Rendering
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// LOCATION FILTER — template-friendly multi-store support
+// Auto-detects stores from data. 1 store = dropdown hidden.
+// ═══════════════════════════════════════════════════════════════
+window._selectedLocation = 'all';
+
+function setupLocationDropdown() {
+  const st = window._ld && window._ld.sellThrough;
+  const locs = (st && st.byLocation) || [];
+  const wrap = document.getElementById('location-filter-wrap');
+  const sel = document.getElementById('location-filter');
+  if (!wrap || !sel) return;
+  if (locs.length <= 1) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  sel.innerHTML = '<option value="all">All Locations</option>' +
+    locs.map(l => `<option value="${encodeURIComponent(l.location)}">${l.location}</option>`).join('');
+  sel.value = encodeURIComponent(window._selectedLocation === 'all' ? 'all' : window._selectedLocation) || 'all';
+}
+
+function setLocation(locEncoded) {
+  window._selectedLocation = (locEncoded && locEncoded !== 'all') ? decodeURIComponent(locEncoded) : 'all';
+  // Re-render all location-sensitive sections
+  renderProperOTB();
+  const st = window._ld && window._ld.sellThrough;
+  if (st) {
+    renderAIBuyingAdvisor(st, st.periodWeeks || 62);
+    renderSellThrough();
+  }
+  // Update context banners
+  const locBanner = document.getElementById('loc-context-banner');
+  if (locBanner) updateLocationBanner(locBanner);
+}
+
+function getNumLocations() {
+  const st = window._ld && window._ld.sellThrough;
+  return (st && st.byLocation && st.byLocation.length) || 1;
+}
+
+function isMultiStoreView() {
+  return (window._selectedLocation === 'all') && getNumLocations() > 1;
+}
+
+// Returns sales metrics for selected location (or all)
+function getLocationSalesData() {
+  const st = window._ld && window._ld.sellThrough;
+  if (!st || !st.summary) return null;
+  const loc = window._selectedLocation || 'all';
+  if (loc === 'all') return st.summary;
+  const byLoc = st.byLocation || [];
+  const found = byLoc.find(l => l.location === loc);
+  if (!found) return st.summary;
+  // Map byLocation fields to summary-compatible shape
+  return {
+    totalRevenue: found.revenue || 0,
+    totalCOGS: found.cogs || 0,
+    grossMargin: found.grossMargin || st.summary.grossMargin || 55,
+    totalUnitsSold: found.unitsSold || 0,
+    totalSales: found.transactions || 0,
+    avgTransaction: found.avgTransactionValue || 0,
+    _locName: loc
+  };
+}
+
+// Returns inventory cost for selected location (proportional split if no per-location data)
+function getLocationInventoryCost() {
+  const st = window._ld && window._ld.sellThrough;
+  const totalCost = (st && st.otb || []).reduce((s, o) => s + (o.currentInventoryCost || 0), 0);
+  const loc = window._selectedLocation || 'all';
+  if (loc === 'all') return totalCost;
+  const numLocs = getNumLocations();
+  return numLocs > 0 ? totalCost / numLocs : totalCost;
+}
+
+// Returns turnover target range based on view (multi-store vs single)
+function getTurnoverTarget() {
+  return isMultiStoreView() ? { low: 2, high: 4 } : { low: 4, high: 6 };
+}
+
+function updateLocationBanner(el) {
+  if (!el) return;
+  const loc = window._selectedLocation || 'all';
+  const numLocs = getNumLocations();
+  if (loc === 'all' && numLocs > 1) {
+    el.innerHTML = `<span style="font-size:12px;color:var(--text-secondary);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;">📍 ${numLocs} stores combined — benchmarks adjusted for multi-store</span>`;
+    el.style.display = '';
+  } else if (loc !== 'all') {
+    el.innerHTML = `<span style="font-size:12px;color:var(--accent-dark);background:var(--accent-warm);border:1px solid var(--accent-warm-deep);border-radius:6px;padding:4px 10px;">📍 Filtered: ${loc} — single-store benchmarks</span>`;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function renderProperOTB() {
   const st = window._ld && window._ld.sellThrough;
   if (!st || !st.summary || !st.otb) return;
 
-  const s = st.summary;
   const periodWeeks = st.periodWeeks || 52;
   const periodMonths = periodWeeks / 4.333;
-  const avgMargin = (s.grossMargin || 55) / 100;
+
+  // --- Location-aware data ---
+  const locSales = getLocationSalesData() || st.summary;
+  const numLocs = getNumLocations();
+  const multiStore = isMultiStoreView();
+  const locLabel = multiStore ? `${numLocs} stores combined` : (window._selectedLocation !== 'all' ? window._selectedLocation : 'all stores');
+
+  const avgMarginPct = locSales.grossMargin || st.summary.grossMargin || 55;
+  const avgMargin = avgMarginPct / 100;
   const costMultiplier = 1 - avgMargin;
 
-  // --- Core OTB Calculation ---
-  const plannedMonthlySales = s.totalRevenue > 0 ? s.totalRevenue / periodMonths : 0;
-  const beginningInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  // Revenue for selected location
+  const locationRevenue = locSales.totalRevenue || 0;
+  const plannedMonthlySales = locationRevenue > 0 ? locationRevenue / periodMonths : 0;
+
+  // Inventory for selected location (proportional split if per-store data unavailable)
+  const totalInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  const beginningInventoryCost = multiStore ? totalInventoryCost : (numLocs > 0 ? totalInventoryCost / numLocs : totalInventoryCost);
   const beginningInventoryRetail = beginningInventoryCost / costMultiplier;
+
   const plannedEndingInventory = plannedMonthlySales * 2.25; // Target 2.25 months of supply
   const onOrderInput = document.getElementById('bp-on-order-input');
   const onOrder = onOrderInput ? parseFloat(onOrderInput.value) || 0 : 0;
@@ -3440,10 +3555,16 @@ function renderProperOTB() {
 
   // --- Inventory Health Metrics ---
   const annualSales = plannedMonthlySales * 12;
-  const avgInventory = beginningInventoryRetail; // Using current as average for this snapshot
-  const turnover = avgInventory > 0 ? annualSales / avgInventory : 0;
+  const turnover = beginningInventoryRetail > 0 ? annualSales / beginningInventoryRetail : 0;
   const monthsOfSupply = plannedMonthlySales > 0 ? beginningInventoryRetail / plannedMonthlySales : 0;
   const buyRatio = plannedMonthlySales > 0 ? beginningInventoryCost / plannedMonthlySales : 0;
+
+  // --- Benchmark targets (adjust for multi-store context) ---
+  const turnoverTarget = getTurnoverTarget(); // {low, high}
+
+  // --- Update location context banner ---
+  const locBanner = document.getElementById('loc-context-banner');
+  updateLocationBanner(locBanner);
 
   // --- Update UI: Stat Cards ---
   const otbEl = document.getElementById('bp-suggested-otb');
@@ -3454,43 +3575,47 @@ function renderProperOTB() {
   const brandsEl = document.getElementById('bp-active-brands');
   const db2 = window._ld && window._ld.dashboard && window._ld.dashboard.inventory || {};
 
-  if(otbEl){ otbEl.textContent = fmtC(netOTB); otbEl.style.color = netOTB > 0 ? 'var(--green)' : 'var(--red)'; }
-  if(otbNoteEl) otbNoteEl.textContent = netOTB > 0 ? '✅ Available to Buy (retail)' : '⚠️ Overstocked — hold buying';
+  if(otbEl){ otbEl.textContent = fmtC(Math.abs(netOTB)); otbEl.style.color = netOTB > 0 ? 'var(--green)' : 'var(--yellow)'; }
+  if(otbNoteEl) otbNoteEl.textContent = netOTB > 0 ? '✅ Available to Buy (retail)' : '↩ Focus on selling through first';
   if(begInvEl){ begInvEl.textContent = fmtC(beginningInventoryRetail); begInvEl.style.color = 'var(--text)'; }
   if(avgMonthlyEl) avgMonthlyEl.textContent = fmtC(plannedMonthlySales);
-  if(avgMonthlyNoteEl) avgMonthlyNoteEl.textContent = `avg over ${Math.round(periodMonths)} months`;
+  if(avgMonthlyNoteEl) avgMonthlyNoteEl.textContent = `avg over ${Math.round(periodMonths)} months${multiStore ? ' · '+locLabel : ''}`;
   if(brandsEl) brandsEl.textContent = (st.byBrand||[]).length || (db2.brandBreakdown||[]).length || '—';
 
   // Banner explanation
   const bannerEl = document.getElementById('bp-otb-banner-text');
   if(bannerEl){
-    bannerEl.innerHTML = `<strong>Proper OTB: ${fmtC(netOTB)}</strong> — ` +
+    const locCtx = multiStore ? ` <em>(${locLabel} · benchmarks adjusted for multi-store)</em>` : (window._selectedLocation !== 'all' ? ` <em>(${locLabel} · single-store benchmarks)</em>` : '');
+    bannerEl.innerHTML = `<strong>OTB: ${netOTB >= 0 ? fmtC(netOTB) : '(' + fmtC(Math.abs(netOTB)) + ')'}</strong>${locCtx} — ` +
       `Planned Sales (${fmtC(plannedMonthlySales)}) + Planned EOM Inv (${fmtC(plannedEndingInventory)}) − Beginning Inv at Retail (${fmtC(beginningInventoryRetail)}) − On-Order (${fmtC(onOrder)}). ` +
       (netOTB > 0
         ? `<span style="color:var(--green);">You have room to buy.</span>`
-        : `<span style="color:var(--red);">You are overstocked — focus on selling before committing new dollars.</span>`) +
+        : `<span style="color:var(--text-secondary);">Current inventory exceeds monthly needs — focus on selling through before committing new dollars.</span>`) +
       ` <em style="color:var(--text-muted);"> Adjust the On-Order field above if you have pending purchase orders.</em>`;
   }
 
   const turnoverEl = document.getElementById('bp-turnover-value');
   const mosEl = document.getElementById('bp-mos-value');
   const buyRatioEl = document.getElementById('bp-buyratio-value');
+  const turnoverCardLabel = document.getElementById('bp-turnover-label');
 
   if(turnoverEl) turnoverEl.textContent = turnover.toFixed(1) + '×';
   if(mosEl) mosEl.textContent = monthsOfSupply.toFixed(1) + ' mo';
   if(buyRatioEl) buyRatioEl.textContent = '$' + buyRatio.toFixed(2);
+  if(turnoverCardLabel) turnoverCardLabel.textContent = multiStore ? `Target ${turnoverTarget.low}–${turnoverTarget.high}× (multi-store)` : `Target ${turnoverTarget.low}–${turnoverTarget.high}× (boutique)`;
 
   const setCardColor = (id, bg, color) => {
     const el = document.getElementById(id);
     if(el){ el.style.background = bg; const v = el.querySelector('.value'); if(v) v.style.color = color; }
   };
-  // Turnover: green 4-6x, yellow 2-4, red <2 or >8
-  if(turnover >= 4 && turnover <= 6) setCardColor('bp-turnover-card', 'var(--green-light)', 'var(--green)');
-  else if(turnover < 2) setCardColor('bp-turnover-card', 'var(--red-light)', 'var(--red)');
+  // Turnover: use location-aware benchmark
+  if(turnover >= turnoverTarget.low && turnover <= turnoverTarget.high) setCardColor('bp-turnover-card', 'var(--green-light)', 'var(--green)');
+  else if(turnover < turnoverTarget.low * 0.5) setCardColor('bp-turnover-card', 'var(--red-light)', 'var(--red)');
   else setCardColor('bp-turnover-card', 'var(--yellow-light)', 'var(--yellow)');
-  // Months of Supply: green 2-2.5, yellow outside, red >4 or <1
-  if(monthsOfSupply >= 2 && monthsOfSupply <= 2.5) setCardColor('bp-mos-card', 'var(--green-light)', 'var(--green)');
-  else if(monthsOfSupply > 4 || monthsOfSupply < 1) setCardColor('bp-mos-card', 'var(--red-light)', 'var(--red)');
+  // Months of Supply: green 2-3 (slightly wider for multi-store), red >5 or <1
+  const mosCeiling = multiStore ? 3.5 : 2.5;
+  if(monthsOfSupply >= 2 && monthsOfSupply <= mosCeiling) setCardColor('bp-mos-card', 'var(--green-light)', 'var(--green)');
+  else if(monthsOfSupply > 5 || monthsOfSupply < 1) setCardColor('bp-mos-card', 'var(--red-light)', 'var(--red)');
   else setCardColor('bp-mos-card', 'var(--yellow-light)', 'var(--yellow)');
   // Buy Ratio: green ~0.40, yellow if high, red if extreme
   if(buyRatio >= 0.35 && buyRatio <= 0.45) setCardColor('bp-buyratio-card', 'var(--green-light)', 'var(--green)');
@@ -3509,18 +3634,16 @@ function renderProperOTB() {
       <div style="font-size:18px;">-</div>
       <div><div style="font-size:16px;font-weight:700;">${fmtC(onOrder)}</div><div>On-Order</div></div>
       <div style="font-size:18px;margin:0 8px;">=</div>
-      <div style="background:${netOTB > 0 ? 'var(--green-light)' : 'var(--red-light)'}; padding:8px 12px; border-radius:8px;">
-        <div style="font-size:20px;font-weight:700;color:${netOTB > 0 ? 'var(--green)' : 'var(--red)'};">${fmtC(netOTB)}</div>
-        <div style="font-size:12px;color:var(--text-secondary);">${netOTB > 0 ? 'Available (Retail)' : 'Overstocked (Retail)'}</div>
+      <div style="background:${netOTB > 0 ? 'var(--green-light)' : 'var(--yellow-light)'}; padding:8px 12px; border-radius:8px;">
+        <div style="font-size:20px;font-weight:700;color:${netOTB > 0 ? 'var(--green)' : 'var(--yellow)'};">${netOTB >= 0 ? fmtC(netOTB) : '(' + fmtC(Math.abs(netOTB)) + ')'}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">${netOTB > 0 ? 'Available (Retail)' : 'Sell Through First'}</div>
       </div>
     </div>`;
 
   // --- Update UI: Budget Split ---
   const budgetSplitEl = document.getElementById('bp-budget-split-content');
   if(budgetSplitEl){
-    // Pre-Season Committed = what's already bought (current inventory at cost)
     const preSeasonCommitted = beginningInventoryCost;
-    // In-Season OTB = 30-50% of the net OTB at cost (flexible reorder budget)
     const netOTBAtCost = netOTB > 0 ? netOTB * costMultiplier : 0;
     const inSeasonMin = netOTBAtCost * 0.30;
     const inSeasonMax = netOTBAtCost * 0.50;
@@ -3529,6 +3652,7 @@ function renderProperOTB() {
         <strong>Pre-Season Committed</strong> is what you've already purchased (current inventory at cost).
         <strong>In-Season OTB</strong> is the flexible budget available for reorders and trend reaction.
         Keep 30–50% of your buy budget flexible so you can chase what's selling.
+        ${multiStore ? `<br><em>Showing combined across ${locLabel}.</em>` : window._selectedLocation !== 'all' ? `<br><em>Showing ${locLabel} only (proportional estimate).</em>` : ''}
       </p>
       <div style="display:flex;gap:16px;flex-wrap:wrap;">
         <div style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;background:var(--bg);">
@@ -3536,8 +3660,8 @@ function renderProperOTB() {
           <div style="font-size:13px;font-weight:600;margin-top:4px;">Pre-Season Committed</div>
           <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">current inventory at cost</div>
         </div>
-        <div style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;background:${netOTBAtCost>0?'var(--green-light)':'var(--red-light)'};">
-          <div style="font-size:20px;font-weight:700;color:${netOTBAtCost>0?'var(--green)':'var(--red)'};">${netOTBAtCost>0?fmtC(inSeasonMin)+' – '+fmtC(inSeasonMax):'$0'}</div>
+        <div style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;background:${netOTBAtCost>0?'var(--green-light)':'var(--yellow-light)'};">
+          <div style="font-size:20px;font-weight:700;color:${netOTBAtCost>0?'var(--green)':'var(--yellow)'};">${netOTBAtCost>0?fmtC(inSeasonMin)+' – '+fmtC(inSeasonMax):'$0'}</div>
           <div style="font-size:13px;font-weight:600;margin-top:4px;">In-Season OTB (Flexible)</div>
           <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${netOTBAtCost>0?'30–50% of new OTB · reorders &amp; trend reaction':'Sell existing inventory first'}</div>
         </div>
@@ -3546,7 +3670,7 @@ function renderProperOTB() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NEW: AI Buying Advisor Insights
+// AI Buying Advisor Insights — location-aware, no doom language
 // ═══════════════════════════════════════════════════════════════
 function renderAIBuyingAdvisor(st, periodWeeks) {
   const aiAdvisorEl = document.getElementById('bp-ai-advisor-content');
@@ -3555,59 +3679,99 @@ function renderAIBuyingAdvisor(st, periodWeeks) {
     return;
   }
 
-  const s = st.summary;
+  // Use location-filtered sales data
+  const locSales = getLocationSalesData() || st.summary;
+  const numLocs = getNumLocations();
+  const multiStore = isMultiStoreView();
+  const locLabel = multiStore ? `${numLocs} stores combined` : (window._selectedLocation !== 'all' ? window._selectedLocation : 'all stores');
+
   const periodMonths = periodWeeks / 4.333;
-  const avgMargin = (s.grossMargin || 55) / 100;
+  const avgMarginPct = locSales.grossMargin || st.summary.grossMargin || 55;
+  const avgMargin = avgMarginPct / 100;
   const costMultiplier = 1 - avgMargin;
-  const plannedMonthlySales = s.totalRevenue > 0 ? s.totalRevenue / periodMonths : 0;
-  const beginningInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  const locationRevenue = locSales.totalRevenue || 0;
+  const plannedMonthlySales = locationRevenue > 0 ? locationRevenue / periodMonths : 0;
+
+  const totalInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  const beginningInventoryCost = multiStore ? totalInventoryCost : (numLocs > 0 ? totalInventoryCost / numLocs : totalInventoryCost);
   const beginningInventoryRetail = beginningInventoryCost / costMultiplier;
+
   const turnover = beginningInventoryRetail > 0 ? (plannedMonthlySales * 12) / beginningInventoryRetail : 0;
   const monthsOfSupply = plannedMonthlySales > 0 ? beginningInventoryRetail / plannedMonthlySales : 0;
   const buyRatio = plannedMonthlySales > 0 ? beginningInventoryCost / plannedMonthlySales : 0;
-  const overallST = s.totalUnitsSold > 0 ? s.totalUnitsSold / (s.totalUnitsSold + ((st.byCategory||[]).reduce((sum,c)=>sum+c.currentStock,0))) * 100 : 0;
+
+  const turnoverTarget = getTurnoverTarget();
+  const overallST = (locSales.totalUnitsSold || 0) > 0
+    ? (locSales.totalUnitsSold || 0) / ((locSales.totalUnitsSold || 0) + ((st.byCategory||[]).reduce((sum,c)=>sum+c.currentStock,0))) * 100
+    : 0;
 
   let insights = [];
 
-  // Insight 1: Months of Supply
-  let mosInsight = `Your inventory covers <strong>${monthsOfSupply.toFixed(1)} months</strong> of sales. The target is 2–2.5 months. `;
-  if (monthsOfSupply > 3.5) mosInsight += '<span style="color:var(--red);">You are significantly overstocked.</span>';
-  else if (monthsOfSupply > 2.5) mosInsight += '<span style="color:var(--yellow-dark);">You\'re overstocked.</span>';
-  else if (monthsOfSupply < 1.5) mosInsight += '<span style="color:var(--accent-sage);">You have room to buy.</span>';
-  else mosInsight += '<span style="color:var(--green);">You\'re right on target.</span>';
+  // Context header for multi-store or single store
+  if (multiStore) {
+    insights.push(`<em style="color:var(--text-secondary);">Viewing ${locLabel}. Benchmarks adjusted: healthy turnover for a multi-store boutique is ${turnoverTarget.low}–${turnoverTarget.high}×/year.</em>`);
+  } else if (window._selectedLocation !== 'all') {
+    insights.push(`<em style="color:var(--text-secondary);">Viewing ${locLabel} only. Single-store benchmarks apply: target ${turnoverTarget.low}–${turnoverTarget.high}× turnover.</em>`);
+  }
+
+  // Insight 1: Months of Supply — no doom language
+  const mosTargetHigh = multiStore ? 3.5 : 2.5;
+  let mosInsight = `Inventory currently covers <strong>${monthsOfSupply.toFixed(1)} months</strong> of sales (target: 2–${mosTargetHigh} months). `;
+  if (monthsOfSupply > mosTargetHigh + 1) {
+    mosInsight += `<span style="color:var(--yellow);">Inventory levels are above target — focus on selling through current stock before adding new buys. This is normal early in a season when fresh receipts have just arrived.</span>`;
+  } else if (monthsOfSupply > mosTargetHigh) {
+    mosInsight += `<span style="color:var(--yellow);">Slightly above the target range. No urgent action needed, but hold off on non-essential new buys.</span>`;
+  } else if (monthsOfSupply < 1.5) {
+    mosInsight += `<span style="color:var(--accent-sage);">You have room to buy.</span>`;
+  } else {
+    mosInsight += `<span style="color:var(--green);">You\'re right on target.</span>`;
+  }
   insights.push(mosInsight);
 
-  // Insight 2: Turnover Rate
-  let turnoverInsight = `Your turnover rate is <strong>${turnover.toFixed(1)}x/year</strong>. `;
-  if (turnover >= 4 && turnover <= 6) turnoverInsight += '<span style="color:var(--green);">This is healthy for a boutique.</span>';
-  else if (turnover > 6) turnoverInsight += '<span style="color:var(--green);">Excellent — you\'re cycling inventory fast.</span>';
-  else turnoverInsight += '<span style="color:var(--red);">This is below the target of 4-6x. Consider markdowns on slow movers.</span>';
+  // Insight 2: Turnover Rate — benchmark-aware
+  let turnoverInsight = `Inventory turnover is <strong>${turnover.toFixed(1)}×/year</strong> (target: ${turnoverTarget.low}–${turnoverTarget.high}× for ${multiStore ? 'a multi-store boutique' : 'a boutique'}). `;
+  if (turnover >= turnoverTarget.low && turnover <= turnoverTarget.high) {
+    turnoverInsight += `<span style="color:var(--green);">This is within the healthy range.</span>`;
+  } else if (turnover > turnoverTarget.high) {
+    turnoverInsight += `<span style="color:var(--green);">Excellent — you\'re cycling inventory quickly. Watch for stockouts in top categories.</span>`;
+  } else if (turnover >= turnoverTarget.low * 0.6) {
+    turnoverInsight += `<span style="color:var(--yellow);">Slightly below target. Review slow-moving categories and consider targeted promotions.</span>`;
+  } else {
+    turnoverInsight += `<span style="color:var(--yellow);">Below target range. Prioritize selling through existing inventory before committing new buys. Seasonal stock may be a factor — reassess in 4–6 weeks.</span>`;
+  }
   insights.push(turnoverInsight);
 
-  // Insight 3: Buy Ratio
-  insights.push(`Industry benchmark: spend ~$0.40 in inventory for every $1 of expected sales. Your current ratio is <strong>$${buyRatio.toFixed(2)}</strong>.`);
+  // Insight 3: Buy Ratio — clarify what it means
+  let brInsight = `The buy ratio measures inventory depth versus monthly sales. Industry target: ~$0.40 per $1 of monthly sales. Current ratio: <strong>$${buyRatio.toFixed(2)}</strong>. `;
+  if (buyRatio <= 0.45 && buyRatio >= 0.35) brInsight += `<span style="color:var(--green);">On target.</span>`;
+  else if (buyRatio <= 0.70) brInsight += `<span style="color:var(--yellow);">Slightly elevated — normal if carrying seasonal stock.</span>`;
+  else brInsight += `<span style="color:var(--yellow);">Elevated — indicates deeper inventory depth. Focus on velocity categories first.</span>`;
+  insights.push(brInsight);
 
   // Insight 4: Overall Sell-Through
   if (overallST > 0) {
     let stInsight = `Overall sell-through is <strong>${Math.round(overallST)}%</strong>. `;
     if (overallST >= 60) stInsight += '<span style="color:var(--green);">Strong performance — your buying decisions are connecting with customers.</span>';
-    else if (overallST < 40) stInsight += '<span style="color:var(--red);">This is below target. Review slow-moving inventory for promotions before committing new dollars.</span>';
-    else stInsight += '<span style="color:var(--yellow-dark);">This is okay, but aim for 60%+ on core items.</span>';
+    else if (overallST < 40) stInsight += '<span style="color:var(--yellow);">Below 60% target — prioritize promotions on slow movers before adding new inventory.</span>';
+    else stInsight += '<span style="color:var(--yellow);">Moderate — aim for 60%+ on core items as the season progresses.</span>';
     insights.push(stInsight);
   }
 
-  // Insight 5 & 6: Category opportunities
+  // Insight 5: Season context
+  insights.push(`<em style="color:var(--text-secondary);">📅 Season note: metrics reflect ${Math.round(periodWeeks)} weeks of history. Early-season inventory levels naturally run higher before peak selling weeks. Revisit targets as the season progresses.</em>`);
+
+  // Insight 6 & 7: Category opportunities
   const buyCats = (st.otb || []).filter(c => (c.weeksOfSupply||99) < 6).map(c => c.category);
-  const holdCats = (st.otb || []).filter(c => (c.weeksOfSupply||0) > 16).map(c => c.category);
+  const holdCats = (st.otb || []).filter(c => (c.weeksOfSupply||0) > 20).map(c => c.category);
 
   if (buyCats.length > 0) {
-    insights.push(`<strong>Categories running low:</strong> <span style="color:var(--green);">${buyCats.join(', ')}</span> (WOS < 6 weeks). Prioritize these in your next buy.`);
+    insights.push(`<strong>Categories to prioritize in your next buy:</strong> <span style="color:var(--green);">${buyCats.join(', ')}</span> — running lean (under 6 weeks of supply).`);
   }
   if (holdCats.length > 0) {
-    insights.push(`<strong>Categories overstocked:</strong> <span style="color:var(--red);">${holdCats.join(', ')}</span> (WOS > 16 weeks). Hold buying and consider promotions here.`);
+    insights.push(`<strong>Categories to hold buying on:</strong> <span style="color:var(--text-secondary);">${holdCats.join(', ')}</span> — high weeks of supply. Let current stock move first.`);
   }
 
-  aiAdvisorEl.innerHTML = '<ul>' + insights.map(i => `<li>${i}</li>`).join('') + '</ul>';
+  aiAdvisorEl.innerHTML = '<ul>' + insights.map(i => `<li style="margin-bottom:8px;">${i}</li>`).join('') + '</ul>';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4053,20 +4217,22 @@ function renderSellThrough(){
   if(!st||!st.summary)return;
   const s=st.summary;
 
-  // ① Header stats
+  // ① Header stats — use location-filtered data if applicable
+  const locSales = getLocationSalesData ? getLocationSalesData() || s : s;
   const revEl=document.getElementById('st-revenue');
   const marEl=document.getElementById('st-margin');
   const unEl=document.getElementById('st-units');
   const aovEl=document.getElementById('st-aov');
   const subEl=document.getElementById('st-period-subtitle');
-  if(revEl)revEl.textContent=fmtC(s.totalRevenue);
-  if(marEl)marEl.textContent=(s.grossMargin||0)+'%';
-  if(unEl)unEl.textContent=fmtN(s.totalUnitsSold);
-  if(aovEl)aovEl.textContent=fmtC(s.avgTransaction);
+  if(revEl)revEl.textContent=fmtC(locSales.totalRevenue||s.totalRevenue);
+  if(marEl)marEl.textContent=(locSales.grossMargin||s.grossMargin||0)+'%';
+  if(unEl)unEl.textContent=fmtN(locSales.totalUnitsSold||s.totalUnitsSold);
+  if(aovEl)aovEl.textContent=fmtC(locSales.avgTransaction||s.avgTransaction);
   if(subEl){
     const ps=st.periodStart?new Date(st.periodStart).toLocaleDateString('en-CA',{month:'short',year:'numeric'}):'Jan 2025';
     const pe=st.periodEnd?new Date(st.periodEnd).toLocaleDateString('en-CA',{month:'short',year:'numeric'}):'Mar 2026';
-    subEl.textContent=ps+' – '+pe+' · '+(st.periodWeeks||62)+' weeks · '+fmtN(s.totalSales)+' transactions';
+    const locNote = (window._selectedLocation && window._selectedLocation!=='all') ? ` · 📍 ${window._selectedLocation}` : (getNumLocations&&getNumLocations()>1?' · 📍 3 stores combined':'');
+    subEl.textContent=ps+' – '+pe+' · '+(st.periodWeeks||62)+' weeks · '+fmtN(locSales.totalSales||s.totalSales)+' transactions'+locNote;
   }
 
   // ② Category table
