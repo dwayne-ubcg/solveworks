@@ -808,21 +808,22 @@ tr:hover td { background: var(--bg); }
     <div class="subtitle">Open-to-Buy Tracker · Connect budget data to activate</div>
   </div>
 
-  <div style="display:flex;gap:16px;margin-bottom:16px;">
+  <!-- Row 1: Core OTB Metrics -->
+  <div style="display:flex;gap:16px;margin-bottom:12px;">
     <div class="stat-card" style="flex:1;background:var(--accent-sage-light);">
-      <div class="value" style="color:var(--accent-sage);" id="bp-suggested-otb">—</div>
+      <div class="value" id="bp-suggested-otb" style="color:var(--accent-sage);">—</div>
       <div class="label">Suggested Monthly OTB</div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">35% of avg monthly sales</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" id="bp-otb-status-note">OTB = Sales + EOM Inv − Beg. Inv − On-Order</div>
     </div>
     <div class="stat-card" style="flex:1;background:var(--accent-warm);">
       <div class="value" style="color:var(--accent-dark);" id="bp-avg-monthly">—</div>
       <div class="label">Avg Monthly Revenue</div>
       <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" id="bp-avg-monthly-note">based on sell-through period</div>
     </div>
-    <div class="stat-card" style="flex:1;background:var(--green-light);">
+    <div class="stat-card" style="flex:1;">
       <div class="value" style="color:var(--green);" id="bp-otb-after-inv">—</div>
-      <div class="label">OTB After Inventory</div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">budget − current inv. cost</div>
+      <div class="label">Beginning Inventory (Retail)</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">current stock at retail value</div>
     </div>
     <div class="stat-card" style="flex:1;">
       <div class="value" id="bp-active-brands">—</div>
@@ -830,12 +831,59 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
+  <!-- Row 2: Inventory Health Metrics -->
+  <div style="display:flex;gap:16px;margin-bottom:16px;">
+    <div class="stat-card" id="bp-turnover-card" style="flex:1;">
+      <div class="value" id="bp-turnover-value">—</div>
+      <div class="label">Inventory Turnover</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Healthy: 4–6× per year</div>
+    </div>
+    <div class="stat-card" id="bp-mos-card" style="flex:1;">
+      <div class="value" id="bp-mos-value">—</div>
+      <div class="label">Months of Supply</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Target: 2–2.5 months</div>
+    </div>
+    <div class="stat-card" id="bp-buyratio-card" style="flex:1;">
+      <div class="value" id="bp-buyratio-value">—</div>
+      <div class="label">Buy Ratio</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Spending per $1 of sales · Target $0.40</div>
+    </div>
+    <div class="stat-card" style="flex:1;">
+      <div class="label" style="margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-secondary);">On-Order Adjustment</div>
+      <input id="bp-on-order-input" type="number" min="0" step="100" placeholder="$0"
+        style="width:100%;font-size:18px;font-weight:700;border:1px solid var(--border);border-radius:6px;padding:4px 8px;background:var(--bg-card);color:var(--text);"
+        onchange="if(window.renderProperOTB)renderProperOTB()">
+      <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">adjust if you have pending orders</div>
+    </div>
+  </div>
+
   <!-- Suggested OTB banner -->
   <div class="ai-rec" style="margin-bottom:16px;" id="bp-otb-banner">
     <div class="ai-icon">💡</div>
     <div class="ai-text" id="bp-otb-banner-text">
-      Calculating suggested OTB from sell-through data…
+      Calculating OTB from sell-through data…
     </div>
+  </div>
+
+  <!-- OTB Formula Visual -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">📐 OTB Formula Breakdown</div>
+    <div id="bp-otb-formula-visual" style="padding:4px 0;">Calculating…</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
+      <strong>Formula:</strong> OTB = Planned Monthly Sales + Planned Ending Inventory (2.25× sales) − Beginning Inventory at Retail − On-Order
+    </div>
+  </div>
+
+  <!-- Budget Split -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">💰 Budget Split</div>
+    <div id="bp-budget-split-content" style="padding:4px 0;">Calculating…</div>
+  </div>
+
+  <!-- AI Buying Advisor -->
+  <div class="card" style="margin-bottom:16px;border-left:3px solid var(--accent-sage);">
+    <div class="card-title">🤖 AI Buying Advisor</div>
+    <div id="bp-ai-advisor-content" style="padding:4px 0;font-size:13px;line-height:1.7;">Loading insights…</div>
   </div>
 
   <div class="grid-2">
@@ -890,8 +938,8 @@ tr:hover td { background: var(--bg); }
     </div>
     <div style="overflow-x:auto;">
       <table>
-        <thead><tr><th>Category</th><th style="text-align:right;">Current Inventory</th><th style="text-align:right;">Weekly Sales Rate</th><th style="text-align:right;">Weeks of Supply</th><th style="text-align:right;">OTB Available</th><th style="text-align:center;">Status</th></tr></thead>
-        <tbody id="bp-otb-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading OTB data…</td></tr></tbody>
+        <thead><tr><th>Category</th><th style="text-align:right;">Current Inv.</th><th style="text-align:right;">Weekly Rate</th><th style="text-align:right;">WOS</th><th style="text-align:right;">OTB Available</th><th style="text-align:right;">Suggested Alloc.</th><th style="text-align:center;">Status</th></tr></thead>
+        <tbody id="bp-otb-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading OTB data…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -3398,29 +3446,56 @@ function renderProperOTB() {
   const buyRatio = plannedMonthlySales > 0 ? beginningInventoryCost / plannedMonthlySales : 0;
 
   // --- Update UI: Stat Cards ---
-  document.getElementById('bp-suggested-otb').textContent = fmtC(netOTB);
-  document.getElementById('bp-otb-status-note').textContent = netOTB > 0 ? 'Available to Buy' : 'Overstocked';
-  document.getElementById('bp-suggested-otb').style.color = netOTB > 0 ? 'var(--green)' : 'var(--red)';
+  const otbEl = document.getElementById('bp-suggested-otb');
+  const otbNoteEl = document.getElementById('bp-otb-status-note');
+  const begInvEl = document.getElementById('bp-otb-after-inv');
+  const avgMonthlyEl = document.getElementById('bp-avg-monthly');
+  const avgMonthlyNoteEl = document.getElementById('bp-avg-monthly-note');
+  const brandsEl = document.getElementById('bp-active-brands');
+  const db2 = window._ld && window._ld.dashboard && window._ld.dashboard.inventory || {};
 
-  document.getElementById('bp-avg-monthly').textContent = fmtC(plannedMonthlySales);
-  document.getElementById('bp-avg-monthly-note').textContent = `avg over ${Math.round(periodMonths)} months`;
+  if(otbEl){ otbEl.textContent = fmtC(netOTB); otbEl.style.color = netOTB > 0 ? 'var(--green)' : 'var(--red)'; }
+  if(otbNoteEl) otbNoteEl.textContent = netOTB > 0 ? '✅ Available to Buy (retail)' : '⚠️ Overstocked — hold buying';
+  if(begInvEl){ begInvEl.textContent = fmtC(beginningInventoryRetail); begInvEl.style.color = 'var(--text)'; }
+  if(avgMonthlyEl) avgMonthlyEl.textContent = fmtC(plannedMonthlySales);
+  if(avgMonthlyNoteEl) avgMonthlyNoteEl.textContent = `avg over ${Math.round(periodMonths)} months`;
+  if(brandsEl) brandsEl.textContent = (st.byBrand||[]).length || (db2.brandBreakdown||[]).length || '—';
+
+  // Banner explanation
+  const bannerEl = document.getElementById('bp-otb-banner-text');
+  if(bannerEl){
+    bannerEl.innerHTML = `<strong>Proper OTB: ${fmtC(netOTB)}</strong> — ` +
+      `Planned Sales (${fmtC(plannedMonthlySales)}) + Planned EOM Inv (${fmtC(plannedEndingInventory)}) − Beginning Inv at Retail (${fmtC(beginningInventoryRetail)}) − On-Order (${fmtC(onOrder)}). ` +
+      (netOTB > 0
+        ? `<span style="color:var(--green);">You have room to buy.</span>`
+        : `<span style="color:var(--red);">You are overstocked — focus on selling before committing new dollars.</span>`) +
+      ` <em style="color:var(--text-muted);"> Adjust the On-Order field above if you have pending purchase orders.</em>`;
+  }
 
   const turnoverEl = document.getElementById('bp-turnover-value');
   const mosEl = document.getElementById('bp-mos-value');
   const buyRatioEl = document.getElementById('bp-buyratio-value');
 
-  turnoverEl.textContent = turnover.toFixed(1) + 'x';
-  mosEl.textContent = monthsOfSupply.toFixed(1) + ' mo';
-  buyRatioEl.textContent = '$' + buyRatio.toFixed(2);
+  if(turnoverEl) turnoverEl.textContent = turnover.toFixed(1) + '×';
+  if(mosEl) mosEl.textContent = monthsOfSupply.toFixed(1) + ' mo';
+  if(buyRatioEl) buyRatioEl.textContent = '$' + buyRatio.toFixed(2);
 
-  const setCardState = (cardEl, value, healthy, watch) => {
-    cardEl.style.background = 'var(--bg)';
-    if (healthy) cardEl.style.background = 'var(--green-light)';
-    if (watch) cardEl.style.background = 'var(--yellow-light)';
+  const setCardColor = (id, bg, color) => {
+    const el = document.getElementById(id);
+    if(el){ el.style.background = bg; const v = el.querySelector('.value'); if(v) v.style.color = color; }
   };
-  setCardState(document.getElementById('bp-turnover-card'), turnover, turnover >= 4 && turnover <= 6, turnover < 2 || turnover > 8);
-  setCardState(document.getElementById('bp-mos-card'), monthsOfSupply, monthsOfSupply >= 2 && monthsOfSupply <= 2.5, monthsOfSupply < 1 || monthsOfSupply > 4);
-  setCardState(document.getElementById('bp-buyratio-card'), buyRatio, buyRatio >= 0.35 && buyRatio <= 0.45, buyRatio > 0.6);
+  // Turnover: green 4-6x, yellow 2-4, red <2 or >8
+  if(turnover >= 4 && turnover <= 6) setCardColor('bp-turnover-card', 'var(--green-light)', 'var(--green)');
+  else if(turnover < 2) setCardColor('bp-turnover-card', 'var(--red-light)', 'var(--red)');
+  else setCardColor('bp-turnover-card', 'var(--yellow-light)', 'var(--yellow)');
+  // Months of Supply: green 2-2.5, yellow outside, red >4 or <1
+  if(monthsOfSupply >= 2 && monthsOfSupply <= 2.5) setCardColor('bp-mos-card', 'var(--green-light)', 'var(--green)');
+  else if(monthsOfSupply > 4 || monthsOfSupply < 1) setCardColor('bp-mos-card', 'var(--red-light)', 'var(--red)');
+  else setCardColor('bp-mos-card', 'var(--yellow-light)', 'var(--yellow)');
+  // Buy Ratio: green ~0.40, yellow if high, red if extreme
+  if(buyRatio >= 0.35 && buyRatio <= 0.45) setCardColor('bp-buyratio-card', 'var(--green-light)', 'var(--green)');
+  else if(buyRatio > 1.0) setCardColor('bp-buyratio-card', 'var(--red-light)', 'var(--red)');
+  else setCardColor('bp-buyratio-card', 'var(--yellow-light)', 'var(--yellow)');
 
   // --- Update UI: OTB Formula Visual ---
   const formulaEl = document.getElementById('bp-otb-formula-visual');
@@ -3443,28 +3518,30 @@ function renderProperOTB() {
   // --- Update UI: Budget Split ---
   const budgetSplitEl = document.getElementById('bp-budget-split-content');
   if(budgetSplitEl){
-    const totalOTBAtCost = (netOTB > 0) ? netOTB * costMultiplier : 0;
-    const inSeasonOTBMin = totalOTBAtCost * 0.30;
-    const inSeasonOTBMax = totalOTBAtCost * 0.50;
-    const preSeason = totalOTBAtCost * 0.60; // Assume 60-40 split for display
-    if(totalOTBAtCost > 0){
-      budgetSplitEl.innerHTML = `
-        <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;">
-          Split your total OTB of <strong>${fmtC(totalOTBAtCost)} (at cost)</strong> into two buckets. The flexible, in-season portion is key for reacting to trends and maximizing sell-through.
-        </p>
-        <div style="display:flex;gap:16px;">
-          <div style="flex:1;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-            <div style="font-size:18px;font-weight:700;">${fmtC(preSeason)}</div>
-            <div style="font-size:12px;">Pre-Season Committed</div>
-          </div>
-          <div style="flex:1;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;background:var(--green-light);">
-            <div style="font-size:18px;font-weight:700;color:var(--green);">${fmtC(inSeasonOTBMin)} – ${fmtC(inSeasonOTBMax)}</div>
-            <div style="font-size:12px;color:var(--text-secondary);">In-Season OTB (Flexible)</div>
-          </div>
-        </div>`;
-    } else {
-      budgetSplitEl.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px;">No OTB available. Focus on selling existing inventory before planning new budget splits.</div>`;
-    }
+    // Pre-Season Committed = what's already bought (current inventory at cost)
+    const preSeasonCommitted = beginningInventoryCost;
+    // In-Season OTB = 30-50% of the net OTB at cost (flexible reorder budget)
+    const netOTBAtCost = netOTB > 0 ? netOTB * costMultiplier : 0;
+    const inSeasonMin = netOTBAtCost * 0.30;
+    const inSeasonMax = netOTBAtCost * 0.50;
+    budgetSplitEl.innerHTML = `
+      <p style="font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:16px;">
+        <strong>Pre-Season Committed</strong> is what you've already purchased (current inventory at cost).
+        <strong>In-Season OTB</strong> is the flexible budget available for reorders and trend reaction.
+        Keep 30–50% of your buy budget flexible so you can chase what's selling.
+      </p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;background:var(--bg);">
+          <div style="font-size:20px;font-weight:700;color:var(--text);">${fmtC(preSeasonCommitted)}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px;">Pre-Season Committed</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">current inventory at cost</div>
+        </div>
+        <div style="flex:1;min-width:180px;border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;background:${netOTBAtCost>0?'var(--green-light)':'var(--red-light)'};">
+          <div style="font-size:20px;font-weight:700;color:${netOTBAtCost>0?'var(--green)':'var(--red)'};">${netOTBAtCost>0?fmtC(inSeasonMin)+' – '+fmtC(inSeasonMax):'$0'}</div>
+          <div style="font-size:13px;font-weight:600;margin-top:4px;">In-Season OTB (Flexible)</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${netOTBAtCost>0?'30–50% of new OTB · reorders &amp; trend reaction':'Sell existing inventory first'}</div>
+        </div>
+      </div>`;
   }
 }
 
@@ -3546,51 +3623,9 @@ function renderBuyPlan(){
       ?'<span style="color:var(--red);font-size:18px;font-weight:700;">↓</span>'
       :'<span style="color:var(--yellow);font-size:18px;font-weight:700;">→</span>';
 
-  // ➀ Suggested OTB — 35% of avg monthly revenue
-  (function renderSuggestedOTB(){
-    const s = st.summary || {};
-    const totalRevenue = s.totalRevenue || 0;
-    const periodMonths = periodWeeks > 0 ? periodWeeks / 4.333 : 1;
-    const avgMonthlyRevenue = totalRevenue / periodMonths;
-    const suggestedOTB = avgMonthlyRevenue * 0.35;
-
-    // Estimate current inventory at cost
-    const db = window._ld && window._ld.dashboard && window._ld.dashboard.inventory || {};
-    const invCostRaw = db.totalValue || (db.brandBreakdown ? db.brandBreakdown.reduce((s,b)=>s+b.cost,0) : 0);
-    // Fallback: estimate cost from retail using avg margin
-    const avgMargin = (s.grossMargin || 55) / 100;
-    const invCost = invCostRaw > 0 ? invCostRaw
-      : (db.totalRetail ? db.totalRetail * (1 - avgMargin) : 0);
-    const otbAfterInv = suggestedOTB - invCost;
-
-    // Update stat cards
-    const elOTB = document.getElementById('bp-suggested-otb');
-    const elAvg = document.getElementById('bp-avg-monthly');
-    const elNote = document.getElementById('bp-avg-monthly-note');
-    const elAfter = document.getElementById('bp-otb-after-inv');
-    const elBrands = document.getElementById('bp-active-brands');
-    if(elOTB) elOTB.textContent = fmtC(suggestedOTB);
-    if(elAvg) elAvg.textContent = fmtC(avgMonthlyRevenue);
-    if(elNote) elNote.textContent = Math.round(periodMonths) + ' months of data';
-    if(elAfter){
-      elAfter.textContent = fmtC(Math.max(otbAfterInv, 0));
-      elAfter.style.color = otbAfterInv > 0 ? 'var(--green)' : 'var(--red)';
-    }
-    if(elBrands) elBrands.textContent = (st.byBrand||[]).length || (db.brandBreakdown||[]).length || '—';
-
-    // Banner explanation
-    const bannerEl = document.getElementById('bp-otb-banner-text');
-    if(bannerEl){
-      const invNote = invCost > 0
-        ? ` Your current inventory is estimated at <strong>${fmtC(invCost)}</strong> at cost, leaving <strong>${fmtC(Math.max(otbAfterInv,0))}</strong> available to buy.`
-        : ' Connect inventory cost data to see OTB after current stock.';
-      bannerEl.innerHTML =
-        `<strong>Suggested Monthly OTB: ${fmtC(suggestedOTB)}</strong> — ` +
-        `calculated as 35% of your average monthly revenue (${fmtC(avgMonthlyRevenue)}/mo across ${Math.round(periodMonths)} months).` +
-        invNote +
-        ` <em style="color:var(--text-muted);">This is a starting point — adjust to your actual buy budget and cash flow.</em>`;
-    }
-  })();
+  // ➀ Proper OTB Calculation + AI Buying Advisor
+  renderProperOTB();
+  renderAIBuyingAdvisor(st, periodWeeks);
 
   // ① AI Recommendation — dynamic from real data
   const aiEl=document.getElementById('bp-ai-text');
@@ -3614,35 +3649,51 @@ function renderBuyPlan(){
     aiEl.innerHTML=msg||'<strong>AI Recommendation:</strong> Load sell-through data to generate insights.';
   }
 
-  // ② OTB by Category
+  // ② OTB by Category — enhanced with allocation + WOS-based status
   const otbTbody=document.getElementById('bp-otb-tbody');
   const otbTotal=document.getElementById('bp-otb-total');
   if(otbTbody&&st.otb&&st.otb.length){
-    const statusBadge={healthy:'badge-green',understocked:'badge-sage',overstocked:'badge-red',critical:'badge-red',buy:'badge-green',watch:'badge-yellow'};
-    const statusLabel={healthy:'Healthy',understocked:'Buy',overstocked:'Overstocked',critical:'Overstocked',buy:'Buy',watch:'Watch'};
-    const sorted=[...st.otb].sort((a,b)=>b.otbAvailable-a.otbAvailable);
+    // Calculate total weekly revenue for proportional allocation
+    const totalWeeklyRate = st.otb.reduce((s,o)=>s+o.weeklyRunRate,0);
+    // Get net OTB from renderProperOTB calc (re-derive here)
+    const s_sum = st.summary||{};
+    const _pm = periodWeeks/4.333;
+    const _pms = s_sum.totalRevenue/_pm;
+    const _bic = st.otb.reduce((s,o)=>s+o.currentInventoryCost,0);
+    const _avgM=(s_sum.grossMargin||55)/100;
+    const _cm=1-_avgM;
+    const _bir=_bic/_cm;
+    const _pei=_pms*2.25;
+    const _netOTB=Math.max(_pms+_pei-_bir,0);
+
+    const sorted=[...st.otb].sort((a,b)=>b.weeklyRunRate-a.weeklyRunRate);
     otbTbody.innerHTML=sorted.map(o=>{
-      const pos=o.otbAvailable>=0;
-      const otbStyle=pos?'color:var(--green);font-weight:700;':'color:var(--red);font-weight:700;';
-      const wos=o.weeklyRunRate>0?Math.round(o.currentInventoryCost/o.weeklyRunRate*10)/10:0;
-      // Derive buy/watch/overstocked from status or otbAvailable
-      let sKey=o.status||'';
-      if(!statusLabel[sKey])sKey=pos?'buy':'overstocked';
-      const badge=statusBadge[sKey]||'badge-sage';
-      const label=statusLabel[sKey]||o.status||'—';
+      const wos=o.weeksOfSupply!=null?o.weeksOfSupply:(o.weeklyRunRate>0?Math.round(o.currentInventoryCost/o.weeklyRunRate*10)/10:0);
+      const otbVal=o.otbAvailable||0;
+      const otbStyle=otbVal>=0?'color:var(--green);font-weight:700;':'color:var(--red);font-weight:700;';
+      // WOS-based status: Buy Now (<6), Hold (>16), Reduce (>26), else Healthy
+      let badge,label;
+      if(wos>0&&wos<6){badge='badge-green';label='Buy Now';}
+      else if(wos>26){badge='badge-red';label='Reduce';}
+      else if(wos>16){badge='badge-yellow';label='Hold';}
+      else{badge='badge-sage';label='Healthy';}
+      // Proportional OTB allocation based on this category's share of weekly sales
+      const catShare = totalWeeklyRate > 0 ? o.weeklyRunRate/totalWeeklyRate : 0;
+      const allocOTB = _netOTB * catShare;
       return`<tr>
         <td><strong>${o.category}</strong></td>
         <td style="text-align:right;">${fmtC(o.currentInventoryCost)}</td>
         <td style="text-align:right;">${fmtC(o.weeklyRunRate)}/wk</td>
-        <td style="text-align:right;">${wos>0?wos+'w':'—'}</td>
-        <td style="text-align:right;${otbStyle}">${pos?'+':''}${fmtC(o.otbAvailable)}</td>
+        <td style="text-align:right;">${wos>0?Math.round(wos)+'w':'—'}</td>
+        <td style="text-align:right;${otbStyle}">${otbVal>=0?'+':''}${fmtC(otbVal)}</td>
+        <td style="text-align:right;font-weight:600;color:var(--accent-sage);">${allocOTB>0?fmtC(allocOTB):'—'}</td>
         <td style="text-align:center;"><span class="badge ${badge}">${label}</span></td>
       </tr>`;
     }).join('');
     const totalOpen=st.otb.filter(o=>o.otbAvailable>0).reduce((s,o)=>s+o.otbAvailable,0);
     if(otbTotal&&totalOpen>0)otbTotal.textContent='Total Open Budget: '+fmtC(totalOpen);
   } else if(otbTbody){
-    otbTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">No OTB data available.</td></tr>';
+    otbTbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No OTB data available.</td></tr>';
   }
 
   // ③ Season ST% Comparison — delegate to dedicated function
