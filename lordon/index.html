@@ -427,9 +427,11 @@ tr:hover td { background: var(--bg); }
 .rbd-hidden { display:none; }
 .rbd-alert { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:5px; font-size:10px; font-weight:700; letter-spacing:0.3px; white-space:nowrap; }
 .rbd-alert-reorder { background:#FDE8E8; color:var(--red); }
+.rbd-alert-soon    { background:#FFF0E0; color:#C96000; }
 .rbd-alert-repeat  { background:#FFF3E0; color:#C98000; }
 .rbd-alert-watch   { background:#FFF8E1; color:var(--yellow); }
 .rbd-alert-new     { background:var(--blue-light); color:var(--blue); }
+.rbd-alert-monitor { background:#F0F0F0; color:#888888; }
 .rbd-alert-ok      { background:var(--green-light); color:var(--green); }
 .rbd-sku-tag { display:inline-block; font-size:11px; font-weight:600; }
 .rbd-filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
@@ -808,20 +810,31 @@ tr:hover td { background: var(--bg); }
 
   <div style="display:flex;gap:16px;margin-bottom:16px;">
     <div class="stat-card" style="flex:1;background:var(--accent-sage-light);">
-      <div class="value" style="color:var(--accent-sage);">—</div>
-      <div class="label">Total Budget</div>
+      <div class="value" style="color:var(--accent-sage);" id="bp-suggested-otb">—</div>
+      <div class="label">Suggested Monthly OTB</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">35% of avg monthly sales</div>
     </div>
     <div class="stat-card" style="flex:1;background:var(--accent-warm);">
-      <div class="value" style="color:var(--accent-dark);">—</div>
-      <div class="label">Committed</div>
+      <div class="value" style="color:var(--accent-dark);" id="bp-avg-monthly">—</div>
+      <div class="label">Avg Monthly Revenue</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" id="bp-avg-monthly-note">based on sell-through period</div>
     </div>
     <div class="stat-card" style="flex:1;background:var(--green-light);">
-      <div class="value" style="color:var(--green);">—</div>
-      <div class="label">OTB Remaining</div>
+      <div class="value" style="color:var(--green);" id="bp-otb-after-inv">—</div>
+      <div class="label">OTB After Inventory</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">budget − current inv. cost</div>
     </div>
     <div class="stat-card" style="flex:1;">
-      <div class="value">22</div>
+      <div class="value" id="bp-active-brands">—</div>
       <div class="label">Active Brands</div>
+    </div>
+  </div>
+
+  <!-- Suggested OTB banner -->
+  <div class="ai-rec" style="margin-bottom:16px;" id="bp-otb-banner">
+    <div class="ai-icon">💡</div>
+    <div class="ai-text" id="bp-otb-banner-text">
+      Calculating suggested OTB from sell-through data…
     </div>
   </div>
 
@@ -883,16 +896,33 @@ tr:hover td { background: var(--bg); }
     </div>
   </div>
 
-  <!-- Season Comparison -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-title" id="bp-season-comp-title">📅 Season Comparison</div>
-    <p id="bp-season-plan-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;"></p>
+  <!-- Season ST% Comparison — Spring -->
+  <div class="card" style="margin-bottom:16px;" id="bp-season-spring-card">
+    <div class="card-title" id="bp-season-spring-title">🌸 Spring '25 vs Spring '26 — Planning Spring '27 Buy</div>
+    <p id="bp-season-spring-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Comparing sell-through % by brand across two Spring seasons</p>
     <div style="overflow-x:auto;">
       <table>
-        <thead id="bp-season-thead"><tr><th>Category</th><th style="text-align:right;">Prev Season Revenue</th><th style="text-align:right;">Curr Season Actual</th><th style="text-align:right;">Curr Season Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr></thead>
-        <tbody id="bp-season-tbody"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading season data…</td></tr></tbody>
+        <thead><tr><th>Brand</th><th style="text-align:right;"><strong>Sp '25 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:right;"><strong>Sp '26 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:center;">Trend</th><th>Signal</th></tr></thead>
+        <tbody id="bp-season-spring-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading Spring comparison…</td></tr></tbody>
       </table>
     </div>
+  </div>
+
+  <!-- Season ST% Comparison — Fall -->
+  <div class="card" style="margin-bottom:16px;" id="bp-season-fall-card">
+    <div class="card-title" id="bp-season-fall-title">🍂 Fall '25 vs Fall '26 — Tracking Performance</div>
+    <p id="bp-season-fall-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Comparing sell-through % by brand across two Fall seasons</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Brand</th><th style="text-align:right;"><strong>Fa '25 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:right;"><strong>Fa '26 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:center;">Trend</th><th>Signal</th></tr></thead>
+        <tbody id="bp-season-fall-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading Fall comparison…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Legacy Season Comparison (hidden — kept for compatibility) -->
+  <div style="display:none;">
+    <table><thead id="bp-season-thead"></thead><tbody id="bp-season-tbody"></tbody></table>
   </div>
 
   <!-- Brand Scorecard -->
@@ -1139,18 +1169,20 @@ tr:hover td { background: var(--bg); }
     <!-- Summary pills -->
     <div class="rbd-summary-pills" id="rbd-pills">
       <span class="rbd-pill" style="background:var(--red-light);color:var(--red);" id="rbd-pill-reorder">— Reorder Now</span>
+      <span class="rbd-pill" style="background:#FFF0E0;color:#C96000;" id="rbd-pill-soon">— Reorder Soon</span>
       <span class="rbd-pill" style="background:#FFF3E0;color:#C98000;" id="rbd-pill-repeat">— Repeat Worthy</span>
       <span class="rbd-pill" style="background:var(--yellow-light);color:var(--yellow);" id="rbd-pill-watch">— Watch</span>
-      <span class="rbd-pill" style="background:var(--green-light);color:var(--green);" id="rbd-pill-ok">— Healthy</span>
+      <span class="rbd-pill" style="background:var(--green-light);color:var(--green);" id="rbd-pill-ok">— New / Monitoring</span>
     </div>
 
     <!-- Filter bar -->
     <div class="rbd-filter-bar" id="rbd-filters">
       <button class="rbd-filter-btn active" onclick="rbdSetFilter('ALL',this)">All Brands</button>
       <button class="rbd-filter-btn" onclick="rbdSetFilter('REORDER_NOW',this)">🔴 Reorder Now</button>
-      <button class="rbd-filter-btn" onclick="rbdSetFilter('REPEAT_WORTHY',this)">🟡 Repeat Worthy</button>
-      <button class="rbd-filter-btn" onclick="rbdSetFilter('WATCH',this)">👁 Watch</button>
-      <button class="rbd-filter-btn" onclick="rbdSetFilter('NEW',this)">🆕 New</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('REORDER_SOON',this)">🟠 Reorder Soon</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('REPEAT_WORTHY',this)">🟢 Repeat Worthy</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('NEW_ARRIVAL',this)">🆕 New Arrival</button>
+      <button class="rbd-filter-btn" onclick="rbdSetFilter('MONITOR',this)">⬜ Monitor</button>
     </div>
 
     <div style="overflow-x:auto;">
@@ -1195,6 +1227,14 @@ tr:hover td { background: var(--bg); }
 
 
 
+  <!-- Size Curve Analysis -->
+  <div class="card" style="margin-bottom:20px;" id="size-curve-card">
+    <div class="card-title">📐 Size Curve Analysis — by Brand</div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Aggregated from SKU-level data · Highlights sell-through imbalances and informs next-season size ordering</p>
+    <div id="size-curve-content">
+      <div style="text-align:center;color:var(--text-secondary);padding:20px;">Loading size curve data…</div>
+    </div>
+  </div>
 
 </div>
 
@@ -2149,10 +2189,54 @@ async function initData(){
     loadJSON('data/sell-through-detail.json?v=' + Date.now())
   ]);
   window._ld={orders:orders||[],products:products||[],customers:customers||[],sales:sales||[],summary:summary||{},dashboard:dashboard||{},omnisend:omnisend||{},sellThrough:sellThrough||{},sellThroughDetail:sellThroughDetail||null};
+  if(window._ld.sellThroughDetail)recalcAlerts(window._ld.sellThroughDetail);
   console.log('Lordon data loaded:',Object.fromEntries(Object.entries(window._ld).map(([k,v])=>[k,Array.isArray(v)?v.length:'obj'])));
   renderDashboard();
 }
 function refreshData(){initData()}
+
+// ═══════════════════════════════════════════════════════════════
+// SMART ALERT RECALCULATION — override JSON alerts with better rules
+// ═══════════════════════════════════════════════════════════════
+function recalcAlerts(detail) {
+  if (!detail || !detail.brands) return;
+  let reorderNow = 0, reorderSoon = 0, repeatWorthy = 0, newArrival = 0, monitor = 0;
+  for (const brand of detail.brands) {
+    for (const s of brand.styles) {
+      const sold = s.sold || 0;
+      const remaining = s.remaining || 0;
+      const vel = s.vel || 0;
+      const wos = s.wos || 0;
+      const weeks = s.weeks || 0;
+      const sellThrough = s.sellThrough || 0;
+      // Apply tiered rules in priority order
+      if (weeks < 4) {
+        s.alert = 'NEW_ARRIVAL';
+        newArrival++;
+      } else if (remaining === 0 && sold >= 5 && vel >= 0.15) {
+        s.alert = 'REORDER_NOW';
+        reorderNow++;
+      } else if (remaining > 0 && remaining <= 2 && wos < 6 && vel >= 0.10) {
+        s.alert = 'REORDER_SOON';
+        reorderSoon++;
+      } else if (sellThrough >= 65 && sold >= 3 && wos < 20) {
+        s.alert = 'REPEAT_WORTHY';
+        repeatWorthy++;
+      } else {
+        s.alert = 'MONITOR';
+        monitor++;
+      }
+    }
+  }
+  // Update top-level counts
+  detail.reorderNow = reorderNow;
+  detail.repeatWorthy = repeatWorthy;
+  detail._reorderSoon = reorderSoon;
+  detail._newArrival = newArrival;
+  detail._monitor = monitor;
+  console.log('Alert recalc:', { reorderNow, reorderSoon, repeatWorthy, newArrival, monitor });
+}
+
 function fmtC(n){return'$'+parseFloat(n||0).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function fmtN(n){return parseFloat(n||0).toLocaleString('en-CA')}
 
@@ -3296,6 +3380,52 @@ function renderBuyPlan(){
       ?'<span style="color:var(--red);font-size:18px;font-weight:700;">↓</span>'
       :'<span style="color:var(--yellow);font-size:18px;font-weight:700;">→</span>';
 
+  // ➀ Suggested OTB — 35% of avg monthly revenue
+  (function renderSuggestedOTB(){
+    const s = st.summary || {};
+    const totalRevenue = s.totalRevenue || 0;
+    const periodMonths = periodWeeks > 0 ? periodWeeks / 4.333 : 1;
+    const avgMonthlyRevenue = totalRevenue / periodMonths;
+    const suggestedOTB = avgMonthlyRevenue * 0.35;
+
+    // Estimate current inventory at cost
+    const db = window._ld && window._ld.dashboard && window._ld.dashboard.inventory || {};
+    const invCostRaw = db.totalValue || (db.brandBreakdown ? db.brandBreakdown.reduce((s,b)=>s+b.cost,0) : 0);
+    // Fallback: estimate cost from retail using avg margin
+    const avgMargin = (s.grossMargin || 55) / 100;
+    const invCost = invCostRaw > 0 ? invCostRaw
+      : (db.totalRetail ? db.totalRetail * (1 - avgMargin) : 0);
+    const otbAfterInv = suggestedOTB - invCost;
+
+    // Update stat cards
+    const elOTB = document.getElementById('bp-suggested-otb');
+    const elAvg = document.getElementById('bp-avg-monthly');
+    const elNote = document.getElementById('bp-avg-monthly-note');
+    const elAfter = document.getElementById('bp-otb-after-inv');
+    const elBrands = document.getElementById('bp-active-brands');
+    if(elOTB) elOTB.textContent = fmtC(suggestedOTB);
+    if(elAvg) elAvg.textContent = fmtC(avgMonthlyRevenue);
+    if(elNote) elNote.textContent = Math.round(periodMonths) + ' months of data';
+    if(elAfter){
+      elAfter.textContent = fmtC(Math.max(otbAfterInv, 0));
+      elAfter.style.color = otbAfterInv > 0 ? 'var(--green)' : 'var(--red)';
+    }
+    if(elBrands) elBrands.textContent = (st.byBrand||[]).length || (db.brandBreakdown||[]).length || '—';
+
+    // Banner explanation
+    const bannerEl = document.getElementById('bp-otb-banner-text');
+    if(bannerEl){
+      const invNote = invCost > 0
+        ? ` Your current inventory is estimated at <strong>${fmtC(invCost)}</strong> at cost, leaving <strong>${fmtC(Math.max(otbAfterInv,0))}</strong> available to buy.`
+        : ' Connect inventory cost data to see OTB after current stock.';
+      bannerEl.innerHTML =
+        `<strong>Suggested Monthly OTB: ${fmtC(suggestedOTB)}</strong> — ` +
+        `calculated as 35% of your average monthly revenue (${fmtC(avgMonthlyRevenue)}/mo across ${Math.round(periodMonths)} months).` +
+        invNote +
+        ` <em style="color:var(--text-muted);">This is a starting point — adjust to your actual buy budget and cash flow.</em>`;
+    }
+  })();
+
   // ① AI Recommendation — dynamic from real data
   const aiEl=document.getElementById('bp-ai-text');
   if(aiEl&&st.byCategory&&st.byBrand){
@@ -3349,42 +3479,8 @@ function renderBuyPlan(){
     otbTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">No OTB data available.</td></tr>';
   }
 
-  // ③ Season Comparison (top 10 categories) — dynamic season labels
-  const si=getSeasonInfo();
-  const seasonTbody=document.getElementById('bp-season-tbody');
-
-  // Update card title and planning subtitle
-  const bpSeasonTitle=document.getElementById('bp-season-comp-title');
-  if(bpSeasonTitle)bpSeasonTitle.textContent=`📅 Season Comparison: ${si.prevLabel} → ${si.currLabel}`;
-  const bpSeasonSub=document.getElementById('bp-season-plan-subtitle');
-  if(bpSeasonSub)bpSeasonSub.textContent=`Planning ${si.nextLabel} Buy — How ${si.currLabel} compares to ${si.prevLabel}`;
-  const bpSeasonThead=document.getElementById('bp-season-thead');
-  if(bpSeasonThead)bpSeasonThead.innerHTML=`<tr><th>Category</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.currShort} Actual</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr>`;
-
-  if(seasonTbody){
-    const sc=st.seasonComparison;
-    if(sc&&sc.byCategory&&sc.byCategory.length){
-      const pKey=si.prevKey, cKey=si.currKey, cKeyProj=si.currKey+'Projected';
-      const sorted=[...sc.byCategory]
-        .filter(c=>c[pKey]&&c[pKey].revenue>0)
-        .sort((a,b)=>b[pKey].revenue-a[pKey].revenue)
-        .slice(0,10);
-      if(sorted.length){
-        seasonTbody.innerHTML=sorted.map(c=>`<tr>
-          <td><strong>${c.category}</strong></td>
-          <td style="text-align:right;">${fmtC((c[pKey]||{}).revenue||0)}</td>
-          <td style="text-align:right;">${fmtC((c[cKey]||{}).revenue||0)}</td>
-          <td style="text-align:right;">${fmtC(((c[cKeyProj]||c[cKey]||{}).revenue)||0)}<br><span style="font-size:10px;color:var(--text-muted);">${(c[cKeyProj]||{}).note||''}</span></td>
-          <td style="text-align:center;">${trendArrow(c.trend)}</td>
-          <td style="font-size:12px;color:var(--text-secondary);">${c.recommendation||'—'}</td>
-        </tr>`).join('');
-      } else {
-        seasonTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">No season comparison data available.</td></tr>';
-      }
-    } else {
-      seasonTbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:20px;">No season comparison data available.</td></tr>';
-    }
-  }
+  // ③ Season ST% Comparison — delegate to dedicated function
+  renderBuyPlanSeasonST();
 
   // ④ Brand Scorecard — wired from sellThrough.byBrand
   const brandTbody=document.getElementById('bp-brand-tbody');
@@ -3428,6 +3524,229 @@ function renderBuyPlan(){
     guideText.textContent=st.marketGuide;
     if(guideCard)guideCard.style.display='';
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BUY PLANNING: Season ST% Comparison — Spring & Fall tables
+// Uses sell-through-detail.json floorDate to assign styles to seasons
+// ═══════════════════════════════════════════════════════════════
+function renderBuyPlanSeasonST(){
+  const detail = window._ld && window._ld.sellThroughDetail;
+  const now = new Date();
+  const isJanJun = now.getMonth() < 6;
+
+  // Assign each style to a season bucket based on floorDate
+  // buckets: sp25 (Jan–Jun 2025), fa25 (Jul–Dec 2025), sp26 (Jan–Jun 2026), fa26 (Jul–Dec 2026)
+  const buckets = { sp25:{}, fa25:{}, sp26:{}, fa26:{} };
+
+  function getBucket(floorDate){
+    const d = new Date(floorDate);
+    if(isNaN(d)) return null;
+    const y = d.getFullYear(), m = d.getMonth();
+    if(y===2025 && m<6)  return 'sp25';
+    if(y===2025 && m>=6) return 'fa25';
+    if(y===2026 && m<6)  return 'sp26';
+    if(y===2026 && m>=6) return 'fa26';
+    return null;
+  }
+
+  if(detail && detail.brands){
+    for(const brand of detail.brands){
+      for(const style of brand.styles){
+        const bk = getBucket(style.floorDate);
+        if(!bk) continue;
+        if(!buckets[bk][brand.brand]) buckets[bk][brand.brand] = { sold:0, remaining:0, revenue:0, styles:0 };
+        buckets[bk][brand.brand].sold     += style.sold || 0;
+        buckets[bk][brand.brand].remaining += style.remaining || 0;
+        buckets[bk][brand.brand].revenue  += style.revenue || 0;
+        buckets[bk][brand.brand].styles++;
+      }
+    }
+  }
+
+  function stPct(d){ return d.sold+d.remaining>0 ? Math.round(d.sold/(d.sold+d.remaining)*100) : 0; }
+  function trendArrow(pts){
+    if(pts>3)  return `<span style="color:var(--green);font-weight:700;">↑ ${pts}pts</span>`;
+    if(pts<-3) return `<span style="color:var(--red);font-weight:700;">↓ ${Math.abs(pts)}pts</span>`;
+    return `<span style="color:var(--yellow);font-weight:700;">→ flat</span>`;
+  }
+  function signal(st1, st2, hasYear2){
+    if(!hasYear2) return '<span style="color:var(--text-muted);font-size:11px;">No data yet</span>';
+    const diff = st2 - st1;
+    if(diff>10) return '<span style="color:var(--green);font-size:11px;">📈 Strong repeat buy</span>';
+    if(diff>0)  return '<span style="color:var(--accent-sage);font-size:11px;">✅ Improving</span>';
+    if(diff>-10) return '<span style="color:var(--yellow);font-size:11px;">👁 Watch closely</span>';
+    return '<span style="color:var(--red);font-size:11px;">⚠️ Declining ST%</span>';
+  }
+
+  function buildRows(bkA, bkB){
+    const allBrands = new Set([...Object.keys(buckets[bkA]), ...Object.keys(buckets[bkB])]);
+    const rows = [];
+    for(const brand of [...allBrands].sort()){
+      const a = buckets[bkA][brand];
+      const b = buckets[bkB][brand];
+      if(!a && !b) continue;
+      const stA = a ? stPct(a) : null;
+      const stB = b ? stPct(b) : null;
+      const diff = (stA!==null && stB!==null) ? stB - stA : null;
+      const stACell = stA!==null ? `<strong>${stA}%</strong>` : '<span style="color:var(--text-muted);">—</span>';
+      const stBCell = stB!==null ? `<strong>${stB}%</strong>` : '<span style="color:var(--text-muted);">—</span>';
+      const aSubtitle = a ? `<div style="font-size:10px;color:var(--text-muted);">${a.sold} sold · ${fmtC(a.revenue)}</div>` : '';
+      const bSubtitle = b ? `<div style="font-size:10px;color:var(--text-muted);">${b.sold} sold · ${fmtC(b.revenue)}</div>` : '';
+      rows.push(`<tr>
+        <td><strong>${brand}</strong></td>
+        <td style="text-align:right;">${stACell}${aSubtitle}</td>
+        <td></td>
+        <td style="text-align:right;">${stBCell}${bSubtitle}</td>
+        <td></td>
+        <td style="text-align:center;">${diff!==null ? trendArrow(diff) : '—'}</td>
+        <td>${signal(stA, stB, stB!==null)}</td>
+      </tr>`);
+    }
+    return rows;
+  }
+
+  // Spring table
+  const springTbody = document.getElementById('bp-season-spring-tbody');
+  if(springTbody){
+    const rows = buildRows('sp25','sp26');
+    if(rows.length){
+      springTbody.innerHTML = rows.join('');
+      // Reorder: primary first based on month
+      const springCard = document.getElementById('bp-season-spring-card');
+      const fallCard   = document.getElementById('bp-season-fall-card');
+      if(springCard && fallCard){
+        const parent = springCard.parentNode;
+        if(isJanJun){
+          // Spring is primary — ensure it's before Fall
+          if(springCard.compareDocumentPosition(fallCard) & Node.DOCUMENT_POSITION_PRECEDING){
+            parent.insertBefore(springCard, fallCard);
+          }
+        } else {
+          // Fall is primary — move Fall before Spring
+          if(fallCard.compareDocumentPosition(springCard) & Node.DOCUMENT_POSITION_PRECEDING){
+            parent.insertBefore(fallCard, springCard);
+          }
+        }
+      }
+    } else {
+      springTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;">No Spring season styles found in sell-through data.</td></tr>';
+    }
+  }
+
+  // Fall table
+  const fallTbody = document.getElementById('bp-season-fall-tbody');
+  if(fallTbody){
+    const rows = buildRows('fa25','fa26');
+    if(rows.length){
+      fallTbody.innerHTML = rows.join('');
+    } else {
+      fallTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;">No Fall season styles found in sell-through data.</td></tr>';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIZE CURVE ANALYSIS — per brand from sell-through-detail SKU data
+// ═══════════════════════════════════════════════════════════════
+function renderSizeCurveAnalysis(){
+  const detail = window._ld && window._ld.sellThroughDetail;
+  const el = document.getElementById('size-curve-content');
+  if(!el) return;
+  if(!detail || !detail.brands){
+    el.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No SKU data available.</div>';
+    return;
+  }
+
+  // Apparel size order
+  const APPAREL_SIZES = ['XS','S','M','L','XL','XXL','1X','2X','3X'];
+  const isApparel = sz => APPAREL_SIZES.includes(sz.toUpperCase());
+
+  // Aggregate: brand → size → {sold, remaining}
+  const brandSizes = {};
+  let totalBrands = 0;
+  for(const brand of detail.brands){
+    const name = brand.brand;
+    const sizeMap = {};
+    let hasSizes = false;
+    for(const style of brand.styles){
+      for(const sku of (style.skus||[])){
+        const sz = (sku.label||'').trim().toUpperCase();
+        if(!isApparel(sz)) continue;
+        hasSizes = true;
+        if(!sizeMap[sz]) sizeMap[sz] = { sold:0, remaining:0 };
+        sizeMap[sz].sold      += sku.sold      || 0;
+        sizeMap[sz].remaining += sku.remaining || 0;
+      }
+    }
+    if(hasSizes){
+      brandSizes[name] = sizeMap;
+      totalBrands++;
+    }
+  }
+
+  if(totalBrands === 0){
+    el.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;">No standard apparel sizes (XS–XXL) found in SKU data.</div>';
+    return;
+  }
+
+  // Build HTML — one block per brand (limit to brands with >0 apparel SKUs)
+  const html = [];
+  html.push('<div style="display:grid;gap:16px;">');
+
+  // Sort brands by total sold descending
+  const sortedBrands = Object.entries(brandSizes)
+    .map(([b, sizes]) => ({ brand:b, sizes, totalSold: Object.values(sizes).reduce((s,v)=>s+v.sold,0) }))
+    .filter(b => b.totalSold > 0)
+    .sort((a,b)=>b.totalSold - a.totalSold)
+    .slice(0, 15); // top 15 brands
+
+  for(const { brand, sizes } of sortedBrands){
+    const sizeKeys = APPAREL_SIZES.filter(sz => sizes[sz]);
+    if(sizeKeys.length < 2) continue;
+
+    const maxSold = Math.max(...sizeKeys.map(sz => sizes[sz].sold), 1);
+
+    // Detect imbalances
+    const lowST  = sizeKeys.filter(sz => { const d=sizes[sz]; const st=d.sold+d.remaining>0?d.sold/(d.sold+d.remaining):0; return st<0.4 && d.remaining>0; });
+    const highST = sizeKeys.filter(sz => { const d=sizes[sz]; const st=d.sold+d.remaining>0?d.sold/(d.sold+d.remaining):0; return st>0.85 && d.sold>0; });
+
+    let rec = '';
+    if(highST.length && lowST.length){
+      rec = `Size curve imbalance: <strong>${highST.join(', ')}</strong> selling out fast (>85% ST) · <strong>${lowST.join(', ')}</strong> slow-moving (<40% ST). Shift next order toward ${highST.join('/')} and reduce ${lowST.join('/')}.`;
+    } else if(highST.length){
+      rec = `<strong>${highST.join(', ')}</strong> selling very fast. Consider ordering more depth in ${highST.join('/')}.`;
+    } else if(lowST.length){
+      rec = `<strong>${lowST.join(', ')}</strong> moving slowly. Consider reducing order depth or marking down these sizes.`;
+    } else {
+      rec = 'Size curve looks balanced — even sell-through across sizes.';
+    }
+
+    html.push(`<div style="border:1px solid var(--border);border-radius:10px;padding:14px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px;">${brand}</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;">`);
+
+    for(const sz of sizeKeys){
+      const d = sizes[sz];
+      const stVal = d.sold+d.remaining>0 ? Math.round(d.sold/(d.sold+d.remaining)*100) : 0;
+      const barH = Math.max(Math.round((d.sold/maxSold)*80), 4);
+      const barColor = stVal>=85?'var(--red)':stVal>=65?'var(--accent-sage)':stVal>=40?'var(--accent)':'var(--blue)';
+      const totalUnits = d.sold + d.remaining;
+      html.push(`<div style="display:flex;flex-direction:column;align-items:center;gap:2px;min-width:40px;">
+        <div style="font-size:10px;color:var(--text-muted);">${stVal}%</div>
+        <div style="width:32px;height:${barH}px;background:${barColor};border-radius:4px 4px 0 0;" title="${sz}: ${d.sold} sold / ${totalUnits} total"></div>
+        <div style="font-size:11px;font-weight:700;">${sz}</div>
+        <div style="font-size:10px;color:var(--text-secondary);">${d.sold}/${totalUnits}</div>
+      </div>`);
+    }
+
+    html.push(`</div>
+      <div style="font-size:12px;color:var(--text-secondary);background:var(--bg);border-radius:6px;padding:8px;">🤖 ${rec}</div>
+    </div>`);
+  }
+
+  html.push('</div>');
+  el.innerHTML = html.join('');
 }
 
 // SELL-THROUGH INTELLIGENCE — Full render
@@ -3638,6 +3957,8 @@ function renderSellThrough(){
   renderSeasonComparison();
   // ⑫ Repeat-buy drill-down
   renderSellThroughDetail();
+  // ⑬ Size curve analysis
+  renderSizeCurveAnalysis();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3664,20 +3985,22 @@ function renderSellThroughDetail() {
 
   // Update summary pills
   const elR = document.getElementById('rbd-pill-reorder');
+  const elRS = document.getElementById('rbd-pill-soon');
   const elRW = document.getElementById('rbd-pill-repeat');
   const elW = document.getElementById('rbd-pill-watch');
   const elO = document.getElementById('rbd-pill-ok');
-  if (elR) elR.textContent = detail.reorderNow + ' Reorder Now';
-  if (elRW) elRW.textContent = detail.repeatWorthy + ' Repeat Worthy';
-  let watchCount = 0, okCount = 0;
+  if (elR) elR.textContent = (detail.reorderNow || 0) + ' Reorder Now';
+  if (elRS) elRS.textContent = (detail._reorderSoon || 0) + ' Reorder Soon';
+  if (elRW) elRW.textContent = (detail.repeatWorthy || 0) + ' Repeat Worthy';
+  let monitorCount = 0, newCount = 0;
   for (const b of detail.brands) {
     for (const s of b.styles) {
-      if (s.alert === 'WATCH') watchCount++;
-      else if (s.alert === 'OK' || s.alert === 'NEW') okCount++;
+      if (s.alert === 'MONITOR') monitorCount++;
+      else if (s.alert === 'NEW_ARRIVAL') newCount++;
     }
   }
-  if (elW) elW.textContent = watchCount + ' Watch';
-  if (elO) elO.textContent = okCount + ' OK / New';
+  if (elW) elW.textContent = monitorCount + ' Monitor';
+  if (elO) elO.textContent = newCount + ' New Arrivals';
 
   // Update last-updated
   const luEl = document.getElementById('rbd-last-updated');
@@ -3690,7 +4013,11 @@ function renderSellThroughDetail() {
   // Alert config
   const alertCfg = {
     REORDER_NOW:   { cls:'rbd-alert-reorder', label:'🔴 Reorder Now' },
-    REPEAT_WORTHY: { cls:'rbd-alert-repeat',  label:'🟡 Repeat Worthy' },
+    REORDER_SOON:  { cls:'rbd-alert-soon',    label:'🟠 Reorder Soon' },
+    REPEAT_WORTHY: { cls:'rbd-alert-repeat',  label:'🟢 Repeat Worthy' },
+    NEW_ARRIVAL:   { cls:'rbd-alert-new',     label:'🆕 New Arrival' },
+    MONITOR:       { cls:'rbd-alert-monitor', label:'⬜ Monitor' },
+    // Legacy keys for backward compat
     WATCH:         { cls:'rbd-alert-watch',   label:'👁 Watch' },
     NEW:           { cls:'rbd-alert-new',     label:'🆕 New' },
     OK:            { cls:'rbd-alert-ok',      label:'✅ OK' },
@@ -3718,11 +4045,11 @@ function renderSellThroughDetail() {
     if (brandStyles.length === 0) continue;
 
     // Compute brand-level alert (worst of its styles)
-    const alertPriority = { REORDER_NOW:0, REPEAT_WORTHY:1, WATCH:2, NEW:3, OK:4 };
+    const alertPriority = { REORDER_NOW:0, REORDER_SOON:1, REPEAT_WORTHY:2, WATCH:3, NEW:4, NEW_ARRIVAL:4, MONITOR:5, OK:6 };
     const worstAlert = brandStyles.reduce((worst, s) => {
-      const ap = alertPriority[s.alert] ?? 5;
-      return ap < alertPriority[worst] ? s.alert : worst;
-    }, 'OK');
+      const ap = alertPriority[s.alert] ?? 7;
+      return ap < (alertPriority[worst] ?? 7) ? s.alert : worst;
+    }, 'MONITOR');
     const bCfg = alertCfg[worstAlert] || alertCfg.OK;
 
     const brandId = 'rbd-brand-' + brand.brand.replace(/[^a-z0-9]/gi, '_');
@@ -3747,7 +4074,7 @@ function renderSellThroughDetail() {
       const wosDisplay = style.wos >= 99 ? '—' : style.wos + 'w';
       const wosStyle = style.wos <= 3 && style.wos > 0 ? 'color:var(--red);font-weight:700;'
                      : style.wos <= 5 ? 'color:var(--yellow);font-weight:600;' : '';
-      const velDisplay = style.vel >= 0.05 ? style.vel.toFixed(2) + '/wk' : '&lt;0.1/wk';
+      const velDisplay = style.weeks < 4 ? '🆕 New — monitoring' : style.vel >= 0.05 ? style.vel.toFixed(2) + '/wk' : '&lt;0.1/wk';
       const floorNote = style.weeks < 2 ? ' <span style="font-size:10px;color:var(--blue);">(new)</span>' : '';
       const stBar = style.sellThrough > 0
         ? `<span style="display:inline-block;width:${Math.min(style.sellThrough,100)*0.5}px;height:6px;background:var(--accent);border-radius:3px;margin-right:4px;vertical-align:middle;"></span>`
