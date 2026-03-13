@@ -295,9 +295,23 @@ function renderBrandTable(){
     const st=pct(b.sold,b.remaining);
     const ws=weeksSupply(b.remaining,b.sold);
     const margin=b.revenue?Math.round((b.revenue-b.cost)/b.revenue*100):0;
-    html+=`<tr class="brand-row"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td>${ws}</td><td>${margin}%</td></tr>`;
+    html+=`<tr class="brand-row" data-brand="${b.name}"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td>${ws}</td><td>${margin}%</td></tr>`;
+    Object.values(b.styles).sort((a,c)=>c.revenue-a.revenue).forEach(s=>{
+      const sSt=pct(s.sold,s.remaining);
+      const act=sSt>=80?'<span class="rec-tag rec-reorder">Reorder</span>':sSt<40?'<span class="rec-tag rec-reduce">Markdown</span>':'';
+      html+=`<tr class="style-row hidden-row" data-parent="${b.name}" data-style="${s.name}"><td style="padding-left:32px">${s.name}</td><td>${fmt(s.revenue)}</td><td>${s.sold}</td><td>${s.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${sSt}%"></div></div><span class="st-pct ${stClass(sSt)}">${sSt}%</span></div></td><td>${weeksSupply(s.remaining,s.sold)}</td><td>${act}</td></tr>`;
+    });
   });
   document.getElementById('brandBody').innerHTML=html;
+  // Click to expand styles
+  document.querySelectorAll('#brandBody .brand-row').forEach(r=>{
+    r.addEventListener('click',()=>{
+      const brand=r.dataset.brand;
+      const icon=r.querySelector('.expand-icon');
+      const open=icon.classList.toggle('open');
+      document.querySelectorAll(`#brandBody [data-parent="${brand}"]`).forEach(sr=>sr.classList.toggle('hidden-row',!open));
+    });
+  });
 }
 
 function renderDrillDown(){
