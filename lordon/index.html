@@ -4631,115 +4631,288 @@ function rbdToggleStyle(styleId) {
   });
 }
 
-function renderSeasonComparison(){
-  const st=window._ld&&window._ld.sellThrough;
-  if(!st)return;
-  const sc=st.seasonComparison;
-  const si=getSeasonInfo();
-  const pKey=si.prevKey, cKey=si.currKey, cKeyProj=si.currKey+'Projected';
-  const ratingBadge={grow:'badge-green',keep:'badge-sage',watch:'badge-yellow',cut:'badge-red'};
-  const ratingLabel={grow:'Grow',keep:'Keep',watch:'Watch',cut:'Cut'};
-  const trendArrow=t=>t==='up'
-    ?'<span style="color:var(--green);font-size:18px;font-weight:700;">↑</span>'
-    :t==='down'
-      ?'<span style="color:var(--red);font-size:18px;font-weight:700;">↓</span>'
-      :'<span style="color:var(--yellow);font-size:18px;font-weight:700;">→</span>';
 
-  // Update static titles and subtitles dynamically
+/*
+This block contains the new implementation for the season comparison feature.
+It is designed to be a self-contained replacement for the existing `renderSeasonComparison` function.
+*/
+
+// ═══════════════════════════════════════════════════════════════
+// NEW SEASON COMPARISON LOGIC (from urbanbutter)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * UTILITY: Converts a floorDate string (e.g., "2025-01-18") to a season key (e.g., "sp25").
+ * @param {string} floorDate - The date string from sell-through-detail.json.
+ * @returns {string|null} The season key or null if invalid.
+ */
+function getSeasonKeyFromDate(floorDate) {
+  const d = new Date(floorDate);
+  if (isNaN(d)) return null;
+  const year = d.getFullYear();
+  const month = d.getMonth(); // 0-11
+  const seasonPrefix = month < 6 ? 'sp' : 'fa'; // Jan-Jun = Spring, Jul-Dec = Fall
+  const shortYear = String(year).slice(-2);
+  return `${seasonPrefix}${shortYear}`;
+}
+
+/**
+ * Builds a BUY_PLAN-like data structure from sell-through-detail.json.
+ * Groups styles by name and aggregates sold/revenue counts per season.
+ * @returns {{brands: object, allStyles: object}}
+ */
+function buildBuyPlanFromDetail() {
+  const detail = window._ld && window._ld.sellThroughDetail;
+  if (!detail || !detail.brands) return { brands: {}, allStyles: {} };
+
+  const brands = {}; // { "BRAND_NAME": { styles: { "STYLE_NAME": { name:"...", sp25: 10, ... } } } }
+  const allStyles = {}; // { "STYLE_NAME": { name:"...", sp25: 10, ... } }
+
+  for (const brandData of detail.brands) {
+    const brandName = brandData.brand;
+    if (!brands[brandName]) {
+      brands[brandName] = { styles: {} };
+    }
+
+    for (const styleData of brandData.styles) {
+      const styleName = styleData.name.toUpperCase();
+      const seasonKey = getSeasonKeyFromDate(styleData.floorDate);
+      if (!seasonKey) continue;
+
+      if (!brands[brandName].styles[styleName]) {
+        brands[brandName].styles[styleName] = { name: styleData.name };
+      }
+      if (!allStyles[styleName]) {
+        allStyles[styleName] = { name: styleData.name };
+      }
+
+      // Aggregate sold units for the same style in the same season
+      const sold = styleData.sold || 0;
+      brands[brandName].styles[styleName][seasonKey] = (brands[brandName].styles[styleName][seasonKey] || 0) + sold;
+      allStyles[styleName][seasonKey] = (allStyles[styleName][seasonKey] || 0) + sold;
+    }
+  }
+  return { brands, allStyles };
+}
+
+/**
+ * Builds a lookup table for remaining inventory per style.
+ * @returns {object} A map of { "STYLE_NAME_UPPER": remaining_units }.
+ */
+function buildRemainingLookupFromDetail() {
+  const detail = window._ld && window._ld.sellThroughDetail;
+  const lookup = {};
+  if (!detail || !detail.brands) return lookup;
+
+  for (const brandData of detail.brands) {
+    for (const style of brandData.styles) {
+      const nameUpper = style.name.toUpperCase();
+      lookup[nameUpper] = (lookup[nameUpper] || 0) + (style.remaining || 0);
+    }
+  }
+  return lookup;
+}
+
+/**
+ * Computes sell-through % for a given set of styles and a season.
+ * Attributes remaining inventory to the most recent season with sales.
+ * (Logic from urbanbutter)
+ * @param {Array<object>} styles - Array of style objects with per-season sold counts.
+ * @param {string} soldKey - The season key to calculate ST for (e.g., "sp25").
+ * @param {object} remainLookup - The remaining inventory lookup table.
+ * @param {Array<string>} seasonPriority - Ordered list of seasons, most recent first.
+ * @returns {number} The calculated sell-through percentage.
+ */
+function computeSeasonST(styles, soldKey, remainLookup, seasonPriority) {
+  let totalSold = 0, totalBought = 0;
+  styles.forEach(s => {
+    const sold = s[soldKey] || 0;
+    totalSold += sold;
+    
+    const rem = remainLookup[s.name.toUpperCase()] || 0;
+    // Find the most recent season this style had sales in
+    const mostRecent = seasonPriority.find(k => s[k] > 0);
+    
+    if (mostRecent === soldKey) {
+      // If this is the most recent season, it "owns" the remaining inventory
+      totalBought += sold + rem;
+    } else {
+      // If not, it means the item sold through in this season and carried over
+      totalBought += sold;
+    }
+  });
+  return totalBought > 0 ? Math.round(totalSold / totalBought * 100) : 0;
+}
+
+
+function renderSeasonComparison() {
+  const st = window._ld && window._ld.sellThrough;
+  if (!st) return;
+
+  // Keep original data source for category comparison
+  const sc = st.seasonComparison;
+  const si = getSeasonInfo();
+  const pKey = si.prevKey, cKey = si.currKey, cKeyProj = si.currKey + 'Projected';
+  
+  const ratingBadge = { grow: 'badge-green', keep: 'badge-sage', watch: 'badge-yellow', cut: 'badge-red' };
+  const ratingLabel = { grow: 'Grow', keep: 'Keep', watch: 'Watch', cut: 'Cut' };
+  const trendArrow = t => t === 'up'
+    ? '<span style="color:var(--green);font-size:18px;font-weight:700;">↑</span>'
+    : t === 'down'
+      ? '<span style="color:var(--red);font-size:18px;font-weight:700;">↓</span>'
+      : '<span style="color:var(--yellow);font-size:18px;font-weight:700;">→</span>';
+
+  // --- Dynamic Headers and Subtitles (No changes needed here) ---
   const stCatTitle=document.getElementById('st-season-cat-title');
-  if(stCatTitle)stCatTitle.textContent=`📅 ${si.prevLabel} vs ${si.currLabel}`;
+  if(stCatTitle)stCatTitle.textContent=\`📅 \${si.prevLabel} vs \${si.currLabel}\`;
   const stCatSub=document.getElementById('st-season-cat-subtitle');
   if(stCatSub){
     const now=new Date();
     const weeksIn=Math.max(Math.round((now-si.currStart)/(7*24*60*60*1000)), 0);
     const progressPct=Math.min(Math.round(weeksIn/si.seasonWeeks*100),100);
-    const progressBar=`<div style="display:inline-block;vertical-align:middle;margin-left:6px;width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${progressPct}%;background:var(--accent-sage);border-radius:3px;"></div></div>`;
-    stCatSub.innerHTML=`<strong>⏳ ${weeksIn} of ${si.seasonWeeks} weeks elapsed in ${si.currShort} (${progressPct}% through season)</strong>${progressBar}`+
-      `<br><span style="color:var(--yellow);">⚠️ "${si.currShort} Projected" extrapolates the current ${weeksIn}-week pace to a full ${si.seasonWeeks}-week season assuming uniform sales. `+
-      `Categories that sell primarily later in the season (e.g. shorts, dresses, swimwear) will be understated right now. `+
-      `Use as directional signal, not a final forecast.</span>`;
+    const progressBar=\`<div style="display:inline-block;vertical-align:middle;margin-left:6px;width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:\${progressPct}%;background:var(--accent-sage);border-radius:3px;"></div></div>\`;
+    stCatSub.innerHTML=\`<strong>⏳ \${weeksIn} of \${si.seasonWeeks} weeks elapsed in \${si.currShort} (\${progressPct}% through season)</strong>\${progressBar}\`+
+      \`<br><span style="color:var(--yellow);">⚠️ "\${si.currShort} Projected" extrapolates the current \${weeksIn}-week pace to a full \${si.seasonWeeks}-week season assuming uniform sales. \`+
+      \`Categories that sell primarily later in the season (e.g. shorts, dresses, swimwear) will be understated right now. \`+
+      \`Use as directional signal, not a final forecast.</span>\`;
   }
   const stCatThead=document.getElementById('st-season-cat-thead');
-  if(stCatThead)stCatThead.innerHTML=`<tr><th>Category</th><th style="text-align:right;">${si.prevShort} Units</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.currShort} Units</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr>`;
-  const stBrandTitle=document.getElementById('st-season-brand-title');
-  if(stBrandTitle)stBrandTitle.textContent=`🏷️ Brand Performance: ${si.prevLabel} vs ${si.currLabel}`;
-  const stBrandSub=document.getElementById('st-season-brand-subtitle');
-  if(stBrandSub){
-    const now=new Date();
-    const weeksIn=Math.max(Math.round((now-si.currStart)/(7*24*60*60*1000)),0);
-    stBrandSub.innerHTML=`Top brands ranked by ${si.prevShort} revenue — ${weeksIn>0?`<strong>${weeksIn} weeks</strong> of ${si.currShort} actual data (linear projection to full season)`:('early '+si.currShort+' data')}. `+
-      `<span style="color:var(--text-muted);">Brands with &lt;20 units sold are flagged Low Volume — treat with caution.</span>`;
-  }
-  const stBrandThead=document.getElementById('st-season-brand-thead');
-  if(stBrandThead)stBrandThead.innerHTML=`<tr><th>Brand</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.prevShort} Margin</th><th style="text-align:right;">${si.currShort} Revenue</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th style="text-align:center;">Rating</th></tr>`;
-
-  // ⑧ Category Season Comparison
-  const catEl=document.getElementById('st-season-cat-tbody');
-  if(catEl&&sc&&sc.byCategory&&sc.byCategory.length){
-    const sorted=[...sc.byCategory]
-      .filter(c=>c[pKey]&&c[pKey].revenue>0)
-      .sort((a,b)=>b[pKey].revenue-a[pKey].revenue);
-    // Categories with $0 in current season AND $0 projected are likely out-of-season
-    // (e.g. shorts/dresses in Feb–Mar). Don't flag as "reduce buy" — flag as seasonal.
-    const OUT_OF_SEASON_CATS = new Set(['SHORT','ROMPER','BODYSUIT','TEE SHIRT','SWIMWEAR']);
-    if(sorted.length){
-      catEl.innerHTML=sorted.map(c=>{
-        const currUnits=(c[cKey]||{}).unitsSold||0;
-        const projRevenue=(c[cKeyProj]||c[cKey]||{}).revenue||0;
-        const isOutOfSeason = OUT_OF_SEASON_CATS.has((c.category||'').toUpperCase()) && currUnits===0;
+  if(stCatThead)stCatThead.innerHTML=\`<tr><th>Category</th><th style="text-align:right;">\${si.prevShort} Units</th><th style="text-align:right;">\${si.prevShort} Revenue</th><th style="text-align:right;">\${si.currShort} Units</th><th style="text-align:right;">\${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr>\`;
+  
+  // --- ⑧ Category Season Comparison (Keep original logic) ---
+  const catEl = document.getElementById('st-season-cat-tbody');
+  if (catEl && sc && sc.byCategory && sc.byCategory.length) {
+    const sorted = [...sc.byCategory]
+      .filter(c => c[pKey] && c[pKey].revenue > 0)
+      .sort((a, b) => b[pKey].revenue - a[pKey].revenue);
+    const OUT_OF_SEASON_CATS = new Set(['SHORT', 'ROMPER', 'BODYSUIT', 'TEE SHIRT', 'SWIMWEAR']);
+    if (sorted.length) {
+      catEl.innerHTML = sorted.map(c => {
+        const currUnits = (c[cKey] || {}).unitsSold || 0;
+        const projRevenue = (c[cKeyProj] || c[cKey] || {}).revenue || 0;
+        const isOutOfSeason = OUT_OF_SEASON_CATS.has((c.category || '').toUpperCase()) && currUnits === 0;
         const rec = isOutOfSeason
-          ? `<span style="color:var(--blue);font-size:11px;">❄️ Out of season (Feb–Mar) — check again in April</span>`
-          : (c.recommendation||'—');
+          ? \`<span style="color:var(--blue);font-size:11px;">❄️ Out of season (Feb–Mar) — check again in April</span>\`
+          : (c.recommendation || '—');
         const projNote = isOutOfSeason
           ? '<span style="font-size:10px;color:var(--blue);">Projection unreliable — $0 early-season sales</span>'
-          : `<span style="font-size:10px;color:var(--text-muted);">${(c[cKeyProj]||{}).note||''}</span>`;
-        return`<tr>
-          <td><strong>${c.category}</strong></td>
-          <td style="text-align:right;">${fmtN((c[pKey]||{}).unitsSold||0)}</td>
-          <td style="text-align:right;">${fmtC((c[pKey]||{}).revenue||0)}</td>
-          <td style="text-align:right;">${fmtN(currUnits)}</td>
-          <td style="text-align:right;">${isOutOfSeason?'—':fmtC(projRevenue)}<br>${projNote}</td>
-          <td style="text-align:center;">${isOutOfSeason?'<span style="color:var(--blue);">❄️</span>':trendArrow(c.trend)}</td>
-          <td style="font-size:12px;color:var(--text-secondary);">${rec}</td>
-        </tr>`;
+          : \`<span style="font-size:10px;color:var(--text-muted);">\${(c[cKeyProj] || {}).note || ''}</span>\`;
+        return \`<tr>
+          <td><strong>\${c.category}</strong></td>
+          <td style="text-align:right;">\${fmtN((c[pKey] || {}).unitsSold || 0)}</td>
+          <td style="text-align:right;">\${fmtC((c[pKey] || {}).revenue || 0)}</td>
+          <td style="text-align:right;">\${fmtN(currUnits)}</td>
+          <td style="text-align:right;">\${isOutOfSeason ? '—' : fmtC(projRevenue)}<br>\${projNote}</td>
+          <td style="text-align:center;">\${isOutOfSeason ? '<span style="color:var(--blue);">❄️</span>' : trendArrow(c.trend)}</td>
+          <td style="font-size:12px;color:var(--text-secondary);">\${rec}</td>
+        </tr>\`;
       }).join('');
     } else {
-      catEl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No season comparison data available.</td></tr>';
+      catEl.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No season comparison data available.</td></tr>';
     }
   }
 
-  // ⑨ Brand Season Comparison
-  const brandEl=document.getElementById('st-season-brand-tbody');
-  if(brandEl&&sc&&sc.byBrand&&sc.byBrand.length){
-    const mainBrands=(st.byBrand||[]).reduce((m,b)=>{m[b.brand]=b;return m;},{});
-    const sorted=[...sc.byBrand]
-      .filter(b=>b[pKey]&&b[pKey].revenue>0)
-      .sort((a,b)=>b[pKey].revenue-a[pKey].revenue)
-      .slice(0,20);
-    if(sorted.length){
-      brandEl.innerHTML=sorted.map(b=>{
-        const mb=mainBrands[b.brand]||{};
-        const badge=ratingBadge[mb.rating]||'badge-sage';
-        const label=ratingLabel[mb.rating]||mb.rating||'—';
-        const currUnits=(b[cKey]||{}).unitsSold||0;
-        const isLowVol = currUnits < 20;
-        const lvTag = isLowVol ? ` <span title="Only ${currUnits} units in ${si.currShort} — low volume" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;">Low Vol</span>` : '';
-        return`<tr>
-          <td><strong>${b.brand}</strong>${lvTag}</td>
-          <td style="text-align:right;">${fmtC((b[pKey]||{}).revenue||0)}</td>
-          <td style="text-align:right;">${(b[pKey]||{}).margin!=null?(b[pKey]||{}).margin+'%':'—'}</td>
-          <td style="text-align:right;">${fmtC((b[cKey]||{}).revenue||0)}</td>
-          <td style="text-align:right;">${fmtC(((b[cKeyProj]||b[cKey]||{}).revenue)||0)}</td>
-          <td style="text-align:center;">${trendArrow(b.trend)}</td>
-          <td style="text-align:center;"><span class="badge ${badge}">${label}</span></td>
-        </tr>`;
+  // --- ⑨ Brand Season Comparison (NEW LOGIC) ---
+  const brandEl = document.getElementById('st-season-brand-tbody');
+  const stBrandTitle = document.getElementById('st-season-brand-title');
+  const stBrandSub = document.getElementById('st-season-brand-subtitle');
+  const stBrandThead = document.getElementById('st-season-brand-thead');
+
+  if (brandEl && window._ld.sellThroughDetail) {
+    // 1. Build data structures
+    const { brands: buyPlanBrands, allStyles } = buildBuyPlanFromDetail();
+    const remainingLookup = buildRemainingLookupFromDetail();
+
+    // 2. Define seasons and priority
+    const si = getSeasonInfo();
+    const pSeasonKey = si.prevKey.replace('ss', 'sp').replace('fw', 'fa');
+    const cSeasonKey = si.currKey.replace('ss', 'sp').replace('fw', 'fa');
+    
+    // Season priority needs to be dynamic based on current date
+    const year = si.currYear;
+    const pYear = si.prevYear;
+    const seasonsInOrder = [];
+    for (let y = year + 1; y >= year - 2; y--) {
+        seasonsInOrder.push(`fa${String(y).slice(-2)}`);
+        seasonsInOrder.push(`sp${String(y).slice(-2)}`);
+    }
+    const seasonPriority = seasonsInOrder;
+
+    // 3. Calculate metrics for each brand
+    const brandData = [];
+    const mainBrands = (st.byBrand || []).reduce((m, b) => { m[b.brand.toUpperCase()] = b; return m; }, {});
+
+    for (const brandName in buyPlanBrands) {
+      const brandStyles = Object.values(buyPlanBrands[brandName].styles);
+      if (brandStyles.length === 0) continue;
+
+      const prevST = computeSeasonST(brandStyles, pSeasonKey, remainingLookup, seasonPriority);
+      const currST = computeSeasonST(brandStyles, cSeasonKey, remainingLookup, seasonPriority);
+
+      // Get total sold for context
+      const prevSold = brandStyles.reduce((sum, s) => sum + (s[pSeasonKey] || 0), 0);
+      const currSold = brandStyles.reduce((sum, s) => sum + (s[cSeasonKey] || 0), 0);
+      
+      if (prevSold > 0 || currSold > 0) {
+        brandData.push({
+          brand: brandName,
+          prevST,
+          currST,
+          prevSold,
+          currSold,
+          trendPts: currST - prevST,
+        });
+      }
+    }
+
+    // 4. Sort and render
+    brandData.sort((a, b) => b.prevSold - a.prevSold); // Sort by previous season's volume
+
+    // Update titles and headers
+    if(stBrandTitle) stBrandTitle.textContent = \`🏷️ Brand Sell-Through: \${si.prevLabel} vs \${si.currLabel}\`;
+    if(stBrandSub) {
+      stBrandSub.innerHTML = \`Sell-through calculated with remaining inventory attributed to the most recent season of sales. ` +
+        \`<span style="color:var(--text-muted);">Brands with &lt;20 units sold in a season are flagged Low Volume — treat with caution.</span>\`;
+    }
+    if(stBrandThead) stBrandThead.innerHTML = \`<tr>
+        <th>Brand</th>
+        <th style="text-align:right;">\${si.prevShort} Sell-Through</th>
+        <th style="text-align:right;">\${si.currShort} Sell-Through</th>
+        <th style="text-align:center;">Trend</th>
+        <th style="text-align:center;">Rating</th>
+      </tr>\`;
+
+    if (brandData.length) {
+      brandEl.innerHTML = brandData.map(b => {
+        const mb = mainBrands[b.brand.toUpperCase()] || {};
+        const badge = ratingBadge[mb.rating] || 'badge-sage';
+        const label = ratingLabel[mb.rating] || mb.rating || '—';
+        const trendPts = b.trendPts;
+        const trendDisplay = trendPts > 5 ? 'up' : trendPts < -5 ? 'down' : 'flat';
+
+        const lvTagPrev = b.prevSold < 20 ? \` <span title="Only \${b.prevSold} units sold — low volume" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;">Low Vol</span>\` : '';
+        const lvTagCurr = b.currSold < 20 && b.currSold > 0 ? \` <span title="Only \${b.currSold} units sold — low volume" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;">Low Vol</span>\` : '';
+
+        return \`<tr>
+          <td><strong>\${b.brand}</strong></td>
+          <td style="text-align:right;">
+            \${b.prevSold > 0 ? \`<strong>\${b.prevST}%</strong><br><span style="font-size:11px;color:var(--text-secondary);">\${b.prevSold} units sold\${lvTagPrev}</span>\` : '—'}
+          </td>
+          <td style="text-align:right;">
+            \${b.currSold > 0 ? \`<strong>\${b.currST}%</strong><br><span style="font-size:11px;color:var(--text-secondary);">\${b.currSold} units sold\${lvTagCurr}</span>\` : '—'}
+          </td>
+          <td style="text-align:center;">\${trendArrow(trendDisplay)}</td>
+          <td style="text-align:center;"><span class="badge \${badge}">\${label}</span></td>
+        </tr>\`;
       }).join('');
     } else {
-      brandEl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No brand comparison data available.</td></tr>';
+      brandEl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:20px;">No brand comparison data could be computed.</td></tr>';
     }
+  } else if (brandEl) {
+    brandEl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:20px;">Sell-through detail data not loaded.</td></tr>';
   }
 
-  // ⑩ Open-to-Buy Calculator
+  // --- ⑩ Open-to-Buy Calculator (Keep original logic) ---
   const otbEl=document.getElementById('st-otb-tbody');
   if(otbEl&&st.otb&&st.otb.length){
     const statusBadge={healthy:'badge-green',understocked:'badge-sage',overstocked:'badge-red',critical:'badge-red',watch:'badge-yellow',buy:'badge-green'};
@@ -4750,33 +4923,33 @@ function renderSeasonComparison(){
       const badge=statusBadge[o.status]||'badge-sage';
       const label=statusLabel[o.status]||o.status;
       const critStyle=o.status==='critical'?'background:var(--red);color:#fff;border-color:var(--red);':'';
-      return`<tr>
-        <td><strong>${o.category}</strong></td>
-        <td style="text-align:right;">${fmtC(o.currentInventoryCost)}</td>
-        <td style="text-align:right;">${fmtC(o.weeklyRunRate)}/wk</td>
-        <td style="text-align:right;">${fmtC(o.plannedEOM)}</td>
-        <td style="text-align:right;${otbStyle}">${pos?'+':''}${fmtC(o.otbAvailable)}</td>
-        <td style="text-align:center;"><span class="badge ${badge}" style="${critStyle}">${label}</span></td>
-      </tr>`;
+      return\`<tr>
+        <td><strong>\${o.category}</strong></td>
+        <td style="text-align:right;">\${fmtC(o.currentInventoryCost)}</td>
+        <td style="text-align:right;">\${fmtC(o.weeklyRunRate)}/wk</td>
+        <td style="text-align:right;">\${fmtC(o.plannedEOM)}</td>
+        <td style="text-align:right;\${otbStyle}">\${pos?'+':''}\${fmtC(o.otbAvailable)}</td>
+        <td style="text-align:center;"><span class="badge \${badge}" style="\${critStyle}">\${label}</span></td>
+      </tr>\`;
     }).join('');
-    // OTB AI insight
     const open=st.otb.filter(o=>o.otbAvailable>0).sort((a,b)=>b.otbAvailable-a.otbAvailable);
     const over=st.otb.filter(o=>o.status==='overstocked'||o.status==='critical');
     const aiEl=document.getElementById('st-otb-ai-text');
     if(aiEl){
       let msg='';
-      if(open.length)msg+=`<strong>Open budget (${open.length}): ${open.map(o=>o.category).join(', ')}</strong> — total available: ${fmtC(open.reduce((s,o)=>s+o.otbAvailable,0))}. Focus new buys here. `;
-      if(over.length)msg+=`<strong>Overstocked (${over.length}): ${over.map(o=>o.category).join(', ')}</strong> — hold off on new purchases until inventory clears. Consider markdowns to accelerate sell-through.`;
+      if(open.length)msg+= \`<strong>Open budget (\${open.length}): \${open.map(o=>o.category).join(', ')}</strong> — total available: \${fmtC(open.reduce((s,o)=>s+o.otbAvailable,0))}. Focus new buys here. \`;
+      if(over.length)msg+= \`<strong>Overstocked (\${over.length}): \${over.map(o=>o.category).join(', ')}</strong> — hold off on new purchases until inventory clears. Consider markdowns to accelerate sell-through.\`;
       aiEl.innerHTML=msg||'OTB positions look balanced across categories.';
     }
   }
 
-  // ⑪ Pre-Market Buying Guide
+  // --- ⑪ Pre-Market Buying Guide (Keep original logic) ---
   const guideEl=document.getElementById('st-market-guide-text');
   if(guideEl&&st.marketGuide){
     guideEl.textContent=st.marketGuide;
   }
 }
+
 
 function renderSellThroughDeadstock(){
   const st=window._ld&&window._ld.sellThrough;
