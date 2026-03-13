@@ -3945,48 +3945,45 @@ function renderBuyPlanSeasonST(){
 
   // Assign each style to a season bucket based on floorDate
   // buckets: sp25 (Jan–Jun 2025), fa25 (Jul–Dec 2025), sp26 (Jan–Jun 2026), fa26 (Jul–Dec 2026)
-  const buckets = { sp25:{}, fa25:{}, sp26:{}, fa26:{} };
-  // Per-brand style-level data for remaining-attribution logic
+  const buckets = { sp24:{}, fa24:{}, sp25:{}, fa25:{}, sp26:{}, fa26:{} };
+  // Per-brand style-level data for remaining-attribution logic (uses seasonSold from build script)
   const brandStyles = {}; // {brandName: [{name, sp25:sold, fa25:sold, ..., remaining}]}
-
-  function getBucket(floorDate){
-    const d = new Date(floorDate);
-    if(isNaN(d)) return null;
-    const y = d.getFullYear(), m = d.getMonth();
-    if(y===2025 && m<6)  return 'sp25';
-    if(y===2025 && m>=6) return 'fa25';
-    if(y===2026 && m<6)  return 'sp26';
-    if(y===2026 && m>=6) return 'fa26';
-    return null;
-  }
 
   if(detail && detail.brands){
     for(const brand of detail.brands){
       if(!brandStyles[brand.brand]) brandStyles[brand.brand] = [];
       for(const style of brand.styles){
-        const bk = getBucket(style.floorDate);
-        if(!bk) continue;
-        if(!buckets[bk][brand.brand]) buckets[bk][brand.brand] = { sold:0, remaining:0, revenue:0, styles:0 };
-        buckets[bk][brand.brand].sold      += style.sold || 0;
-        buckets[bk][brand.brand].remaining += style.remaining || 0;
-        buckets[bk][brand.brand].revenue   += style.revenue || 0;
-        buckets[bk][brand.brand].styles++;
-        // Track per-style season data for remaining attribution
+        const ss = style.seasonSold || {};
+        // Build style object with per-season sold counts
         const sObj = { name: style.name, remaining: style.remaining || 0 };
-        sObj[bk] = style.sold || 0;
+        for(const [sk, qty] of Object.entries(ss)){
+          sObj[sk] = qty;
+          // Accumulate into brand buckets per season
+          if(!buckets[sk]) buckets[sk] = {};
+          if(!buckets[sk][brand.brand]) buckets[sk][brand.brand] = { sold:0, remaining:0, revenue:0, styles:0 };
+          buckets[sk][brand.brand].sold += qty;
+        }
+        // Add remaining and revenue to the floor-date season bucket
+        const fd = new Date(style.floorDate);
+        const fdY = fd.getFullYear(), fdM = fd.getMonth();
+        const fdSk = fdM < 6 ? 'sp' + String(fdY).slice(-2) : 'fa' + String(fdY).slice(-2);
+        if(!buckets[fdSk]) buckets[fdSk] = {};
+        if(!buckets[fdSk][brand.brand]) buckets[fdSk][brand.brand] = { sold:0, remaining:0, revenue:0, styles:0 };
+        buckets[fdSk][brand.brand].remaining += style.remaining || 0;
+        buckets[fdSk][brand.brand].revenue   += style.revenue || 0;
+        buckets[fdSk][brand.brand].styles++;
         brandStyles[brand.brand].push(sObj);
       }
     }
   }
 
   // Season priority: most recent first — remaining goes to the newest season with sales
-  const seasonPriority = ['sp26','fa25','sp25'];
+  const seasonPriority = ['sp26','fa25','sp25','fa24','sp24'];
 
   // Sell-through with remaining-attribution (same logic as urbanbutter)
   // Remaining only counts against the MOST RECENT season with sales for that style
   function stPct(brandName, seasonKey){
     if(!brandName || !seasonKey || !brandStyles[brandName]) return 0;
-    // Filter to styles that belong to this season
     const styles = brandStyles[brandName].filter(s => s[seasonKey] > 0);
     let totalSold = 0, totalBought = 0;
     styles.forEach(s => {
@@ -3995,9 +3992,9 @@ function renderBuyPlanSeasonST(){
       const rem = s.remaining || 0;
       const mostRecent = seasonPriority.find(k => s[k] > 0);
       if(mostRecent === seasonKey){
-        totalBought += sold + rem; // this season owns the remaining
+        totalBought += sold + rem;
       } else {
-        totalBought += sold; // fully sold through for this older season
+        totalBought += sold;
       }
     });
     return totalBought > 0 ? Math.round(totalSold / totalBought * 100) : 0;
