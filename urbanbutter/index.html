@@ -168,7 +168,7 @@ tr:hover{background:var(--cream)}
                 <th>Units Remaining</th>
                 <th>Sell-Through</th>
                 <th>Velocity</th>
-                <th>Margin</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="brandBody"></tbody>
@@ -302,16 +302,16 @@ function renderKPIs(){
   const rev=brands.reduce((a,b)=>a+b.revenue,0);
   const sold=brands.reduce((a,b)=>a+b.sold,0);
   const rem=brands.reduce((a,b)=>a+b.remaining,0);
-  const cost=brands.reduce((a,b)=>a+b.cost,0);
   const fullRev=brands.reduce((a,b)=>a+(b.full_revenue||b.revenue),0);
   const soldRem=brands.reduce((a,b)=>a+(b.soldRemaining||b.remaining),0);
   const st=pct(sold,soldRem);
-  const margin=fullRev?Math.round((fullRev-cost)/fullRev*100):0;
+  const totalBrands=brands.length;
+  const activeBrands=brands.filter(b=>b.sold>0).length;
   document.getElementById('kpis').innerHTML=`
-    <div class="kpi"><div class="kpi-label">Revenue (30d)</div><div class="kpi-val">${fmt(rev)}</div><div class="kpi-sub kpi-up">↑ 14% vs last month</div></div>
+    <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-val">${fmt(rev)}</div><div class="kpi-sub">${activeBrands} of ${totalBrands} brands selling</div></div>
     <div class="kpi"><div class="kpi-label">Units Sold</div><div class="kpi-val">${sold}</div><div class="kpi-sub">${rem} remaining</div></div>
     <div class="kpi"><div class="kpi-label">Sell-Through</div><div class="kpi-val">${st}%</div><div class="kpi-sub kpi-${st>=65?'up':'down'}">${st>=65?'On track':'Below target'}</div></div>
-    <div class="kpi"><div class="kpi-label">Blended Margin</div><div class="kpi-val">${margin}%</div><div class="kpi-sub">across all brands</div></div>`;
+    <div class="kpi"><div class="kpi-label">Inventory Value</div><div class="kpi-val">${fmt(fullRev)}</div><div class="kpi-sub">at retail</div></div>`;
 }
 
 function renderBrandTable(){
@@ -320,8 +320,10 @@ function renderBrandTable(){
   brands.forEach(b=>{
     const st=brandST(b);
     const ws=weeksSupply(b.remaining,b.sold);
-    const fr=b.full_revenue||b.revenue;const margin=fr?Math.round((fr-b.cost)/fr*100):0;
-    html+=`<tr class="brand-row" data-brand="${b.name}"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td>${ws}</td><td>${margin}%</td></tr>`;
+    const reorderCount=Object.values(b.styles).filter(s=>s.alert==='REORDER_NOW').length;
+    const repeatCount=Object.values(b.styles).filter(s=>s.alert==='REPEAT_WORTHY').length;
+    const actionLabel=reorderCount?`<span class="rec-tag rec-reorder" style="font-size:11px">🔴 ${reorderCount} reorder</span>`:(repeatCount?`<span class="rec-tag" style="background:#FFF3E0;color:#E6A23C;font-size:11px">🟡 ${repeatCount} repeat</span>`:'');
+    html+=`<tr class="brand-row" data-brand="${b.name}"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td>${ws}</td><td>${actionLabel}</td></tr>`;
     Object.values(b.styles).sort((a,c)=>c.revenue-a.revenue).forEach(s=>{
       const sSt=pct(s.sold,s.remaining);
       const alert=s.alert||'';
