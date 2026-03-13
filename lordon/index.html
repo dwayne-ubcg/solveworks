@@ -950,7 +950,7 @@ tr:hover td { background: var(--bg); }
     <p id="bp-season-spring-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Comparing sell-through % by brand across two Spring seasons</p>
     <div style="overflow-x:auto;">
       <table>
-        <thead><tr><th>Brand</th><th style="text-align:right;"><strong>Sp '25 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:right;"><strong>Sp '26 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:center;">Trend</th><th>Signal</th></tr></thead>
+        <thead><tr><th>Brand</th><th style="text-align:right;"><strong>Sp '25 Final ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Sp '25 Units · Rev</th><th style="text-align:right;"><strong>Sp '26 Current ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Sp '26 Projected ST%*</th><th style="text-align:center;">Trend</th><th>Signal</th></tr></thead>
         <tbody id="bp-season-spring-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading Spring comparison…</td></tr></tbody>
       </table>
     </div>
@@ -962,7 +962,7 @@ tr:hover td { background: var(--bg); }
     <p id="bp-season-fall-subtitle" style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Comparing sell-through % by brand across two Fall seasons</p>
     <div style="overflow-x:auto;">
       <table>
-        <thead><tr><th>Brand</th><th style="text-align:right;"><strong>Fa '25 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:right;"><strong>Fa '26 ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Units · Revenue</th><th style="text-align:center;">Trend</th><th>Signal</th></tr></thead>
+        <thead><tr><th>Brand</th><th style="text-align:right;"><strong>Fa '25 Final ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Fa '25 Units · Rev</th><th style="text-align:right;"><strong>Fa '26 Current ST%</strong></th><th style="text-align:right;font-size:11px;color:var(--text-secondary);">Fa '26 Projected ST%*</th><th style="text-align:center;">Trend</th><th>Signal</th></tr></thead>
         <tbody id="bp-season-fall-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">Loading Fall comparison…</td></tr></tbody>
       </table>
     </div>
@@ -3719,9 +3719,11 @@ function renderBuyPlan(){
         :b.currentStock>0&&b.unitsSold>0&&b.grossMargin>0
           ?(b.grossMargin/100*(b.unitsSold/b.currentStock)).toFixed(2)
           :'—';
+      // Low-volume flag: < 20 units sold means data is statistically thin
+      const lvTag=b.unitsSold<20?` <span title="Only ${b.unitsSold} units sold — low volume, treat rating with caution" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;">Low Vol</span>`:'';
       const rowBg=i%2===0?'':'background:var(--bg);';
       return`<tr style="${rowBg}">
-        <td><strong>${b.brand}</strong></td>
+        <td><strong>${b.brand}</strong>${lvTag}</td>
         <td style="text-align:right;"><span class="badge ${stBadge}">${b.sellThrough}%</span></td>
         <td style="text-align:right;">${b.grossMargin!=null?b.grossMargin+'%':'—'}</td>
         <td style="text-align:right;">—</td>
@@ -3752,6 +3754,17 @@ function renderBuyPlanSeasonST(){
   const now = new Date();
   const isJanJun = now.getMonth() < 6;
 
+  // ── Season progress constants ──────────────────────────────
+  // Spring: Jan 1 – Jun 30 (26 weeks). Fall: Jul 1 – Dec 31 (26 weeks).
+  const SP26_START = new Date(2026, 0, 1);
+  const SP26_END   = new Date(2026, 5, 30);
+  const FA25_START = new Date(2025, 6, 1);
+  const FA25_END   = new Date(2025, 11, 31);
+  const SEASON_WEEKS = 26;
+
+  const sp26WeeksElapsed = Math.max((now - SP26_START) / (7*24*60*60*1000), 0.5);
+  const sp26ProgressPct  = Math.min(Math.round(sp26WeeksElapsed / SEASON_WEEKS * 100), 100);
+
   // Assign each style to a season bucket based on floorDate
   // buckets: sp25 (Jan–Jun 2025), fa25 (Jul–Dec 2025), sp26 (Jan–Jun 2026), fa26 (Jul–Dec 2026)
   const buckets = { sp25:{}, fa25:{}, sp26:{}, fa26:{} };
@@ -3773,60 +3786,106 @@ function renderBuyPlanSeasonST(){
         const bk = getBucket(style.floorDate);
         if(!bk) continue;
         if(!buckets[bk][brand.brand]) buckets[bk][brand.brand] = { sold:0, remaining:0, revenue:0, styles:0 };
-        buckets[bk][brand.brand].sold     += style.sold || 0;
+        buckets[bk][brand.brand].sold      += style.sold || 0;
         buckets[bk][brand.brand].remaining += style.remaining || 0;
-        buckets[bk][brand.brand].revenue  += style.revenue || 0;
+        buckets[bk][brand.brand].revenue   += style.revenue || 0;
         buckets[bk][brand.brand].styles++;
       }
     }
   }
 
   function stPct(d){ return d.sold+d.remaining>0 ? Math.round(d.sold/(d.sold+d.remaining)*100) : 0; }
+
+  // Project current-season ST% to end-of-season using linear pace.
+  // projectedST(d, weeksElapsed) → integer % or null
+  function projectedST(d, weeksElapsed){
+    if(!d || d.sold+d.remaining===0) return null;
+    const totalUnits = d.sold + d.remaining;
+    const projSold = Math.min(d.sold * (SEASON_WEEKS / Math.max(weeksElapsed, 0.5)), totalUnits);
+    return Math.round(projSold / totalUnits * 100);
+  }
+
   function trendArrow(pts){
     if(pts>3)  return `<span style="color:var(--green);font-weight:700;">↑ ${pts}pts</span>`;
     if(pts<-3) return `<span style="color:var(--red);font-weight:700;">↓ ${Math.abs(pts)}pts</span>`;
     return `<span style="color:var(--yellow);font-weight:700;">→ flat</span>`;
   }
-  function signal(st1, st2, hasYear2){
-    if(!hasYear2) return '<span style="color:var(--text-muted);font-size:11px;">No data yet</span>';
-    const diff = st2 - st1;
+
+  // signal() now compares PROJECTED current-season ST% vs completed prior-season ST%
+  function signal(stPrior, stCurrProjected, hasData){
+    if(!hasData) return '<span style="color:var(--text-muted);font-size:11px;">No data yet</span>';
+    if(stCurrProjected === null) return '<span style="color:var(--text-muted);font-size:11px;">No data yet</span>';
+    const diff = stCurrProjected - stPrior;
     if(diff>10) return '<span style="color:var(--green);font-size:11px;">📈 Strong repeat buy</span>';
-    if(diff>0)  return '<span style="color:var(--accent-sage);font-size:11px;">✅ Improving</span>';
+    if(diff>0)  return '<span style="color:var(--accent-sage);font-size:11px;">✅ On pace to improve</span>';
     if(diff>-10) return '<span style="color:var(--yellow);font-size:11px;">👁 Watch closely</span>';
-    return '<span style="color:var(--red);font-size:11px;">⚠️ Declining ST%</span>';
+    return '<span style="color:var(--red);font-size:11px;">⚠️ Pace behind prior season</span>';
   }
 
-  function buildRows(bkA, bkB){
+  function buildRows(bkA, bkB, weeksElapsed){
     const allBrands = new Set([...Object.keys(buckets[bkA]), ...Object.keys(buckets[bkB])]);
     const rows = [];
     for(const brand of [...allBrands].sort()){
       const a = buckets[bkA][brand];
       const b = buckets[bkB][brand];
       if(!a && !b) continue;
-      const stA = a ? stPct(a) : null;
-      const stB = b ? stPct(b) : null;
-      const diff = (stA!==null && stB!==null) ? stB - stA : null;
+      const stA    = a ? stPct(a) : null;
+      const stB    = b ? stPct(b) : null;
+      const stBProj = b ? projectedST(b, weeksElapsed) : null;
+      const diff   = (stA!==null && stBProj!==null) ? stBProj - stA : null;
+
       const stACell = stA!==null ? `<strong>${stA}%</strong>` : '<span style="color:var(--text-muted);">—</span>';
-      const stBCell = stB!==null ? `<strong>${stB}%</strong>` : '<span style="color:var(--text-muted);">—</span>';
+      const stBCell = stB!==null ? `<strong>${stB}%</strong><span style="font-size:10px;color:var(--text-muted);margin-left:3px;">${b.sold} sold</span>` : '<span style="color:var(--text-muted);">—</span>';
       const aUnitsRev = a ? `${a.sold} sold · ${fmtC(a.revenue)}` : '—';
-      const bUnitsRev = b ? `${b.sold} sold · ${fmtC(b.revenue)}` : '—';
+
+      // Low-volume flag for current-season brands (<5 units sold in this season)
+      const lowVol = b && b.sold < 5;
+      const lvTag = lowVol ? ' <span title="Fewer than 5 units sold this season — treat with caution" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;margin-left:3px;">Low Vol</span>' : '';
+
+      const projCell = stBProj!==null
+        ? `<strong style="font-style:italic;">${stBProj}%</strong><span style="font-size:9px;color:var(--text-muted);margin-left:3px;">proj</span>`
+        : '<span style="color:var(--text-muted);">—</span>';
+
       rows.push(`<tr>
-        <td><strong>${brand}</strong></td>
+        <td><strong>${brand}</strong>${lvTag}</td>
         <td style="text-align:right;">${stACell}</td>
         <td style="text-align:right;font-size:11px;color:var(--text-secondary);">${aUnitsRev}</td>
         <td style="text-align:right;">${stBCell}</td>
-        <td style="text-align:right;font-size:11px;color:var(--text-secondary);">${bUnitsRev}</td>
+        <td style="text-align:right;">${projCell}</td>
         <td style="text-align:center;">${diff!==null ? trendArrow(diff) : '—'}</td>
-        <td>${signal(stA, stB, stB!==null)}</td>
+        <td>${signal(stA, stBProj, stB!==null)}</td>
       </tr>`);
     }
     return rows;
   }
 
+  // ── Spring card: inject season progress banner ─────────────
+  const springSubEl = document.getElementById('bp-season-spring-subtitle');
+  if(springSubEl){
+    const progressBar = `<div style="margin-top:6px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;width:200px;">` +
+      `<div style="height:100%;width:${sp26ProgressPct}%;background:var(--accent-sage);border-radius:3px;"></div></div>`;
+    springSubEl.innerHTML =
+      `⏳ <strong>Spring '26 is ${sp26WeeksElapsed.toFixed(1)} of ${SEASON_WEEKS} weeks in (${sp26ProgressPct}% of season)</strong> — ` +
+      `Sp '26 "Current ST%" reflects only sales so far. "Projected ST%*" extrapolates at today's pace to end-of-season. ` +
+      `<span style="color:var(--yellow);">Compare Projected vs Sp '25 Final — not raw numbers.</span>` +
+      progressBar +
+      `<div style="margin-top:4px;font-size:10px;color:var(--text-muted);">* Linear projection; assume uniform sales rate. Categories with early/late-season bias will vary.</div>`;
+  }
+  const springTitleEl = document.getElementById('bp-season-spring-title');
+  if(springTitleEl) springTitleEl.textContent = `🌸 Spring '25 (Final) vs Spring '26 (In Progress) — Planning Spring '27 Buy`;
+
+  // ── Fall card: note that Fa '26 hasn't started ─────────────
+  const fallSubEl = document.getElementById('bp-season-fall-subtitle');
+  if(fallSubEl){
+    fallSubEl.innerHTML =
+      `Fall '25 is complete (Jul–Dec 2025). Fall '26 begins July 2026 — no data yet. ` +
+      `<span style="color:var(--text-muted);">This table shows Fa '25 brands for reference when planning next Fall buy.</span>`;
+  }
+
   // Spring table
   const springTbody = document.getElementById('bp-season-spring-tbody');
   if(springTbody){
-    const rows = buildRows('sp25','sp26');
+    const rows = buildRows('sp25','sp26', sp26WeeksElapsed);
     if(rows.length){
       springTbody.innerHTML = rows.join('');
       // Reorder: primary first based on month
@@ -3835,12 +3894,10 @@ function renderBuyPlanSeasonST(){
       if(springCard && fallCard){
         const parent = springCard.parentNode;
         if(isJanJun){
-          // Spring is primary — ensure it's before Fall
           if(springCard.compareDocumentPosition(fallCard) & Node.DOCUMENT_POSITION_PRECEDING){
             parent.insertBefore(springCard, fallCard);
           }
         } else {
-          // Fall is primary — move Fall before Spring
           if(fallCard.compareDocumentPosition(springCard) & Node.DOCUMENT_POSITION_PRECEDING){
             parent.insertBefore(fallCard, springCard);
           }
@@ -3851,14 +3908,29 @@ function renderBuyPlanSeasonST(){
     }
   }
 
-  // Fall table
+  // Fall table — Fa '26 will always be empty in Spring; show Fa '25 data only
   const fallTbody = document.getElementById('bp-season-fall-tbody');
   if(fallTbody){
-    const rows = buildRows('fa25','fa26');
+    const rows = buildRows('fa25','fa26', SEASON_WEEKS); // fa26 = empty, no projection needed
     if(rows.length){
       fallTbody.innerHTML = rows.join('');
     } else {
-      fallTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;">No Fall season styles found in sell-through data.</td></tr>';
+      // Show Fa '25 stand-alone when no Fa '26 yet
+      const fa25Brands = Object.keys(buckets['fa25']);
+      if(fa25Brands.length){
+        fallTbody.innerHTML = fa25Brands.sort().map(brand => {
+          const a = buckets['fa25'][brand];
+          const stA = stPct(a);
+          return `<tr>
+            <td><strong>${brand}</strong></td>
+            <td style="text-align:right;"><strong>${stA}%</strong></td>
+            <td style="text-align:right;font-size:11px;color:var(--text-secondary);">${a.sold} sold · ${fmtC(a.revenue)}</td>
+            <td colspan="4" style="text-align:center;color:var(--text-muted);font-size:11px;">Fall '26 begins July 2026</td>
+          </tr>`;
+        }).join('');
+      } else {
+        fallTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px;">No Fall season styles found in sell-through data.</td></tr>';
+      }
     }
   }
 }
@@ -4034,8 +4106,10 @@ function renderSellThrough(){
       const label=ratingLabel[b.rating]||b.rating;
       const icon=ratingIcon[b.rating]||'';
       const rowBg=i%2===0?'':'background:var(--bg);';
+      // Low-volume flag: fewer than 20 units sold means ratings are statistically thin
+      const lvTag=b.unitsSold<20?`<span title="Only ${b.unitsSold} units sold — low volume, treat rating with caution" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;margin-left:4px;">Low Vol</span>`:'';
       return`<div style="display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border-light);${rowBg}">
-        <div style="width:160px;flex-shrink:0;"><strong style="font-size:14px;">${b.brand}</strong></div>
+        <div style="width:160px;flex-shrink:0;"><strong style="font-size:14px;">${b.brand}</strong>${lvTag}</div>
         <div style="flex:1;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
           <span style="font-size:13px;font-weight:600;">${fmtC(b.revenue)}</span>
           <span style="font-size:12px;color:var(--text-secondary);">ST: ${b.sellThrough}%</span>
@@ -4051,10 +4125,15 @@ function renderSellThrough(){
     const watch=sorted.filter(b=>b.rating==='watch');
     const aiEl=document.getElementById('st-brand-ai-text');
     if(aiEl){
+      // Filter low-volume brands from actionable recommendations
+      const growHigh=grow.filter(b=>b.unitsSold>=20);
+      const growLow=grow.filter(b=>b.unitsSold<20);
+      const cutHigh=cut.filter(b=>b.unitsSold>=20);
       let msg='';
-      if(grow.length)msg+=`<strong>Grow (${grow.length}): ${grow.map(b=>b.brand).join(', ')}</strong> — these brands show strong sell-through and healthy margins; increase your OTB allocation here. `;
-      if(cut.length)msg+=`<strong>Cut (${cut.length}): ${cut.map(b=>b.brand).join(', ')}</strong> — underperforming on sell-through and margin; negotiate exit terms or sunset these lines next season. `;
-      if(watch.length)msg+=`<strong>Watch (${watch.length}): ${watch.map(b=>b.brand).join(', ')}</strong> — on the fence; set 90-day performance targets before next buy.`;
+      if(growHigh.length)msg+=`<strong>Grow (${growHigh.length}): ${growHigh.map(b=>b.brand).join(', ')}</strong> — strong sell-through and healthy margins; increase OTB here. `;
+      if(cutHigh.length)msg+=`<strong>Cut (${cutHigh.length}): ${cutHigh.map(b=>b.brand).join(', ')}</strong> — underperforming; negotiate exit terms or sunset next season. `;
+      if(watch.length)msg+=`<strong>Watch (${watch.length}): ${watch.map(b=>b.brand).join(', ')}</strong> — set 90-day targets before next buy. `;
+      if(growLow.length)msg+=`<span style="color:var(--text-muted);">Low Volume (rated Grow but &lt;20 units sold): ${growLow.map(b=>b.brand).join(', ')} — confirm with reorder before scaling.</span>`;
       aiEl.innerHTML=msg||'All brands performing within expected range.';
     }
   }
@@ -4389,8 +4468,13 @@ function renderSeasonComparison(){
   const stCatSub=document.getElementById('st-season-cat-subtitle');
   if(stCatSub){
     const now=new Date();
-    const weeksIn=Math.round((now-si.currStart)/(7*24*60*60*1000));
-    stCatSub.textContent=`${weeksIn>0?weeksIn+' weeks':'Early days'} into ${si.currShort} — projections based on current pace`;
+    const weeksIn=Math.max(Math.round((now-si.currStart)/(7*24*60*60*1000)), 0);
+    const progressPct=Math.min(Math.round(weeksIn/si.seasonWeeks*100),100);
+    const progressBar=`<div style="display:inline-block;vertical-align:middle;margin-left:6px;width:80px;height:6px;background:var(--border);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${progressPct}%;background:var(--accent-sage);border-radius:3px;"></div></div>`;
+    stCatSub.innerHTML=`<strong>⏳ ${weeksIn} of ${si.seasonWeeks} weeks elapsed in ${si.currShort} (${progressPct}% through season)</strong>${progressBar}`+
+      `<br><span style="color:var(--yellow);">⚠️ "${si.currShort} Projected" extrapolates the current ${weeksIn}-week pace to a full ${si.seasonWeeks}-week season assuming uniform sales. `+
+      `Categories that sell primarily later in the season (e.g. shorts, dresses, swimwear) will be understated right now. `+
+      `Use as directional signal, not a final forecast.</span>`;
   }
   const stCatThead=document.getElementById('st-season-cat-thead');
   if(stCatThead)stCatThead.innerHTML=`<tr><th>Category</th><th style="text-align:right;">${si.prevShort} Units</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.currShort} Units</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th>Recommendation</th></tr>`;
@@ -4399,8 +4483,9 @@ function renderSeasonComparison(){
   const stBrandSub=document.getElementById('st-season-brand-subtitle');
   if(stBrandSub){
     const now=new Date();
-    const weeksIn=Math.round((now-si.currStart)/(7*24*60*60*1000));
-    stBrandSub.textContent=`Top brands ranked by ${si.prevShort} revenue — ${weeksIn>0?weeksIn+' weeks of '+si.currShort+' data':'early '+si.currShort+' data'}`;
+    const weeksIn=Math.max(Math.round((now-si.currStart)/(7*24*60*60*1000)),0);
+    stBrandSub.innerHTML=`Top brands ranked by ${si.prevShort} revenue — ${weeksIn>0?`<strong>${weeksIn} weeks</strong> of ${si.currShort} actual data (linear projection to full season)`:('early '+si.currShort+' data')}. `+
+      `<span style="color:var(--text-muted);">Brands with &lt;20 units sold are flagged Low Volume — treat with caution.</span>`;
   }
   const stBrandThead=document.getElementById('st-season-brand-thead');
   if(stBrandThead)stBrandThead.innerHTML=`<tr><th>Brand</th><th style="text-align:right;">${si.prevShort} Revenue</th><th style="text-align:right;">${si.prevShort} Margin</th><th style="text-align:right;">${si.currShort} Revenue</th><th style="text-align:right;">${si.currShort} Projected</th><th style="text-align:center;">Trend</th><th style="text-align:center;">Rating</th></tr>`;
@@ -4411,16 +4496,30 @@ function renderSeasonComparison(){
     const sorted=[...sc.byCategory]
       .filter(c=>c[pKey]&&c[pKey].revenue>0)
       .sort((a,b)=>b[pKey].revenue-a[pKey].revenue);
+    // Categories with $0 in current season AND $0 projected are likely out-of-season
+    // (e.g. shorts/dresses in Feb–Mar). Don't flag as "reduce buy" — flag as seasonal.
+    const OUT_OF_SEASON_CATS = new Set(['SHORT','ROMPER','BODYSUIT','TEE SHIRT','SWIMWEAR']);
     if(sorted.length){
-      catEl.innerHTML=sorted.map(c=>`<tr>
-        <td><strong>${c.category}</strong></td>
-        <td style="text-align:right;">${fmtN((c[pKey]||{}).unitsSold||0)}</td>
-        <td style="text-align:right;">${fmtC((c[pKey]||{}).revenue||0)}</td>
-        <td style="text-align:right;">${fmtN((c[cKey]||{}).unitsSold||0)}</td>
-        <td style="text-align:right;">${fmtC(((c[cKeyProj]||c[cKey]||{}).revenue)||0)}<br><span style="font-size:10px;color:var(--text-muted);">${(c[cKeyProj]||{}).note||''}</span></td>
-        <td style="text-align:center;">${trendArrow(c.trend)}</td>
-        <td style="font-size:12px;color:var(--text-secondary);">${c.recommendation||'—'}</td>
-      </tr>`).join('');
+      catEl.innerHTML=sorted.map(c=>{
+        const currUnits=(c[cKey]||{}).unitsSold||0;
+        const projRevenue=(c[cKeyProj]||c[cKey]||{}).revenue||0;
+        const isOutOfSeason = OUT_OF_SEASON_CATS.has((c.category||'').toUpperCase()) && currUnits===0;
+        const rec = isOutOfSeason
+          ? `<span style="color:var(--blue);font-size:11px;">❄️ Out of season (Feb–Mar) — check again in April</span>`
+          : (c.recommendation||'—');
+        const projNote = isOutOfSeason
+          ? '<span style="font-size:10px;color:var(--blue);">Projection unreliable — $0 early-season sales</span>'
+          : `<span style="font-size:10px;color:var(--text-muted);">${(c[cKeyProj]||{}).note||''}</span>`;
+        return`<tr>
+          <td><strong>${c.category}</strong></td>
+          <td style="text-align:right;">${fmtN((c[pKey]||{}).unitsSold||0)}</td>
+          <td style="text-align:right;">${fmtC((c[pKey]||{}).revenue||0)}</td>
+          <td style="text-align:right;">${fmtN(currUnits)}</td>
+          <td style="text-align:right;">${isOutOfSeason?'—':fmtC(projRevenue)}<br>${projNote}</td>
+          <td style="text-align:center;">${isOutOfSeason?'<span style="color:var(--blue);">❄️</span>':trendArrow(c.trend)}</td>
+          <td style="font-size:12px;color:var(--text-secondary);">${rec}</td>
+        </tr>`;
+      }).join('');
     } else {
       catEl.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:20px;">No season comparison data available.</td></tr>';
     }
@@ -4439,8 +4538,11 @@ function renderSeasonComparison(){
         const mb=mainBrands[b.brand]||{};
         const badge=ratingBadge[mb.rating]||'badge-sage';
         const label=ratingLabel[mb.rating]||mb.rating||'—';
+        const currUnits=(b[cKey]||{}).unitsSold||0;
+        const isLowVol = currUnits < 20;
+        const lvTag = isLowVol ? ` <span title="Only ${currUnits} units in ${si.currShort} — low volume" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;">Low Vol</span>` : '';
         return`<tr>
-          <td><strong>${b.brand}</strong></td>
+          <td><strong>${b.brand}</strong>${lvTag}</td>
           <td style="text-align:right;">${fmtC((b[pKey]||{}).revenue||0)}</td>
           <td style="text-align:right;">${(b[pKey]||{}).margin!=null?(b[pKey]||{}).margin+'%':'—'}</td>
           <td style="text-align:right;">${fmtC((b[cKey]||{}).revenue||0)}</td>
@@ -4457,8 +4559,8 @@ function renderSeasonComparison(){
   // ⑩ Open-to-Buy Calculator
   const otbEl=document.getElementById('st-otb-tbody');
   if(otbEl&&st.otb&&st.otb.length){
-    const statusBadge={healthy:'badge-green',understocked:'badge-sage',overstocked:'badge-red',critical:'badge-red'};
-    const statusLabel={healthy:'Healthy',understocked:'Understocked',overstocked:'Overstocked',critical:'Critical'};
+    const statusBadge={healthy:'badge-green',understocked:'badge-sage',overstocked:'badge-red',critical:'badge-red',watch:'badge-yellow',buy:'badge-green'};
+    const statusLabel={healthy:'Healthy',understocked:'Understocked',overstocked:'Overstocked',critical:'Critical',watch:'Watch',buy:'Buy Now'};
     otbEl.innerHTML=st.otb.map(o=>{
       const pos=o.otbAvailable>=0;
       const otbStyle=pos?'color:var(--green);font-weight:700;':'color:var(--red);font-weight:700;';
