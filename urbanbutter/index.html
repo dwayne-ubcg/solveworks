@@ -315,10 +315,9 @@ function aggregateBrands(){
   const brands=getBrands();
   const map={};
   brands.forEach(b=>{
-    if(!map[b.name])map[b.name]={name:b.name,revenue:0,sold:0,remaining:0,cost:0,styles:{}};
+    if(!map[b.name])map[b.name]={name:b.name,revenue:0,sold:0,remaining:0,soldRemaining:0,cost:0,styles:{}};
     map[b.name].revenue+=b.revenue;
     map[b.name].sold+=b.sold;
-    map[b.name].remaining+=b.remaining;
     map[b.name].cost+=b.cost;
     b.styles.forEach(s=>{
       if(!map[b.name].styles[s.name])map[b.name].styles[s.name]={name:s.name,revenue:0,sold:0,remaining:0,skus:{}};
@@ -326,6 +325,9 @@ function aggregateBrands(){
       ms.revenue+=s.revenue;ms.sold+=s.sold;
       const sRem=s.skus.reduce((a,sk)=>a+sk.remaining,0);
       ms.remaining+=sRem;
+      map[b.name].remaining+=sRem;
+      // Only count remaining toward sell-through if style has sales
+      if(s.sold>0||s.revenue>0)map[b.name].soldRemaining+=sRem;
       s.skus.forEach(sk=>{
         if(!ms.skus[sk.label])ms.skus[sk.label]={label:sk.label,sold:0,remaining:0,revenue:0};
         ms.skus[sk.label].sold+=sk.sold;ms.skus[sk.label].remaining+=sk.remaining;ms.skus[sk.label].revenue+=sk.revenue;
@@ -334,6 +336,8 @@ function aggregateBrands(){
   });
   return Object.values(map).sort((a,b)=>b.revenue-a.revenue);
 }
+// Sell-through for brands: only count stock that has started selling
+function brandST(b){return pct(b.sold,b.soldRemaining||b.remaining)}
 
 // ─── RENDER ───
 function renderAll(){renderKPIs();renderBrandTable();renderDrillDown();renderRecs();renderCompare()}
@@ -344,7 +348,8 @@ function renderKPIs(){
   const sold=brands.reduce((a,b)=>a+b.sold,0);
   const rem=brands.reduce((a,b)=>a+b.remaining,0);
   const cost=brands.reduce((a,b)=>a+b.cost,0);
-  const st=pct(sold,rem);
+  const soldRem=brands.reduce((a,b)=>a+(b.soldRemaining||b.remaining),0);
+  const st=pct(sold,soldRem);
   const margin=rev?Math.round((rev-cost)/rev*100):0;
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="kpi-label">Revenue (30d)</div><div class="kpi-val">${fmt(rev)}</div><div class="kpi-sub kpi-up">↑ 14% vs last month</div></div>
@@ -357,13 +362,13 @@ function renderBrandTable(){
   const brands=aggregateBrands();
   let html='';
   brands.forEach(b=>{
-    const st=pct(b.sold,b.remaining);
+    const st=brandST(b);
     const ws=weeksSupply(b.remaining,b.sold);
     const margin=b.revenue?Math.round((b.revenue-b.cost)/b.revenue*100):0;
     html+=`<tr class="brand-row" data-brand="${b.name}"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td>${ws}</td><td>${margin}%</td></tr>`;
     Object.values(b.styles).sort((a,c)=>c.revenue-a.revenue).forEach(s=>{
       const sSt=pct(s.sold,s.remaining);
-      const act=sSt>=70?'<span class="rec-tag rec-reorder">🔴 Reorder Now</span>':sSt>=50?'<span class="rec-tag rec-reorder" style="background:#FFF3E0;color:#E6A23C">🟡 Repeat Worthy</span>':sSt>=30?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080">🟢 Watching</span>':'';
+      const act=s.sold===0?'<span class="rec-tag" style="background:#E3F2FD;color:#1976D2;font-size:12px">🆕 New</span>':sSt>=70?'<span class="rec-tag rec-reorder">🔴 Reorder Now</span>':sSt>=50?'<span class="rec-tag rec-reorder" style="background:#FFF3E0;color:#E6A23C">🟡 Repeat Worthy</span>':sSt>=30?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080">🟢 Watching</span>':'';
       html+=`<tr class="style-row hidden-row" data-parent="${b.name}" data-style="${s.name}"><td style="padding-left:32px">${s.name}</td><td>${fmt(s.revenue)}</td><td>${s.sold}</td><td>${s.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${sSt}%"></div></div><span class="st-pct ${stClass(sSt)}">${sSt}%</span></div></td><td>${weeksSupply(s.remaining,s.sold)}</td><td>${act}</td></tr>`;
     });
   });
@@ -387,11 +392,11 @@ function renderDrillDown(){
     html+=`<tr class="brand-row" data-brand="${b.name}"><td><span class="expand-icon">▶</span>${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${bSt}%"></div></div><span class="st-pct ${stClass(bSt)}">${bSt}%</span></div></td><td>${velocity(b.sold)}</td><td></td></tr>`;
     Object.values(b.styles).sort((a,c)=>c.revenue-a.revenue).forEach(s=>{
       const sSt=pct(s.sold,s.remaining);
-      const act=sSt>=70?'<span class="rec-tag rec-reorder">🔴 Reorder Now</span>':sSt>=50?'<span class="rec-tag rec-reorder" style="background:#FFF3E0;color:#E6A23C">🟡 Repeat Worthy</span>':sSt>=30?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080">🟢 Watching</span>':'';
+      const act=s.sold===0?'<span class="rec-tag" style="background:#E3F2FD;color:#1976D2;font-size:12px">🆕 New</span>':sSt>=70?'<span class="rec-tag rec-reorder">🔴 Reorder Now</span>':sSt>=50?'<span class="rec-tag rec-reorder" style="background:#FFF3E0;color:#E6A23C">🟡 Repeat Worthy</span>':sSt>=30?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080">🟢 Watching</span>':'';
       html+=`<tr class="style-row hidden-row" data-parent="${b.name}" data-style="${s.name}"><td><span class="expand-icon">▶</span>${s.name}</td><td>${fmt(s.revenue)}</td><td>${s.sold}</td><td>${s.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${sSt}%"></div></div><span class="st-pct ${stClass(sSt)}">${sSt}%</span></div></td><td>${velocity(s.sold)}</td><td>${act}</td></tr>`;
       Object.values(s.skus).sort((a,c)=>c.sold-a.sold).forEach(sk=>{
         const skSt=pct(sk.sold,sk.remaining);
-        const skAct=sk.remaining===0?'<span class="rec-tag rec-hold">Sold Out</span>':skSt>=70?'<span class="rec-tag rec-reorder">🔴 Reorder</span>':skSt>=50?'<span class="rec-tag rec-reorder" style="background:#FFF3E0;color:#E6A23C">🟡 Repeat</span>':'';
+        const skAct=sk.remaining===0&&sk.sold>0?'<span class="rec-tag rec-hold">Sold Out</span>':sk.sold===0?'<span class="rec-tag" style="background:#E3F2FD;color:#1976D2;font-size:11px">🆕 New</span>':skSt>=70?'<span class="rec-tag rec-reorder">🔴 Reorder</span>':skSt>=50?'<span class="rec-tag rec-reorder" style="background:#FFF3E0;color:#E6A23C">🟡 Repeat</span>':'';
         html+=`<tr class="sku-row hidden-row" data-parent="${b.name}:${s.name}"><td>${sk.label}</td><td>${fmt(sk.revenue)}</td><td>${sk.sold}</td><td>${sk.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${skSt}%"></div></div><span class="st-pct ${stClass(skSt)}">${skSt}%</span></div></td><td></td><td>${skAct}</td></tr>`;
       });
     });
