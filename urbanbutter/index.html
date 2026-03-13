@@ -200,12 +200,28 @@ tr:hover{background:var(--cream)}
     <!-- BUY PLANNING TAB -->
     <div class="tab-content" id="tab-buyrec">
       <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
-        <div class="kpi"><div class="kpi-label">OTB Budget Remaining</div><div class="kpi-val" id="otbVal">$18,400</div><div class="kpi-sub">of $145,000 total</div></div>
-        <div class="kpi"><div class="kpi-label">Reorder Suggestions</div><div class="kpi-val" id="reorderCount">8</div><div class="kpi-sub">styles need attention</div></div>
-        <div class="kpi"><div class="kpi-label">Overstock Alerts</div><div class="kpi-val" id="overstockCount">3</div><div class="kpi-sub">consider markdown</div></div>
+        <div class="kpi"><div class="kpi-label">Reorder Suggestions</div><div class="kpi-val" id="reorderCount">0</div><div class="kpi-sub">styles need attention</div></div>
+        <div class="kpi"><div class="kpi-label">Top Performers</div><div class="kpi-val" id="topPerfCount">0</div><div class="kpi-sub">brands above 60% ST</div></div>
+        <div class="kpi"><div class="kpi-label">Slow Movers</div><div class="kpi-val" id="overstockCount">0</div><div class="kpi-sub">consider reducing</div></div>
       </div>
-      <h3 style="font-size:16px;margin-bottom:16px">Recommendations</h3>
-      <div id="recCards"></div>
+      <div class="card">
+        <div class="card-header"><h3>Buy Planning by Brand</h3></div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Brand</th>
+                <th>Revenue</th>
+                <th>Sold</th>
+                <th>Remaining</th>
+                <th>Sell-Through</th>
+                <th>Recommendation</th>
+              </tr>
+            </thead>
+            <tbody id="buyBrandBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- COMPARE STORES TAB -->
@@ -360,23 +376,23 @@ function renderDrillDown(){
 
 function renderRecs(){
   const brands=aggregateBrands();
-  let recs=[];
+  let html='';
+  let reorderCount=0, topPerf=0, slowCount=0;
+  brands.sort((a,b)=>{const stA=pct(a.sold,a.remaining),stB=pct(b.sold,b.remaining);return stB-stA});
   brands.forEach(b=>{
-    Object.values(b.styles).forEach(s=>{
-      const st=pct(s.sold,s.remaining);
-      if(st>=70)recs.push({icon:'🔴',title:`Reorder Now: ${b.name} ${s.name}`,desc:`${st}% sell-through with only ${s.remaining} units left. At current velocity, you'll be out in ${weeksSupply(s.remaining,s.sold)} weeks. Already late to reorder.`,tag:'reorder'});
-      else if(st>=50)recs.push({icon:'🟡',title:`Repeat Worthy: ${b.name} ${s.name}`,desc:`${st}% sell-through — strong performer. ${s.remaining} units left. Consider reorder of ${Math.ceil(s.sold*0.5)} units before stock runs out.`,tag:'repeat'});
-      else if(st<30&&s.remaining>10)recs.push({icon:'⚠️',title:`Slow Mover: ${b.name} ${s.name}`,desc:`Only ${st}% sell-through with ${s.remaining} units remaining. Consider markdown to move inventory.`,tag:'reduce'});
-      Object.values(s.skus).forEach(sk=>{
-        if(sk.remaining===0&&sk.sold>=5)recs.push({icon:'🚨',title:`Sold Out: ${b.name} ${s.name} — ${sk.label}`,desc:`This SKU sold ${sk.sold} units and is completely gone. Lost sales likely.`,tag:'reorder'});
-      });
-    });
+    const st=pct(b.sold,b.remaining);
+    const ws=weeksSupply(b.remaining,b.sold);
+    let rec='',recClass='';
+    if(st>=70){rec='🔴 Increase Buy — flying off shelves';recClass='rec-reorder';reorderCount++}
+    else if(st>=50){rec='🟡 Maintain / Slight Increase — strong seller';recClass='rec-repeat';topPerf++}
+    else if(st>=30){rec='🟢 Maintain — selling steadily';recClass=''}
+    else{rec='⚠️ Reduce Buy — slow mover';recClass='rec-reduce';slowCount++}
+    html+=`<tr><td style="font-weight:600">${b.name}</td><td>${fmt(b.revenue)}</td><td>${b.sold}</td><td>${b.remaining}</td><td><div class="st-bar-wrap"><div class="st-bg"><div class="st-bar st-fill" style="width:${st}%"></div></div><span class="st-pct ${stClass(st)}">${st}%</span></div></td><td><span class="rec-tag ${recClass}" style="font-size:12px">${rec}</span></td></tr>`;
   });
-  recs.sort((a,b)=>{const order={reorder:0,repeat:1,reduce:2};return(order[a.tag]??9)-(order[b.tag]??9)});
-  document.getElementById('recCards').innerHTML=recs.slice(0,20).map(r=>`
-    <div class="rec-card"><div class="rec-icon">${r.icon}</div><div class="rec-body"><h4>${r.title}</h4><p>${r.desc}</p><span class="rec-tag rec-${r.tag}">${r.tag==='reorder'?'Reorder Now':r.tag==='repeat'?'Repeat Worthy':r.tag==='reduce'?'Consider Markdown':'Review'}</span></div></div>`).join('');
-  document.getElementById('reorderCount').textContent=recs.filter(r=>r.tag==='reorder'||r.tag==='repeat').length;
-  document.getElementById('overstockCount').textContent=recs.filter(r=>r.tag==='reduce').length;
+  document.getElementById('buyBrandBody').innerHTML=html;
+  document.getElementById('reorderCount').textContent=reorderCount;
+  document.getElementById('topPerfCount').textContent=topPerf;
+  document.getElementById('overstockCount').textContent=slowCount;
 }
 
 function renderCompare(){
