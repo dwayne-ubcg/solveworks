@@ -3879,20 +3879,25 @@ function renderBuyPlan(){
   if(brandTbody&&st.byBrand&&st.byBrand.length){
     const ratingBadge={grow:'badge-green',keep:'badge-sage',watch:'badge-yellow',cut:'badge-red'};
     const ratingIcon={grow:'🚀',keep:'✅',watch:'👁️',cut:'✂️'};
+    // Use inventory margins from dashboard.json (wholesale vs retail) — more accurate than sell-through margins which include markdowns
+    const dbInv=window._ld&&window._ld.dashboard&&window._ld.dashboard.inventory||{};
+    const invMarginMap=(dbInv.brandBreakdown||[]).reduce((m,b)=>(m[b.name.toUpperCase()]=b.margin,m),{});
     const sorted=[...st.byBrand].sort((a,b)=>b.revenue-a.revenue).slice(0,20);
     brandTbody.innerHTML=sorted.map((b,i)=>{
       const stBadge=b.sellThrough>=65?'badge-green':b.sellThrough>=45?'badge-yellow':'badge-red';
       const badge=ratingBadge[b.rating]||'badge-sage';
       const icon=ratingIcon[b.rating]||'';
       const label=(b.rating||'').charAt(0).toUpperCase()+(b.rating||'').slice(1)||'—';
+      // Use inventory margin if available, fall back to sell-through margin
+      const margin=invMarginMap[b.brand.toUpperCase()]||b.grossMargin||null;
       // Weeks of supply: currentStock / weeklyRate — derive from available fields
       const wos=b.weeksOfSupply!=null?b.weeksOfSupply
         :b.currentStock>0&&b.unitsSold>0?Math.round(b.currentStock/(b.unitsSold/periodWeeks)*10)/10
         :'—';
-      // GMROI: grossMargin% × (unitsSold/currentStock) — approximate
+      // GMROI: margin% × (unitsSold/currentStock) — use inventory margin
       const gmroi=b.gmroi!=null?b.gmroi.toFixed(2)
-        :b.currentStock>0&&b.unitsSold>0&&b.grossMargin>0
-          ?(b.grossMargin/100*(b.unitsSold/b.currentStock)).toFixed(2)
+        :b.currentStock>0&&b.unitsSold>0&&margin>0
+          ?(margin/100*(b.unitsSold/b.currentStock)).toFixed(2)
           :'—';
       // Low-volume flag: < 20 units sold means data is statistically thin
       const lvTag=b.unitsSold<20?` <span title="Only ${b.unitsSold} units sold — low volume, treat rating with caution" style="font-size:9px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 4px;">Low Vol</span>`:'';
@@ -3900,7 +3905,7 @@ function renderBuyPlan(){
       return`<tr style="${rowBg}">
         <td><strong>${b.brand}</strong>${lvTag}</td>
         <td style="text-align:right;"><span class="badge ${stBadge}">${b.sellThrough}%</span></td>
-        <td style="text-align:right;">${b.grossMargin!=null?b.grossMargin+'%':'—'}</td>
+        <td style="text-align:right;">${margin!=null?margin+'%':'—'}</td>
         <td style="text-align:right;">—</td>
         <td style="text-align:right;">${typeof wos==='number'?wos+'w':wos}</td>
         <td style="text-align:right;">${gmroi}</td>
@@ -4236,7 +4241,10 @@ function renderSellThrough(){
   const aovEl=document.getElementById('st-aov');
   const subEl=document.getElementById('st-period-subtitle');
   if(revEl)revEl.textContent=fmtC(locSales.totalRevenue||s.totalRevenue);
-  if(marEl)marEl.textContent=(locSales.grossMargin||s.grossMargin||0)+'%';
+  // Prefer inventory margin (wholesale vs retail) over sell-through margin (includes markdowns)
+  const dbInvM=window._ld&&window._ld.dashboard&&window._ld.dashboard.inventory||{};
+  const blendedInvMargin=dbInvM.brandBreakdown&&dbInvM.brandBreakdown.length>0?Math.round((1-dbInvM.brandBreakdown.reduce((s,b)=>s+b.cost,0)/dbInvM.brandBreakdown.reduce((s,b)=>s+b.retail,0))*100):null;
+  if(marEl)marEl.textContent=(blendedInvMargin||locSales.grossMargin||s.grossMargin||0)+'%';
   if(unEl)unEl.textContent=fmtN(locSales.totalUnitsSold||s.totalUnitsSold);
   if(aovEl)aovEl.textContent=fmtC(locSales.avgTransaction||s.avgTransaction);
   if(subEl){
