@@ -3541,10 +3541,13 @@ function renderProperOTB() {
   const locationRevenue = locSales.totalRevenue || 0;
   const plannedMonthlySales = locationRevenue > 0 ? locationRevenue / periodMonths : 0;
 
-  // Inventory for selected location (proportional split if per-store data unavailable)
-  const totalInventoryCost = (st.otb || []).reduce((sum, o) => sum + (o.currentInventoryCost || 0), 0);
+  // Inventory from dashboard.json brandBreakdown (actual Lightspeed inventory values)
+  const db = window._ld && window._ld.dashboard && window._ld.dashboard.inventory || {};
+  const dbBrands = db.brandBreakdown || [];
+  const totalInventoryCost = dbBrands.length > 0 ? dbBrands.reduce((s,b) => s + (b.cost||0), 0) : (st.otb || []).reduce((s,o) => s + (o.currentInventoryCost||0), 0);
+  const totalInventoryRetail = dbBrands.length > 0 ? dbBrands.reduce((s,b) => s + (b.retail||0), 0) : totalInventoryCost / costMultiplier;
   const beginningInventoryCost = multiStore ? totalInventoryCost : (numLocs > 0 ? totalInventoryCost / numLocs : totalInventoryCost);
-  const beginningInventoryRetail = beginningInventoryCost / costMultiplier;
+  const beginningInventoryRetail = multiStore ? totalInventoryRetail : (numLocs > 0 ? totalInventoryRetail / numLocs : totalInventoryRetail);
 
   const plannedEndingInventory = plannedMonthlySales * 2.25; // Target 2.25 months of supply
   const onOrderInput = document.getElementById('bp-on-order-input');
