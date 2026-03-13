@@ -202,17 +202,16 @@ tr:hover{background:var(--cream)}
 
     <!-- BUY PLANNING TAB -->
     <div class="tab-content" id="tab-buyrec">
-      <h3 style="font-size:18px;margin-bottom:16px">Buy Planning — Season Over Season by Brand</h3>
-      <p style="color:var(--text2);font-size:13px;margin-bottom:20px">Click a brand to see style-level performance across seasons. Use this to steer what to increase, maintain, or drop.</p>
+      <h3 id="buyTitle" style="font-size:18px;margin-bottom:16px">Buy Planning — Season Over Season by Brand</h3>
+      <p id="buySubtitle" style="color:var(--text2);font-size:13px;margin-bottom:20px">Click a brand to see style-level performance across seasons. Use this to steer what to increase, maintain, or drop.</p>
       <div class="card">
         <div style="overflow-x:auto">
           <table>
             <thead>
               <tr>
                 <th>Brand</th>
-                <th>Spring '25</th>
-                <th>Fall '25</th>
-                <th>Spring '26</th>
+                <th id="buyCol1"></th>
+                <th id="buyCol2"></th>
                 <th>Trend</th>
               </tr>
             </thead>
@@ -394,22 +393,57 @@ function renderDrillDown(){
   });
 }
 
+function getSeasonConfig(){
+  const m=new Date().getMonth();// 0-indexed
+  const y=new Date().getFullYear();
+  const yShort=String(y).slice(-2);
+  const prevShort=String(y-1).slice(-2);
+  const nextShort=String(y+1).slice(-2);
+  // Spring = Jan-Jun (months 0-5), Fall = Jul-Dec (months 6-11)
+  if(m<6){
+    return{
+      season:'Spring',
+      col1Label:`Spring '${prevShort}`,col2Label:`Spring '${yShort}`,
+      b1s:'sp'+prevShort+'_sold',b1r:'sp'+prevShort+'_rev',b2s:'sp'+yShort+'_sold',b2r:'sp'+yShort+'_rev',
+      c1:'sp'+prevShort,c1r:'sp'+prevShort+'r',c2:'sp'+yShort,c2r:'sp'+yShort+'r',
+      s1:'sp'+prevShort,s2:'sp'+yShort,
+      planLabel:`Planning Spring '${nextShort} Buy`
+    };
+  }else{
+    return{
+      season:'Fall',
+      col1Label:`Fall '${prevShort}`,col2Label:`Fall '${yShort}`,
+      b1s:'fa'+prevShort+'_sold',b1r:'fa'+prevShort+'_rev',b2s:'fa'+yShort+'_sold',b2r:'fa'+yShort+'_rev',
+      c1:'fa'+prevShort,c1r:'fa'+prevShort+'r',c2:'fa'+yShort,c2r:'fa'+yShort+'r',
+      s1:'fa'+prevShort,s2:'fa'+yShort,
+      planLabel:`Planning Fall '${nextShort} Buy`
+    };
+  }
+}
 function renderRecs(){
+  const sc=getSeasonConfig();
+  document.getElementById('buyTitle').textContent=`Buy Planning — ${sc.season} vs ${sc.season} by Brand`;
+  document.getElementById('buySubtitle').textContent=`${sc.planLabel}. Click a brand to see style-level performance.`;
+  document.getElementById('buyCol1').textContent=sc.col1Label;
+  document.getElementById('buyCol2').textContent=sc.col2Label;
   let html='';
   BUY_PLAN.forEach((b,bi)=>{
-    const arrow=b.change_pct>0?'↑':'↓';
-    const cls=b.change_pct>20?'kpi-up':b.change_pct<-20?'kpi-down':'';
-    html+=`<tr class="brand-row buy-brand-row" data-bidx="${bi}" style="cursor:pointer"><td><span class="expand-icon">▶</span><strong>${b.brand}</strong></td><td>${b.sp25_sold} units<br><span style="color:var(--text2);font-size:12px">${fmt(b.sp25_rev)}</span></td><td>${b.fa25_sold} units<br><span style="color:var(--text2);font-size:12px">${fmt(b.fa25_rev)}</span></td><td>${b.sp26_sold} units<br><span style="color:var(--text2);font-size:12px">${fmt(b.sp26_rev)}</span></td><td class="${cls}" style="font-weight:600">${arrow} ${Math.abs(b.change_pct)}%</td></tr>`;
-    // Category rows for this brand
+    const s1=b[sc.b1s]||0,r1=b[sc.b1r]||0,s2=b[sc.b2s]||0,r2=b[sc.b2r]||0;
+    const changePct=s1>0?Math.round((s2-s1)/s1*100):(s2>0?999:0);
+    const arrow=changePct>0?'↑':'↓';
+    const cls=changePct>20?'kpi-up':changePct<-20?'kpi-down':'';
+    html+=`<tr class="brand-row buy-brand-row" data-bidx="${bi}" style="cursor:pointer"><td><span class="expand-icon">▶</span><strong>${b.brand}</strong></td><td>${s1} units<br><span style="color:var(--text2);font-size:12px">${fmt(r1)}</span></td><td>${s2} units<br><span style="color:var(--text2);font-size:12px">${fmt(r2)}</span></td><td class="${cls}" style="font-weight:600">${arrow} ${Math.abs(changePct)}%</td></tr>`;
     b.categories.forEach((c,ci)=>{
-      const cArrow=c.change>0?'↑':'↓';
-      const cCls=c.change>20?'kpi-up':c.change<-20?'kpi-down':'';
+      const cv1=c[sc.c1]||0,cv1r=c[sc.c1r]||0,cv2=c[sc.c2]||0,cv2r=c[sc.c2r]||0;
+      const cChange=cv1>0?Math.round((cv2-cv1)/cv1*100):(cv2>0?999:0);
+      const cArrow=cChange>0?'↑':'↓';
+      const cCls=cChange>20?'kpi-up':cChange<-20?'kpi-down':'';
       const recTag=c.rec==='Grow'?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080;font-size:11px">📈 Grow</span>':c.rec==='Reduce'?'<span class="rec-tag rec-reduce" style="font-size:11px">📉 Reduce</span>':'<span class="rec-tag" style="background:#f5f5f5;color:#666;font-size:11px">➡️ Maintain</span>';
-      html+=`<tr class="style-row hidden-row buy-cat-row" data-buy-brand="${bi}" data-buy-cat="${bi}-${ci}" style="cursor:pointer;background:var(--cream)"><td style="padding-left:28px"><span class="expand-icon">▶</span><strong>${c.category}</strong></td><td style="font-size:13px">${c.sp25}<br><span style="color:var(--text2);font-size:11px">${fmt(c.sp25r)}</span></td><td style="font-size:13px">${c.fa25}<br><span style="color:var(--text2);font-size:11px">${fmt(c.fa25r)}</span></td><td style="font-size:13px">${c.sp26}<br><span style="color:var(--text2);font-size:11px">${fmt(c.sp26r)}</span></td><td><span class="${cCls}" style="font-weight:600;font-size:12px">${cArrow} ${Math.abs(c.change)}%</span> ${recTag}</td></tr>`;
-      // Style rows within this category
+      html+=`<tr class="style-row hidden-row buy-cat-row" data-buy-brand="${bi}" data-buy-cat="${bi}-${ci}" style="cursor:pointer;background:var(--cream)"><td style="padding-left:28px"><span class="expand-icon">▶</span><strong>${c.category}</strong></td><td style="font-size:13px">${cv1}<br><span style="color:var(--text2);font-size:11px">${fmt(cv1r)}</span></td><td style="font-size:13px">${cv2}<br><span style="color:var(--text2);font-size:11px">${fmt(cv2r)}</span></td><td><span class="${cCls}" style="font-weight:600;font-size:12px">${cArrow} ${Math.abs(cChange)}%</span> ${recTag}</td></tr>`;
       c.styles.forEach(s=>{
+        const sv1=s[sc.s1]||'-',sv2=s[sc.s2]||'-';
         const sTag=s.rec==='Rebuy'?'<span class="rec-tag" style="background:#E8F5ED;color:#40c080;font-size:10px">🔄 Rebuy</span>':'<span class="rec-tag" style="background:#f5f5f5;color:#999;font-size:10px">👀 Watch</span>';
-        html+=`<tr class="sku-row hidden-row" data-buy-style="${bi}-${ci}"><td style="padding-left:52px;font-size:12px">${s.name}</td><td style="font-size:12px">${s.sp25||'-'}</td><td style="font-size:12px">${s.fa25||'-'}</td><td style="font-size:12px">${s.sp26||'-'}</td><td>${sTag}</td></tr>`;
+        html+=`<tr class="sku-row hidden-row" data-buy-style="${bi}-${ci}"><td style="padding-left:52px;font-size:12px">${s.name}</td><td style="font-size:12px">${sv1}</td><td style="font-size:12px">${sv2}</td><td>${sTag}</td></tr>`;
       });
     });
   });
