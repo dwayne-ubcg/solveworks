@@ -3946,6 +3946,8 @@ function renderBuyPlanSeasonST(){
   // Assign each style to a season bucket based on floorDate
   // buckets: sp25 (Jan–Jun 2025), fa25 (Jul–Dec 2025), sp26 (Jan–Jun 2026), fa26 (Jul–Dec 2026)
   const buckets = { sp25:{}, fa25:{}, sp26:{}, fa26:{} };
+  // Per-brand style-level data for remaining-attribution logic
+  const brandStyles = {}; // {brandName: [{name, sp25:sold, fa25:sold, ..., remaining}]}
 
   function getBucket(floorDate){
     const d = new Date(floorDate);
@@ -3960,6 +3962,7 @@ function renderBuyPlanSeasonST(){
 
   if(detail && detail.brands){
     for(const brand of detail.brands){
+      if(!brandStyles[brand.brand]) brandStyles[brand.brand] = [];
       for(const style of brand.styles){
         const bk = getBucket(style.floorDate);
         if(!bk) continue;
@@ -3968,19 +3971,47 @@ function renderBuyPlanSeasonST(){
         buckets[bk][brand.brand].remaining += style.remaining || 0;
         buckets[bk][brand.brand].revenue   += style.revenue || 0;
         buckets[bk][brand.brand].styles++;
+        // Track per-style season data for remaining attribution
+        const sObj = { name: style.name, remaining: style.remaining || 0 };
+        sObj[bk] = style.sold || 0;
+        brandStyles[brand.brand].push(sObj);
       }
     }
   }
 
-  function stPct(d){ return d.sold+d.remaining>0 ? Math.round(d.sold/(d.sold+d.remaining)*100) : 0; }
+  // Season priority: most recent first — remaining goes to the newest season with sales
+  const seasonPriority = ['sp26','fa25','sp25'];
+
+  // Sell-through with remaining-attribution (same logic as urbanbutter)
+  // Remaining only counts against the MOST RECENT season with sales for that style
+  function stPct(brandName, seasonKey){
+    if(!brandName || !seasonKey || !brandStyles[brandName]) return 0;
+    // Filter to styles that belong to this season
+    const styles = brandStyles[brandName].filter(s => s[seasonKey] > 0);
+    let totalSold = 0, totalBought = 0;
+    styles.forEach(s => {
+      const sold = s[seasonKey] || 0;
+      totalSold += sold;
+      const rem = s.remaining || 0;
+      const mostRecent = seasonPriority.find(k => s[k] > 0);
+      if(mostRecent === seasonKey){
+        totalBought += sold + rem; // this season owns the remaining
+      } else {
+        totalBought += sold; // fully sold through for this older season
+      }
+    });
+    return totalBought > 0 ? Math.round(totalSold / totalBought * 100) : 0;
+  }
 
   // Project current-season ST% to end-of-season using linear pace.
   // projectedST(d, weeksElapsed) → integer % or null
-  function projectedST(d, weeksElapsed){
+  function projectedST(brandName, seasonKey, weeksElapsed){
+    const d = buckets[seasonKey] && buckets[seasonKey][brandName];
     if(!d || d.sold+d.remaining===0) return null;
-    const totalUnits = d.sold + d.remaining;
-    const projSold = Math.min(d.sold * (SEASON_WEEKS / Math.max(weeksElapsed, 0.5)), totalUnits);
-    return Math.round(projSold / totalUnits * 100);
+    // Use attributed ST% and project linearly
+    const currentST = stPct(brandName, seasonKey);
+    const projST = Math.min(Math.round(currentST * (SEASON_WEEKS / Math.max(weeksElapsed, 0.5))), 100);
+    return projST;
   }
 
   function trendArrow(pts){
@@ -4007,9 +4038,9 @@ function renderBuyPlanSeasonST(){
       const a = buckets[bkA][brand];
       const b = buckets[bkB][brand];
       if(!a && !b) continue;
-      const stA    = a ? stPct(a) : null;
-      const stB    = b ? stPct(b) : null;
-      const stBProj = b ? projectedST(b, weeksElapsed) : null;
+      const stA    = a ? stPct(brand, bkA) : null;
+      const stB    = b ? stPct(brand, bkB) : null;
+      const stBProj = b ? projectedST(brand, bkB, weeksElapsed) : null;
       const diff   = (stA!==null && stBProj!==null) ? stBProj - stA : null;
 
       const stACell = stA!==null ? `<strong>${stA}%</strong>` : '<span style="color:var(--text-muted);">—</span>';
@@ -4098,7 +4129,7 @@ function renderBuyPlanSeasonST(){
       if(fa25Brands.length){
         fallTbody.innerHTML = fa25Brands.sort().map(brand => {
           const a = buckets['fa25'][brand];
-          const stA = stPct(a);
+          const stA = stPct(brand, 'fa25');
           return `<tr>
             <td><strong>${brand}</strong></td>
             <td style="text-align:right;"><strong>${stA}%</strong></td>
