@@ -2142,14 +2142,17 @@ function getMonthsRemaining() {
 function getBaselineMonthlySales() {
   if (!ST) return 0;
   // Use SS25 full-season revenue as baseline (captures real spring/summer curve)
-  // instead of just the first 10 cold weeks of SS26
+  // SS25 was 2 stores — scale to current store count (3)
+  const ss25Stores = 2;
+  const currentStores = CONFIG.stores.length || 3;
+  const storeScale = currentStores / ss25Stores;
   const sc = ST.seasonComparison;
   if (sc && sc.byCategory) {
     let ss25TotalRev = 0;
     for (const c of sc.byCategory) {
       ss25TotalRev += (c.ss25FullSeason?.revenue || 0);
     }
-    if (ss25TotalRev > 0) return ss25TotalRev / 6; // 6 month spring season
+    if (ss25TotalRev > 0) return (ss25TotalRev / 6) * storeScale; // 6mo season × store scaling
   }
   // Fallback to period average
   return ST.summary.totalRevenue / (ST.periodWeeks / 4.33);
@@ -2344,6 +2347,9 @@ function renderBuyPlanning() {
     }
   }
   const SS25_WEEKS = 26; // full spring season Jan–Jun
+  const SS25_STORES = 2;
+  const CURRENT_STORES = CONFIG.stores.length || 3;
+  const storeScale = CURRENT_STORES / SS25_STORES;
 
   const otbRows = (ST.otb || []).filter(o => o.category !== 'UNKNOWN');
   const growthMult = 1 + getGrowthPct() / 100;
@@ -2354,11 +2360,12 @@ function renderBuyPlanning() {
     const ss25 = ss25CatLookup[cat];
 
     // Use SS25 full-season weekly rate as baseline (captures spring/summer selling curve)
+    // Scale from 2 stores (SS25) to 3 stores (current)
     // Fall back to SS26-to-date rate if no SS25 data exists
     let baseWeeklyRevenue, baseWeeklyUnits;
     if (ss25 && ss25.revenue > 0) {
-      baseWeeklyRevenue = ss25.revenue / SS25_WEEKS;
-      baseWeeklyUnits = (ss25.unitsSold || 0) / SS25_WEEKS;
+      baseWeeklyRevenue = (ss25.revenue / SS25_WEEKS) * storeScale;
+      baseWeeklyUnits = ((ss25.unitsSold || 0) / SS25_WEEKS) * storeScale;
     } else {
       baseWeeklyRevenue = (o.weeklyRunRateCost || 0);
       baseWeeklyUnits = (o.weeklyRunRateUnits || 0);
