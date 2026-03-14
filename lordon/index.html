@@ -1674,6 +1674,12 @@ input,select{font-family:inherit;font-size:13px}
           <option value="professional">📋 Professional Services</option>
           <option value="other">📦 Other</option>
         </select>
+        <select id="receipt-filter-store" onchange="renderReceipts()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;">
+          <option value="all">All Stores</option>
+          <option value="Saint John">Saint John</option>
+          <option value="Moncton">Moncton</option>
+          <option value="Halifax">Halifax</option>
+        </select>
         <select id="receipt-filter-month" onchange="renderReceipts()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;">
           <option value="all">All Months</option>
         </select>
@@ -4178,6 +4184,13 @@ function showToast(msg) {
         return '<option value="' + kv[0] + '"' + (r && r.category === kv[0] ? ' selected' : '') + '>' + kv[1] + '</option>';
       }).join('') +
       '</select></div>' +
+      '<div class="receipt-field"><label>Store Location</label>' +
+      '<select id="rc-store">' +
+      '<option value=""' + (!r || !r.store ? ' selected' : '') + '>— Select Store —</option>' +
+      CONFIG.stores.map(function(s) {
+        return '<option value="' + s.name + '"' + (r && r.store === s.name ? ' selected' : '') + '>' + s.name + '</option>';
+      }).join('') +
+      '</select></div>' +
       '<div class="receipt-field"><label>Notes (optional)</label>' +
       '<textarea id="rc-notes" rows="2" placeholder="Any additional details…">' + (r ? esc(r.notes || '') : '') + '</textarea></div>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">' +
@@ -4225,6 +4238,7 @@ function showToast(msg) {
       amount: amount,
       date: (document.getElementById('rc-date') || {}).value || '',
       category: (document.getElementById('rc-cat') || {}).value || 'other',
+      store: (document.getElementById('rc-store') || {}).value || '',
       notes: ((document.getElementById('rc-notes') || {}).value || '').trim(),
       image: newImage || (editId ? ((receipts.find(function(r) { return r.id === editId; }) || {}).image || '') : '')
     };
@@ -4273,9 +4287,11 @@ function showToast(msg) {
   window.renderReceipts = function() {
     loadReceipts();
     const catF = (document.getElementById('receipt-filter-cat') || {}).value || 'all';
+    const storeF = (document.getElementById('receipt-filter-store') || {}).value || 'all';
     const monthF = (document.getElementById('receipt-filter-month') || {}).value || 'all';
     let filtered = receipts;
     if (catF !== 'all') filtered = filtered.filter(function(r) { return r.category === catF; });
+    if (storeF !== 'all') filtered = filtered.filter(function(r) { return r.store === storeF; });
     if (monthF !== 'all') filtered = filtered.filter(function(r) { return r.date && r.date.startsWith(monthF); });
     const total = filtered.reduce(function(s, r) { return s + (r.amount || 0); }, 0);
     const totalEl = document.getElementById('receipt-total');
@@ -4301,7 +4317,7 @@ function showToast(msg) {
         (r.image ? '<img class="receipt-img-thumb" src="' + r.image + '" alt="">' :
           '<div class="receipt-icon" style="background:' + color + '22;color:' + color + ';">' + icon + '</div>') +
         '<div class="receipt-info">' +
-        '<div class="receipt-vendor">' + esc(r.vendor) + '</div>' +
+        '<div class="receipt-vendor">' + esc(r.vendor) + (r.store ? ' <span style="font-size:11px;font-weight:500;color:var(--sage);background:var(--sage-lt,#eef4ef);padding:1px 6px;border-radius:4px;margin-left:6px">' + esc(r.store) + '</span>' : '') + '</div>' +
         '<div class="receipt-desc">' + esc(RECEIPT_CATS[r.category] || '') + (r.notes ? ' · ' + esc(r.notes) : '') + '</div>' +
         '</div>' +
         '<div style="text-align:right;flex-shrink:0;">' +
