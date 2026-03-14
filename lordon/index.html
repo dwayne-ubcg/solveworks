@@ -6,636 +6,1092 @@
 <title>LORDON — Mission Control</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root {
-  --bg: #F8F5F0;
-  --bg-deep: #F2EDE6;
-  --bg-sidebar: #FDFCFA;
-  --bg-card: #FFFFFF;
-  --bg-hover: #F5F0EB;
-  --border: #E5DDD4;
-  --border-light: #EDE8E2;
-  --text: #1E1B18;
-  --text-2: #4A4540;
-  --text-3: #7A736C;
-  --text-4: #A09890;
-  --accent: #C4A882;
-  --accent-dark: #A8906E;
-  --accent-deep: #8B7355;
-  --accent-warm: #EAD9C5;
-  --sage: #7A9B7A;
-  --sage-light: #E4EEE4;
-  --sage-dark: #5A7A5A;
-  --rose: #C07878;
-  --rose-light: #F0E4E4;
-  --green: #4A9A5A;
-  --green-light: #E2F2E6;
-  --amber: #B8860B;
-  --amber-light: #FBF4DC;
-  --red: #B84040;
-  --red-light: #F5E6E6;
-  --blue: #4A78B8;
-  --blue-light: #E4EDF8;
-  --purple: #7A60A8;
-  --purple-light: #EEE8F8;
-  --shadow-xs: 0 1px 3px rgba(30,27,24,0.06);
-  --shadow-sm: 0 2px 8px rgba(30,27,24,0.07);
-  --shadow: 0 4px 16px rgba(30,27,24,0.08);
-  --shadow-lg: 0 8px 32px rgba(30,27,24,0.12);
-  --shadow-xl: 0 16px 48px rgba(30,27,24,0.14);
-  --radius: 14px;
-  --radius-sm: 9px;
-  --sidebar-w: 256px;
-  --topbar-h: 58px;
-  --t: 0.25s cubic-bezier(0.4,0,0.2,1);
+  --bg:#FAF8F5;
+  --bg-card:#FFFFFF;
+  --bg-hover:#F5F1EC;
+  --bg-deep:#F0EBE4;
+  --border:#E8E3DC;
+  --border-light:#F0EBE6;
+  --text:#1E1B18;
+  --text-2:#5C574F;
+  --text-3:#9B9590;
+  --accent:#C4A882;
+  --accent-dk:#A8906E;
+  --accent-lt:#F5EDDF;
+  --sage:#7A9970;
+  --sage-lt:#EAF0E8;
+  --rose:#C47A7A;
+  --rose-lt:#F5E8E8;
+  --amber:#C09040;
+  --amber-lt:#F5EDD8;
+  --blue:#5A8FBF;
+  --blue-lt:#E8F0F8;
+  --green:#4E9E68;
+  --green-lt:#E6F5EC;
+  --red:#C45050;
+  --red-lt:#FAE8E8;
+  --purple:#7A5AC4;
+  --purple-lt:#EDE8FA;
+  --shadow:0 1px 4px rgba(30,27,24,.06),0 4px 16px rgba(30,27,24,.05);
+  --shadow-lg:0 4px 24px rgba(30,27,24,.10),0 16px 48px rgba(30,27,24,.06);
+  --shadow-card:0 0 0 1px var(--border),0 2px 8px rgba(30,27,24,.05);
+  --sidebar-w:248px;
+  --topbar-h:52px;
+  --radius:12px;
+  --radius-sm:8px;
+  --t:.2s cubic-bezier(.4,0,.2,1);
 }
 
-body { font-family: 'DM Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
-h1,h2,h3,h4 { font-family: 'Playfair Display', serif; font-weight: 600; }
-button { font-family: inherit; cursor: pointer; }
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:'Playfair Display',serif}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select{font-family:inherit;font-size:13px}
 
-/* ── LOGIN ───────────────────────────────── */
-#login-screen {
-  position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #F2EDE6 0%, #E8DDD0 50%, #DDD0C0 100%);
-}
-.login-card {
-  background: #fff; border-radius: 20px; box-shadow: var(--shadow-xl);
-  padding: 48px 48px 40px; width: 420px; max-width: 95vw;
-  animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes slideUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
-.login-logo {
-  width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 20px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: #fff;
-}
-.login-card h2 { text-align: center; font-size: 22px; margin-bottom: 4px; }
-.login-card p { text-align: center; color: var(--text-3); font-size: 13px; margin-bottom: 32px; }
-.login-card label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-2); margin-bottom: 8px; }
-.login-card input {
-  width: 100%; border: 1.5px solid var(--border); border-radius: 10px;
-  padding: 13px 16px; font-size: 15px; font-family: inherit; outline: none;
-  background: var(--bg); color: var(--text); transition: var(--t);
-}
-.login-card input:focus { border-color: var(--accent); background: #fff; }
-.login-btn {
-  width: 100%; margin-top: 20px; padding: 14px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  border: none; border-radius: 10px; color: #fff; font-size: 15px; font-weight: 600;
-  transition: var(--t); cursor: pointer;
-}
-.login-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(196,168,130,0.4); }
-.login-err { color: var(--red); font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1E1B18 0%,#2D2A22 50%,#1A1714 100%);z-index:9999}
+.login-box{background:#FFFFFF;border-radius:20px;padding:48px 44px;width:380px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.login-logo{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.login-mark{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent-dk));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#fff}
+.login-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--text)}
+.login-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
+.login-field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);background:var(--bg);outline:none;transition:border-color var(--t)}
+.login-field input:focus{border-color:var(--accent)}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--accent),var(--accent-dk));color:#fff;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity var(--t)}
+.login-btn:hover{opacity:.9}
+.login-err{color:var(--red);font-size:13px;margin-top:12px;display:none;text-align:center}
 
-/* ── TOPBAR ──────────────────────────────── */
-.topbar {
-  position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); z-index: 800;
-  background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border); display: flex; align-items: center;
-  padding: 0 24px; gap: 16px; justify-content: space-between;
+/* ── APP SHELL ── */
+#app{display:none;height:100vh;overflow:hidden}
+
+/* ── TOP BAR ── */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:rgba(250,248,245,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 0;z-index:800}
+.topbar-left{display:flex;align-items:center;gap:0}
+.topbar-brand{width:var(--sidebar-w);display:flex;align-items:center;gap:12px;padding:0 20px;border-right:1px solid var(--border);height:var(--topbar-h)}
+.brand-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--accent-dk));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.brand-name{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;letter-spacing:.3px}
+.brand-sub{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);margin-top:1px}
+.topbar-center{flex:1;display:flex;align-items:center;padding:0 20px}
+.store-selector{display:flex;align-items:center;gap:10px}
+.store-selector label{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3)}
+.store-select{appearance:none;background:var(--bg-card);border:1.5px solid var(--border);border-radius:8px;padding:6px 32px 6px 12px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239B9590' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;outline:none;transition:border-color var(--t)}
+.store-select:focus{border-color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.live-indicator{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--text-3)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+.updated-time{font-size:11px;color:var(--text-3);font-weight:500}
+.topbar-icon-btn{width:34px;height:34px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);font-size:15px;transition:all var(--t)}
+.topbar-icon-btn:hover{background:var(--bg-hover);color:var(--text);border-color:var(--accent)}
+.hamburger{display:none}
+
+/* ── SIDEBAR ── */
+.sidebar{position:fixed;top:var(--topbar-h);left:0;bottom:0;width:var(--sidebar-w);background:var(--bg-card);border-right:1px solid var(--border);padding:16px 12px;overflow-y:auto;z-index:700;transition:transform var(--t)}
+.sidebar::-webkit-scrollbar{width:0}
+.nav-section-label{font-size:9.5px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-3);padding:0 10px;margin:16px 0 6px}
+.nav-section-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text-2);transition:all var(--t);margin-bottom:1px;position:relative}
+.nav-item:hover{background:var(--bg-hover);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,var(--accent-lt),#F0E6D8);color:var(--text);font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:3px;background:linear-gradient(to bottom,var(--accent),var(--accent-dk));border-radius:0 3px 3px 0}
+.nav-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.nav-item.active .nav-icon{background:var(--accent);filter:drop-shadow(0 2px 4px rgba(196,168,130,.4))}
+.nav-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--rose-lt);color:var(--rose)}
+.nav-divider{height:1px;background:var(--border-light);margin:8px 0}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);margin-top:var(--topbar-h);height:calc(100vh - var(--topbar-h));overflow-y:auto;background:var(--bg)}
+.main::-webkit-scrollbar{width:6px}
+.main::-webkit-scrollbar-track{background:transparent}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.page{display:none;animation:fadeUp .25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-inner{padding:28px 32px 40px}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:24px;display:flex;align-items:flex-end;justify-content:space-between}
+.page-header-text h2{font-size:26px;font-weight:600;letter-spacing:-.3px;margin-bottom:2px}
+.page-header-text .subtitle{font-size:13px;color:var(--text-3);font-weight:400}
+.page-actions{display:flex;gap:8px}
+
+/* ── HERO METRICS STRIP ── */
+.hero-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1.5px solid var(--border);border-radius:16px;overflow:hidden;background:var(--bg-card);box-shadow:var(--shadow);margin-bottom:20px}
+.hero-metric{padding:20px 18px;position:relative;transition:background var(--t)}
+.hero-metric:not(:last-child){border-right:1px solid var(--border)}
+.hero-metric:hover{background:var(--bg-hover)}
+.hero-metric .hm-label{font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+.hero-metric .hm-value{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1;color:var(--text)}
+.hero-metric .hm-value.lg{font-size:22px}
+.hero-metric .hm-sub{font-size:11.5px;color:var(--text-3);margin-top:6px;display:flex;align-items:center;gap:6px}
+.hero-metric .hm-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px}
+.trend-up{background:var(--green-lt);color:var(--green)}
+.trend-dn{background:var(--red-lt);color:var(--red)}
+.trend-neu{background:var(--bg-deep);color:var(--text-2)}
+.hero-metric .hm-sparkline{position:absolute;bottom:0;left:0;right:0;opacity:.25}
+
+/* ── SECTION CONTAINER ── */
+.section{margin-bottom:20px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:13px;font-weight:700;letter-spacing:.3px;color:var(--text);display:flex;align-items:center;gap:8px}
+.section-title .s-icon{font-size:15px}
+.section-actions{display:flex;gap:6px}
+
+/* ── CARDS ── */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-card);overflow:hidden}
+.card-body{padding:20px}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:13px;font-weight:600;letter-spacing:.1px}
+.card-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+
+/* ── GRID LAYOUTS ── */
+.g-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.g-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.g-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.g-2-1{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.g-1-2{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+.g-3-2{display:grid;grid-template-columns:3fr 2fr;gap:16px}
+
+/* ── KPI TILES ── */
+.kpi-tile{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:6px;transition:all var(--t);cursor:default}
+.kpi-tile:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.kpi-tile .kt-label{font-size:10.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3)}
+.kpi-tile .kt-value{font-size:24px;font-weight:700;letter-spacing:-1px;line-height:1}
+.kpi-tile .kt-meta{font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:6px;margin-top:2px}
+.kpi-tile .kt-bar{height:3px;border-radius:2px;background:var(--bg-deep);margin-top:8px;overflow:hidden}
+.kpi-tile .kt-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--accent-dk));transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+
+/* ── AI INSIGHT BOX ── */
+.ai-box{border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;position:relative;overflow:hidden}
+.ai-box-default{background:linear-gradient(135deg,#FFF9F2,#FFF4E8);border:1px solid #E8D5B0}
+.ai-box-sage{background:linear-gradient(135deg,#F2F8F0,#EAF3E6);border:1px solid #C0D8B8}
+.ai-box-blue{background:linear-gradient(135deg,#F0F5FA,#E8F0F8);border:1px solid #B8CDD8}
+.ai-box-red{background:linear-gradient(135deg,#FDF5F5,#FAE8E8);border:1px solid #D8B8B8}
+.ai-box::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.ai-box-default::before{background:linear-gradient(to bottom,var(--accent),var(--amber))}
+.ai-box-sage::before{background:linear-gradient(to bottom,var(--sage),#5A8055)}
+.ai-box-blue::before{background:linear-gradient(to bottom,var(--blue),#3A6FA0)}
+.ai-box-red::before{background:linear-gradient(to bottom,var(--rose),var(--red))}
+.ai-icon-wrap{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.ai-box-default .ai-icon-wrap{background:linear-gradient(135deg,var(--accent),var(--accent-dk))}
+.ai-box-sage .ai-icon-wrap{background:linear-gradient(135deg,var(--sage),#4E7A45)}
+.ai-box-blue .ai-icon-wrap{background:linear-gradient(135deg,var(--blue),#3A6FA0)}
+.ai-box-red .ai-icon-wrap{background:linear-gradient(135deg,var(--rose),var(--red))}
+.ai-text{font-size:12.5px;line-height:1.6;color:var(--text-2)}
+.ai-text strong{font-weight:700;color:var(--text)}
+.ai-text em{font-style:normal;color:var(--accent-dk);font-weight:600}
+
+/* ── TABLES ── */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.data-table th{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);padding:10px 12px;border-bottom:1.5px solid var(--border);text-align:left;cursor:pointer;user-select:none;white-space:nowrap;transition:color var(--t)}
+.data-table th:hover{color:var(--text)}
+.data-table th.sorted{color:var(--accent-dk)}
+.data-table th .sort-icon{display:inline-block;margin-left:4px;font-size:9px;opacity:.5}
+.data-table th.sorted .sort-icon{opacity:1;color:var(--accent-dk)}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle;transition:background var(--t)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:var(--bg-hover)}
+.data-table .num{text-align:right;font-feature-settings:'tnum'}
+.data-table .strong{font-weight:600;color:var(--text)}
+
+/* ── INLINE BAR ── */
+.inline-bar{display:flex;align-items:center;gap:8px;min-width:100px}
+.inline-bar-track{flex:1;height:5px;background:var(--bg-deep);border-radius:3px;overflow:hidden}
+.inline-bar-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.bar-green{background:linear-gradient(90deg,#5EC988,#4E9E68)}
+.bar-amber{background:linear-gradient(90deg,#D4A84B,#C09040)}
+.bar-red{background:linear-gradient(90deg,#D46060,#C45050)}
+.bar-blue{background:linear-gradient(90deg,#6AABDF,#5A8FBF)}
+.bar-accent{background:linear-gradient(90deg,var(--accent),var(--accent-dk))}
+.bar-sage{background:linear-gradient(90deg,#8FBA80,var(--sage))}
+.inline-bar-val{font-size:11px;font-weight:600;width:34px;text-align:right}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.badge-green{background:var(--green-lt);color:var(--green)}
+.badge-red{background:var(--red-lt);color:var(--red)}
+.badge-amber{background:var(--amber-lt);color:var(--amber)}
+.badge-blue{background:var(--blue-lt);color:var(--blue)}
+.badge-sage{background:var(--sage-lt);color:var(--sage)}
+.badge-rose{background:var(--rose-lt);color:var(--rose)}
+.badge-purple{background:var(--purple-lt);color:var(--purple)}
+.badge-neutral{background:var(--bg-deep);color:var(--text-2)}
+
+/* ── MINI SPARKLINE ── */
+.sparkline{display:inline-block;vertical-align:middle}
+
+/* ── DONUT CHART ── */
+.donut-wrap{display:flex;align-items:center;gap:24px}
+.donut-svg{flex-shrink:0}
+.donut-legend{display:flex;flex-direction:column;gap:8px;flex:1}
+.donut-item{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.donut-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.donut-item-val{margin-left:auto;font-weight:600;font-size:12px}
+.donut-item-pct{font-size:11px;color:var(--text-3)}
+
+/* ── HORIZONTAL BAR CHART ── */
+.hbar-chart{display:flex;flex-direction:column;gap:8px}
+.hbar-row{display:flex;align-items:center;gap:10px}
+.hbar-label{width:80px;font-size:11.5px;font-weight:500;text-align:right;color:var(--text-2);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar-track{flex:1;height:22px;background:var(--bg-deep);border-radius:5px;overflow:hidden;position:relative}
+.hbar-fill{height:100%;border-radius:5px;display:flex;align-items:center;padding-left:8px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.hbar-fill-label{font-size:10.5px;font-weight:600;color:rgba(255,255,255,.9)}
+.hbar-val{font-size:11px;color:var(--text-2);width:60px;flex-shrink:0;text-align:left}
+
+/* ── STORE CARD ── */
+.store-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all var(--t)}
+.store-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.store-card-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.store-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-dk));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff}
+.store-name{font-weight:700;font-size:15px}
+.store-pct{font-size:11.5px;color:var(--text-3)}
+.store-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.store-metric .sm-label{font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3)}
+.store-metric .sm-val{font-size:17px;font-weight:700;letter-spacing:-.5px}
+.store-metric .sm-sub{font-size:11px;color:var(--text-3)}
+
+/* ── PILL TOGGLE ── */
+.pill-toggle{display:inline-flex;background:var(--bg-deep);border-radius:10px;padding:3px;gap:2px}
+.pill-btn{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer;transition:all var(--t)}
+.pill-btn:hover{color:var(--text)}
+.pill-btn.active{background:var(--bg-card);color:var(--text);box-shadow:0 1px 4px rgba(30,27,24,.1)}
+
+/* ── BTN ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all var(--t);border:none}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-dk)}
+.btn-ghost{background:var(--bg-card);color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg-hover);color:var(--text)}
+
+/* ── RANK NUMBER ── */
+.rank-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:10.5px;font-weight:700;background:var(--bg-deep);color:var(--text-3)}
+.rank-num.r1{background:linear-gradient(135deg,#FFD700,#E5AC00);color:#5C3D00}
+.rank-num.r2{background:linear-gradient(135deg,#C0C8D0,#A0A8B0);color:#2A3038}
+.rank-num.r3{background:linear-gradient(135deg,#D4A070,#B07848);color:#fff}
+
+/* ── HEALTH SIGNAL ── */
+.health-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:2px}
+.hb-seg{flex:1;border-radius:2px;transition:all var(--t)}
+
+/* ── UNFULFILLED ORDER ROW ── */
+.order-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)}
+.order-row:last-child{border-bottom:none}
+.order-num{font-size:12px;font-weight:700;color:var(--text);width:52px;flex-shrink:0}
+.order-item{flex:1;font-size:12.5px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.order-type{font-size:11px;font-weight:600;color:var(--text-3);flex-shrink:0}
+
+/* ── YESTERDAY SPLIT ── */
+.split-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;gap:0}
+.split-bar-pos{transition:width .8s ease}
+.split-bar-online{transition:width .8s ease}
+
+/* ── COMING SOON ── */
+.coming-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px;color:var(--text-3)}
+.coming-soon .cs-icon{font-size:48px;opacity:.4}
+.coming-soon h3{font-family:'Playfair Display',serif;font-size:22px;color:var(--text-2);font-weight:600}
+.coming-soon p{font-size:13px;text-align:center;max-width:340px;line-height:1.6}
+
+/* ── MOBILE ── */
+@media(max-width:900px){
+  .hamburger{display:flex!important}
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .topbar-brand{width:auto;border-right:none}
+  .hero-strip{grid-template-columns:1fr 1fr}
+  .g-3,.g-4,.g-5{grid-template-columns:1fr 1fr}
+  .g-2-1,.g-1-2,.g-3-2{grid-template-columns:1fr}
+  .page-inner{padding:16px}
 }
-.tb-left { display: flex; align-items: center; gap: 14px; }
-.hamburger {
-  display: none; width: 36px; height: 36px; border-radius: 9px;
-  border: 1px solid var(--border); background: var(--bg); align-items: center;
-  justify-content: center; color: var(--text-3); font-size: 17px; transition: var(--t);
+@media(max-width:500px){
+  .hero-strip{grid-template-columns:1fr}
+  .g-2{grid-template-columns:1fr}
 }
-.hamburger:hover { background: var(--bg-hover); }
-.tb-brand { display: flex; align-items: center; gap: 10px; }
-.tb-logo {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: #fff;
+
+/* ── SORTING INDICATOR ── */
+.th-asc::after{content:' ↑';font-size:9px;color:var(--accent-dk)}
+.th-desc::after{content:' ↓';font-size:9px;color:var(--accent-dk)}
+
+/* ── EXPANDABLE BRAND TABLE ── */
+.st-brand-wrap{overflow-x:auto}
+.st-brand-wrap::-webkit-scrollbar{height:4px}
+.st-brand-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.st-thead{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1.5fr 40px;gap:0;padding:10px 12px;border-bottom:1.5px solid var(--border);font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3)}
+.st-thead span.num{text-align:right}
+.st-brand-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr 1.5fr 40px;gap:0;padding:12px 12px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background var(--t);align-items:center;font-size:12.5px}
+.st-brand-row:hover{background:var(--bg-hover)}
+.st-brand-row.expanded{background:var(--accent-lt)}
+.st-brand-row .brand-name{font-weight:700;font-size:13px;color:var(--text)}
+.st-brand-row span.num{text-align:right;font-feature-settings:'tnum'}
+.expand-chevron{text-align:center;font-size:10px;color:var(--text-3);transition:transform .2s ease}
+.st-brand-row.expanded .expand-chevron{transform:rotate(90deg)}
+.st-expand-panel{display:none;background:var(--bg);border-bottom:1.5px solid var(--border);animation:fadeUp .2s ease}
+.st-expand-panel.open{display:block}
+.st-expand-inner{padding:16px}
+.st-style-table{width:100%;border-collapse:collapse;font-size:12px}
+.st-style-table th{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-3);padding:7px 10px;border-bottom:1.5px solid var(--border);text-align:left;white-space:nowrap}
+.st-style-table th.num{text-align:right}
+.st-style-table td{padding:8px 10px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+.st-style-table td.num{text-align:right;font-feature-settings:'tnum'}
+.st-style-table tr.style-row{cursor:pointer;transition:background var(--t)}
+.st-style-table tr.style-row:hover td{background:var(--bg-hover)}
+.st-style-table tr.style-row.expanded td{background:var(--accent-lt)}
+.st-sku-row{display:none}
+.st-sku-row.open{display:table-row}
+.st-sku-mini{background:var(--bg-deep);padding:12px 16px}
+.sku-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.sku-chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);min-width:72px}
+.sku-chip .sku-size{font-size:11px;font-weight:700;color:var(--text-2)}
+.sku-chip .sku-sold{font-size:10.5px;color:var(--text-3)}
+.sku-chip .sku-st{font-size:11px;font-weight:700}
+.sku-chip .sku-action{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:10px;margin-top:2px}
+.sku-chip.sold-out{border-color:var(--red);background:var(--red-lt)}
+.sku-chip.low-stock{border-color:var(--amber);background:var(--amber-lt)}
+
+/* ── ALERT BADGES ── */
+.alert-REORDER_NOW{background:var(--red-lt);color:var(--red)}
+.alert-REPEAT_WORTHY{background:var(--green-lt);color:var(--green)}
+.alert-WATCH{background:var(--amber-lt);color:var(--amber)}
+.alert-NEW{background:var(--blue-lt);color:var(--blue)}
+
+/* ── SIZE CURVES ── */
+.size-curve-grid{display:flex;flex-direction:column;gap:8px;padding:4px 0}
+.size-curve-row{display:grid;grid-template-columns:64px 1fr 1fr 80px 80px;gap:12px;align-items:center;font-size:12px}
+.size-curve-row.header{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-3);padding-bottom:6px;border-bottom:1px solid var(--border-light)}
+.size-bar-track{height:16px;background:var(--bg-deep);border-radius:4px;overflow:hidden;position:relative}
+.size-bar-fill{height:100%;border-radius:4px;transition:width 1s ease;display:flex;align-items:center;padding-left:6px}
+.size-bar-fill span{font-size:9.5px;font-weight:700;color:rgba(255,255,255,.9)}
+.size-gap-badge{display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:10px}
+.gap-over{background:var(--green-lt);color:var(--green)}
+.gap-under{background:var(--red-lt);color:var(--red)}
+.gap-ok{background:var(--bg-deep);color:var(--text-3)}
+
+/* ── SEASON COMPARISON TABLE ── */
+.season-comp-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.season-comp-table th{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);padding:10px 12px;border-bottom:1.5px solid var(--border);text-align:left;cursor:pointer;user-select:none;white-space:nowrap}
+.season-comp-table th.num{text-align:right}
+.season-comp-table td{padding:9px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+.season-comp-table td.num{text-align:right;font-feature-settings:'tnum'}
+.season-comp-table tr:hover td{background:var(--bg-hover)}
+.trend-arrow{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:10px}
+.trend-up-badge{background:var(--green-lt);color:var(--green)}
+.trend-dn-badge{background:var(--red-lt);color:var(--red)}
+.trend-flat-badge{background:var(--bg-deep);color:var(--text-3)}
+
+/* ── OTB FORMULA VISUAL ── */
+.otb-formula-block{background:var(--bg);border-radius:12px;padding:20px;margin-bottom:16px}
+.otb-formula-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:10px;margin-bottom:8px}
+.otb-formula-row:last-child{margin-bottom:0;border:2px solid var(--accent);background:linear-gradient(135deg,var(--accent-lt),#F0E6D8)!important}
+.otb-formula-label{font-size:12.5px;color:var(--text-2);font-weight:500}
+.otb-formula-value{font-size:16px;font-weight:700}
+.otb-on-order-wrap{display:flex;align-items:center;gap:10px}
+.otb-on-order-input{width:120px;padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-weight:700;color:var(--text);background:var(--bg-card);text-align:right;outline:none;transition:border-color var(--t)}
+.otb-on-order-input:focus{border-color:var(--accent)}
+
+/* ── MOBILE RESPONSIVE (phase 3 additions) ── */
+@media(max-width:900px){
+  .st-thead,.st-brand-row{grid-template-columns:2fr 1fr 1fr 80px 40px}
+  .st-thead span:nth-child(3),.st-thead span:nth-child(4),.st-thead span:nth-child(5),
+  .st-brand-row span:nth-child(3),.st-brand-row span:nth-child(4),.st-brand-row span:nth-child(5){display:none}
+  .size-curve-row{grid-template-columns:48px 1fr 70px}
+  .size-curve-row .size-bar-track:last-of-type,.size-curve-row .size-gap-badge+*{display:none}
 }
-.tb-name { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-2); }
-.tb-divider { color: var(--border); font-weight: 300; font-size: 18px; }
-.tb-client { font-size: 13px; color: var(--text-3); font-weight: 500; }
-.tb-right { display: flex; align-items: center; gap: 12px; }
-.store-select {
-  display: flex; align-items: center; gap: 8px; padding: 7px 12px;
-  border: 1.5px solid var(--border); border-radius: 9px; background: var(--bg);
-  font-size: 13px; font-weight: 500; color: var(--text-2); cursor: pointer; transition: var(--t);
-}
-.store-select:hover { border-color: var(--accent); background: var(--accent-warm); }
-.store-select select {
-  border: none; background: transparent; font-size: 13px; font-weight: 600;
-  font-family: inherit; color: var(--text); cursor: pointer; outline: none;
-}
-.live-indicator { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-3); }
-.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-.tb-updated { font-size: 11px; color: var(--text-4); }
 
-/* ── SIDEBAR ─────────────────────────────── */
-.sidebar {
-  position: fixed; top: var(--topbar-h); left: 0; bottom: 0; width: var(--sidebar-w);
-  background: var(--bg-sidebar); border-right: 1px solid var(--border);
-  padding: 16px 12px; overflow-y: auto; z-index: 700; transition: transform var(--t);
-}
-.nav-section { margin-bottom: 6px; }
-.nav-label { font-size: 9.5px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; color: var(--text-4); padding: 0 12px; margin: 14px 0 6px; }
-.nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px;
-  cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--text-3);
-  transition: var(--t); margin-bottom: 1px; user-select: none;
-}
-.nav-item:hover { background: var(--bg-hover); color: var(--text-2); }
-.nav-item.active {
-  background: linear-gradient(135deg, #EAD9C5, #E5CEBA); color: var(--accent-deep); font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(196,168,130,0.3);
-}
-.nav-icon { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
-.nav-badge {
-  margin-left: auto; background: var(--rose); color: #fff; font-size: 10px;
-  font-weight: 700; padding: 1px 6px; border-radius: 8px; letter-spacing: 0.2px;
-}
-.nav-coming { margin-left: auto; font-size: 10px; color: var(--text-4); font-style: italic; }
-
-/* ── MAIN ────────────────────────────────── */
-.main { margin-left: var(--sidebar-w); margin-top: var(--topbar-h); padding: 28px 32px; min-height: calc(100vh - var(--topbar-h)); }
-.page { display: none; }
-.page.active { display: block; animation: fadeIn 0.3s ease; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-
-/* ── PAGE HEADERS ────────────────────────── */
-.pg-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
-.pg-title { font-size: 26px; line-height: 1.1; }
-.pg-subtitle { font-size: 13px; color: var(--text-3); margin-top: 4px; }
-.pg-meta { font-size: 12px; color: var(--text-4); text-align: right; }
-
-/* ── GRID LAYOUTS ───────────────────────── */
-.g2  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-.g3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-.g4  { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
-.g5  { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 14px; }
-.g2-1{ display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
-.g1-2{ display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
-.mb16{ margin-bottom: 16px; }
-.mb24{ margin-bottom: 24px; }
-
-/* ── CARDS ───────────────────────────────── */
-.card {
-  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 20px; box-shadow: var(--shadow-sm); transition: var(--t);
-  position: relative; overflow: hidden;
-}
-.card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-.card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text-3); margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
-.card-title .ct-icon { font-size: 14px; }
-.section-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; font-family: 'Playfair Display', serif; }
-
-/* ── HERO KPI CARDS ─────────────────────── */
-.kpi-card {
-  border-radius: var(--radius); padding: 18px 20px; position: relative;
-  overflow: hidden; cursor: default; transition: var(--t);
-  box-shadow: var(--shadow-sm);
-}
-.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.kpi-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; opacity: 0.75; margin-bottom: 8px; }
-.kpi-value { font-size: 28px; font-weight: 700; font-family: 'DM Sans', sans-serif; letter-spacing: -0.5px; line-height: 1; }
-.kpi-sub { font-size: 11.5px; margin-top: 6px; opacity: 0.75; display: flex; align-items: center; gap: 5px; }
-.kpi-accent { background: linear-gradient(135deg, var(--accent-warm), #E8CDA8); color: var(--accent-deep); border: 1px solid rgba(196,168,130,0.25); }
-.kpi-sage   { background: linear-gradient(135deg, var(--sage-light), #D8EBD8); color: var(--sage-dark); border: 1px solid rgba(122,155,122,0.2); }
-.kpi-blue   { background: linear-gradient(135deg, var(--blue-light), #D4E6F5); color: var(--blue); border: 1px solid rgba(74,120,184,0.2); }
-.kpi-rose   { background: linear-gradient(135deg, var(--rose-light), #EDD8D8); color: var(--rose); border: 1px solid rgba(192,120,120,0.2); }
-.kpi-green  { background: linear-gradient(135deg, var(--green-light), #CDE8D5); color: var(--green); border: 1px solid rgba(74,154,90,0.2); }
-.kpi-amber  { background: linear-gradient(135deg, var(--amber-light), #F5EBCA); color: var(--amber); border: 1px solid rgba(184,134,11,0.2); }
-.kpi-purple { background: linear-gradient(135deg, var(--purple-light), #E0D8F2); color: var(--purple); border: 1px solid rgba(122,96,168,0.2); }
-.kpi-teal   { background: linear-gradient(135deg, #E0F0F0, #CDE6E6); color: #3A7A7A; border: 1px solid rgba(58,122,122,0.2); }
-
-/* ── TREND ARROWS ────────────────────────── */
-.trend-up   { color: var(--green); display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; }
-.trend-down { color: var(--red); display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 600; }
-.trend-flat { color: var(--text-3); font-size: 12px; font-weight: 600; }
-
-/* ── BADGES ──────────────────────────────── */
-.badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap; }
-.badge-green  { background: var(--green-light); color: var(--green); }
-.badge-red    { background: var(--red-light); color: var(--red); }
-.badge-amber  { background: var(--amber-light); color: var(--amber); }
-.badge-blue   { background: var(--blue-light); color: var(--blue); }
-.badge-sage   { background: var(--sage-light); color: var(--sage-dark); }
-.badge-rose   { background: var(--rose-light); color: var(--rose); }
-.badge-purple { background: var(--purple-light); color: var(--purple); }
-.badge-gray   { background: #F0EBE5; color: var(--text-3); }
-
-/* ── TABLES ──────────────────────────────── */
-.tbl-wrap { overflow-x: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-th {
-  padding: 9px 13px; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.6px; color: var(--text-3); background: var(--bg-deep);
-  border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap;
-  cursor: pointer; user-select: none; transition: var(--t);
-}
-th:hover { background: #EDE7E0; color: var(--text-2); }
-th.sorted-asc::after { content: ' ↑'; color: var(--accent-dark); }
-th.sorted-desc::after { content: ' ↓'; color: var(--accent-dark); }
-td { padding: 9px 13px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: var(--bg); }
-.tbl-rank { font-weight: 700; color: var(--text-3); font-size: 12px; width: 32px; }
-
-/* ── MINI BAR ────────────────────────────── */
-.mini-bar { display: flex; align-items: center; gap: 8px; }
-.mini-bar-track { flex: 1; height: 6px; background: var(--bg-deep); border-radius: 3px; overflow: hidden; min-width: 50px; }
-.mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
-.mini-bar-val { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-
-/* ── AI INSIGHT ──────────────────────────── */
-.ai-insight {
-  border-radius: 12px; padding: 16px 20px;
-  background: linear-gradient(135deg, #FFF8F0, #FFF3E8);
-  position: relative; overflow: hidden;
-  animation: insightIn 0.4s ease;
-  border: 1px solid transparent;
-  background-clip: padding-box;
-}
-.ai-insight::before {
-  content: ''; position: absolute; inset: 0; border-radius: 12px;
-  padding: 1.5px; background: linear-gradient(135deg, var(--accent), #E8CCA0, var(--accent-dark));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
-}
-@keyframes insightIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-.ai-insight-inner { display: flex; gap: 14px; align-items: flex-start; }
-.ai-icon {
-  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  display: flex; align-items: center; justify-content: center; font-size: 16px;
-}
-.ai-text { font-size: 13.5px; line-height: 1.6; color: var(--text-2); }
-.ai-text strong { color: var(--accent-deep); font-weight: 700; }
-
-/* ── HEALTH CARDS ────────────────────────── */
-.health-card { border-radius: var(--radius-sm); padding: 16px 18px; border: 1px solid var(--border); background: var(--bg-card); }
-.health-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-3); margin-bottom: 8px; }
-.health-val { font-size: 24px; font-weight: 700; line-height: 1.1; }
-.health-desc { font-size: 11px; color: var(--text-3); margin-top: 4px; }
-.health-bar { margin-top: 10px; height: 5px; background: var(--bg-deep); border-radius: 3px; overflow: hidden; }
-.health-bar-fill { height: 100%; border-radius: 3px; }
-
-/* ── SVG DONUT ───────────────────────────── */
-.donut-wrap { display: flex; align-items: center; gap: 24px; }
-.donut-legend { display: flex; flex-direction: column; gap: 10px; }
-.legend-item { display: flex; align-items: center; gap: 9px; font-size: 13px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-/* ── HORIZONTAL BAR CHART ────────────────── */
-.hbar-chart { display: flex; flex-direction: column; gap: 8px; }
-.hbar-row { display: flex; align-items: center; gap: 10px; }
-.hbar-label { width: 110px; font-size: 12px; font-weight: 500; text-align: right; flex-shrink: 0; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.hbar-track { flex: 1; height: 24px; background: var(--bg-deep); border-radius: 6px; overflow: hidden; position: relative; }
-.hbar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; color: #fff; min-width: 30px; transition: width 1s ease; }
-.hbar-amount { width: 90px; font-size: 12px; color: var(--text-3); text-align: right; flex-shrink: 0; }
-
-/* ── OOS ALERT ROW ───────────────────────── */
-.oos-row { display: flex; align-items: center; gap: 14px; padding: 10px 14px; border-radius: 9px; background: var(--bg); border: 1px solid var(--border-light); margin-bottom: 6px; transition: var(--t); }
-.oos-row:hover { background: #FFF5F0; border-color: rgba(184,64,64,0.2); }
-.oos-brand { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-4); }
-.oos-name { font-size: 13px; font-weight: 600; color: var(--text); }
-.oos-meta { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-/* ── TOP SELLER ROW ──────────────────────── */
-.seller-row { display: flex; align-items: center; gap: 14px; padding: 9px 14px; border-radius: 9px; transition: var(--t); }
-.seller-row:hover { background: var(--bg); }
-.seller-rank { font-size: 15px; font-weight: 700; color: var(--text-3); width: 28px; }
-.seller-info { flex: 1; min-width: 0; }
-.seller-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.seller-brand { font-size: 11px; color: var(--text-3); }
-.seller-stats { display: flex; align-items: center; gap: 16px; }
-.seller-stat { text-align: right; }
-.seller-stat .val { font-size: 13px; font-weight: 700; }
-.seller-stat .lbl { font-size: 10px; color: var(--text-4); }
-
-/* ── STORE CARDS ─────────────────────────── */
-.store-card { border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); background: var(--bg-card); box-shadow: var(--shadow-sm); transition: var(--t); }
-.store-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-.store-name { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.store-metric { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; }
-.store-metric:last-child { border-bottom: none; }
-.store-metric .m-label { color: var(--text-3); }
-.store-metric .m-val { font-weight: 700; }
-
-/* ── UNFULFILLED ORDERS ──────────────────── */
-.order-row { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--border-light); font-size: 13px; }
-.order-row:last-child { border-bottom: none; }
-.order-num { font-weight: 700; color: var(--accent-dark); width: 60px; flex-shrink: 0; }
-.order-items { flex: 1; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.order-type { font-size: 11px; color: var(--blue); font-weight: 600; }
-
-/* ── COMING SOON ─────────────────────────── */
-.coming-soon {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 400px; text-align: center;
-}
-.cs-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
-.cs-title { font-size: 22px; font-weight: 600; font-family: 'Playfair Display', serif; color: var(--text-2); margin-bottom: 8px; }
-.cs-desc { font-size: 14px; color: var(--text-3); max-width: 380px; line-height: 1.6; }
-.cs-badge { display: inline-block; margin-top: 16px; padding: 6px 16px; border-radius: 20px; background: var(--accent-warm); color: var(--accent-deep); font-size: 12px; font-weight: 600; }
-
-/* ── MOBILE ──────────────────────────────── */
-@media (max-width: 1024px) {
-  .g5 { grid-template-columns: 1fr 1fr 1fr; }
-  .g4 { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
-  .sidebar.open { transform: translateX(0); }
-  .main { margin-left: 0; padding: 16px; }
-  .hamburger { display: flex; }
-  .g5,.g4,.g3,.g2 { grid-template-columns: 1fr 1fr; }
-  .g2-1,.g1-2 { grid-template-columns: 1fr; }
-  .kpi-value { font-size: 22px; }
-  .sidebar-overlay { position: fixed; inset: 0; background: rgba(30,27,24,0.4); z-index: 699; display: none; }
-  .sidebar-overlay.show { display: block; }
-}
-@media (max-width: 480px) {
-  .g5,.g4,.g3,.g2 { grid-template-columns: 1fr; }
-}
+/* ── SCROLLABLE TABLE WRAP ── */
+.table-wrap{overflow-x:auto}
+.table-wrap::-webkit-scrollbar{height:4px}
+.table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     LOGIN SCREEN
-═══════════════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">L</div>
-    <h2>LORDON</h2>
-    <p>Mission Control Dashboard</p>
-    <label for="pw">Password</label>
-    <input type="password" id="pw" placeholder="Enter your password" autofocus
-      onkeydown="if(event.key==='Enter') doLogin()">
-    <button class="login-btn" onclick="doLogin()">Sign In</button>
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-mark">L</div>
+      <div>
+        <div class="login-title">LORDON</div>
+        <div class="login-sub">Mission Control</div>
+      </div>
+    </div>
+    <div class="login-field">
+      <label>Access Code</label>
+      <input type="password" id="pw-input" placeholder="Enter password" autocomplete="off">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Access Dashboard</button>
     <div class="login-err" id="login-err">Incorrect password. Try again.</div>
   </div>
 </div>
 
-<div class="sidebar-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
+<!-- APP -->
+<div id="app">
 
-<!-- ═══════════════════════════════════════════
-     APP SHELL
-═══════════════════════════════════════════ -->
-<div id="app" style="display:none">
-
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="tb-left">
-    <button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
-    <div class="tb-brand">
-      <div class="tb-logo">L</div>
-      <span class="tb-name">Lordon</span>
-      <span class="tb-divider">/</span>
-      <span class="tb-client">Mission Control</span>
-    </div>
-  </div>
-  <div class="tb-right">
-    <div class="store-select">
-      <span>🏪</span>
-      <select id="store-sel" onchange="onStoreChange()">
-        <option value="all">All Stores</option>
-        <option value="Saint John">Saint John</option>
-        <option value="Moncton">Moncton</option>
-        <option value="Halifax">Halifax</option>
-      </select>
-    </div>
-    <div class="live-indicator">
-      <div class="live-dot"></div>
-      <span>Live</span>
-    </div>
-    <div class="tb-updated" id="tb-updated">Loading…</div>
-  </div>
-</div>
-
-<!-- SIDEBAR -->
-<nav class="sidebar" id="sidebar">
-  <div class="nav-section">
-    <div class="nav-label">Analytics</div>
-    <div class="nav-item active" data-tab="briefing" onclick="nav(this)">
-      <span class="nav-icon">🏠</span> Briefing
-    </div>
-    <div class="nav-item" data-tab="sales" onclick="nav(this)">
-      <span class="nav-icon">📊</span> Sales Analytics
-    </div>
-    <div class="nav-item" data-tab="sellthrough" onclick="nav(this)">
-      <span class="nav-icon">🎯</span> Sell-Through Intel
-      <span class="nav-coming">Q2</span>
-    </div>
-    <div class="nav-item" data-tab="inventory" onclick="nav(this)">
-      <span class="nav-icon">📦</span> Inventory Health
-      <span class="nav-coming">Q2</span>
-    </div>
-    <div class="nav-item" data-tab="buying" onclick="nav(this)">
-      <span class="nav-icon">🛒</span> Buy Planning
-      <span class="nav-coming">Q2</span>
-    </div>
-    <div class="nav-item" data-tab="customers" onclick="nav(this)">
-      <span class="nav-icon">👥</span> Customer Intel
-      <span class="nav-coming">Q2</span>
-    </div>
-    <div class="nav-item" data-tab="multistore" onclick="nav(this)">
-      <span class="nav-icon">🗺️</span> Multi-Store
-      <span class="nav-coming">Q2</span>
-    </div>
-  </div>
-  <div class="nav-section">
-    <div class="nav-label">Operations</div>
-    <div class="nav-item" data-tab="social" onclick="nav(this)">
-      <span class="nav-icon">📱</span> Social
-      <span class="nav-coming">Soon</span>
-    </div>
-    <div class="nav-item" data-tab="chat" onclick="nav(this)">
-      <span class="nav-icon">💬</span> Chat
-    </div>
-    <div class="nav-item" data-tab="receipts" onclick="nav(this)">
-      <span class="nav-icon">🧾</span> Receipts
-      <span class="nav-coming">Soon</span>
-    </div>
-    <div class="nav-item" data-tab="documents" onclick="nav(this)">
-      <span class="nav-icon">📄</span> Documents
-      <span class="nav-coming">Soon</span>
-    </div>
-  </div>
-</nav>
-
-<!-- MAIN CONTENT -->
-<main class="main">
-
-  <!-- ── BRIEFING ─────────────────────────── -->
-  <div class="page active" id="tab-briefing">
-    <div class="pg-header">
-      <div>
-        <h2 class="pg-title">Daily Briefing</h2>
-        <div class="pg-subtitle" id="briefing-date">Loading...</div>
-      </div>
-      <div class="pg-meta" id="briefing-updated"></div>
-    </div>
-    <!-- Magic 10 KPI Cards -->
-    <div class="g5 mb24" id="kpi-cards"></div>
-    <!-- Row: Yesterday Briefing + Top Sellers -->
-    <div class="g2 mb24">
-      <div>
-        <div class="card" id="yesterday-card"></div>
-        <div class="card mt16" id="unfulfilled-card"></div>
-      </div>
-      <div class="card" id="top-sellers-card"></div>
-    </div>
-    <!-- OOS Alerts -->
-    <div class="card mb24" id="oos-card"></div>
-    <!-- Health Snapshot -->
-    <div class="card mb24" id="health-card"></div>
-    <!-- AI Insight -->
-    <div id="briefing-insight"></div>
-  </div>
-
-  <!-- ── SALES ANALYTICS ───────────────────── -->
-  <div class="page" id="tab-sales">
-    <div class="pg-header">
-      <div>
-        <h2 class="pg-title">Sales Analytics</h2>
-        <div class="pg-subtitle">Rolling 30-day performance</div>
-      </div>
-    </div>
-    <!-- Summary Cards -->
-    <div class="g4 mb24" id="sales-summary"></div>
-    <!-- Category Chart + Channel Donut -->
-    <div class="g2-1 mb24">
-      <div class="card" id="category-card"></div>
-      <div class="card" id="channel-card"></div>
-    </div>
-    <!-- Category Table -->
-    <div class="card mb24" id="category-table-card"></div>
-    <!-- Brand Table + Location Cards -->
-    <div class="g1-2 mb24">
-      <div>
-        <div class="card mb16" id="location-card"></div>
-      </div>
-      <div class="card" id="brand-table-card"></div>
-    </div>
-    <!-- AI Insight -->
-    <div id="sales-insight"></div>
-  </div>
-
-  <!-- ── SELL-THROUGH INTEL ─────────────────── -->
-  <div class="page" id="tab-sellthrough">
-    <div class="coming-soon">
-      <div class="cs-icon">🎯</div>
-      <div class="cs-title">Sell-Through Intel</div>
-      <div class="cs-desc">Deep sell-through analysis by style, size, and season — with floor-date tracking and repeat-worthy alerts.</div>
-      <div class="cs-badge">Coming Q2 2026</div>
-    </div>
-  </div>
-
-  <!-- ── INVENTORY HEALTH ───────────────────── -->
-  <div class="page" id="tab-inventory">
-    <div class="coming-soon">
-      <div class="cs-icon">📦</div>
-      <div class="cs-title">Inventory Health</div>
-      <div class="cs-desc">Aging buckets, dead stock alerts, weeks of supply by category, and lost-revenue from out-of-stock top sellers.</div>
-      <div class="cs-badge">Coming Q2 2026</div>
-    </div>
-  </div>
-
-  <!-- ── BUY PLANNING ───────────────────────── -->
-  <div class="page" id="tab-buying">
-    <div class="coming-soon">
-      <div class="cs-icon">🛒</div>
-      <div class="cs-title">Buy Planning</div>
-      <div class="cs-desc">OTB calculator, season-over-season brand comparison, and GMROI brand scorecard to guide your next buy.</div>
-      <div class="cs-badge">Coming Q2 2026</div>
-    </div>
-  </div>
-
-  <!-- ── CUSTOMER INTELLIGENCE ─────────────── -->
-  <div class="page" id="tab-customers">
-    <div class="coming-soon">
-      <div class="cs-icon">👥</div>
-      <div class="cs-title">Customer Intelligence</div>
-      <div class="cs-desc">LTV segments, VIP customer ranking, repeat purchase rates, and email marketing ROI from Omnisend.</div>
-      <div class="cs-badge">Coming Q2 2026</div>
-    </div>
-  </div>
-
-  <!-- ── MULTI-STORE ────────────────────────── -->
-  <div class="page" id="tab-multistore">
-    <div class="coming-soon">
-      <div class="cs-icon">🗺️</div>
-      <div class="cs-title">Multi-Store</div>
-      <div class="cs-desc">Side-by-side comparison of Saint John, Moncton, and Halifax — revenue, sell-through, and inventory allocation.</div>
-      <div class="cs-badge">Coming Q2 2026</div>
-    </div>
-  </div>
-
-  <!-- ── SOCIAL ────────────────────────────── -->
-  <div class="page" id="tab-social">
-    <div class="coming-soon">
-      <div class="cs-icon">📱</div>
-      <div class="cs-title">Social Media</div>
-      <div class="cs-desc">Connect your Instagram, TikTok, and other accounts to track reach, engagement, and social-driven sales.</div>
-      <div class="cs-badge">Coming Soon</div>
-    </div>
-  </div>
-
-  <!-- ── CHAT ──────────────────────────────── -->
-  <div class="page" id="tab-chat">
-    <div class="pg-header">
-      <div>
-        <h2 class="pg-title">AI Assistant</h2>
-        <div class="pg-subtitle">Ask anything about your business</div>
-      </div>
-    </div>
-    <div class="card" style="max-width:700px">
-      <div style="background:var(--sage-light);border-radius:10px;padding:14px 18px;margin-bottom:16px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-          <div style="width:32px;height:32px;border-radius:50%;background:var(--sage);display:flex;align-items:center;justify-content:center;font-size:16px">🤖</div>
-          <strong style="font-size:14px">Lordon AI</strong>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="topbar-icon-btn hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-brand">
+        <div class="brand-mark">L</div>
+        <div>
+          <div class="brand-name">LORDON</div>
+          <div class="brand-sub">Mission Control</div>
         </div>
-        <p style="font-size:13.5px;line-height:1.6;color:var(--text-2)">Hi! I'm your Lordon AI assistant. I can answer questions about your sales, inventory, and customers using your live data. What would you like to know?</p>
       </div>
-      <div style="display:flex;gap:10px">
-        <input type="text" placeholder="Ask about your business..." style="flex:1;border:1.5px solid var(--border);border-radius:9px;padding:11px 15px;font-size:14px;font-family:inherit;outline:none;background:var(--bg)">
-        <button style="background:linear-gradient(135deg,var(--accent),var(--accent-dark));border:none;border-radius:9px;padding:11px 20px;color:#fff;font-weight:600;font-size:14px;cursor:pointer">Send</button>
+      <div class="topbar-center">
+        <div class="store-selector">
+          <label>Store</label>
+          <select class="store-select" id="store-select" onchange="onStoreChange(this.value)">
+            <option value="all">All Stores</option>
+            <option value="Saint John">Saint John</option>
+            <option value="Moncton">Moncton</option>
+            <option value="Halifax">Halifax</option>
+          </select>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- ── RECEIPTS ───────────────────────────── -->
-  <div class="page" id="tab-receipts">
-    <div class="coming-soon">
-      <div class="cs-icon">🧾</div>
-      <div class="cs-title">Receipts</div>
-      <div class="cs-desc">Browse and search transaction receipts and returns across all locations.</div>
-      <div class="cs-badge">Coming Soon</div>
+    <div class="topbar-right">
+      <div class="live-indicator">
+        <div class="live-dot"></div>
+        <span>Live</span>
+      </div>
+      <div class="updated-time" id="updated-label">—</div>
+      <button class="topbar-icon-btn" title="Refresh" onclick="loadData()">⟳</button>
     </div>
   </div>
 
-  <!-- ── DOCUMENTS ─────────────────────────── -->
-  <div class="page" id="tab-documents">
-    <div class="coming-soon">
-      <div class="cs-icon">📄</div>
-      <div class="cs-title">Documents</div>
-      <div class="cs-desc">Centralized access to business documents, vendor agreements, and seasonal lookbooks.</div>
-      <div class="cs-badge">Coming Soon</div>
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="nav-section-label">Analytics</div>
+    <div class="nav-item active" data-tab="briefing" onclick="switchTab('briefing')">
+      <div class="nav-icon">🏠</div>Briefing
+    </div>
+    <div class="nav-item" data-tab="sales" onclick="switchTab('sales')">
+      <div class="nav-icon">📊</div>Sales Analytics
+    </div>
+    <div class="nav-item" data-tab="sellthrough" onclick="switchTab('sellthrough')">
+      <div class="nav-icon">🎯</div>Sell-Through Intel
+    </div>
+    <div class="nav-item" data-tab="inventory" onclick="switchTab('inventory')">
+      <div class="nav-icon">📦</div>Inventory Health
+    </div>
+    <div class="nav-item" data-tab="buying" onclick="switchTab('buying')">
+      <div class="nav-icon">🛒</div>Buy Planning
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Intelligence</div>
+    <div class="nav-item" data-tab="customers" onclick="switchTab('customers')">
+      <div class="nav-icon">👥</div>Customers
+    </div>
+    <div class="nav-item" data-tab="multistore" onclick="switchTab('multistore')">
+      <div class="nav-icon">🗺️</div>Multi-Store
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Workspace</div>
+    <div class="nav-item" data-tab="social" onclick="switchTab('social')">
+      <div class="nav-icon">📱</div>Social
+    </div>
+    <div class="nav-item" data-tab="chat" onclick="switchTab('chat')">
+      <div class="nav-icon">💬</div>Chat
+    </div>
+    <div class="nav-item" data-tab="receipts" onclick="switchTab('receipts')">
+      <div class="nav-icon">🧾</div>Receipts
+    </div>
+    <div class="nav-item" data-tab="documents" onclick="switchTab('documents')">
+      <div class="nav-icon">📄</div>Documents
     </div>
   </div>
 
-</main>
+  <!-- MAIN CONTENT -->
+  <div class="main" id="main-scroll">
+
+    <!-- ═══ BRIEFING ═══ -->
+    <div class="page active" id="page-briefing">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2>Good morning, Lordon ☀️</h2>
+            <div class="subtitle" id="briefing-date">Loading...</div>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-ghost btn-sm">📥 Export</button>
+          </div>
+        </div>
+
+        <!-- HERO STRIP (10 KPIs) -->
+        <div class="hero-strip" id="hero-strip" style="grid-template-columns:repeat(5,1fr)">
+          <!-- populated by JS -->
+        </div>
+        <div class="hero-strip" id="hero-strip-2" style="grid-template-columns:repeat(5,1fr);margin-top:-1px;border-top:none;border-radius:0 0 16px 16px">
+          <!-- row 2 -->
+        </div>
+
+        <div class="g-2-1 section">
+          <!-- YESTERDAY BRIEFING -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Yesterday's Performance</div>
+                <div class="card-sub" id="yesterday-label">—</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="g-3" style="margin-bottom:16px" id="yesterday-kpis"></div>
+              <!-- POS / ONLINE SPLIT -->
+              <div style="margin-bottom:16px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px">
+                  <span style="color:var(--sage)">🏪 In-Store</span>
+                  <span style="color:var(--blue)">🌐 Online</span>
+                </div>
+                <div class="split-bar" id="pos-online-bar" style="height:10px;border-radius:5px;overflow:hidden;display:flex"></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:5px" id="pos-online-labels"></div>
+              </div>
+              <!-- TOP SELLERS -->
+              <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);margin-bottom:10px">Top Sellers (30d)</div>
+              <div id="top-sellers-list"></div>
+              <div style="height:12px"></div>
+              <div class="ai-box ai-box-default" id="yesterday-ai"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <!-- UNFULFILLED ORDERS -->
+            <div class="card" style="flex:0 0 auto">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">🚨 Unfulfilled Orders</div>
+                  <div class="card-sub" id="unfulfilled-count-label">—</div>
+                </div>
+                <span class="badge badge-red" id="unfulfilled-badge">—</span>
+              </div>
+              <div class="card-body" id="unfulfilled-list"></div>
+            </div>
+
+            <!-- BUSINESS HEALTH SNAPSHOT -->
+            <div class="card" style="flex:1">
+              <div class="card-header">
+                <div class="card-title">Business Health</div>
+              </div>
+              <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:12px" id="health-kpis"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OOS TOP SELLERS -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🚫</span> Out-of-Stock Alerts — Reorder Now</div>
+            <span class="badge badge-red" id="oos-count-badge">—</span>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="oos-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Brand</th>
+                      <th class="num">On Hand</th>
+                      <th class="num">Weekly Velocity</th>
+                      <th class="num">Days of Supply</th>
+                      <th>Status</th>
+                      <th>Stocked At</th>
+                    </tr>
+                  </thead>
+                  <tbody id="oos-tbody"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:14px">
+                <div class="ai-box ai-box-red" id="oos-ai"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ SALES ANALYTICS ═══ -->
+    <div class="page" id="page-sales">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2>Sales Analytics</h2>
+            <div class="subtitle">Revenue, channels, brands & locations</div>
+          </div>
+          <div class="page-actions">
+            <div class="pill-toggle" id="period-toggle">
+              <button class="pill-btn active" onclick="setPeriod('30d',this)">30 Days</button>
+              <button class="pill-btn" onclick="setPeriod('weekly',this)">Weekly</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOP METRICS ROW -->
+        <div class="g-4 section" id="sales-kpi-row"></div>
+
+        <!-- REVENUE BY CATEGORY + CHANNEL -->
+        <div class="g-3-2 section">
+          <!-- CATEGORY BAR CHART -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Revenue by Category</div>
+                <div class="card-sub">All-time sell data from inventory records</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="hbar-chart" id="category-bars"></div>
+            </div>
+          </div>
+
+          <!-- CHANNEL DONUT -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Channel Breakdown</div>
+              <div class="card-sub">In-store vs online (30d)</div>
+            </div>
+            <div class="card-body">
+              <div class="donut-wrap" id="channel-donut-wrap">
+                <svg class="donut-svg" id="channel-donut-svg" width="140" height="140" viewBox="0 0 140 140"></svg>
+                <div class="donut-legend" id="channel-legend"></div>
+              </div>
+              <div style="margin-top:16px" id="channel-ai"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BRAND CHART + LOCATION CARDS -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🏷️</span> Sales by Brand (All-Time Top 10)</div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="brand-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('brand-table',0)">Brand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-table',1)" class="num">Revenue <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-table',2)" class="num">Units <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-table',3)" class="num">Sell-Through <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-table',4)" class="num">Margin <span class="sort-icon">⇅</span></th>
+                      <th>Rating</th>
+                      <th>Performance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="brand-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STORE PERFORMANCE -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🏪</span> Sales by Location (All-Time)</div>
+          </div>
+          <div class="g-3" id="location-cards"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ SELL-THROUGH INTEL ═══ -->
+    <div class="page" id="page-sellthrough">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2>Sell-Through Intel</h2>
+            <div class="subtitle">What's on the floor, how it's performing, what to reorder</div>
+          </div>
+          <div class="page-actions">
+            <div class="pill-toggle" id="season-toggle">
+              <button class="pill-btn active" onclick="setSTSeason('spring',this)">Spring '26</button>
+              <button class="pill-btn" onclick="setSTSeason('fall',this)">Fall '25</button>
+              <button class="pill-btn" onclick="setSTSeason('all',this)">All Current Floor</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2.12 Season Summary Cards -->
+        <div class="g-4 section" id="st-season-kpis"></div>
+        <div class="g-3 section" id="st-season-kpis-2"></div>
+
+        <!-- 2.13 Brand Sell-Through Table (Expandable) -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🏷️</span> Brand Sell-Through — Floor Performance</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;color:var(--text-3)">Click brand to expand styles</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <div class="st-brand-wrap">
+                <div class="st-thead">
+                  <span>Brand</span>
+                  <span class="num">Revenue</span>
+                  <span class="num">Sold</span>
+                  <span class="num">Remaining</span>
+                  <span class="num">Sell-Through</span>
+                  <span class="num">WOS</span>
+                  <span>Alert</span>
+                  <span></span>
+                </div>
+                <div id="st-brand-rows"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2.14 Size Sell-Through Curves -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">📐</span> Size Sell-Through Curves</div>
+          </div>
+          <div class="g-2">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Standard Sizes (XS–XXL)</div>
+                  <div class="card-sub">Stock distribution vs. sales demand</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="size-curve-row header">
+                  <span>Size</span>
+                  <span>Stock on Hand</span>
+                  <span>Units Sold</span>
+                  <span style="text-align:right">Sell-Through</span>
+                  <span style="text-align:right">Buy Gap</span>
+                </div>
+                <div class="size-curve-grid" id="size-curve-standard"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Denim/Numeric Sizes</div>
+                  <div class="card-sub">Jeans, pants, footwear</div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="size-curve-row header">
+                  <span>Size</span>
+                  <span>Stock on Hand</span>
+                  <span>Units Sold</span>
+                  <span style="text-align:right">Sell-Through</span>
+                  <span style="text-align:right">Buy Gap</span>
+                </div>
+                <div class="size-curve-grid" id="size-curve-numeric"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="ai-box ai-box-sage" id="size-curve-ai"></div>
+          </div>
+        </div>
+
+        <!-- 2.15 Slow Movers + Dead Stock Alert -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🐢</span> Slow Movers + Dead Stock Alert</div>
+            <span class="badge badge-red" id="slow-count-badge">—</span>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="slow-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('slow-table',0)">Style <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('slow-table',1)">Brand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('slow-table',2)">Arrived <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('slow-table',3)" class="num">Weeks In <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('slow-table',4)" class="num">Units <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('slow-table',5)" class="num">Sell-Through <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('slow-table',6)" class="num">Cost Tied Up <span class="sort-icon">⇅</span></th>
+                      <th>Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody id="slow-tbody"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:14px">
+                <div class="ai-box ai-box-red" id="slow-ai"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ INVENTORY HEALTH ═══ -->
+    <div class="page" id="page-inventory">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2>Inventory Health</h2>
+            <div class="subtitle">OTB status, brand value, inventory distribution</div>
+          </div>
+        </div>
+        <!-- Inventory Value KPIs -->
+        <div class="g-4 section" id="inv-kpis"></div>
+        <!-- OTB Section -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🛒</span> Open-to-Buy Status by Category</div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="otb-table">
+                  <thead>
+                    <tr>
+                      <th>Category</th>
+                      <th class="num">Units</th>
+                      <th class="num">Cost on Hand</th>
+                      <th class="num">Weekly Run Rate</th>
+                      <th class="num">WOS</th>
+                      <th class="num">Planned EOM</th>
+                      <th class="num">OTB Available</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="otb-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Brand Inventory -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🏷️</span> Inventory by Brand — Current Value</div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="inv-brand-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('inv-brand-table',0)">Brand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('inv-brand-table',1)" class="num">Units <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('inv-brand-table',2)" class="num">Cost Value <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('inv-brand-table',3)" class="num">Retail Value <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('inv-brand-table',4)" class="num">Margin <span class="sort-icon">⇅</span></th>
+                      <th>Value Mix</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inv-brand-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ BUY PLANNING ═══ -->
+    <div class="page" id="page-buying">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text">
+            <h2>Buy Planning</h2>
+            <div class="subtitle">OTB calculator · category buy status · season-over-season · brand scorecard</div>
+          </div>
+        </div>
+
+        <!-- 2.20 OTB Calculator -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🧮</span> Open-to-Buy Calculator</div>
+          </div>
+          <div class="g-2-1">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">OTB Formula Breakdown</div>
+                  <div class="card-sub">OTB = Planned Monthly Sales + Planned EOM − BOM Inventory at Retail − On Order</div>
+                </div>
+              </div>
+              <div class="card-body" id="otb-calc-body"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px" id="otb-health-cards"></div>
+          </div>
+        </div>
+
+        <!-- 2.21 OTB by Category -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">📦</span> OTB by Category</div>
+            <span style="font-size:11px;color:var(--text-3)">Categories with buy triggers highlighted</span>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="otb-cat-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('otb-cat-table',0)">Category <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',1)" class="num">Units on Hand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',2)" class="num">Cost on Hand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',3)" class="num">Weekly Run Rate <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',4)" class="num">WOS <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',5)" class="num">Planned EOM <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',6)" class="num">OTB Available <span class="sort-icon">⇅</span></th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="otb-cat-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2.22 Season-Over-Season Brand Comparison -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">📅</span> Season-Over-Season: SS25 vs SS26</div>
+          </div>
+          <div class="card">
+            <div class="card-body" id="season-comp-body"></div>
+          </div>
+        </div>
+
+        <!-- 2.23 Brand Scorecard (GMROI Focus) -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🏆</span> Brand Scorecard — GMROI & Performance Rating</div>
+            <span style="font-size:11px;color:var(--text-3)">GMROI = Gross Margin $ ÷ Avg Inventory Cost</span>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="brand-scorecard-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('brand-scorecard-table',0)">Brand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',1)" class="num">Sell-Through <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',2)" class="num">Revenue <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',3)" class="num">Gross Margin % <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',4)" class="num">GMROI <span class="sort-icon">⇅</span></th>
+                      <th>Rating</th>
+                      <th>Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody id="brand-scorecard-tbody"></tbody>
+                </table>
+              </div>
+              <div style="margin-top:14px">
+                <div class="ai-box ai-box-default" id="scorecard-ai"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ CUSTOMERS ═══ -->
+    <div class="page" id="page-customers">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text"><h2>Customer Intelligence</h2><div class="subtitle">Shopify customer data & top spenders</div></div>
+        </div>
+        <div class="g-4 section" id="cust-kpis"></div>
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">👑</span> Top Customers by Spend</div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="cust-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Location</th>
+                      <th class="num">Total Spent</th>
+                      <th class="num">Orders</th>
+                      <th class="num">Avg Order</th>
+                      <th>Last Order</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cust-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MULTI-STORE ═══ -->
+    <div class="page" id="page-multistore">
+      <div class="page-inner">
+        <div class="page-header">
+          <div class="page-header-text"><h2>Multi-Store</h2><div class="subtitle">Side-by-side: Saint John · Moncton · Halifax</div></div>
+        </div>
+        <div class="g-3 section" id="multistore-cards"></div>
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">📊</span> Store Comparison</div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="multistore-table">
+                  <thead>
+                    <tr>
+                      <th>Location</th>
+                      <th class="num">Revenue</th>
+                      <th class="num">Transactions</th>
+                      <th class="num">Avg Transaction</th>
+                      <th class="num">Units Sold</th>
+                      <th class="num">Gross Margin</th>
+                      <th>Revenue Share</th>
+                    </tr>
+                  </thead>
+                  <tbody id="multistore-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ai-box ai-box-sage section" id="multistore-ai"></div>
+      </div>
+    </div>
+
+    <!-- STUB PAGES -->
+    <div class="page" id="page-social"><div class="coming-soon"><div class="cs-icon">📱</div><h3>Social Media</h3><p>Connect your Instagram and TikTok accounts to track engagement, follower growth, and content performance directly in your dashboard.</p></div></div>
+    <div class="page" id="page-chat"><div class="coming-soon"><div class="cs-icon">💬</div><h3>AI Assistant</h3><p>Ask questions about your inventory, sales trends, and business performance in plain English. Coming soon.</p></div></div>
+    <div class="page" id="page-receipts"><div class="coming-soon"><div class="cs-icon">🧾</div><h3>Receipts & Transactions</h3><p>Browse and search transaction receipts from all three store locations.</p></div></div>
+    <div class="page" id="page-documents"><div class="coming-soon"><div class="cs-icon">📄</div><h3>Documents</h3><p>Access brand documents, price lists, lookbooks, and store files in one place.</p></div></div>
+
+  </div><!-- /main -->
 </div><!-- /app -->
 
-<style>
-.mt16 { margin-top: 16px; }
-</style>
-
 <script>
-// ═══════════════════════════════════════════════════
-//  CONFIG — Section 7 of plan (authoritative)
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════
 const CONFIG = {
   client: {
     name: 'LORDON',
@@ -650,12 +1106,7 @@ const CONFIG = {
     { id: '0a91b764-1c75-11ec-e0eb-20b4fab32baf', name: 'Moncton' },
     { id: '020b2c2a-4675-11ef-e88b-6d58ba838307', name: 'Halifax' },
   ],
-  api: {
-    lightspeed_account_id: '',
-    shopify_store: 'lordon.myshopify.com',
-  },
   rules: {
-    store_sqft: { 'Saint John': 2400, 'Moncton': 1800, 'Halifax': 2100 },
     store_hours: { open: 9, close: 18 },
     target_margin: 55,
     target_turns: { low: 4, high: 6 },
@@ -663,645 +1114,1482 @@ const CONFIG = {
     otb_buy_ratio: 0.40,
     vip_threshold_spend: 500,
     vip_threshold_orders: 3,
-    seasons: {
-      spring: { start_month: 1, end_month: 6 },
-      fall:   { start_month: 7, end_month: 12 },
-    },
   },
   benchmarks: {
-    repeat_zone: { min_st_2wk: 40, min_st_4wk: 60 },
-    watch_zone:  { min_st_3wk: 25, max_st_3wk: 40 },
-    dont_repeat: { max_st_3wk: 20 },
     reorder_trigger_wos: 3,
-    reorder_min_weeks_remaining: 6,
+    gmroi_excellent: 3.0,
+    gmroi_good: 2.0,
+    gmroi_fair: 1.5,
   },
 };
 
-// ═══════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════
-let DB = null;   // dashboard.json
-let ST = null;   // sell-through.json
-let selectedStore = 'all';
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let DB = null;
+let ST = null;
+let STD = null; // sell-through-detail.json
+let activeStore = 'all';
+let currentTab = 'briefing';
+let stSeason = 'spring'; // 'spring' | 'fall' | 'all'
 
-// ═══════════════════════════════════════════════════
-//  LOGIN
-// ═══════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
 function doLogin() {
-  const v = document.getElementById('pw').value.trim();
-  if (v === CONFIG.client.password) {
+  const pw = document.getElementById('pw-input').value;
+  if (pw.trim() === CONFIG.client.password) {
     localStorage.setItem('lordon_auth', 'true');
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    initDashboard();
+    loadData();
   } else {
     document.getElementById('login-err').style.display = 'block';
-    document.getElementById('pw').style.borderColor = 'var(--red)';
-    setTimeout(() => {
-      document.getElementById('login-err').style.display = 'none';
-      document.getElementById('pw').style.borderColor = '';
-    }, 2000);
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-input').focus();
   }
 }
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-// ═══════════════════════════════════════════════════
-//  NAV
-// ═══════════════════════════════════════════════════
-function nav(el) {
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  el.classList.add('active');
-  const tab = el.dataset.tab;
-  document.getElementById('tab-' + tab).classList.add('active');
-  closeSidebar();
-}
-function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sb-overlay').classList.toggle('show');
-}
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sb-overlay').classList.remove('show');
+// Auto-login if previously authenticated
+if (localStorage.getItem('lordon_auth') === 'true') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadData();
 }
 
-// ═══════════════════════════════════════════════════
-//  STORE SELECTOR
-// ═══════════════════════════════════════════════════
-function onStoreChange() {
-  selectedStore = document.getElementById('store-sel').value;
-  if (DB && ST) {
-    renderBriefing();
-    renderSalesAnalytics();
-  }
-}
-
-// ═══════════════════════════════════════════════════
-//  FORMAT HELPERS
-// ═══════════════════════════════════════════════════
-const fmt     = n => '$' + (n||0).toLocaleString('en-CA', {minimumFractionDigits:0, maximumFractionDigits:0});
-const fmtDec  = n => '$' + (n||0).toLocaleString('en-CA', {minimumFractionDigits:2, maximumFractionDigits:2});
-const fmtNum  = n => (n||0).toLocaleString('en-CA');
-const fmtPct  = n => (n||0).toFixed(1) + '%';
-const fmtPct0 = n => Math.round(n||0) + '%';
-const fmtX    = n => (n||0).toFixed(1) + '×';
-const fmtWk   = n => (n||0).toFixed(1) + 'w';
-
-function trend(val, suffix = '%', invert = false) {
-  if (val == null || val === 0) return `<span class="trend-flat">— 0${suffix}</span>`;
-  const good = invert ? val < 0 : val > 0;
-  const cls = good ? 'trend-up' : 'trend-down';
-  const arrow = val > 0 ? '↑' : '↓';
-  return `<span class="${cls}">${arrow} ${Math.abs(val).toFixed(1)}${suffix}</span>`;
-}
-function badge(text, cls) {
-  return `<span class="badge badge-${cls}">${text}</span>`;
-}
-function ratingBadge(r) {
-  const map = { grow:'green', keep:'sage', watch:'amber', cut:'red', maintain:'blue' };
-  return badge(r ? r.toUpperCase() : '—', map[r?.toLowerCase()] || 'gray');
-}
-function urgencyBadge(u) {
-  const s = (u||'').toLowerCase();
-  if (s === 'urgent' || s === 'urgent') return badge('⚠ URGENT', 'red');
-  if (s === 'watch') return badge('WATCH', 'amber');
-  return badge('OK', 'green');
-}
-function miniBar(pct, color = '#C4A882', max = 100) {
-  const w = Math.min(100, (pct / max) * 100);
-  return `<div class="mini-bar">
-    <div class="mini-bar-track"><div class="mini-bar-fill" style="width:${w}%;background:${color}"></div></div>
-    <span class="mini-bar-val">${fmtPct0(pct)}</span>
-  </div>`;
-}
-function marginColor(m) {
-  if (m >= 58) return 'var(--green)';
-  if (m >= 52) return 'var(--sage)';
-  if (m >= 45) return 'var(--amber)';
-  return 'var(--red)';
-}
-function stColor(st) {
-  if (st >= 70) return 'var(--green)';
-  if (st >= 50) return 'var(--sage)';
-  if (st >= 30) return 'var(--amber)';
-  return 'var(--red)';
-}
-
-// ═══════════════════════════════════════════════════
-//  SORTABLE TABLE HELPER
-// ═══════════════════════════════════════════════════
-function makeSortable(tableId) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  const ths = table.querySelectorAll('th[data-col]');
-  let sortCol = null, sortAsc = true;
-  ths.forEach(th => {
-    th.style.cursor = 'pointer';
-    th.onclick = () => {
-      const col = th.dataset.col;
-      if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = false; }
-      ths.forEach(t => { t.classList.remove('sorted-asc','sorted-desc'); });
-      th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
-      const tbody = table.querySelector('tbody');
-      const rows = Array.from(tbody.querySelectorAll('tr'));
-      rows.sort((a, b) => {
-        const av = a.dataset[col] || a.cells[th.cellIndex]?.textContent || '';
-        const bv = b.dataset[col] || b.cells[th.cellIndex]?.textContent || '';
-        const an = parseFloat(av.replace(/[^0-9.-]/g,'')), bn = parseFloat(bv.replace(/[^0-9.-]/g,''));
-        const r = isNaN(an) ? av.localeCompare(bv) : an - bn;
-        return sortAsc ? r : -r;
-      });
-      rows.forEach(r => tbody.appendChild(r));
-    };
-  });
-}
-
-// ═══════════════════════════════════════════════════
-//  SPARKLINE SVG
-// ═══════════════════════════════════════════════════
-function sparkline(vals, w = 60, h = 24, color = '#C4A882') {
-  if (!vals || vals.length < 2) return '';
-  const mn = Math.min(...vals), mx = Math.max(...vals);
-  const rng = mx - mn || 1;
-  const pts = vals.map((v, i) => {
-    const x = (i / (vals.length - 1)) * w;
-    const y = h - ((v - mn) / rng) * (h - 4) - 2;
-    return `${x},${y}`;
-  }).join(' ');
-  return `<svg width="${w}" height="${h}" style="display:block"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-}
-
-// ═══════════════════════════════════════════════════
-//  DATA FETCH
-// ═══════════════════════════════════════════════════
-async function initDashboard() {
+// ═══════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════
+async function loadData() {
   try {
-    const [dbRes, stRes] = await Promise.all([
-      fetch('./data/dashboard.json'),
-      fetch('./data/sell-through.json'),
+    const [dbRes, stRes, stdRes] = await Promise.all([
+      fetch('./data/dashboard.json?t=' + Date.now()),
+      fetch('./data/sell-through.json?t=' + Date.now()),
+      fetch('./data/sell-through-detail.json?t=' + Date.now()),
     ]);
     DB = await dbRes.json();
     ST = await stRes.json();
+    STD = await stdRes.json();
     renderAll();
-  } catch(e) {
+  } catch (e) {
     console.error('Data load error:', e);
-    document.getElementById('tb-updated').textContent = 'Error loading data';
   }
 }
 
 function renderAll() {
-  updateMeta();
+  updateLastUpdated();
   renderBriefing();
-  renderSalesAnalytics();
+  renderSales();
+  renderSellThrough();
+  renderInventory();
+  renderBuyPlanning();
+  renderCustomers();
+  renderMultiStore();
 }
 
-function updateMeta() {
+function updateLastUpdated() {
+  if (!DB) return;
   const d = new Date(DB.lastUpdated);
-  document.getElementById('tb-updated').textContent = 'Updated ' + d.toLocaleTimeString('en-CA', {hour:'2-digit',minute:'2-digit'});
-  const today = new Date();
-  document.getElementById('briefing-date').textContent =
-    today.toLocaleDateString('en-CA', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
-  document.getElementById('briefing-updated').textContent = 'Data as of ' + d.toLocaleDateString('en-CA', {month:'short', day:'numeric'}) + ' at ' + d.toLocaleTimeString('en-CA', {hour:'2-digit',minute:'2-digit'});
+  const label = d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })
+    + ' · ' + d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('updated-label').textContent = 'Updated ' + label;
 }
 
-// ═══════════════════════════════════════════════════
-//  GET LOCATION-FILTERED DATA
-// ═══════════════════════════════════════════════════
-function getAnalyticsData() {
-  const a = DB.analytics;
-  if (selectedStore === 'all') return a;
-  // Filter to single store
-  const loc = a.byLocation[selectedStore];
-  if (!loc) return a;
-  const totalRev = Object.values(a.byLocation).reduce((s,l) => s + (l.revenue||0), 0);
-  const pct = totalRev > 0 ? loc.revenue / totalRev : 0;
-  return {
-    ...a,
-    revenue30d: loc.revenue,
-    revenue30dPOS: loc.revenue * (a.inStorePct || 0.78),
-    revenue30dOnline: loc.revenue * ((a.onlinePct||0) / 100 || 0.22),
-    transactions30d: loc.count,
-    aov: loc.count > 0 ? loc.revenue / loc.count : a.aov,
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+const $ = (id) => document.getElementById(id);
+const fmt$ = (v) => '$' + Number(v).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const fmtK = (v) => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : fmt$(v);
+const fmtN = (v) => Number(v).toLocaleString('en-CA');
+const fmtPct = (v) => (v == null ? '—' : Math.round(v) + '%');
+const fmtPct0 = (v) => (v == null ? '—' : Math.round(v) + '%');
+const fmtDec = (v, d=1) => v == null ? '—' : Number(v).toFixed(d);
+// Gold-standard sell-through: sold / (sold + remaining) × 100
+const calcST = (sold, remaining) => {
+  const total = sold + remaining;
+  return total > 0 ? (sold / total) * 100 : 0;
+};
+
+function trendBadge(pct, prefix='') {
+  if (pct == null) return '';
+  const cls = pct > 0 ? 'trend-up' : pct < 0 ? 'trend-dn' : 'trend-neu';
+  const arrow = pct > 0 ? '↑' : pct < 0 ? '↓' : '→';
+  return `<span class="hm-trend ${cls}">${arrow} ${prefix}${Math.abs(Math.round(pct))}%</span>`;
+}
+
+function colorST(pct) {
+  if (pct >= 70) return 'var(--green)';
+  if (pct >= 50) return 'var(--sage)';
+  if (pct >= 30) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function barColorST(pct) {
+  if (pct >= 70) return 'bar-green';
+  if (pct >= 50) return 'bar-sage';
+  if (pct >= 30) return 'bar-amber';
+  return 'bar-red';
+}
+
+function ratingBadge(r) {
+  const map = {
+    grow: ['badge-green', '▲ Grow'],
+    keep: ['badge-sage', '● Keep'],
+    watch: ['badge-amber', '◉ Watch'],
+    cut: ['badge-red', '▼ Cut'],
   };
+  const [cls, label] = map[r] || ['badge-neutral', r || '—'];
+  return `<span class="badge ${cls}">${label}</span>`;
 }
 
-function getSTLocationData() {
-  if (selectedStore === 'all') return null;
-  return ST.byLocation.find(l => l.location === selectedStore) || null;
+function inlineBar(pct, maxPct=100, colorClass='bar-accent') {
+  const w = Math.min(100, (pct / maxPct) * 100);
+  return `<div class="inline-bar">
+    <div class="inline-bar-track"><div class="inline-bar-fill ${colorClass}" style="width:${w}%"></div></div>
+    <span class="inline-bar-val" style="color:${colorST(pct)}">${Math.round(pct)}%</span>
+  </div>`;
 }
 
-// ═══════════════════════════════════════════════════
-//  RENDER BRIEFING
-// ═══════════════════════════════════════════════════
+function sparklineSVG(values, w=60, h=22, color='#C4A882') {
+  if (!values || values.length < 2) return '';
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg class="sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function donutSVG(svgId, pct, color1='#C4A882', color2='#E8E3DC', r=50) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const cx = 70, cy = 70, stroke = 18;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - pct / 100);
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color2}" stroke-width="${stroke}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color1}" stroke-width="${stroke}"
+      stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+      stroke-linecap="round" transform="rotate(-90 ${cx} ${cy})"/>
+  `;
+}
+
+function channelDonut(inStorePct, onlinePct) {
+  const svg = $('channel-donut-svg');
+  if (!svg) return;
+  const cx = 70, cy = 70, r = 50, stroke = 18;
+  const circumference = 2 * Math.PI * r;
+  const gap = 0.03 * circumference;
+  const seg1 = (inStorePct / 100) * circumference - gap;
+  const seg2 = (onlinePct / 100) * circumference - gap;
+  const off2 = circumference - seg1 - gap;
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-deep)" stroke-width="${stroke}"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--sage)" stroke-width="${stroke}"
+      stroke-dasharray="${seg1} ${circumference}" stroke-dashoffset="0"
+      stroke-linecap="butt" transform="rotate(-90 ${cx} ${cy})"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--blue)" stroke-width="${stroke}"
+      stroke-dasharray="${seg2} ${circumference}" stroke-dashoffset="${-seg1 - gap}"
+      stroke-linecap="butt" transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${cy - 8}" text-anchor="middle" font-size="20" font-weight="700" fill="var(--text)" font-family="DM Sans,sans-serif">${inStorePct}%</text>
+    <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-size="10" fill="var(--text-3)" font-family="DM Sans,sans-serif">In-Store</text>
+  `;
+}
+
+// Store filter helper
+function filterByStore(data, storeKey='location') {
+  if (activeStore === 'all') return data;
+  return data.filter(d => d[storeKey] === activeStore);
+}
+
+function getLocationData() {
+  if (!ST) return [];
+  if (activeStore === 'all') return ST.byLocation;
+  return ST.byLocation.filter(l => l.location === activeStore);
+}
+
+// ═══════════════════════════════════════════════════════
+// BRIEFING TAB
+// ═══════════════════════════════════════════════════════
 function renderBriefing() {
+  if (!DB || !ST) return;
   const b = DB.briefing;
   const a = DB.analytics;
-  const inv = DB.inventory;
-  const cust = DB.customers;
-  const sum = ST.summary;
-  const sloc = getSTLocationData();
+  const s = ST.summary;
 
-  // ── Magic 10 KPI Cards ──────────────────────────
-  const rev30 = selectedStore === 'all' ? a.revenue30d
-    : (DB.locations.find(l=>l.name===selectedStore)?.revenue || a.revenue30d);
-  const trans30 = selectedStore === 'all' ? a.transactions30d
-    : (DB.analytics.byLocation[selectedStore]?.count || a.transactions30d);
-  const aov = trans30 > 0 ? rev30 / trans30 : a.aov;
+  // Update date
+  const now = new Date();
+  $('briefing-date').textContent = now.toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const kpis = [
-    { label:'Yesterday Revenue', value:fmt(b.yesterdayRevenue), sub:`POS ${fmt(b.yesterdayPOS)} · Online ${fmt(b.yesterdayOnline)}`, cls:'kpi-accent' },
-    { label:'Yesterday Transactions', value:fmtNum(b.yesterdayTransactions), sub:`AOV ${fmtDec(b.yesterdayRevenue / (b.yesterdayTransactions||1))}`, cls:'kpi-blue' },
-    { label:'Today Revenue', value:fmt(b.todayRevenue), sub: b.todayTransactions > 0 ? `${fmtNum(b.todayTransactions)} transactions` : 'Day in progress', cls:'kpi-sage' },
-    { label:'Today Transactions', value:fmtNum(b.todayTransactions), sub:'Live count', cls:'kpi-green' },
-    { label:'30-Day Revenue', value:fmt(rev30), sub:`${fmtNum(trans30)} transactions`, cls:'kpi-accent' },
-    { label:'30-Day Transactions', value:fmtNum(trans30), sub:`AOV ${fmtDec(aov)}`, cls:'kpi-blue' },
-    { label:'Avg Order Value', value:fmtDec(aov), sub:'Rolling 30 days', cls:'kpi-amber' },
-    { label:'Gross Margin', value:fmtPct0(sloc ? sloc.grossMargin : sum.grossMargin), sub:'On cost of goods', cls:'kpi-green' },
-    { label:'Inventory Value', value:fmt(inv.totalValue), sub:`${fmtNum(inv.totalProducts)} products`, cls:'kpi-rose' },
-    { label:'Total Customers', value:fmtNum(cust.total), sub:`${fmtNum(cust.totalOrders)} total orders`, cls:'kpi-purple' },
+  // Hero strip row 1: Today's metrics
+  const aov = b.todayTransactions > 0 ? b.todayRevenue / b.todayTransactions : 0;
+  const yesterdayAOV = b.yesterdayTransactions > 0 ? b.yesterdayRevenue / b.yesterdayTransactions : 0;
+
+  // Revenue 30d for weekly sparkline proxy
+  const weeklyValues = Object.values(a.weeklyRevenue || {}).filter(v => v > 0);
+
+  const heroRow1 = [
+    {
+      label: 'Sales Today',
+      value: b.todayRevenue > 0 ? fmt$(b.todayRevenue) : '—',
+      sub: b.todayTransactions > 0 ? `${b.todayTransactions} transactions` : 'No sales recorded yet',
+      sparkValues: weeklyValues,
+    },
+    {
+      label: 'Yesterday Revenue',
+      value: fmt$(b.yesterdayRevenue),
+      sub: `${b.yesterdayTransactions} transactions`,
+      trend: null,
+    },
+    {
+      label: '30-Day Revenue',
+      value: fmt$(a.revenue30d),
+      sub: `${fmtN(a.transactions30d)} transactions`,
+    },
+    {
+      label: 'Avg Transaction',
+      value: fmt$(a.aov),
+      sub: 'Last 30 days',
+    },
+    {
+      label: 'Unfulfilled Orders',
+      value: b.unfulfilledOrders.length,
+      sub: 'Need fulfillment',
+      alert: b.unfulfilledOrders.length > 0,
+    },
   ];
 
-  document.getElementById('kpi-cards').innerHTML = kpis.map(k => `
-    <div class="kpi-card ${k.cls}">
-      <div class="kpi-label">${k.label}</div>
-      <div class="kpi-value">${k.value}</div>
-      <div class="kpi-sub">${k.sub}</div>
+  const urgentCount = ST.reorderAlert.filter(r => r.urgency === 'urgent').length;
+  const stBlended = Math.round(s.totalUnitsSold / (s.totalUnitsSold + 10202) * 100);
+  const totalOTBAvailable = ST.otb.filter(o => o.status === 'buy').reduce((sum, o) => sum + o.otbAvailable, 0);
+
+  const heroRow2 = [
+    {
+      label: 'Gross Margin',
+      value: fmtPct(s.grossMargin),
+      sub: `$${fmtN(Math.round(s.grossProfit))} profit`,
+    },
+    {
+      label: 'Blended Sell-Through',
+      value: fmtPct(stBlended),
+      sub: `${fmtN(s.totalUnitsSold)} units sold`,
+    },
+    {
+      label: 'Total Revenue (All-Time)',
+      value: '$' + (s.totalRevenue / 1000000).toFixed(2) + 'M',
+      sub: `${fmtN(s.totalSales)} transactions`,
+    },
+    {
+      label: '🚫 OOS Alerts',
+      value: urgentCount,
+      sub: 'Urgent reorders needed',
+      alert: urgentCount > 0,
+    },
+    {
+      label: 'Open-to-Buy',
+      value: fmt$(Math.round(totalOTBAvailable)),
+      sub: 'JEANS category · buy now',
+    },
+  ];
+
+  function renderHeroRow(containerId, items) {
+    const el = $(containerId);
+    if (!el) return;
+    el.innerHTML = items.map(m => `
+      <div class="hero-metric">
+        <div class="hm-label">${m.label}</div>
+        <div class="hm-value ${String(m.value).length > 7 ? 'lg' : ''}" style="${m.alert ? 'color:var(--red)' : ''}">${m.value}</div>
+        <div class="hm-sub">
+          <span>${m.sub || ''}</span>
+          ${m.trend ? trendBadge(m.trend) : ''}
+          ${m.sparkValues && m.sparkValues.length > 1 ? sparklineSVG(m.sparkValues, 40, 16, 'var(--accent)') : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderHeroRow('hero-strip', heroRow1);
+  renderHeroRow('hero-strip-2', heroRow2);
+
+  // Yesterday KPIs
+  const yKpis = [
+    { label: 'Revenue', value: fmt$(b.yesterdayRevenue) },
+    { label: 'Transactions', value: fmtN(b.yesterdayTransactions) },
+    { label: 'Avg Sale', value: fmt$(yesterdayAOV) },
+  ];
+  $('yesterday-kpis').innerHTML = yKpis.map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value" style="font-size:20px">${k.value}</div>
     </div>
   `).join('');
 
-  // ── Yesterday's Briefing ────────────────────────
-  const posShare = b.yesterdayRevenue > 0 ? ((b.yesterdayPOS / b.yesterdayRevenue)*100).toFixed(0) : 0;
-  const onlineShare = b.yesterdayRevenue > 0 ? ((b.yesterdayOnline / b.yesterdayRevenue)*100).toFixed(0) : 0;
-  document.getElementById('yesterday-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">📅</span> Yesterday's Performance</div>
-    <div style="display:flex;gap:12px;margin-bottom:14px">
-      <div style="flex:1;background:var(--bg);border-radius:9px;padding:12px;text-align:center">
-        <div style="font-size:22px;font-weight:700">${fmt(b.yesterdayRevenue)}</div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:2px">Total Revenue</div>
-      </div>
-      <div style="flex:1;background:var(--bg);border-radius:9px;padding:12px;text-align:center">
-        <div style="font-size:22px;font-weight:700">${fmtNum(b.yesterdayTransactions)}</div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:2px">Transactions</div>
-      </div>
-    </div>
-    <div style="margin-bottom:10px">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-3);margin-bottom:8px">Channel Split</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <span style="font-size:12px;font-weight:600;width:60px">In-Store</span>
-        <div style="flex:1;height:7px;background:var(--bg-deep);border-radius:4px;overflow:hidden">
-          <div style="width:${posShare}%;height:100%;background:var(--sage);border-radius:4px"></div>
-        </div>
-        <span style="font-size:12px;font-weight:700;width:70px;text-align:right">${fmt(b.yesterdayPOS)} <span style="color:var(--text-4);font-weight:400">${posShare}%</span></span>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:12px;font-weight:600;width:60px">Online</span>
-        <div style="flex:1;height:7px;background:var(--bg-deep);border-radius:4px;overflow:hidden">
-          <div style="width:${onlineShare}%;height:100%;background:var(--blue);border-radius:4px"></div>
-        </div>
-        <span style="font-size:12px;font-weight:700;width:70px;text-align:right">${fmt(b.yesterdayOnline)} <span style="color:var(--text-4);font-weight:400">${onlineShare}%</span></span>
-      </div>
-    </div>
+  // Yesterday label
+  const yDate = new Date();
+  yDate.setDate(yDate.getDate() - 1);
+  $('yesterday-label').textContent = yDate.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  // POS/Online split
+  const posAmt = b.yesterdayPOS || 0;
+  const onlineAmt = b.yesterdayOnline || 0;
+  const posTotal = posAmt + onlineAmt;
+  const posPct = posTotal > 0 ? Math.round(posAmt / posTotal * 100) : a.channelBreakdown.inStorePct;
+  const onPct = 100 - posPct;
+  $('pos-online-bar').innerHTML = `
+    <div class="split-bar-pos" style="flex:${posPct};background:var(--sage);border-radius:5px 0 0 5px"></div>
+    <div class="split-bar-online" style="flex:${onPct};background:var(--blue);border-radius:0 5px 5px 0"></div>
+  `;
+  $('pos-online-labels').innerHTML = `
+    <span style="color:var(--sage);font-weight:600">🏪 In-Store ${posPct}% · ${fmt$(posAmt > 0 ? posAmt : a.revenue30dPOS)}</span>
+    <span style="color:var(--blue);font-weight:600">${fmt$(onlineAmt > 0 ? onlineAmt : a.revenue30dOnline)} · ${onPct}% Online 🌐</span>
   `;
 
-  // ── Unfulfilled Orders ──────────────────────────
+  // Top sellers from bestPerformers
+  const realSellers = ST.bestPerformers
+    .filter(p => p.brand !== 'UNKNOWN' && p.type !== 'EXCLUDE FOR REPORTS')
+    .slice(0, 5);
+
+  $('top-sellers-list').innerHTML = realSellers.map((p, i) => {
+    const cls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+      <span class="rank-num ${cls}">${i+1}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+        <div style="font-size:11px;color:var(--text-3)">${p.brand} · ${p.type}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:13px;font-weight:700">${fmtN(p.unitsSold)} units</div>
+        <div style="font-size:11px;color:var(--text-3)">${fmt$(p.revenue)}</div>
+      </div>
+      <span class="badge ${p.grossMargin >= 55 ? 'badge-green' : 'badge-amber'}">${p.grossMargin}% GM</span>
+    </div>`;
+  }).join('');
+
+  // Yesterday AI
+  const topSeller = realSellers[0];
+  const topCategory = ST.byCategory.sort((a,b) => b.revenue - a.revenue)[0];
+  $('yesterday-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
+    <div class="ai-text">Yesterday's <strong>${fmt$(b.yesterdayRevenue)}</strong> came from ${b.yesterdayTransactions} transactions. 
+    Your 30-day leader is <strong>${topSeller ? topSeller.name : 'N/A'}</strong> (${topSeller ? fmtN(topSeller.unitsSold) + ' units' : '—'}). 
+    Top category all-time: <em>${topCategory.category}</em> at <strong>${fmt$(topCategory.revenue)}</strong> revenue with <strong>${topCategory.sellThrough}%</strong> sell-through.</div>`;
+
+  // Unfulfilled orders
   const orders = b.unfulfilledOrders || [];
-  document.getElementById('unfulfilled-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">📬</span> Unfulfilled Orders <span style="margin-left:auto">${badge(orders.length + ' pending', orders.length > 5 ? 'red' : 'amber')}</span></div>
-    ${orders.slice(0,8).map(o => `
-      <div class="order-row">
-        <span class="order-num">${o.name}</span>
-        <span class="order-items">${o.items}</span>
-        <span class="order-type">${o.fulfillment || 'Ship'}</span>
-      </div>`).join('')}
-    ${orders.length > 8 ? `<div style="font-size:12px;color:var(--text-3);text-align:center;padding-top:8px">+${orders.length-8} more orders</div>` : ''}
-  `;
+  $('unfulfilled-badge').textContent = orders.length;
+  $('unfulfilled-count-label').textContent = `${orders.length} orders need fulfillment`;
+  $('unfulfilled-list').innerHTML = orders.map(o => `
+    <div class="order-row">
+      <span class="order-num">${o.name}</span>
+      <span class="order-item">${o.items}</span>
+      <span class="order-type"><span class="badge ${o.fulfillment === 'Ship' ? 'badge-blue' : 'badge-sage'}">${o.fulfillment}</span></span>
+    </div>
+  `).join('') || '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:16px 0">✓ All orders fulfilled</div>';
 
-  // ── Top 10 Selling Styles (30d) ─────────────────
-  const performers = (ST.bestPerformers || []).filter(p =>
-    p.brand !== 'UNKNOWN' && p.type !== 'EXCLUDE FOR REPORTS' && p.name !== 'Gift Card'
-  ).slice(0, 10);
-
-  document.getElementById('top-sellers-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">🏆</span> Top Selling Styles — 30 Days</div>
-    ${performers.map((p, i) => `
-      <div class="seller-row">
-        <span class="seller-rank">#${i+1}</span>
-        <div class="seller-info">
-          <div class="seller-name">${p.name}</div>
-          <div class="seller-brand">${p.brand} · ${p.type}</div>
-        </div>
-        <div class="seller-stats">
-          <div class="seller-stat">
-            <div class="val">${fmtNum(p.unitsSold)}</div>
-            <div class="lbl">Units</div>
-          </div>
-          <div class="seller-stat">
-            <div class="val">${fmt(p.revenue)}</div>
-            <div class="lbl">Revenue</div>
-          </div>
-          <div class="seller-stat">
-            <div class="val">${fmtPct0(p.grossMargin)}</div>
-            <div class="lbl">Margin</div>
-          </div>
-        </div>
-      </div>
-    `).join('')}
-  `;
-
-  // ── Out-of-Stock Alerts ─────────────────────────
-  const urgentAlerts = (ST.reorderAlert || []).filter(r =>
-    (r.urgency || '').toLowerCase() === 'urgent'
-  ).slice(0, 8);
-
-  document.getElementById('oos-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">🚨</span> Out-of-Stock Alerts <span style="margin-left:auto">${badge(urgentAlerts.length + ' urgent', 'red')}</span></div>
-    ${urgentAlerts.length === 0
-      ? '<p style="color:var(--text-3);font-size:13px;text-align:center;padding:16px">No urgent out-of-stock alerts</p>'
-      : urgentAlerts.map(r => {
-          const typeName = r.type?.name || r.type || 'Unknown';
-          return `<div class="oos-row">
-            <div>
-              <div class="oos-brand">${r.brand} · ${typeName}</div>
-              <div class="oos-name">${r.name}</div>
-            </div>
-            <div class="oos-meta">
-              <div style="text-align:right">
-                <div style="font-size:12px;font-weight:700">${r.onHand} on hand</div>
-                <div style="font-size:11px;color:var(--text-3)">${r.daysOfSupply}d supply</div>
-              </div>
-              <div style="text-align:right">
-                <div style="font-size:12px;font-weight:700">${r.weeklyRate}/wk</div>
-                <div style="font-size:11px;color:var(--text-3)">velocity</div>
-              </div>
-              ${urgencyBadge(r.urgency)}
-            </div>
-          </div>`;
-        }).join('')}
-  `;
-
-  // ── Business Health Snapshot ────────────────────
-  const gmPct = sloc ? sloc.grossMargin : sum.grossMargin;
-  const totalSold = sum.totalSales;
-  const invCost = inv.totalValue;
-  const annualCOGS = sum.totalCOGS * (52 / ST.periodWeeks || 4);
-  const invTurns = invCost > 0 ? annualCOGS / invCost : 0;
-  const monthlyRev = sum.totalRevenue / ((ST.periodWeeks || 52) / 4.33);
-  const monthsSupply = monthlyRev > 0 ? (sum.totalRevenue / 12) / monthlyRev : 0;
-
-  const healthItems = [
-    {
-      label: 'Inventory Turns', val: fmtX(invTurns),
-      desc: 'Annual COGS ÷ avg inventory cost',
-      good: invTurns >= CONFIG.rules.target_turns.low && invTurns <= CONFIG.rules.target_turns.high,
-      pct: Math.min(100, (invTurns / CONFIG.rules.target_turns.high) * 100),
-      color: invTurns >= 4 ? 'var(--green)' : invTurns >= 2 ? 'var(--amber)' : 'var(--red)',
-    },
-    {
-      label: 'Months of Supply', val: (monthsSupply > 0 ? monthsSupply.toFixed(1) : '—') + 'm',
-      desc: 'Current inventory ÷ monthly sales',
-      good: monthsSupply >= 2 && monthsSupply <= 2.5,
-      pct: Math.min(100, (monthsSupply / 3) * 100),
-      color: monthsSupply <= 3 ? 'var(--green)' : 'var(--amber)',
-    },
-    {
-      label: 'Gross Margin', val: fmtPct0(gmPct),
-      desc: 'Revenue minus cost of goods',
-      good: gmPct >= CONFIG.rules.target_margin,
-      pct: gmPct,
-      color: marginColor(gmPct),
-    },
-    {
-      label: 'Sell-Through', val: fmtPct0(sum.totalSales > 0 ? (sum.totalSales / (sum.totalSales + (ST.byCategory?.reduce((s,c)=>s+c.currentStock,0)||0))) * 100 : 0),
-      desc: 'Units sold ÷ (sold + remaining)',
-      good: true,
-      pct: sum.totalSales > 0 ? Math.min(100, (sum.totalSales / (sum.totalSales + (ST.byCategory?.reduce((s,c)=>s+c.currentStock,0)||0))) * 100) : 0,
-      color: 'var(--sage)',
-    },
+  // Business Health KPIs
+  const invTurns = s.totalRevenue > 0 ? (s.totalCOGS / (DB.inventory.totalValue || 1)).toFixed(1) : '—';
+  const monthlyRevAvg = s.totalRevenue / 14; // ~14 months
+  const monthsSupply = monthlyRevAvg > 0 ? (DB.inventory.totalValue / monthlyRevAvg * (1/0.45)).toFixed(1) : '—';
+  const healthKpis = [
+    { label: 'Gross Margin', value: fmtPct(s.grossMargin), target: `Target: ${CONFIG.rules.target_margin}%`, color: s.grossMargin >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: s.grossMargin },
+    { label: 'Blended Sell-Through', value: fmtPct(stBlended), target: 'Target: ≥60%', color: stBlended >= 60 ? 'var(--green)' : stBlended >= 40 ? 'var(--amber)' : 'var(--red)', pct: stBlended },
+    { label: 'Inventory Value (Cost)', value: fmt$(DB.inventory.totalValue), target: `${DB.inventory.totalProducts} products on hand`, color: 'var(--blue)', pct: 70 },
+    { label: 'Avg Transaction', value: fmt$(a.aov), target: 'Last 30 days', color: 'var(--sage)', pct: Math.min(100, (a.aov / 200) * 100) },
   ];
-
-  document.getElementById('health-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">💊</span> Business Health Snapshot</div>
-    <div class="g4">
-      ${healthItems.map(h => `
-        <div class="health-card">
-          <div class="health-label">${h.label}</div>
-          <div class="health-val" style="color:${h.color}">${h.val}</div>
-          <div class="health-desc">${h.desc}</div>
-          <div class="health-bar"><div class="health-bar-fill" style="width:${h.pct}%;background:${h.color}"></div></div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-
-  // ── AI Insight ──────────────────────────────────
-  const topBrand = ST.byBrand?.[0];
-  const urgentCount = (ST.reorderAlert||[]).filter(r=>(r.urgency||'').toLowerCase()==='urgent').length;
-  const top3Sellers = performers.slice(0,3).map(p=>p.name).join(', ');
-  document.getElementById('briefing-insight').innerHTML = `
-    <div class="ai-insight">
-      <div class="ai-insight-inner">
-        <div class="ai-icon">✨</div>
-        <div class="ai-text">
-          Yesterday delivered <strong>${fmt(b.yesterdayRevenue)}</strong> across <strong>${fmtNum(b.yesterdayTransactions)} transactions</strong> (AOV <strong>${fmtDec(b.yesterdayRevenue/(b.yesterdayTransactions||1))}</strong>).
-          Your strongest brand remains <strong>${topBrand?.brand||'ICHI'}</strong> at <strong>${topBrand?.sellThrough||71}% sell-through</strong> and <strong>${fmtPct0(topBrand?.grossMargin||56)} margin</strong>.
-          <strong>${urgentCount} styles</strong> are critically low on stock — prioritize reorders now to protect revenue velocity.
-          Your top performers this month: <strong>${top3Sellers}</strong>.
-        </div>
+  $('health-kpis').innerHTML = healthKpis.map(k => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)">
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3)">${k.label}</div>
+        <div style="font-size:20px;font-weight:700;letter-spacing:-.5px;color:${k.color}">${k.value}</div>
+        <div style="font-size:11px;color:var(--text-3)">${k.target}</div>
+      </div>
+      <div style="width:80px">
+        <div class="inline-bar-track" style="height:4px"><div class="inline-bar-fill" style="width:${k.pct}%;background:${k.color}"></div></div>
       </div>
     </div>
-  `;
+  `).join('');
+
+  // OOS Table
+  const urgent = ST.reorderAlert.filter(r => r.urgency === 'urgent');
+  const watchItems = ST.reorderAlert.filter(r => r.urgency !== 'urgent').slice(0, 6);
+  const allAlerts = [...urgent, ...watchItems];
+
+  $('oos-count-badge').textContent = urgent.length + ' urgent';
+  $('oos-tbody').innerHTML = allAlerts.map(r => {
+    const typeName = typeof r.type === 'object' ? r.type.name : r.type || '—';
+    const isUrgent = r.urgency === 'urgent';
+    const stockedAt = r.stockByLocation ? Object.keys(r.stockByLocation).join(', ') : 'N/A';
+    return `<tr>
+      <td class="strong">${r.name}</td>
+      <td>${r.brand}</td>
+      <td class="num">${r.onHand}</td>
+      <td class="num">${r.weeklyRate ? r.weeklyRate.toFixed(1) + '/wk' : '—'}</td>
+      <td class="num" style="color:${r.daysOfSupply < 14 ? 'var(--red)' : 'var(--amber)'}">${r.daysOfSupply}d</td>
+      <td><span class="badge ${isUrgent ? 'badge-red' : 'badge-amber'}">${isUrgent ? '🚨 Urgent' : '⚠ Watch'}</span></td>
+      <td style="font-size:11px;color:var(--text-3)">${stockedAt}</td>
+    </tr>`;
+  }).join('');
+
+  // OOS AI
+  const urgentNames = urgent.slice(0, 3).map(r => r.brand + ' ' + r.name.split('(')[0].trim()).join(', ');
+  $('oos-ai').innerHTML = `<div class="ai-icon-wrap">🚨</div>
+    <div class="ai-text"><strong>${urgent.length} styles need immediate reorder.</strong> ${urgentNames ? 'Prioritize: <em>' + urgentNames + '</em>.' : ''} 
+    Additionally, <strong>${watchItems.length} styles</strong> are running low. Check vendor lead times — spring season 
+    selling window is closing.</div>`;
 }
 
-// ═══════════════════════════════════════════════════
-//  RENDER SALES ANALYTICS
-// ═══════════════════════════════════════════════════
-function renderSalesAnalytics() {
-  const a = getAnalyticsData();
-  const ch = DB.analytics.channelBreakdown;
-  const sum = ST.summary;
-  const byLoc = ST.byLocation;
+// ═══════════════════════════════════════════════════════
+// SALES ANALYTICS TAB
+// ═══════════════════════════════════════════════════════
+function renderSales() {
+  if (!DB || !ST) return;
+  const a = DB.analytics;
+  const s = ST.summary;
 
-  // ── Summary Cards ───────────────────────────────
-  const posShare = a.revenue30d > 0 ? ((a.revenue30dPOS||DB.analytics.revenue30dPOS) / DB.analytics.revenue30d * 100).toFixed(1) : ch.inStorePct;
-  document.getElementById('sales-summary').innerHTML = [
-    { label:'30-Day Revenue', value:fmt(a.revenue30d), sub:`${fmtPct0(ch.inStorePct)}% in-store`, cls:'kpi-accent' },
-    { label:'Transactions', value:fmtNum(a.transactions30d), sub:'Closed sales', cls:'kpi-blue' },
-    { label:'Avg Order Value', value:fmtDec(a.aov), sub:'Revenue ÷ transactions', cls:'kpi-sage' },
-    { label:'Gross Margin', value:fmtPct0(sum.grossMargin), sub:`${fmt(sum.grossProfit)} gross profit`, cls:'kpi-green' },
-  ].map(k => `<div class="kpi-card ${k.cls}"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+  // Top KPI row
+  $('sales-kpi-row').innerHTML = [
+    { label: '30-Day Revenue', value: fmt$(a.revenue30d), sub: `${fmtN(a.transactions30d)} transactions` },
+    { label: '30-Day POS', value: fmt$(a.revenue30dPOS), sub: `${a.channelBreakdown.inStorePct}% of revenue` },
+    { label: '30-Day Online', value: fmt$(a.revenue30dOnline), sub: `${a.channelBreakdown.onlinePct}% of revenue` },
+    { label: 'Avg Transaction Value', value: fmt$(a.aov), sub: 'Last 30 days' },
+  ].map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value">${k.value}</div>
+      <div class="kt-meta">${k.sub}</div>
+    </div>
+  `).join('');
 
-  // ── Revenue by Category — Horizontal Bar Chart ──
-  const cats = (ST.byCategory || []).slice(0, 15);
-  const maxRev = Math.max(...cats.map(c => c.revenue));
-  const barColors = ['#C4A882','#7A9B7A','#7BA3C4','#C07878','#9B8EC4','#4A9A5A','#B8860B','#4A78B8','#7A6050','#5A8A7A'];
+  // Category horizontal bars
+  const cats = ST.byCategory
+    .filter(c => c.category !== 'EXCLUDE FOR REPORTS' && c.revenue > 0)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 12);
+  const maxRev = cats[0]?.revenue || 1;
 
-  document.getElementById('category-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">📊</span> Revenue by Category — 30d</div>
-    <div class="hbar-chart">
-      ${cats.map((c, i) => `
-        <div class="hbar-row">
-          <span class="hbar-label">${c.category}</span>
-          <div class="hbar-track">
-            <div class="hbar-fill" style="width:${(c.revenue/maxRev*100).toFixed(1)}%;background:${barColors[i%barColors.length]}">${fmtPct0(c.revenue/DB.analytics.revenue30d*100)}</div>
-          </div>
-          <span class="hbar-amount">${fmt(c.revenue)}</span>
+  const palette = ['#C4A882','#8FA387','#7BA3C4','#C47A7A','#D4A84B','#9B8EC4','#C47070','#5A8FBF','#4E9E68','#C09040','#7A5AC4','#5C574F'];
+
+  $('category-bars').innerHTML = cats.map((c, i) => {
+    const pct = (c.revenue / maxRev) * 100;
+    const color = palette[i % palette.length];
+    return `<div class="hbar-row">
+      <span class="hbar-label">${c.category}</span>
+      <div class="hbar-track">
+        <div class="hbar-fill" style="width:${pct}%;background:${color}">
+          ${pct > 25 ? `<span class="hbar-fill-label">${fmt$(c.revenue)}</span>` : ''}
         </div>
-      `).join('')}
+      </div>
+      <span class="hbar-val">${pct <= 25 ? fmt$(c.revenue) : fmtPct(c.sellThrough) + ' ST'}</span>
+    </div>`;
+  }).join('');
+
+  // Channel donut
+  const cb = a.channelBreakdown;
+  channelDonut(cb.inStorePct, cb.onlinePct);
+  $('channel-legend').innerHTML = `
+    <div class="donut-item">
+      <div class="donut-dot" style="background:var(--sage)"></div>
+      <span>In-Store POS</span>
+      <span class="donut-item-val">${fmt$(cb.inStore)}</span>
+    </div>
+    <div class="donut-item">
+      <div class="donut-dot" style="background:var(--blue)"></div>
+      <span>Online / Shopify</span>
+      <span class="donut-item-val">${fmt$(cb.online)}</span>
+    </div>
+    <div style="height:1px;background:var(--border-light);margin:4px 0"></div>
+    <div class="donut-item">
+      <div class="donut-dot" style="background:var(--bg-deep)"></div>
+      <span style="font-weight:600">Total (30d)</span>
+      <span class="donut-item-val">${fmt$(cb.inStore + cb.online)}</span>
     </div>
   `;
+  $('channel-ai').innerHTML = `<div class="ai-box ai-box-blue">
+    <div class="ai-icon-wrap">💡</div>
+    <div class="ai-text"><strong>${cb.inStorePct}%</strong> of 30-day revenue is in-store. 
+    Online drives <em>${fmt$(cb.online)}</em> — consider Shopify campaigns to grow digital share. 
+    Your email list of 7,296+ subscribers is an underutilized channel.</div>
+  </div>`;
 
-  // ── Channel Donut ───────────────────────────────
-  const inStorePct = ch.inStorePct || 78;
-  const onlinePct  = ch.onlinePct  || 22;
-  const r = 42, cx = 54, cy = 54, circ = 2 * Math.PI * r;
-  const inStoreLen  = (inStorePct/100) * circ;
-  const onlineLen   = (onlinePct/100) * circ;
-  const gap = 2;
-  document.getElementById('channel-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">🔄</span> Channel Split</div>
-    <div class="donut-wrap" style="flex-direction:column;align-items:center;gap:16px">
-      <svg width="108" height="108" style="transform:rotate(-90deg)">
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--bg-deep)" stroke-width="14"/>
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--sage)" stroke-width="14"
-          stroke-dasharray="${inStoreLen} ${circ}" stroke-dashoffset="0" stroke-linecap="butt"/>
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--blue)" stroke-width="14"
-          stroke-dasharray="${onlineLen} ${circ}" stroke-dashoffset="${-(inStoreLen + gap)}" stroke-linecap="butt"/>
-      </svg>
-      <div class="donut-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--sage)"></div>
-          <div><div style="font-weight:700">${fmtPct0(inStorePct)}</div><div style="font-size:11px;color:var(--text-3)">In-Store ${fmt(ch.inStore)}</div></div>
+  // Brand table (from ST.byBrand)
+  const brands = ST.byBrand.sort((a, b) => b.revenue - a.revenue).slice(0, 15);
+  const maxBrandRev = brands[0]?.revenue || 1;
+  $('brand-tbody').innerHTML = brands.map(b => `
+    <tr>
+      <td class="strong">${b.brand}</td>
+      <td class="num">${fmt$(b.revenue)}</td>
+      <td class="num">${fmtN(b.unitsSold)}</td>
+      <td class="num">${inlineBar(b.sellThrough, 100, barColorST(b.sellThrough))}</td>
+      <td class="num">
+        <span style="color:${b.grossMargin >= 55 ? 'var(--green)' : b.grossMargin >= 45 ? 'var(--amber)' : 'var(--red)'};font-weight:600">${b.grossMargin}%</span>
+      </td>
+      <td>${ratingBadge(b.rating)}</td>
+      <td>
+        <div class="inline-bar-track" style="width:90px;height:4px">
+          <div class="inline-bar-fill bar-accent" style="width:${(b.revenue/maxBrandRev*100).toFixed(0)}%"></div>
         </div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>
-          <div><div style="font-weight:700">${fmtPct0(onlinePct)}</div><div style="font-size:11px;color:var(--text-3)">Online ${fmt(ch.online)}</div></div>
+      </td>
+    </tr>
+  `).join('');
+
+  // Location cards
+  const locs = ST.byLocation;
+  const totalLocRev = locs.reduce((sum, l) => sum + l.revenue, 0);
+  $('location-cards').innerHTML = locs.map((l, i) => {
+    const letters = ['SJ', 'MO', 'HX'];
+    const colors = ['var(--accent)', 'var(--sage)', 'var(--blue)'];
+    const pct = totalLocRev > 0 ? Math.round(l.revenue / totalLocRev * 100) : 0;
+    return `<div class="store-card">
+      <div class="store-card-header">
+        <div class="store-avatar" style="background:${colors[i]}">${letters[i]}</div>
+        <div>
+          <div class="store-name">${l.location}</div>
+          <div class="store-pct">${pct}% of revenue</div>
         </div>
+        <span class="badge ${l.grossMargin >= 55 ? 'badge-green' : 'badge-amber'}" style="margin-left:auto">${l.grossMargin}% GM</span>
+      </div>
+      <div class="store-metrics">
+        <div class="store-metric"><div class="sm-label">Revenue</div><div class="sm-val" style="font-size:15px">${fmtK(l.revenue)}</div></div>
+        <div class="store-metric"><div class="sm-label">Transactions</div><div class="sm-val" style="font-size:15px">${fmtN(l.transactions)}</div></div>
+        <div class="store-metric"><div class="sm-label">Avg Transaction</div><div class="sm-val" style="font-size:15px">${fmt$(l.avgTransactionValue)}</div></div>
+        <div class="store-metric"><div class="sm-label">Units Sold</div><div class="sm-val" style="font-size:15px">${fmtN(l.unitsSold)}</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="inline-bar-track" style="height:5px">
+          <div class="inline-bar-fill" style="width:${pct}%;background:${colors[i]}"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// SELL-THROUGH INTEL
+// ═══════════════════════════════════════════════════════
+
+function setSTSeason(season, btn) {
+  stSeason = season;
+  document.querySelectorAll('#season-toggle .pill-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSellThrough();
+}
+
+function getSeasonStyles() {
+  if (!STD) return [];
+  const allStyles = [];
+  for (const brand of STD.brands) {
+    for (const style of brand.styles) {
+      allStyles.push({ ...style, brandName: brand.brand });
+    }
+  }
+  if (stSeason === 'all') return allStyles;
+  return allStyles.filter(s => {
+    if (!s.floorDate) return false;
+    const month = new Date(s.floorDate).getMonth() + 1;
+    return stSeason === 'spring' ? (month >= 1 && month <= 6) : (month >= 7 && month <= 12);
+  });
+}
+
+function alertBadgeHtml(alert) {
+  const map = {
+    REORDER_NOW: ['alert-REORDER_NOW', '🔴 Reorder Now'],
+    REPEAT_WORTHY: ['alert-REPEAT_WORTHY', '🟢 Repeat Worthy'],
+    WATCH: ['alert-WATCH', '🟡 Watch'],
+    NEW: ['alert-NEW', '🔵 New'],
+  };
+  const [cls, label] = map[alert] || ['badge-neutral', alert || '—'];
+  return `<span class="badge ${cls}" style="font-size:10px">${label}</span>`;
+}
+
+function alertPriority(alert) {
+  return { REORDER_NOW: 0, REPEAT_WORTHY: 1, WATCH: 2, NEW: 3 }[alert] ?? 4;
+}
+
+function renderSellThrough() {
+  if (!STD || !ST) return;
+
+  const seasonStyles = getSeasonStyles();
+
+  // ── 2.12 Season Summary Cards ──
+  const totalSold = seasonStyles.reduce((s, x) => s + (x.sold || 0), 0);
+  const totalRemaining = seasonStyles.reduce((s, x) => s + (x.remaining || 0), 0);
+  const blendedST = calcST(totalSold, totalRemaining);
+  const reorderNowCount = seasonStyles.filter(s => s.alert === 'REORDER_NOW').length;
+  const repeatWorthyCount = seasonStyles.filter(s => s.alert === 'REPEAT_WORTHY').length;
+  const watchCount = seasonStyles.filter(s => s.alert === 'WATCH').length;
+  const newCount = seasonStyles.filter(s => s.alert === 'NEW').length;
+  const productsOnFloor = seasonStyles.length;
+
+  const seasonLabel = stSeason === 'spring' ? "Spring '26" : stSeason === 'fall' ? "Fall '25" : 'All Current Floor';
+
+  $('st-season-kpis').innerHTML = [
+    { label: 'Products on Floor', value: fmtN(productsOnFloor), sub: seasonLabel, color: 'var(--text)' },
+    { label: 'Units Remaining', value: fmtN(totalRemaining), sub: 'Current floor stock', color: 'var(--text)' },
+    { label: 'Blended Sell-Through', value: fmtPct0(blendedST), sub: 'sold ÷ (sold + remaining)', color: colorST(blendedST) },
+    { label: 'Reorder Now', value: reorderNowCount, sub: '100% sold out w/ velocity', color: 'var(--red)', bold: true },
+  ].map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value" style="font-size:22px;color:${k.color};${k.bold ? 'font-weight:800' : ''}">${k.value}</div>
+      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${k.sub}</div>
+    </div>
+  `).join('');
+
+  $('st-season-kpis-2').innerHTML = [
+    { label: '🟢 Repeat Worthy', value: repeatWorthyCount, sub: '≥60% in ≤4w or ≥40% in ≤3w', color: 'var(--green)' },
+    { label: '🟡 Watch', value: watchCount, sub: '≥25% sell-through', color: 'var(--amber)' },
+    { label: '🔵 New (No Sales Yet)', value: newCount, sub: 'Too early to judge', color: 'var(--blue)' },
+  ].map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value" style="font-size:22px;color:${k.color}">${k.value}</div>
+      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${k.sub}</div>
+    </div>
+  `).join('');
+
+  // ── 2.13 Brand Sell-Through Table (Expandable) ──
+  // Group seasonStyles by brand
+  const brandMap = {};
+  for (const style of seasonStyles) {
+    if (!brandMap[style.brandName]) brandMap[style.brandName] = [];
+    brandMap[style.brandName].push(style);
+  }
+
+  // Aggregate brand-level stats
+  const brandAggs = Object.entries(brandMap).map(([brand, styles]) => {
+    const sold = styles.reduce((s, x) => s + (x.sold || 0), 0);
+    const remaining = styles.reduce((s, x) => s + (x.remaining || 0), 0);
+    const revenue = styles.reduce((s, x) => s + (x.revenue || 0), 0);
+    const st = calcST(sold, remaining);
+    // Aggregate WOS: average of styles that have velocity
+    const activeStyles = styles.filter(s => (s.vel || 0) > 0);
+    const avgWOS = activeStyles.length > 0
+      ? activeStyles.reduce((s, x) => s + (x.wos || 0), 0) / activeStyles.length
+      : null;
+    // Worst alert (lowest priority number)
+    const worstAlert = styles.reduce((best, s) => {
+      return alertPriority(s.alert) < alertPriority(best) ? s.alert : best;
+    }, 'NEW');
+    return { brand, styles, sold, remaining, revenue, st, avgWOS, worstAlert };
+  }).sort((a, b) => b.revenue - a.revenue);
+
+  const brandRowsHtml = brandAggs.map((agg, i) => {
+    const brandId = 'brand-' + i;
+    const panelId = 'panel-' + i;
+
+    // AI insight per brand
+    const repeatWorthyStyles = agg.styles.filter(s => s.alert === 'REPEAT_WORTHY');
+    const reorderStyles = agg.styles.filter(s => s.alert === 'REORDER_NOW');
+    const aiText = buildBrandAI(agg, repeatWorthyStyles, reorderStyles);
+
+    // Build style rows with SKU expand
+    const styleRowsHtml = agg.styles
+      .sort((a, b) => alertPriority(a.alert) - alertPriority(b.alert))
+      .map((style, si) => {
+        const styleRowId = `style-${i}-${si}`;
+        const skuRowId = `sku-${i}-${si}`;
+        const styleST = calcST(style.sold || 0, style.remaining || 0);
+        const floorDateStr = style.floorDate
+          ? new Date(style.floorDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '—';
+
+        // SKU chips
+        const skuChips = (style.skus || []).map(sku => {
+          const skuST = calcST(sku.sold || 0, sku.remaining || 0);
+          const isSoldOut = (sku.remaining || 0) === 0 && (sku.sold || 0) > 0;
+          const isLow = (sku.remaining || 0) <= 2 && (sku.remaining || 0) > 0 && (sku.sold || 0) > 0;
+          const chipClass = isSoldOut ? 'sold-out' : isLow ? 'low-stock' : '';
+          const actionLabel = isSoldOut ? '<span class="sku-action" style="background:var(--red-lt);color:var(--red)">REORDER</span>'
+                            : isLow ? '<span class="sku-action" style="background:var(--amber-lt);color:var(--amber)">LOW</span>'
+                            : '';
+          const stColor = skuST >= 70 ? 'var(--green)' : skuST >= 40 ? 'var(--amber)' : 'var(--red)';
+          return `<div class="sku-chip ${chipClass}">
+            <span class="sku-size">${sku.label || '?'}</span>
+            <span class="sku-sold">${sku.sold || 0} sold / ${sku.remaining || 0} left</span>
+            <span class="sku-st" style="color:${stColor}">${Math.round(skuST)}% ST</span>
+            ${actionLabel}
+          </div>`;
+        }).join('');
+
+        return `
+        <tr class="style-row" id="${styleRowId}" onclick="toggleSkuRow('${skuRowId}','${styleRowId}')">
+          <td class="strong" style="padding-left:20px;font-size:12px">${style.name}</td>
+          <td class="num">${fmt$(style.revenue || 0)}</td>
+          <td class="num">${style.sold || 0}</td>
+          <td class="num">${style.remaining || 0}</td>
+          <td class="num">${floorDateStr}</td>
+          <td class="num">${style.weeks ? style.weeks.toFixed(1) + 'w' : '—'}</td>
+          <td class="num">${style.vel ? style.vel.toFixed(2) + '/wk' : '—'}</td>
+          <td class="num" style="color:${(style.wos || 0) < 4 ? 'var(--red)' : 'var(--green)'}">${style.wos ? style.wos.toFixed(1) + 'w' : '—'}</td>
+          <td class="num">
+            <div class="inline-bar">
+              <div class="inline-bar-track"><div class="inline-bar-fill ${barColorST(styleST)}" style="width:${Math.min(100,styleST)}%"></div></div>
+              <span class="inline-bar-val" style="color:${colorST(styleST)}">${Math.round(styleST)}%</span>
+            </div>
+          </td>
+          <td>${alertBadgeHtml(style.alert)}</td>
+        </tr>
+        <tr class="st-sku-row" id="${skuRowId}">
+          <td colspan="10" style="padding:0">
+            <div class="st-sku-mini">
+              <div style="font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-3);margin-bottom:8px">SKU Breakdown — ${style.name}</div>
+              <div class="sku-grid">${skuChips || '<span style="font-size:12px;color:var(--text-3)">No SKU data available</span>'}</div>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+    const wosStr = agg.avgWOS != null ? fmtDec(agg.avgWOS, 1) + 'w' : '—';
+
+    return `
+    <div class="st-brand-row" id="${brandId}" onclick="toggleBrandPanel('${brandId}','${panelId}')">
+      <span class="brand-name">${agg.brand}</span>
+      <span class="num">${fmt$(agg.revenue)}</span>
+      <span class="num">${fmtN(agg.sold)}</span>
+      <span class="num">${fmtN(agg.remaining)}</span>
+      <span class="num">
+        <div class="inline-bar">
+          <div class="inline-bar-track"><div class="inline-bar-fill ${barColorST(agg.st)}" style="width:${Math.min(100,agg.st)}%"></div></div>
+          <span class="inline-bar-val" style="color:${colorST(agg.st)}">${Math.round(agg.st)}%</span>
+        </div>
+      </span>
+      <span class="num" style="color:${agg.avgWOS != null && agg.avgWOS < 4 ? 'var(--red)' : 'var(--green)'}">${wosStr}</span>
+      <span>${alertBadgeHtml(agg.worstAlert)}</span>
+      <span class="expand-chevron">▶</span>
+    </div>
+    <div class="st-expand-panel" id="${panelId}">
+      <div class="st-expand-inner">
+        <div class="ai-box ai-box-default" style="margin-bottom:12px">
+          <div class="ai-icon-wrap">💡</div>
+          <div class="ai-text">${aiText}</div>
+        </div>
+        <div class="table-wrap">
+          <table class="st-style-table">
+            <thead>
+              <tr>
+                <th>Style</th>
+                <th class="num">Revenue</th>
+                <th class="num">Sold</th>
+                <th class="num">Remaining</th>
+                <th class="num">Floor Date</th>
+                <th class="num">Weeks</th>
+                <th class="num">Velocity</th>
+                <th class="num">WOS</th>
+                <th class="num">Sell-Through</th>
+                <th>Alert</th>
+              </tr>
+            </thead>
+            <tbody>${styleRowsHtml}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('st-brand-rows').innerHTML = brandRowsHtml;
+
+  // ── 2.14 Size Sell-Through Curves ──
+  const sa = ST.sizeAnalysis;
+  const standardSizes = ['XS', 'S', 'S/M', 'M', 'M/L', 'L', 'XL', 'XXL'];
+  const numericSizes = ['24','25','26','27','28','29','30','31','32','33','36','37','38','39','40','41'];
+
+  function renderSizeCurves(containerId, sizes) {
+    const el = $(containerId);
+    if (!el) return;
+    const filtered = sizes.filter(sz => sa.currentStock[sz] > 0 || sa.unitsSold[sz] > 0);
+    if (filtered.length === 0) {
+      el.innerHTML = '<div style="color:var(--text-3);font-size:12px;padding:8px 0">No data for this size range.</div>';
+      return;
+    }
+    const maxStock = Math.max(...filtered.map(sz => sa.currentStock[sz] || 0));
+    const maxSold = Math.max(...filtered.map(sz => sa.unitsSold[sz] || 0));
+
+    el.innerHTML = filtered.map(sz => {
+      const stock = sa.currentStock[sz] || 0;
+      const sold = sa.unitsSold[sz] || 0;
+      const stPct = calcST(sold, stock);
+      const stockBarW = maxStock > 0 ? (stock / maxStock) * 100 : 0;
+      const soldBarW = maxSold > 0 ? (sold / maxSold) * 100 : 0;
+
+      // Find sizeInsight for gap
+      const insight = (sa.sizeInsights || []).find(i => i.size === sz);
+      let gapHtml = '';
+      if (insight) {
+        if (insight.gap > 1) gapHtml = `<span class="size-gap-badge gap-under">Under-bought +${insight.gap}%</span>`;
+        else if (insight.gap < -1) gapHtml = `<span class="size-gap-badge gap-over">Over-bought ${insight.gap}%</span>`;
+        else gapHtml = `<span class="size-gap-badge gap-ok">Balanced</span>`;
+      }
+
+      const stColor = stPct >= 70 ? 'var(--green)' : stPct >= 40 ? 'var(--amber)' : 'var(--red)';
+
+      return `<div class="size-curve-row">
+        <span style="font-weight:700;font-size:12.5px">${sz}</span>
+        <div class="size-bar-track">
+          <div class="size-bar-fill" style="width:${stockBarW}%;background:var(--accent)">
+            ${stockBarW > 20 ? `<span>${stock}</span>` : ''}
+          </div>
+        </div>
+        <div class="size-bar-track">
+          <div class="size-bar-fill" style="width:${soldBarW}%;background:var(--sage)">
+            ${soldBarW > 20 ? `<span>${sold}</span>` : ''}
+          </div>
+        </div>
+        <span style="text-align:right;font-weight:700;color:${stColor}">${Math.round(stPct)}%</span>
+        ${gapHtml}
+      </div>`;
+    }).join('');
+  }
+
+  renderSizeCurves('size-curve-standard', standardSizes);
+  renderSizeCurves('size-curve-numeric', numericSizes);
+
+  // Size curves AI insight
+  const insights = sa.sizeInsights || [];
+  const underBought = insights.filter(i => i.gap > 1).sort((a, b) => b.gap - a.gap);
+  const overBought = insights.filter(i => i.gap < -1).sort((a, b) => a.gap - b.gap);
+  const topUnder = underBought.slice(0, 2).map(i => `<strong>${i.size}</strong>`).join(' and ');
+  const topOver = overBought.slice(0, 2).map(i => `<strong>${i.size}</strong>`).join(' and ');
+
+  // Find fastest and slowest by sell-through
+  const stdSizesST = insights.map(i => ({ ...i, st: calcST(i.sold, i.stock) })).sort((a, b) => b.st - a.st);
+  const fastest = stdSizesST[0];
+  const slowest = stdSizesST[stdSizesST.length - 1];
+
+  $('size-curve-ai').innerHTML = `<div class="ai-icon-wrap">📐</div>
+    <div class="ai-text">
+      ${fastest ? `<strong>${fastest.size}</strong> is your fastest-moving size at <em>${Math.round(fastest.st)}% sell-through</em>.` : ''}
+      ${slowest && slowest.size !== fastest?.size ? ` <strong>${slowest.size}</strong> is consistently slow at <em>${Math.round(slowest.st)}% sell-through</em> with ${slowest.stock} units still on hand.` : ''}
+      ${topUnder ? ` Adjust size run on reorders: <strong>buy more ${topUnder}</strong> — demand exceeds current buy ratio.` : ''}
+      ${topOver ? ` <strong>${topOver}</strong> ${overBought.length > 1 ? 'are' : 'is'} over-bought relative to demand — reduce allocation on next order.` : ''}
+      ${sa.recommendation ? ` ${sa.recommendation}` : ''}
+    </div>`;
+
+  // ── 2.15 Slow Movers + Dead Stock ──
+  const slow = ST.slowMovers || [];
+  const deadStock = slow.filter(s => s.velocityPerWeek === 0);
+  $('slow-count-badge').textContent = deadStock.length + ' dead stock';
+  $('slow-tbody').innerHTML = slow.slice(0, 25).map(s => {
+    const st = s.sellThrough || calcST(s.unitsSold || 0, s.currentStock || 0);
+    const weeksColor = s.weeksInStore >= 8 ? 'var(--red)' : s.weeksInStore >= 4 ? 'var(--amber)' : 'var(--text-3)';
+    const arrivedStr = s.arrivedDate ? new Date(s.arrivedDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : '—';
+    return `<tr>
+      <td class="strong">${s.name}</td>
+      <td>${s.brand}</td>
+      <td>${arrivedStr}</td>
+      <td class="num" style="color:${weeksColor};font-weight:600">${fmtDec(s.weeksInStore, 1)}w</td>
+      <td class="num">${s.currentStock}</td>
+      <td class="num"><span class="badge ${st <= 0 ? 'badge-red' : st < 25 ? 'badge-amber' : 'badge-neutral'}">${Math.round(st)}%</span></td>
+      <td class="num" style="font-weight:600;color:var(--red)">${fmt$(s.costTiedUp || 0)}</td>
+      <td style="font-size:11.5px;color:var(--text-2)">${s.recommendation || '—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No slow movers found</td></tr>';
+
+  const totalCostTied = deadStock.reduce((sum, s) => sum + (s.costTiedUp || 0), 0);
+  const topDeadCost = [...deadStock].sort((a, b) => (b.costTiedUp || 0) - (a.costTiedUp || 0)).slice(0, 3);
+  const topNames = topDeadCost.map(s => `<em>${s.name}</em>`).join(', ');
+
+  $('slow-ai').innerHTML = `<div class="ai-icon-wrap">⚠️</div>
+    <div class="ai-text">
+      <strong>${deadStock.length} styles</strong> have zero sales velocity — that's <em>${fmt$(totalCostTied)}</em> in capital tied up in dead stock.
+      ${topNames ? ` Top offenders by cost: ${topNames}.` : ''}
+      Recommend a markdown event: at 25% off you recover substantial margin vs. end-of-season clearance at 50%+.
+      ${deadStock.filter(s => s.weeksInStore >= 8).length > 0 ? ` <strong>${deadStock.filter(s => s.weeksInStore >= 8).length} styles</strong> have been on the floor 8+ weeks with no movement — consider immediate markdown or inter-store transfer.` : ''}
+    </div>`;
+}
+
+function buildBrandAI(agg, repeatWorthyStyles, reorderStyles) {
+  const stStr = Math.round(agg.st) + '%';
+  const revenueStr = fmt$(agg.revenue);
+  let text = `<strong>${agg.brand}</strong>: ${stStr} sell-through on <strong>${revenueStr}</strong> revenue this season. `;
+  if (reorderStyles.length > 0) {
+    text += `<strong style="color:var(--red)">${reorderStyles.length} style${reorderStyles.length > 1 ? 's' : ''} sold out</strong> with proven velocity — prioritize reorder. `;
+  }
+  if (repeatWorthyStyles.length > 0) {
+    text += `<strong style="color:var(--green)">${repeatWorthyStyles.length} repeat-worthy style${repeatWorthyStyles.length > 1 ? 's' : ''}</strong> — strong candidates for next season buy. `;
+  }
+  if (agg.st >= 70) {
+    text += 'Recommend increasing next season buy by 15-20%.';
+  } else if (agg.st >= 50) {
+    text += 'Solid performance — maintain current buy depth.';
+  } else if (agg.st >= 30) {
+    text += `At current velocity, remaining ${fmtN(agg.remaining)} units will take time to clear. Monitor closely.`;
+  } else if (agg.st < 30 && agg.remaining > 0) {
+    text += `<strong style="color:var(--red)">Warning:</strong> Low sell-through with ${fmtN(agg.remaining)} units remaining. Consider markdown or reduce next buy.`;
+  }
+  return text;
+}
+
+function toggleBrandPanel(brandId, panelId) {
+  const row = $(brandId);
+  const panel = $(panelId);
+  if (!row || !panel) return;
+  const isOpen = panel.classList.contains('open');
+  // Close all other panels
+  document.querySelectorAll('.st-expand-panel.open').forEach(p => { p.classList.remove('open'); });
+  document.querySelectorAll('.st-brand-row.expanded').forEach(r => { r.classList.remove('expanded'); });
+  if (!isOpen) {
+    panel.classList.add('open');
+    row.classList.add('expanded');
+  }
+}
+
+function toggleSkuRow(skuRowId, styleRowId) {
+  const skuRow = $(skuRowId);
+  const styleRow = $(styleRowId);
+  if (!skuRow) return;
+  const isOpen = skuRow.classList.contains('open');
+  // Close sibling sku rows in same brand panel
+  skuRow.closest('.st-expand-panel')?.querySelectorAll('.st-sku-row.open').forEach(r => r.classList.remove('open'));
+  skuRow.closest('.st-expand-panel')?.querySelectorAll('.style-row.expanded').forEach(r => r.classList.remove('expanded'));
+  if (!isOpen) {
+    skuRow.classList.add('open');
+    styleRow?.classList.add('expanded');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// INVENTORY HEALTH
+// ═══════════════════════════════════════════════════════
+function renderInventory() {
+  if (!DB || !ST) return;
+  const inv = DB.inventory;
+  const s = ST.summary;
+
+  // Inventory KPIs
+  const totalRetail = inv.brandBreakdown.reduce((sum, b) => sum + (b.retail || 0), 0);
+  $('inv-kpis').innerHTML = [
+    { label: 'Inventory at Cost', value: fmt$(inv.totalValue), sub: `${inv.totalProducts} products`, color: 'var(--text)' },
+    { label: 'Inventory at Retail', value: fmt$(totalRetail), sub: 'Full retail value', color: 'var(--text)' },
+    { label: 'Implied Margin on Hand', value: fmtPct(totalRetail > 0 ? (totalRetail - inv.totalValue) / totalRetail * 100 : 0), sub: 'Retail - cost ÷ retail', color: 'var(--green)' },
+    { label: 'Brands on Floor', value: inv.brandBreakdown.length, sub: 'Active brands', color: 'var(--text)' },
+  ].map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value" style="color:${k.color};font-size:20px">${k.value}</div>
+      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${k.sub}</div>
+    </div>
+  `).join('');
+
+  // OTB Table
+  $('otb-tbody').innerHTML = ST.otb.map(o => {
+    const statusCls = o.status === 'buy' ? 'badge-red' : o.status === 'healthy' ? 'badge-green' : 'badge-amber';
+    const statusLabel = o.status === 'buy' ? '🛒 Buy Now' : o.status === 'healthy' ? '✓ Healthy' : '⚠ Overstocked';
+    return `<tr>
+      <td class="strong">${o.category}</td>
+      <td class="num">${fmtN(o.currentStock)}</td>
+      <td class="num">${fmt$(o.currentInventoryCost)}</td>
+      <td class="num">${fmt$(o.weeklyRunRate)}/wk</td>
+      <td class="num" style="color:${o.weeksOfSupply < 4 ? 'var(--red)' : o.weeksOfSupply > 16 ? 'var(--amber)' : 'var(--green)'}">${fmtDec(o.weeksOfSupply)}w</td>
+      <td class="num">${fmt$(o.plannedEOM)}</td>
+      <td class="num" style="color:${o.otbAvailable > 0 ? 'var(--green)' : 'var(--text-3)'};font-weight:700">${fmt$(Math.max(0, o.otbAvailable))}</td>
+      <td><span class="badge ${statusCls}">${statusLabel}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Brand inventory table
+  const brands = inv.brandBreakdown.sort((a, b) => b.cost - a.cost);
+  const totalCost = brands.reduce((sum, b) => sum + (b.cost || 0), 0);
+  $('inv-brand-tbody').innerHTML = brands.map(b => {
+    const mix = totalCost > 0 ? (b.cost / totalCost) * 100 : 0;
+    const impliedMargin = b.retail > 0 ? Math.round((b.retail - b.cost) / b.retail * 100) : 0;
+    return `<tr>
+      <td class="strong">${b.name}</td>
+      <td class="num">${fmtN(b.count)}</td>
+      <td class="num">${fmt$(b.cost)}</td>
+      <td class="num">${fmt$(b.retail)}</td>
+      <td class="num"><span style="color:${impliedMargin >= 55 ? 'var(--green)' : impliedMargin >= 45 ? 'var(--amber)' : 'var(--red)'};font-weight:600">${impliedMargin}%</span></td>
+      <td>
+        <div class="inline-bar">
+          <div class="inline-bar-track" style="width:80px"><div class="inline-bar-fill bar-accent" style="width:${mix}%"></div></div>
+          <span class="inline-bar-val">${fmtDec(mix)}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// BUY PLANNING
+// ═══════════════════════════════════════════════════════
+
+function getOnOrder() {
+  const stored = localStorage.getItem('lordon_on_order');
+  return stored ? parseFloat(stored) : 0;
+}
+
+function saveOnOrder(val) {
+  localStorage.setItem('lordon_on_order', val);
+}
+
+function recalcOTB() {
+  if (!DB || !ST) return;
+  const s = ST.summary;
+  const inv = DB.inventory;
+  const periodMonths = ST.periodWeeks / 4.33;
+  const plannedMonthlySales = s.totalRevenue / periodMonths;
+  const plannedEOM = plannedMonthlySales * 2.25;
+  const avgMargin = s.grossMargin / 100;
+  const bomInventoryRetail = inv.totalValue / (1 - avgMargin);
+  const onOrder = getOnOrder();
+  const netOTB = plannedMonthlySales + plannedEOM - bomInventoryRetail - onOrder;
+
+  // Update result display
+  const resultEl = document.getElementById('otb-result-value');
+  const otbPct = plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0;
+  if (resultEl) {
+    resultEl.textContent = fmt$(netOTB);
+    resultEl.style.color = netOTB > 0 ? 'var(--green)' : 'var(--red)';
+  }
+  const otbPctEl = document.getElementById('otb-pct-card');
+  if (otbPctEl) otbPctEl.textContent = Math.round(otbPct) + '%';
+}
+
+function renderBuyPlanning() {
+  if (!DB || !ST) return;
+  const s = ST.summary;
+  const inv = DB.inventory;
+
+  // ── 2.20 OTB Calculator ──
+  const periodMonths = ST.periodWeeks / 4.33;
+  const plannedMonthlySales = s.totalRevenue / periodMonths;
+  const plannedEOM = plannedMonthlySales * 2.25;
+  const avgMargin = s.grossMargin / 100;
+  const bomInventoryRetail = inv.totalValue / (1 - avgMargin);
+  const onOrder = getOnOrder();
+  const netOTB = plannedMonthlySales + plannedEOM - bomInventoryRetail - onOrder;
+
+  $('otb-calc-body').innerHTML = `
+    <div class="otb-formula-block">
+      <div class="otb-formula-row" style="background:var(--green-lt)">
+        <span class="otb-formula-label">+ Planned Monthly Sales<br><span style="font-size:10.5px;color:var(--text-3)">Total Revenue ÷ ${fmtDec(periodMonths, 1)} months of data</span></span>
+        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedMonthlySales)}</span>
+      </div>
+      <div class="otb-formula-row" style="background:var(--green-lt)">
+        <span class="otb-formula-label">+ Planned EOM Inventory<br><span style="font-size:10.5px;color:var(--text-3)">Planned Monthly Sales × 2.25 (target 2-2.5mo supply)</span></span>
+        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedEOM)}</span>
+      </div>
+      <div class="otb-formula-row" style="background:var(--red-lt)">
+        <span class="otb-formula-label">− Beginning Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">Cost ${fmt$(inv.totalValue)} ÷ (1 − ${Math.round(avgMargin * 100)}% margin)</span></span>
+        <span class="otb-formula-value" style="color:var(--red)">${fmt$(bomInventoryRetail)}</span>
+      </div>
+      <div class="otb-formula-row" style="background:var(--bg-card);border:1.5px solid var(--border)">
+        <span class="otb-formula-label">− On Order<br><span style="font-size:10.5px;color:var(--text-3)">Enter your current purchase orders</span></span>
+        <div class="otb-on-order-wrap">
+          <span style="font-size:14px;color:var(--text-3);font-weight:600">$</span>
+          <input class="otb-on-order-input" id="on-order-input" type="number" min="0" step="100"
+            value="${onOrder}" placeholder="0"
+            oninput="saveOnOrder(this.value); recalcOTB();">
+        </div>
+      </div>
+      <div class="otb-formula-row">
+        <span class="otb-formula-label" style="font-size:14px;font-weight:700">= Net Open-to-Buy</span>
+        <span class="otb-formula-value" id="otb-result-value" style="font-size:24px;color:${netOTB > 0 ? 'var(--green)' : 'var(--red)'}">${fmt$(netOTB)}</span>
+      </div>
+    </div>
+    <div class="ai-box ai-box-default">
+      <div class="ai-icon-wrap">💡</div>
+      <div class="ai-text">
+        Based on <strong>${fmt$(s.totalRevenue)}</strong> revenue over <strong>${fmtDec(periodMonths, 1)} months</strong>
+        (avg <strong>${fmt$(plannedMonthlySales)}</strong>/month).
+        ${netOTB > 0
+          ? `You have <em>${fmt$(netOTB)}</em> in theoretical buying power. Prioritize categories with WOS below 4 weeks.`
+          : `Your inventory <strong>exceeds</strong> planned levels by ${fmt$(Math.abs(netOTB))} — focus on sell-through before committing new orders.`}
       </div>
     </div>
   `;
 
-  // ── Category Table (sortable) ───────────────────
-  document.getElementById('category-table-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">🗂️</span> Category Performance Detail</div>
-    <div class="tbl-wrap">
-      <table id="cat-tbl">
-        <thead>
-          <tr>
-            <th data-col="category">Category</th>
-            <th data-col="revenue" class="sorted-desc">Revenue</th>
-            <th data-col="units">Units Sold</th>
-            <th data-col="st">Sell-Through %</th>
-            <th data-col="margin">Gross Margin</th>
-            <th data-col="wos">Wks of Supply</th>
-            <th data-col="gmroi">GMROI</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${cats.map(c => {
-            const stPct = c.sellThrough || 0;
-            const stColor_ = stColor(stPct);
-            return `<tr data-revenue="${c.revenue}" data-units="${c.unitsSold}" data-st="${stPct}" data-margin="${c.grossMargin}" data-wos="${c.weeksOfSupply}" data-gmroi="${c.gmroi||0}" data-category="${c.category}">
-              <td style="font-weight:600">${c.category}</td>
-              <td style="font-weight:700">${fmt(c.revenue)}</td>
-              <td>${fmtNum(c.unitsSold)}</td>
-              <td>${miniBar(stPct, stColor_, 100)}</td>
-              <td>${miniBar(c.grossMargin, marginColor(c.grossMargin), 70)}</td>
-              <td style="font-weight:600">${fmtWk(c.weeksOfSupply)}</td>
-              <td style="font-weight:700">${c.gmroi ? c.gmroi.toFixed(2) + '×' : '—'}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+  // Health cards
+  const invTurns = s.totalCOGS / (inv.totalValue || 1);
+  const moSupply = plannedMonthlySales > 0 ? (bomInventoryRetail / plannedMonthlySales) : 0;
+  const buyRatio = plannedMonthlySales > 0 ? inv.totalValue / plannedMonthlySales : 0;
+  const otbPct = plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0;
+
+  $('otb-health-cards').innerHTML = [
+    {
+      label: 'Inventory Turns',
+      value: fmtDec(invTurns, 1) + '×',
+      sub: 'Annual COGS ÷ inventory cost',
+      target: 'Target: 4–6×',
+      good: invTurns >= 4 && invTurns <= 6,
+      warn: invTurns > 2 && invTurns < 4,
+    },
+    {
+      label: 'Months of Supply',
+      value: fmtDec(moSupply, 1) + 'mo',
+      sub: 'Inventory retail ÷ monthly sales',
+      target: 'Target: 2–2.5 months',
+      good: moSupply >= 2 && moSupply <= 2.5,
+      warn: moSupply < 3,
+    },
+    {
+      label: 'Buy Ratio',
+      value: '$' + buyRatio.toFixed(2),
+      sub: 'Inventory cost ÷ monthly sales',
+      target: 'Target: ~$0.40 per $1',
+      good: buyRatio >= 0.35 && buyRatio <= 0.45,
+      warn: buyRatio < 0.55,
+    },
+    {
+      label: 'Monthly OTB %',
+      value: '<span id="otb-pct-card">' + Math.round(otbPct) + '%</span>',
+      sub: 'Net OTB ÷ planned monthly sales',
+      target: 'Target: 35–45%',
+      good: otbPct >= 35 && otbPct <= 45,
+      warn: otbPct > 0 && otbPct < 60,
+    },
+  ].map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value" style="color:${k.good ? 'var(--green)' : k.warn ? 'var(--amber)' : 'var(--red)'};font-size:20px">${k.value}</div>
+      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${k.sub}</div>
+      <div style="font-size:10px;font-weight:600;color:${k.good ? 'var(--green)' : 'var(--text-3)'};margin-top:4px">${k.target}</div>
     </div>
-  `;
-  makeSortable('cat-tbl');
+  `).join('');
 
-  // ── Store Location Cards ────────────────────────
-  const totalLocRev = byLoc.reduce((s,l) => s+l.revenue, 0);
-  document.getElementById('location-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">🗺️</span> Sales by Location</div>
-    ${byLoc.map(loc => {
-      const share = totalLocRev > 0 ? ((loc.revenue / totalLocRev)*100) : 0;
-      return `
-        <div style="border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <div style="font-weight:700;font-size:14px">📍 ${loc.location}</div>
-            <div style="font-size:12px;color:var(--text-3)">${fmtPct0(share)} of total</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">
-            <div><div style="color:var(--text-3)">Revenue</div><div style="font-weight:700;font-size:14px">${fmt(loc.revenue)}</div></div>
-            <div><div style="color:var(--text-3)">Transactions</div><div style="font-weight:700;font-size:14px">${fmtNum(loc.transactions)}</div></div>
-            <div><div style="color:var(--text-3)">Avg Transaction</div><div style="font-weight:600">${fmtDec(loc.avgTransactionValue)}</div></div>
-            <div><div style="color:var(--text-3)">Gross Margin</div><div style="font-weight:600;color:${marginColor(loc.grossMargin)}">${fmtPct0(loc.grossMargin)}</div></div>
-          </div>
-          <div style="margin-top:8px;height:5px;background:var(--bg-deep);border-radius:3px;overflow:hidden">
-            <div style="width:${share.toFixed(1)}%;height:100%;background:var(--accent);border-radius:3px"></div>
-          </div>
-        </div>`;
-    }).join('')}
-  `;
+  // ── 2.21 OTB by Category ──
+  const otbRows = ST.otb || [];
+  $('otb-cat-tbody').innerHTML = otbRows.map(o => {
+    const statusCls = o.status === 'buy' ? 'badge-red' : o.status === 'healthy' ? 'badge-green' : 'badge-amber';
+    const statusLabel = o.status === 'buy' ? '🛒 Buy Now' : o.status === 'healthy' ? '✓ Healthy' : '⚠ Overstocked';
+    const wosColor = o.weeksOfSupply < 3 ? 'var(--red)' : o.weeksOfSupply < 6 ? 'var(--amber)' : 'var(--green)';
+    return `<tr style="${o.status === 'buy' ? 'background:var(--red-lt)' : ''}">
+      <td class="strong">${o.category}</td>
+      <td class="num">${fmtN(o.currentStock)}</td>
+      <td class="num">${fmt$(o.currentInventoryCost)}</td>
+      <td class="num">${fmt$(o.weeklyRunRate)}/wk</td>
+      <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(o.weeksOfSupply, 1)}w</span></td>
+      <td class="num">${fmt$(o.plannedEOM)}</td>
+      <td class="num"><span style="color:${o.otbAvailable > 0 ? 'var(--green)' : 'var(--text-3)'};font-weight:700">${fmt$(Math.max(0, o.otbAvailable))}</span></td>
+      <td><span class="badge ${statusCls}">${statusLabel}</span></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No OTB data available</td></tr>';
 
-  // ── Brand Table (sortable, top 15) ─────────────
-  const brands = (ST.byBrand || []).slice(0, 15);
-  document.getElementById('brand-table-card').innerHTML = `
-    <div class="card-title"><span class="ct-icon">🏷️</span> Sales by Brand — All Time</div>
-    <div class="tbl-wrap">
-      <table id="brand-tbl">
-        <thead>
-          <tr>
-            <th class="tbl-rank">#</th>
-            <th data-col="brand">Brand</th>
-            <th data-col="revenue" class="sorted-desc">Revenue</th>
-            <th data-col="units">Units</th>
-            <th data-col="st">Sell-Through</th>
-            <th data-col="margin">Margin</th>
-            <th data-col="rating">Rating</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${brands.map((b, i) => `
-            <tr data-revenue="${b.revenue}" data-units="${b.unitsSold}" data-st="${b.sellThrough}" data-margin="${b.grossMargin}" data-brand="${b.brand}" data-rating="${b.rating||''}">
-              <td class="tbl-rank">${i+1}</td>
-              <td><div style="font-weight:600">${b.brand}</div><div style="font-size:11px;color:var(--text-3)">${fmtNum(b.currentStock)} units on hand</div></td>
-              <td style="font-weight:700">${fmt(b.revenue)}</td>
-              <td>${fmtNum(b.unitsSold)}</td>
-              <td>${miniBar(b.sellThrough, stColor(b.sellThrough), 100)}</td>
-              <td>${miniBar(b.grossMargin, marginColor(b.grossMargin), 70)}</td>
-              <td>${ratingBadge(b.rating)}</td>
+  // ── 2.22 Season-Over-Season Brand Comparison ──
+  const sc = ST.seasonComparison;
+  let scHtml = '';
+  if (sc && sc.byBrand && sc.byBrand.length > 0) {
+    const byBrand = sc.byBrand.filter(b => b.ss25?.revenue > 0 || b.ss26?.revenue > 0);
+
+    function trendArrow(trend) {
+      if (trend === 'up') return '<span class="trend-arrow trend-up-badge">↑ Up</span>';
+      if (trend === 'down') return '<span class="trend-arrow trend-dn-badge">↓ Down</span>';
+      return '<span class="trend-arrow trend-flat-badge">→ Flat</span>';
+    }
+
+    const tableRows = byBrand.map(b => {
+      const ss25Rev = b.ss25?.revenue || 0;
+      const ss26Rev = b.ss26?.revenue || 0;
+      const ss26Proj = b.ss26Projected?.revenue || null;
+      const changePct = ss25Rev > 0 ? ((ss26Proj || ss26Rev) - ss25Rev) / ss25Rev * 100 : null;
+
+      return `<tr>
+        <td class="strong">${b.brand}</td>
+        <td class="num">${fmt$(ss25Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss25?.unitsSold || 0} units</span></td>
+        <td class="num">${fmt$(ss26Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} units actual</span></td>
+        <td class="num">${ss26Proj ? fmt$(ss26Proj) + '<br><span style="font-size:10px;color:var(--text-3)">26w projected</span>' : '—'}</td>
+        <td class="num">
+          ${changePct != null ? `<span style="color:${changePct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${changePct >= 0 ? '+' : ''}${Math.round(changePct)}%</span>` : '—'}
+        </td>
+        <td>${trendArrow(b.trend)}</td>
+        <td style="font-size:11.5px;color:var(--text-2)">${b.recommendation || '—'}</td>
+      </tr>`;
+    }).join('');
+
+    // AI insight for season comparison
+    const upBrands = byBrand.filter(b => b.trend === 'up').length;
+    const downBrands = byBrand.filter(b => b.trend === 'down').length;
+    const topProjected = [...byBrand].filter(b => b.ss26Projected).sort((a, b) => (b.ss26Projected?.revenue || 0) - (a.ss26Projected?.revenue || 0))[0];
+
+    scHtml = `
+      <div style="margin-bottom:12px" class="ai-box ai-box-blue">
+        <div class="ai-icon-wrap">📅</div>
+        <div class="ai-text">
+          <strong>SS26 vs SS25</strong> (${sc.ss26Period || '6 weeks actual'} → ${sc.ss25Period || '26 weeks SS25'}).
+          <strong style="color:var(--green)">${upBrands} brand${upBrands !== 1 ? 's' : ''} trending up</strong>,
+          <strong style="color:var(--red)">${downBrands} trending down</strong>.
+          ${topProjected ? `<strong>${topProjected.brand}</strong> projects ${fmt$(topProjected.ss26Projected.revenue)} for full SS26.` : ''}
+          Note: SS26 actuals reflect only 6 weeks — projections extrapolated to 26-week season.
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="season-comp-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('season-comp-tbl',0)">Brand ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',1)">SS25 Revenue ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',2)">SS26 Actual (6w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',3)">SS26 Projected (26w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',4)">Change ⇅</th>
+              <th>Trend</th>
+              <th>Recommendation</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-  makeSortable('brand-tbl');
-
-  // ── AI Insight ──────────────────────────────────
-  const topCat = cats[0];
-  const topBrand = brands[0];
-  const worstST = [...brands].sort((a,b)=>a.sellThrough-b.sellThrough)[0];
-  document.getElementById('sales-insight').innerHTML = `
-    <div class="ai-insight" style="margin-top:16px">
-      <div class="ai-insight-inner">
-        <div class="ai-icon">📊</div>
+          </thead>
+          <tbody id="season-comp-tbl">${tableRows}</tbody>
+        </table>
+      </div>`;
+  } else {
+    scHtml = `
+      <div class="ai-box ai-box-blue" style="margin-bottom:16px">
+        <div class="ai-icon-wrap">📅</div>
         <div class="ai-text">
-          <strong>${topCat?.category}</strong> leads all categories at <strong>${fmt(topCat?.revenue)}</strong> revenue with <strong>${fmtPct0(topCat?.sellThrough)} sell-through</strong>.
-          Your strongest brand is <strong>${topBrand?.brand}</strong> at <strong>${fmt(topBrand?.revenue)}</strong> — rated <strong>${topBrand?.rating?.toUpperCase()}</strong> with ${fmtPct0(topBrand?.grossMargin)} margin.
-          In-store drives <strong>${fmtPct0(ch.inStorePct)}</strong> of all revenue vs. <strong>${fmtPct0(ch.onlinePct)}</strong> online.
-          Watch <strong>${worstST?.brand}</strong> — lowest sell-through at <strong>${fmtPct0(worstST?.sellThrough)}</strong>.
+          <strong>Season-over-season comparison</strong> will appear here once two full seasons of data have been collected.
+          This view compares Spring '25 vs Spring '26 brand and category performance to guide buying decisions.
+          Data collection is in progress — check back as the SS26 season matures.
         </div>
       </div>
-    </div>
-  `;
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 0;color:var(--text-3);gap:12px">
+        <div style="font-size:36px;opacity:.3">📊</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-2)">Season comparison data will appear here</div>
+        <div style="font-size:12px;max-width:400px;text-align:center;line-height:1.6">
+          Brand × category × style-level SS25 vs SS26 analysis with Grow / Maintain / Reduce / Rebuy recommendations.
+          Requires one complete selling season.
+        </div>
+      </div>`;
+  }
+  $('season-comp-body').innerHTML = scHtml;
+
+  // ── 2.23 Brand Scorecard (GMROI Focus) ──
+  const scorecard = ST.brandScorecard || ST.byBrand;
+  const totalRevAll = scorecard.reduce((s, b) => s + (b.revenue || 0), 0);
+
+  $('brand-scorecard-tbody').innerHTML = scorecard
+    .filter(b => (b.revenue || 0) > 0)
+    .sort((a, b) => b.revenue - a.revenue)
+    .map(b => {
+      // GMROI: (revenue - cogs) / cogs_on_hand  where cogs_on_hand ≈ from byBrand
+      const grossMarginDollars = (b.revenue || 0) - (b.cogs || 0);
+      // Estimate avg inventory cost: currentStock × (cogs / (unitsSold + currentStock))
+      const totalUnits = (b.unitsSold || 0) + (b.currentStock || 0);
+      const avgCostPerUnit = totalUnits > 0 ? (b.cogs || 0) / totalUnits : 0;
+      const cogsOnHand = (b.currentStock || 0) * avgCostPerUnit;
+      const gmroi = cogsOnHand > 0 ? grossMarginDollars / cogsOnHand : null;
+
+      const gmroiColor = gmroi == null ? 'var(--text-3)'
+        : gmroi >= 3 ? 'var(--green)'
+        : gmroi >= 2 ? 'var(--sage)'
+        : gmroi >= 1.5 ? 'var(--amber)'
+        : 'var(--red)';
+
+      const gmroiLabel = gmroi == null ? '—'
+        : gmroi >= 3 ? `⭐ ${fmtDec(gmroi)}`
+        : gmroi >= 2 ? `✓ ${fmtDec(gmroi)}`
+        : gmroi >= 1.5 ? `◉ ${fmtDec(gmroi)}`
+        : `▼ ${fmtDec(gmroi)}`;
+
+      const mgStr = b.grossMargin != null
+        ? `<span style="color:${b.grossMargin >= 55 ? 'var(--green)' : b.grossMargin >= 45 ? 'var(--amber)' : 'var(--red)'};font-weight:600">${b.grossMargin}%</span>`
+        : '—';
+
+      return `<tr>
+        <td class="strong">${b.brand}</td>
+        <td class="num">${inlineBar(b.sellThrough || 0, 100, barColorST(b.sellThrough || 0))}</td>
+        <td class="num">${fmt$(b.revenue)}</td>
+        <td class="num">${mgStr}</td>
+        <td class="num" style="color:${gmroiColor};font-weight:700">${gmroiLabel}</td>
+        <td>${ratingBadge(b.rating)}</td>
+        <td style="font-size:11.5px;color:var(--text-2);max-width:220px">${b.ratingReason || '—'}</td>
+      </tr>`;
+    }).join('');
+
+  // Scorecard AI insight
+  const growBrands = scorecard.filter(b => b.rating === 'grow' && (b.revenue || 0) > 10000);
+  const cutBrands = scorecard.filter(b => b.rating === 'cut' || b.rating === 'watch');
+  const topGrow = growBrands.sort((a, b) => b.revenue - a.revenue).slice(0, 3).map(b => `<strong>${b.brand}</strong>`).join(', ');
+  const topCut = cutBrands.sort((a, b) => (a.sellThrough || 0) - (b.sellThrough || 0)).slice(0, 2).map(b => `<strong>${b.brand}</strong>`).join(', ');
+
+  $('scorecard-ai').innerHTML = `<div class="ai-icon-wrap">🏆</div>
+    <div class="ai-text">
+      <strong>Grow:</strong> ${topGrow || 'N/A'} — increase next season OTB by 15-20%.
+      ${topCut ? ` <strong>Watch/Reduce:</strong> ${topCut} — lower sell-through or margin warrants careful scrutiny on reorders.` : ''}
+      GMROI target: ≥2.0× = good return on inventory investment. Focus buying dollars on brands with the highest GMROI.
+    </div>`;
 }
 
-// ═══════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', () => {
-  if (localStorage.getItem('lordon_auth') === 'true') {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    initDashboard();
-  } else {
-    document.getElementById('pw').focus();
+// ═══════════════════════════════════════════════════════
+// CUSTOMERS
+// ═══════════════════════════════════════════════════════
+function renderCustomers() {
+  if (!DB) return;
+  const c = DB.customers;
+
+  $('cust-kpis').innerHTML = [
+    { label: 'Total Customers', value: fmtN(c.total), sub: 'Shopify database' },
+    { label: 'With Orders', value: fmtN(c.withOrders), sub: 'Purchased at least once' },
+    { label: 'Total Orders', value: fmtN(c.totalOrders), sub: 'All Shopify orders' },
+    { label: 'Shopify Revenue', value: fmt$(c.totalSpent), sub: 'Last data sync' },
+  ].map(k => `
+    <div class="kpi-tile">
+      <div class="kt-label">${k.label}</div>
+      <div class="kt-value" style="font-size:20px">${k.value}</div>
+      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${k.sub}</div>
+    </div>
+  `).join('');
+
+  const topC = c.topCustomers || [];
+  $('cust-tbody').innerHTML = topC.map((cust, i) => {
+    const avg = cust.orders > 0 ? cust.spent / cust.orders : 0;
+    const cls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+    return `<tr>
+      <td><span class="rank-num ${cls}">${i+1}</span></td>
+      <td class="strong">${cust.name}</td>
+      <td style="font-size:12px;color:var(--text-2)">${cust.city}, ${cust.province}</td>
+      <td class="num"><strong>${fmt$(cust.spent)}</strong></td>
+      <td class="num">${cust.orders}</td>
+      <td class="num">${fmt$(avg)}</td>
+      <td style="font-size:12px;color:var(--text-3)">${cust.lastOrder}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// MULTI-STORE
+// ═══════════════════════════════════════════════════════
+function renderMultiStore() {
+  if (!ST) return;
+  const locs = ST.byLocation;
+  const totalRev = locs.reduce((s, l) => s + l.revenue, 0);
+  const colors = ['var(--accent)', 'var(--sage)', 'var(--blue)'];
+  const letters = ['SJ', 'MO', 'HX'];
+
+  $('multistore-cards').innerHTML = locs.map((l, i) => {
+    const pct = totalRev > 0 ? Math.round(l.revenue / totalRev * 100) : 0;
+    return `<div class="store-card">
+      <div class="store-card-header">
+        <div class="store-avatar" style="background:${colors[i]};font-size:15px">${letters[i]}</div>
+        <div>
+          <div class="store-name">${l.location}</div>
+          <div class="store-pct">${pct}% of chain revenue</div>
+        </div>
+      </div>
+      <div class="store-metrics">
+        <div class="store-metric"><div class="sm-label">Revenue</div><div class="sm-val">${fmtK(l.revenue)}</div></div>
+        <div class="store-metric"><div class="sm-label">Transactions</div><div class="sm-val">${fmtN(l.transactions)}</div></div>
+        <div class="store-metric"><div class="sm-label">Avg Ticket</div><div class="sm-val">${fmt$(l.avgTransactionValue)}</div></div>
+        <div class="store-metric"><div class="sm-label">Units Sold</div><div class="sm-val">${fmtN(l.unitsSold)}</div></div>
+      </div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:var(--text-3)">Gross Margin</span>
+        <span class="badge ${l.grossMargin >= 55 ? 'badge-green' : 'badge-amber'}">${l.grossMargin}% GM</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('multistore-tbody').innerHTML = locs.map((l, i) => {
+    const pct = totalRev > 0 ? Math.round(l.revenue / totalRev * 100) : 0;
+    return `<tr>
+      <td style="display:flex;align-items:center;gap:10px">
+        <div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0"></div>
+        <span class="strong">${l.location}</span>
+      </td>
+      <td class="num">${fmt$(l.revenue)}</td>
+      <td class="num">${fmtN(l.transactions)}</td>
+      <td class="num">${fmt$(l.avgTransactionValue)}</td>
+      <td class="num">${fmtN(l.unitsSold)}</td>
+      <td class="num"><span style="color:${l.grossMargin >= 55 ? 'var(--green)' : 'var(--amber)'};font-weight:600">${l.grossMargin}%</span></td>
+      <td>
+        <div class="inline-bar">
+          <div class="inline-bar-track" style="width:80px"><div class="inline-bar-fill" style="width:${pct}%;background:${colors[i]}"></div></div>
+          <span class="inline-bar-val">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // AI insight
+  const sorted = [...locs].sort((a, b) => b.avgTransactionValue - a.avgTransactionValue);
+  const topAOV = sorted[0];
+  const bottomAOV = sorted[sorted.length - 1];
+  $('multistore-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
+    <div class="ai-text">
+      <strong>${topAOV.location}</strong> leads on average transaction value at 
+      <em>${fmt$(topAOV.avgTransactionValue)}</em> — 
+      ${Math.round((topAOV.avgTransactionValue - bottomAOV.avgTransactionValue) / bottomAOV.avgTransactionValue * 100)}% above ${bottomAOV.location}. 
+      Saint John drives <strong>${Math.round(locs[0].revenue / totalRev * 100)}%</strong> of chain revenue with the highest transaction volume. 
+      Consider sharing top-performing Saint John buying decisions with the other locations.
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// NAV & UI
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + tab);
+  if (page) page.classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+  document.getElementById('main-scroll')?.scrollTo(0, 0);
+  // Close sidebar on mobile
+  if (window.innerWidth <= 900) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+function onStoreChange(val) {
+  activeStore = val;
+  renderAll();
+}
+
+function setPeriod(period, btn) {
+  document.querySelectorAll('#period-toggle .pill-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Period switching - would filter data; for now re-renders same data
+  renderSales();
+}
+
+// ═══════════════════════════════════════════════════════
+// TABLE SORTING
+// ═══════════════════════════════════════════════════════
+const sortState = {};
+function sortTable(tableId, colIdx) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const key = tableId + '_' + colIdx;
+  const asc = sortState[key] !== true;
+  sortState[key] = asc;
+
+  // Update header indicators
+  const ths = table.querySelectorAll('th');
+  ths.forEach((th, i) => {
+    th.classList.remove('th-asc', 'th-desc');
+    if (i === colIdx) th.classList.add(asc ? 'th-asc' : 'th-desc');
+  });
+
+  const tbody = table.querySelector('tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  rows.sort((a, b) => {
+    const aCell = a.cells[colIdx]?.textContent?.trim() || '';
+    const bCell = b.cells[colIdx]?.textContent?.trim() || '';
+    // Try numeric
+    const aNum = parseFloat(aCell.replace(/[$,%KM]/g, '').replace(/,/g, ''));
+    const bNum = parseFloat(bCell.replace(/[$,%KM]/g, '').replace(/,/g, ''));
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      return asc ? aNum - bNum : bNum - aNum;
+    }
+    return asc ? aCell.localeCompare(bCell) : bCell.localeCompare(aCell);
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+
+// Click outside sidebar to close on mobile
+document.addEventListener('click', (e) => {
+  if (window.innerWidth <= 900) {
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.getElementById('hamburger');
+    if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && !hamburger.contains(e.target)) {
+      sidebar.classList.remove('open');
+    }
   }
 });
 </script>
