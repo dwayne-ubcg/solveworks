@@ -247,6 +247,7 @@ input,select{font-family:inherit;font-size:13px}
 /* ── STORE CARD ── */
 .store-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:20px;transition:all var(--t)}
 .store-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.store-card-active{border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(196,168,130,0.15)}
 .store-card-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
 .store-avatar{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-dk));display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff}
 .store-name{font-weight:700;font-size:15px}
@@ -726,6 +727,9 @@ input,select{font-family:inherit;font-size:13px}
           </div>
         </div>
 
+        <!-- Store filter notice for Sell-Through -->
+        <div id="st-store-note" style="display:none;background:var(--amber-lt,#fff8e6);border:1px solid var(--amber,#D4A84B);border-radius:8px;padding:10px 16px;font-size:12.5px;color:var(--text-2);margin-bottom:0" class="section"></div>
+
         <!-- 2.12 Season Summary Cards -->
         <div class="g-4 section" id="st-season-kpis"></div>
         <div class="g-3 section" id="st-season-kpis-2"></div>
@@ -851,6 +855,36 @@ input,select{font-family:inherit;font-size:13px}
         </div>
         <!-- Inventory Value KPIs -->
         <div class="g-4 section" id="inv-kpis"></div>
+        <!-- Aging Buckets Section -->
+        <div class="section" id="aging-buckets-section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">📦</span> Inventory Aging — Days on Floor</div>
+            <div style="font-size:11px;color:var(--text-3)">Click a tile to filter the table</div>
+          </div>
+          <div class="g-4 section" id="aging-tiles" style="margin-bottom:0"></div>
+          <div class="ai-box ai-box-red section" id="aging-ai" style="margin-top:12px"></div>
+          <div class="card" style="margin-top:12px">
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="data-table" id="aging-table">
+                  <thead>
+                    <tr>
+                      <th>Style</th>
+                      <th>Brand</th>
+                      <th class="num">Days on Floor</th>
+                      <th class="num">Units Remaining</th>
+                      <th class="num">Sell-Through %</th>
+                      <th class="num">Cost Tied Up</th>
+                      <th>Recommendation</th>
+                    </tr>
+                  </thead>
+                  <tbody id="aging-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- OTB Section -->
         <div class="section">
           <div class="section-header">
@@ -1010,6 +1044,13 @@ input,select{font-family:inherit;font-size:13px}
           <div class="page-header-text"><h2>Customer Intelligence</h2><div class="subtitle">Shopify customer data & top spenders</div></div>
         </div>
         <div class="g-4 section" id="cust-kpis"></div>
+        <!-- Customer Segments -->
+        <div class="section" id="cust-segments-section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🎯</span> Customer Segments</div>
+          </div>
+          <div class="g-3 section" id="cust-segments" style="margin-bottom:0"></div>
+        </div>
         <div class="section">
           <div class="section-header">
             <div class="section-title"><span class="s-icon">👑</span> Top Customers by Spend</div>
@@ -1026,6 +1067,8 @@ input,select{font-family:inherit;font-size:13px}
                       <th class="num">Total Spent</th>
                       <th class="num">Orders</th>
                       <th class="num">Avg Order</th>
+                      <th class="num">Avg Order Value</th>
+                      <th>Segment</th>
                       <th>Last Order</th>
                     </tr>
                   </thead>
@@ -1127,6 +1170,7 @@ let STD = null; // sell-through-detail.json
 let activeStore = 'all';
 let currentTab = 'briefing';
 let stSeason = 'spring'; // 'spring' | 'fall' | 'all'
+const EXCLUDED_BRANDS = ['UNKNOWN', 'SIDEWALK SALE', 'GIFT CARD'];
 
 // ═══════════════════════════════════════════════════════
 // AUTH
@@ -1313,11 +1357,34 @@ function getLocationData() {
 // ═══════════════════════════════════════════════════════
 // BRIEFING TAB
 // ═══════════════════════════════════════════════════════
+// ── Store filter helpers ──
+function getStoreRevShare() {
+  // Returns revenue share (0-1) for activeStore vs chain total from ST.byLocation
+  if (!ST || activeStore === 'all') return 1;
+  const total = ST.byLocation.reduce((s, l) => s + l.revenue, 0);
+  const loc = ST.byLocation.find(l => l.location === activeStore);
+  return loc && total > 0 ? loc.revenue / total : 1;
+}
+function getStoreLocData() {
+  // Returns the ST.byLocation entry for the selected store, or null for all
+  if (!ST || activeStore === 'all') return null;
+  return ST.byLocation.find(l => l.location === activeStore) || null;
+}
+function getStoreInventory() {
+  // Returns DB.inventory.byLocation[storeName] or null for all
+  if (!DB || activeStore === 'all') return null;
+  return (DB.inventory.byLocation || {})[activeStore] || null;
+}
+
 function renderBriefing() {
   if (!DB || !ST) return;
   const b = DB.briefing;
   const a = DB.analytics;
   const s = ST.summary;
+
+  // Store filter: compute revenue share for selected store
+  const storeRevShare = getStoreRevShare();
+  const storeLoc = getStoreLocData(); // null = all stores
 
   // Update date
   const now = new Date();
@@ -1329,6 +1396,18 @@ function renderBriefing() {
 
   // Revenue 30d for weekly sparkline proxy
   const weeklyValues = Object.values(a.weeklyRevenue || {}).filter(v => v > 0);
+
+  // Store-filtered 30d revenue: use DB.analytics.byLocation if available, else scale
+  let storeRev30d = a.revenue30d;
+  let storeTxns30d = a.transactions30d;
+  let storeAOV = a.aov;
+  if (storeLoc) {
+    // Scale 30d figures by store revenue share from ST.byLocation
+    storeRev30d = Math.round(a.revenue30d * storeRevShare);
+    storeTxns30d = Math.round(a.transactions30d * storeRevShare);
+    storeAOV = storeLoc.avgTransactionValue || storeAOV;
+  }
+  const storeLabel = activeStore === 'all' ? 'All Stores' : activeStore;
 
   const heroRow1 = [
     {
@@ -1344,14 +1423,14 @@ function renderBriefing() {
       trend: null,
     },
     {
-      label: '30-Day Revenue',
-      value: fmt$(a.revenue30d),
-      sub: `${fmtN(a.transactions30d)} transactions`,
+      label: activeStore === 'all' ? '30-Day Revenue' : `30-Day Revenue — ${storeLabel}`,
+      value: fmt$(storeRev30d),
+      sub: `${fmtN(storeTxns30d)} transactions`,
     },
     {
       label: 'Avg Transaction',
-      value: fmt$(a.aov),
-      sub: 'Last 30 days',
+      value: fmt$(storeAOV),
+      sub: activeStore === 'all' ? 'Last 30 days' : storeLabel,
     },
     {
       label: 'Unfulfilled Orders',
@@ -1378,18 +1457,18 @@ function renderBriefing() {
   const heroRow2 = [
     {
       label: 'Gross Margin',
-      value: fmtPct(s.grossMargin),
-      sub: `$${fmtN(Math.round(s.grossProfit))} profit`,
+      value: storeLoc ? fmtPct(storeLoc.grossMargin) : fmtPct(s.grossMargin),
+      sub: storeLoc ? storeLabel : `$${fmtN(Math.round(s.grossProfit))} profit`,
     },
     {
       label: 'Blended Sell-Through',
-      value: fmtPct(stBlended),
-      sub: `${fmtN(s.totalUnitsSold)} units sold`,
+      value: storeLoc ? fmtPct(storeLoc.sellThrough) : fmtPct(stBlended),
+      sub: storeLoc ? `${fmtN(storeLoc.unitsSold)} units sold` : `${fmtN(s.totalUnitsSold)} units sold`,
     },
     {
-      label: 'Total Revenue (All-Time)',
-      value: '$' + (s.totalRevenue / 1000000).toFixed(2) + 'M',
-      sub: `${fmtN(s.totalSales)} transactions`,
+      label: storeLoc ? `Revenue — ${storeLabel}` : 'Total Revenue (All-Time)',
+      value: storeLoc ? fmt$(storeLoc.revenue) : '$' + (s.totalRevenue / 1000000).toFixed(2) + 'M',
+      sub: storeLoc ? `${fmtN(storeLoc.transactions)} transactions` : `${fmtN(s.totalSales)} transactions`,
     },
     {
       label: '🚫 OOS Alerts',
@@ -1498,14 +1577,16 @@ function renderBriefing() {
   `).join('') || '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:16px 0">✓ All orders fulfilled</div>';
 
   // Business Health KPIs
-  const invTurns = s.totalRevenue > 0 ? (s.totalCOGS / (DB.inventory.totalValue || 1)).toFixed(1) : '—';
-  const monthlyRevAvg = s.totalRevenue / 14; // ~14 months
-  const monthsSupply = monthlyRevAvg > 0 ? ((DB.inventory.totalRetail || DB.inventory.totalValue) / monthlyRevAvg).toFixed(1) : '—';
+  const storeInvData = getStoreInventory();
+  const displayInvValue = storeInvData ? storeInvData.cost : DB.inventory.totalValue;
+  const displayGM = storeLoc ? storeLoc.grossMargin : s.grossMargin;
+  const displayST = storeLoc ? storeLoc.sellThrough : stBlended;
+  const displayAOV = storeAOV;
   const healthKpis = [
-    { label: 'Gross Margin', value: fmtPct(s.grossMargin), target: `Target: ${CONFIG.rules.target_margin}%`, color: s.grossMargin >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: s.grossMargin },
-    { label: 'Blended Sell-Through', value: fmtPct(stBlended), target: 'Target: ≥60%', color: stBlended >= 60 ? 'var(--green)' : stBlended >= 40 ? 'var(--amber)' : 'var(--red)', pct: stBlended },
-    { label: 'Inventory Value (Cost)', value: fmt$(DB.inventory.totalValue), target: `${DB.inventory.totalProducts} products on hand`, color: 'var(--blue)', pct: 70 },
-    { label: 'Avg Transaction', value: fmt$(a.aov), target: 'Last 30 days', color: 'var(--sage)', pct: Math.min(100, (a.aov / 200) * 100) },
+    { label: 'Gross Margin', value: fmtPct(displayGM), target: `Target: ${CONFIG.rules.target_margin}%${storeLoc ? ' · ' + storeLabel : ''}`, color: displayGM >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: displayGM },
+    { label: 'Blended Sell-Through', value: fmtPct(displayST), target: `Target: ≥60%${storeLoc ? ' (chain-wide)' : ''}`, color: displayST >= 60 ? 'var(--green)' : displayST >= 40 ? 'var(--amber)' : 'var(--red)', pct: displayST },
+    { label: storeLoc ? `Inventory Cost — ${storeLabel}` : 'Inventory Value (Cost)', value: fmt$(displayInvValue), target: storeInvData ? `${fmtN(storeInvData.units)} units` : `${DB.inventory.totalProducts} products on hand`, color: 'var(--blue)', pct: 70 },
+    { label: 'Avg Transaction', value: fmt$(displayAOV), target: activeStore === 'all' ? 'Last 30 days' : storeLabel, color: 'var(--sage)', pct: Math.min(100, (displayAOV / 200) * 100) },
   ];
   $('health-kpis').innerHTML = healthKpis.map(k => `
     <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)">
@@ -1666,19 +1747,21 @@ function renderSales() {
     </tr>
   `).join('');
 
-  // Location cards
-  const locs = ST.byLocation;
-  const totalLocRev = locs.reduce((sum, l) => sum + l.revenue, 0);
-  $('location-cards').innerHTML = locs.map((l, i) => {
+  // Location cards — filter to selected store if active
+  const allLocs = ST.byLocation;
+  const totalLocRev = allLocs.reduce((sum, l) => sum + l.revenue, 0);
+  const visibleLocs = activeStore === 'all' ? allLocs : allLocs.filter(l => l.location === activeStore);
+  $('location-cards').innerHTML = visibleLocs.map((l) => {
+    const i = allLocs.indexOf(l);
     const letters = ['SJ', 'MO', 'HX'];
     const colors = ['var(--accent)', 'var(--sage)', 'var(--blue)'];
     const pct = totalLocRev > 0 ? Math.round(l.revenue / totalLocRev * 100) : 0;
-    return `<div class="store-card">
+    return `<div class="store-card${activeStore !== 'all' ? ' store-card-active' : ''}">
       <div class="store-card-header">
-        <div class="store-avatar" style="background:${colors[i]}">${letters[i]}</div>
+        <div class="store-avatar" style="background:${colors[i] || 'var(--accent)'}">${letters[i] || l.location.substring(0,2).toUpperCase()}</div>
         <div>
           <div class="store-name">${l.location}</div>
-          <div class="store-pct">${pct}% of revenue</div>
+          <div class="store-pct">${pct}% of chain revenue</div>
         </div>
         <span class="badge ${l.grossMargin >= 55 ? 'badge-green' : 'badge-amber'}" style="margin-left:auto">${l.grossMargin}% GM</span>
       </div>
@@ -1690,7 +1773,7 @@ function renderSales() {
       </div>
       <div style="margin-top:12px">
         <div class="inline-bar-track" style="height:5px">
-          <div class="inline-bar-fill" style="width:${pct}%;background:${colors[i]}"></div>
+          <div class="inline-bar-fill" style="width:${pct}%;background:${colors[i] || 'var(--accent)'}"></div>
         </div>
       </div>
     </div>`;
@@ -1741,6 +1824,17 @@ function alertPriority(alert) {
 
 function renderSellThrough() {
   if (!STD || !ST) return;
+
+  // Store filter notice
+  const stNote = $('st-store-note');
+  if (stNote) {
+    if (activeStore !== 'all') {
+      stNote.style.display = '';
+      stNote.innerHTML = `<span style="font-weight:600">📍 ${activeStore} selected:</span> Sell-through data is chain-wide — store filter applies to revenue and inventory metrics only.`;
+    } else {
+      stNote.style.display = 'none';
+    }
+  }
 
   const seasonStyles = getSeasonStyles();
 
@@ -1929,23 +2023,32 @@ function renderSellThrough() {
   const sa = ST.sizeAnalysis;
 
   // If currentStock is empty (build-order race condition), rebuild from sell-through-detail
-  if (STD && STD.brands && Object.keys(sa.currentStock || {}).length === 0) {
+  // Always rebuild size stock and sold from STD (sa.currentStock and sa.unitsSold may be empty)
+  if (STD && STD.brands) {
     const stockBySize = {};
+    const soldBySize = {};
+    const SM = { XS:['XS','XSMALL'], S:['S','SMALL','SM'], 'S/M':['S/M','S-M'], M:['M','MED','MEDIUM'], 'M/L':['M/L','M-L','ML'], L:['L','LG','LRG','LARGE'], XL:['XL','XLARGE','X-LARGE'], XXL:['XXL','2XL','2X'] };
     for (const brand of STD.brands) {
+      if (EXCLUDED_BRANDS.includes(brand.brand)) continue;
       for (const style of brand.styles) {
         for (const sku of (style.skus || [])) {
           const sz = (sku.label || '').toUpperCase().trim();
           if (!sz) continue;
-          // Canonical size mapping (inline)
-          const SM = { XS:['XS','XSMALL'], S:['S','SMALL','SM'], 'S/M':['S/M','S-M'], M:['M','MED','MEDIUM'], 'M/L':['M/L','M-L','ML'], L:['L','LG','LRG','LARGE'], XL:['XL','XLARGE','X-LARGE'], XXL:['XXL','2XL','2X'] };
           let canon = /^\d{2}$/.test(sz) ? sz : null;
           if (!canon) { for (const [c, vs] of Object.entries(SM)) { if (vs.includes(sz) || c === sz) { canon = c; break; } } }
-          if (canon) stockBySize[canon] = (stockBySize[canon] || 0) + (sku.remaining || 0);
+          if (canon) {
+            stockBySize[canon] = (stockBySize[canon] || 0) + (sku.remaining || 0);
+            soldBySize[canon] = (soldBySize[canon] || 0) + (sku.sold || 0);
+          }
         }
       }
     }
-    sa.currentStock = stockBySize;
-    console.log('Size stock rebuilt from detail:', stockBySize);
+    // Only override if STD has data (prefer STD over empty sa data)
+    if (Object.keys(stockBySize).length > 0) {
+      sa.currentStock = stockBySize;
+      if (Object.keys(sa.unitsSold || {}).length === 0) sa.unitsSold = soldBySize;
+      console.log('Size curves rebuilt from STD detail:', stockBySize);
+    }
   }
 
   const standardSizes = ['XS', 'S', 'S/M', 'M', 'M/L', 'L', 'XL', 'XXL'];
@@ -2023,55 +2126,51 @@ function renderSellThrough() {
     </div>`;
 
   // ── 2.15 Slow Movers + Dead Stock ──
-  // Build from sell-through-detail (STD) — has accurate remaining, velocity, floorDate
-  const slowFromDetail = [];
+  // Build from sell-through-detail (STD) — filtered by sellThrough < 30%, aged >= 21 days
+  const slowMovers = [];
   if (STD && STD.brands) {
+    const avgCostRatio = ST.summary.totalCOGS / ST.summary.totalRevenue;
     for (const brand of STD.brands) {
+      if (EXCLUDED_BRANDS.includes(brand.brand)) continue;
       for (const style of brand.styles) {
-        const rem = style.remaining || 0;
-        if (rem === 0) continue; // Not slow if nothing on floor
-        // Estimate cost per unit from brand avg supply price or ~45% of revenue
-        const avgCost = style.sold > 0 ? ((style.revenue || 0) / style.sold) * 0.45 : rem * 40;
-        const costTiedUp = rem * (style.sold > 0 ? (style.revenue / style.sold) * 0.45 : 40);
-        slowFromDetail.push({
-          name: style.name,
-          brand: brand.brand,
-          floorDate: style.floorDate,
-          weeksInStore: style.weeks || 0,
-          sold: style.sold || 0,
-          remaining: rem,
-          sellThrough: style.sellThrough || 0,
-          vel: style.vel || 0,
-          costTiedUp: Math.round(costTiedUp),
-          wos: style.wos || 999,
+        if ((style.remaining || 0) <= 0) continue;
+        if ((style.sellThrough || 0) >= 30) continue; // not slow
+        const daysOld = Math.round((new Date() - new Date(style.floorDate)) / 86400000);
+        if (daysOld < 21) continue; // give new arrivals 3 weeks
+        const costPerUnit = style.revenue > 0 && style.sold > 0
+          ? (style.revenue / style.sold) * avgCostRatio
+          : 30;
+        const costTiedUp = style.remaining * costPerUnit;
+        let rec = 'Monitor';
+        if (daysOld >= 90 || (daysOld >= 60 && (style.sellThrough || 0) < 20)) rec = '🔴 30%+ markdown or clearance';
+        else if (daysOld >= 60 || (daysOld >= 30 && (style.sellThrough || 0) < 15)) rec = '🟠 20% markdown recommended';
+        else if (daysOld >= 30 && (style.sellThrough || 0) < 30) rec = '🟡 Consider 15% markdown';
+        slowMovers.push({
+          name: style.name, brand: brand.brand,
+          arrivedDate: style.floorDate, weeksInStore: style.weeks || 0,
+          currentStock: style.remaining, sellThrough: style.sellThrough || 0,
+          costTiedUp, recommendation: rec, vel: style.vel || 0, daysOld
         });
       }
     }
   }
-  // Sort: lowest sell-through first, then lowest velocity
-  const slow = slowFromDetail
-    .filter(s => s.weeksInStore >= 4) // at least 4 weeks on floor to judge
-    .sort((a, b) => a.sellThrough - b.sellThrough || a.vel - b.vel)
-    .slice(0, 25);
-  const deadStock = slow.filter(s => s.vel === 0);
+  slowMovers.sort((a, b) => (b.costTiedUp || 0) - (a.costTiedUp || 0));
+  const slow = slowMovers.slice(0, 25);
+  const deadStock = slowMovers.filter(s => s.vel === 0);
   $('slow-count-badge').textContent = deadStock.length + ' dead stock';
   $('slow-tbody').innerHTML = slow.map(s => {
     const st = s.sellThrough;
     const weeksColor = s.weeksInStore >= 8 ? 'var(--red)' : s.weeksInStore >= 4 ? 'var(--amber)' : 'var(--text-3)';
-    const arrivedStr = s.floorDate ? new Date(s.floorDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const rec = s.vel === 0 && s.weeksInStore >= 8 ? '🔴 Markdown or transfer'
-      : s.vel === 0 ? '⚠️ Monitor — no sales yet'
-      : s.sellThrough < 20 && s.weeksInStore >= 6 ? '🟡 Consider markdown 20%'
-      : '👁 Watch';
+    const arrivedStr = s.arrivedDate ? new Date(s.arrivedDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     return `<tr>
       <td class="strong">${s.name}</td>
       <td>${s.brand}</td>
       <td>${arrivedStr}</td>
       <td class="num" style="color:${weeksColor};font-weight:600">${fmtDec(s.weeksInStore, 1)}w</td>
-      <td class="num">${s.remaining}</td>
+      <td class="num">${s.currentStock}</td>
       <td class="num"><span class="badge ${st <= 10 ? 'badge-red' : st < 25 ? 'badge-amber' : 'badge-neutral'}">${Math.round(st)}%</span></td>
-      <td class="num" style="font-weight:600;color:var(--red)">${fmt$(s.costTiedUp)}</td>
-      <td style="font-size:11.5px;color:var(--text-2)">${rec}</td>
+      <td class="num" style="font-weight:600;color:var(--red)">${fmt$(Math.round(s.costTiedUp))}</td>
+      <td style="font-size:11.5px;color:var(--text-2)">${s.recommendation}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No slow movers found</td></tr>';
 
@@ -2081,10 +2180,10 @@ function renderSellThrough() {
 
   $('slow-ai').innerHTML = `<div class="ai-icon-wrap">⚠️</div>
     <div class="ai-text">
-      <strong>${deadStock.length} styles</strong> have zero sales velocity — that's <em>${fmt$(totalCostTied)}</em> in capital tied up in dead stock.
+      <strong>${deadStock.length} styles</strong> have zero sales velocity — that's <em>${fmt$(Math.round(totalCostTied))}</em> in capital tied up in dead stock.
       ${topNames ? ` Top offenders by cost: ${topNames}.` : ''}
       Recommend a markdown event: at 25% off you recover substantial margin vs. end-of-season clearance at 50%+.
-      ${deadStock.filter(s => s.weeksInStore >= 8).length > 0 ? ` <strong>${deadStock.filter(s => s.weeksInStore >= 8).length} styles</strong> have been on the floor 8+ weeks with no movement — consider immediate markdown or inter-store transfer.` : ''}
+      ${deadStock.filter(s => s.daysOld >= 60).length > 0 ? ` <strong>${deadStock.filter(s => s.daysOld >= 60).length} styles</strong> have been on the floor 60+ days with no movement — consider immediate markdown or inter-store transfer.` : ''}
     </div>`;
 }
 
@@ -2145,14 +2244,20 @@ function renderInventory() {
   if (!DB || !ST) return;
   const inv = DB.inventory;
   const s = ST.summary;
+  const storeInv = getStoreInventory(); // null = all stores
+  const storeLabel = activeStore === 'all' ? 'All Stores' : activeStore;
 
-  // Inventory KPIs
+  // Inventory KPIs — use per-store data when filtered
   const totalRetail = inv.brandBreakdown.reduce((sum, b) => sum + (b.retail || 0), 0);
+  const displayCost = storeInv ? storeInv.cost : inv.totalValue;
+  const displayRetail = storeInv ? storeInv.retail : totalRetail;
+  const displayUnits = storeInv ? storeInv.units : inv.totalUnits;
+  const impliedMargin = displayRetail > 0 ? (displayRetail - displayCost) / displayRetail * 100 : 0;
   $('inv-kpis').innerHTML = [
-    { label: 'Inventory at Cost', value: fmt$(inv.totalValue), sub: `${inv.totalProducts} products`, color: 'var(--text)' },
-    { label: 'Inventory at Retail', value: fmt$(totalRetail), sub: 'Full retail value', color: 'var(--text)' },
-    { label: 'Implied Margin on Hand', value: fmtPct(totalRetail > 0 ? (totalRetail - inv.totalValue) / totalRetail * 100 : 0), sub: 'Retail - cost ÷ retail', color: 'var(--green)' },
-    { label: 'Brands on Floor', value: inv.brandBreakdown.length, sub: 'Active brands', color: 'var(--text)' },
+    { label: storeInv ? `Inventory at Cost — ${storeLabel}` : 'Inventory at Cost', value: fmt$(displayCost), sub: storeInv ? `${fmtN(displayUnits)} units` : `${inv.totalProducts} products`, color: 'var(--text)' },
+    { label: storeInv ? `Inventory at Retail — ${storeLabel}` : 'Inventory at Retail', value: fmt$(displayRetail), sub: 'Full retail value', color: 'var(--text)' },
+    { label: 'Implied Margin on Hand', value: fmtPct(impliedMargin), sub: 'Retail - cost ÷ retail', color: 'var(--green)' },
+    { label: 'Brands on Floor', value: inv.brandBreakdown.length, sub: storeInv ? storeLabel : 'Active brands', color: 'var(--text)' },
   ].map(k => `
     <div class="kpi-tile">
       <div class="kt-label">${k.label}</div>
@@ -2224,6 +2329,101 @@ function renderInventory() {
       </td>
     </tr>`;
   }).join('');
+
+  // Render aging buckets
+  renderAgingBuckets();
+}
+
+// ═══════════════════════════════════════════════════════
+// AGING BUCKETS
+// ═══════════════════════════════════════════════════════
+let agingActiveBucket = null; // null = all
+
+function buildAgingData() {
+  if (!STD || !STD.brands || !ST) return [];
+  const now = new Date();
+  const avgCostRatio = ST.summary.totalCOGS / ST.summary.totalRevenue;
+  const rows = [];
+  for (const brand of STD.brands) {
+    if (EXCLUDED_BRANDS.includes(brand.brand)) continue;
+    for (const style of brand.styles) {
+      if ((style.remaining || 0) <= 0) continue;
+      const floorDate = new Date(style.floorDate);
+      const daysOld = Math.round((now - floorDate) / 86400000);
+      const bucket = daysOld < 30 ? '0-30' : daysOld < 60 ? '30-60' : daysOld < 90 ? '60-90' : '90+';
+      const costPerUnit = (style.revenue > 0 && (style.sold + style.remaining) > 0)
+        ? (style.revenue / (style.sold + style.remaining)) * avgCostRatio
+        : 30;
+      const costTiedUp = style.remaining * costPerUnit;
+      let rec = 'Monitor';
+      if (daysOld >= 90) rec = '30%+ markdown or clearance';
+      else if (daysOld >= 60 && (style.sellThrough || 0) < 30) rec = '20% markdown recommended';
+      else if (daysOld >= 30 && (style.sellThrough || 0) < 30) rec = 'Consider 15% markdown';
+      rows.push({ name: style.name, brand: brand.brand, daysOld, bucket, remaining: style.remaining, sellThrough: style.sellThrough || 0, costTiedUp, rec });
+    }
+  }
+  return rows;
+}
+
+function renderAgingBuckets() {
+  const tilesEl = $('aging-tiles');
+  const aiEl = $('aging-ai');
+  const tbodyEl = $('aging-tbody');
+  if (!tilesEl || !aiEl || !tbodyEl) return;
+  if (!STD || !ST) return;
+
+  const rows = buildAgingData();
+  const buckets = [
+    { key: '0-30', label: '0–30 Days', color: 'var(--green)', bg: 'var(--green-lt,#edfaee)' },
+    { key: '30-60', label: '30–60 Days', color: 'var(--amber)', bg: 'var(--amber-lt,#fff8e6)' },
+    { key: '60-90', label: '60–90 Days', color: 'var(--red)', bg: 'var(--red-lt,#fdecea)' },
+    { key: '90+', label: '90+ Days (Dead Stock)', color: 'var(--red)', bg: 'var(--red-lt,#fdecea)' },
+  ];
+
+  // Aggregate by bucket
+  const bucketAgg = {};
+  for (const b of buckets) {
+    bucketAgg[b.key] = { units: 0, cost: 0 };
+  }
+  for (const r of rows) {
+    bucketAgg[r.bucket].units += r.remaining;
+    bucketAgg[r.bucket].cost += r.costTiedUp;
+  }
+
+  tilesEl.innerHTML = buckets.map(b => {
+    const agg = bucketAgg[b.key];
+    const isActive = agingActiveBucket === b.key;
+    return `<div class="kpi-tile" onclick="setAgingBucket('${b.key}')" style="cursor:pointer;border:2px solid ${isActive ? b.color : 'transparent'};background:${isActive ? b.bg : ''};transition:all .2s">
+      <div class="kt-label" style="color:${b.color};font-weight:700">${b.label}</div>
+      <div class="kt-value" style="color:${b.color};font-size:22px">${fmtN(agg.units)} units</div>
+      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${fmt$(Math.round(agg.cost))} cost tied up</div>
+    </div>`;
+  }).join('');
+
+  // AI insight on 90+ bucket
+  const deadAgg = bucketAgg['90+'];
+  aiEl.innerHTML = `<div class="ai-icon-wrap">⚠️</div>
+    <div class="ai-text">You have <strong>${fmtN(deadAgg.units)} units</strong> in the 90+ day bucket representing <strong>${fmt$(Math.round(deadAgg.cost))}</strong> in cost. These are dead stock. Recommend a targeted markdown event to recover capital before end of season.</div>`;
+
+  // Detail table — filter by active bucket
+  const displayRows = agingActiveBucket ? rows.filter(r => r.bucket === agingActiveBucket) : rows;
+  displayRows.sort((a, b) => b.costTiedUp - a.costTiedUp);
+
+  const bucketColor = { '0-30': 'badge-green', '30-60': 'badge-amber', '60-90': 'badge-red', '90+': 'badge-red' };
+  tbodyEl.innerHTML = displayRows.map(r => `<tr>
+    <td class="strong">${r.name}</td>
+    <td>${r.brand}</td>
+    <td class="num"><span class="badge ${bucketColor[r.bucket]}">${r.daysOld}d</span></td>
+    <td class="num">${fmtN(r.remaining)}</td>
+    <td class="num"><span class="badge ${r.sellThrough >= 50 ? 'badge-green' : r.sellThrough >= 25 ? 'badge-amber' : 'badge-red'}">${Math.round(r.sellThrough)}%</span></td>
+    <td class="num" style="font-weight:600;color:var(--red)">${fmt$(Math.round(r.costTiedUp))}</td>
+    <td style="font-size:11.5px;color:var(--text-2)">${r.rec}</td>
+  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No items in this bucket</td></tr>';
+}
+
+function setAgingBucket(bucket) {
+  agingActiveBucket = agingActiveBucket === bucket ? null : bucket;
+  renderAgingBuckets();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2825,6 +3025,12 @@ function renderBuyPlanning() {
 // ═══════════════════════════════════════════════════════
 // CUSTOMERS
 // ═══════════════════════════════════════════════════════
+function getCustomerSegment(cust) {
+  if (cust.spent >= 500 && cust.orders >= 3) return 'VIP';
+  if (cust.orders >= 2) return 'Regular';
+  return 'One-Time';
+}
+
 function renderCustomers() {
   if (!DB) return;
   const c = DB.customers;
@@ -2842,10 +3048,46 @@ function renderCustomers() {
     </div>
   `).join('');
 
+  // Customer Segments
   const topC = c.topCustomers || [];
+  const vipCustomers = topC.filter(cu => getCustomerSegment(cu) === 'VIP');
+  const regularCustomers = topC.filter(cu => getCustomerSegment(cu) === 'Regular');
+  const oneTimeCustomers = topC.filter(cu => getCustomerSegment(cu) === 'One-Time');
+  const vipAvgSpend = vipCustomers.length > 0 ? vipCustomers.reduce((s, cu) => s + cu.spent, 0) / vipCustomers.length : 0;
+  const regularAvgSpend = regularCustomers.length > 0 ? regularCustomers.reduce((s, cu) => s + cu.spent, 0) / regularCustomers.length : 0;
+  const segEl = $('cust-segments');
+  if (segEl) {
+    segEl.innerHTML = [
+      {
+        icon: '👑', label: 'VIP', count: vipCustomers.length, color: 'var(--accent)',
+        sub: `≥$500 spent + 3+ orders · avg ${fmt$(Math.round(vipAvgSpend))}/customer`,
+        badge: 'badge-amber',
+      },
+      {
+        icon: '🔄', label: 'Regular', count: regularCustomers.length, color: 'var(--sage)',
+        sub: `2+ orders · avg ${fmt$(Math.round(regularAvgSpend))}/customer`,
+        badge: 'badge-sage',
+      },
+      {
+        icon: '✨', label: 'One-Time', count: oneTimeCustomers.length, color: 'var(--blue)',
+        sub: 'Single purchase — re-engagement opportunity',
+        badge: 'badge-blue',
+      },
+    ].map(seg => `
+      <div class="kpi-tile" style="border-left:3px solid ${seg.color}">
+        <div class="kt-label">${seg.icon} ${seg.label} <span class="badge ${seg.badge}" style="font-size:10px">${seg.count}</span></div>
+        <div class="kt-value" style="font-size:22px;color:${seg.color}">${seg.count}</div>
+        <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${seg.sub}</div>
+      </div>
+    `).join('');
+  }
+
   $('cust-tbody').innerHTML = topC.map((cust, i) => {
     const avg = cust.orders > 0 ? cust.spent / cust.orders : 0;
     const cls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
+    const seg = getCustomerSegment(cust);
+    const segBadgeCls = seg === 'VIP' ? 'badge-amber' : seg === 'Regular' ? 'badge-sage' : 'badge-blue';
+    const segIcon = seg === 'VIP' ? '👑' : seg === 'Regular' ? '🔄' : '✨';
     return `<tr>
       <td><span class="rank-num ${cls}">${i+1}</span></td>
       <td class="strong">${cust.name}</td>
@@ -2853,6 +3095,8 @@ function renderCustomers() {
       <td class="num"><strong>${fmt$(cust.spent)}</strong></td>
       <td class="num">${cust.orders}</td>
       <td class="num">${fmt$(avg)}</td>
+      <td class="num">${fmt$(Math.round(avg))}</td>
+      <td><span class="badge ${segBadgeCls}">${segIcon} ${seg}</span></td>
       <td style="font-size:12px;color:var(--text-3)">${cust.lastOrder}</td>
     </tr>`;
   }).join('');
@@ -2870,11 +3114,12 @@ function renderMultiStore() {
 
   $('multistore-cards').innerHTML = locs.map((l, i) => {
     const pct = totalRev > 0 ? Math.round(l.revenue / totalRev * 100) : 0;
-    return `<div class="store-card">
+    const isSelected = activeStore !== 'all' && l.location === activeStore;
+    return `<div class="store-card${isSelected ? ' store-card-active' : ''}">
       <div class="store-card-header">
         <div class="store-avatar" style="background:${colors[i]};font-size:15px">${letters[i]}</div>
         <div>
-          <div class="store-name">${l.location}</div>
+          <div class="store-name">${l.location}${isSelected ? ' <span class="badge badge-sage" style="font-size:10px;padding:2px 6px">Selected</span>' : ''}</div>
           <div class="store-pct">${pct}% of chain revenue</div>
         </div>
       </div>
@@ -2893,10 +3138,11 @@ function renderMultiStore() {
 
   $('multistore-tbody').innerHTML = locs.map((l, i) => {
     const pct = totalRev > 0 ? Math.round(l.revenue / totalRev * 100) : 0;
-    return `<tr>
+    const isSelected = activeStore !== 'all' && l.location === activeStore;
+    return `<tr${isSelected ? ' style="background:var(--sage-lt,rgba(143,163,135,0.1));font-weight:600"' : ''}>
       <td style="display:flex;align-items:center;gap:10px">
         <div style="width:8px;height:8px;border-radius:50%;background:${colors[i]};flex-shrink:0"></div>
-        <span class="strong">${l.location}</span>
+        <span class="strong">${l.location}</span>${isSelected ? ' <span class="badge badge-sage" style="font-size:10px;padding:2px 5px">Active</span>' : ''}
       </td>
       <td class="num">${fmt$(l.revenue)}</td>
       <td class="num">${fmtN(l.transactions)}</td>
