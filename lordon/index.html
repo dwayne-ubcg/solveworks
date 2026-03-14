@@ -1495,7 +1495,7 @@ function renderBriefing() {
   // Business Health KPIs
   const invTurns = s.totalRevenue > 0 ? (s.totalCOGS / (DB.inventory.totalValue || 1)).toFixed(1) : '—';
   const monthlyRevAvg = s.totalRevenue / 14; // ~14 months
-  const monthsSupply = monthlyRevAvg > 0 ? (DB.inventory.totalValue / monthlyRevAvg * (1/0.45)).toFixed(1) : '—';
+  const monthsSupply = monthlyRevAvg > 0 ? ((DB.inventory.totalRetail || DB.inventory.totalValue) / monthlyRevAvg).toFixed(1) : '—';
   const healthKpis = [
     { label: 'Gross Margin', value: fmtPct(s.grossMargin), target: `Target: ${CONFIG.rules.target_margin}%`, color: s.grossMargin >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: s.grossMargin },
     { label: 'Blended Sell-Through', value: fmtPct(stBlended), target: 'Target: ≥60%', color: stBlended >= 60 ? 'var(--green)' : stBlended >= 40 ? 'var(--amber)' : 'var(--red)', pct: stBlended },
@@ -2131,11 +2131,12 @@ function recalcOTB() {
   if (!DB || !ST) return;
   const s = ST.summary;
   const inv = DB.inventory;
+  const storeCount = CONFIG.stores.length || 1;
+  const eomMultiplier = storeCount >= 3 ? 3.0 : storeCount >= 2 ? 2.5 : 2.25;
   const periodMonths = ST.periodWeeks / 4.33;
   const plannedMonthlySales = s.totalRevenue / periodMonths;
-  const plannedEOM = plannedMonthlySales * 2.25;
-  const avgMargin = s.grossMargin / 100;
-  const bomInventoryRetail = inv.totalValue / (1 - avgMargin);
+  const plannedEOM = plannedMonthlySales * eomMultiplier;
+  const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - (s.grossMargin / 100)));
   const onOrder = getOnOrder();
   const netOTB = plannedMonthlySales + plannedEOM - bomInventoryRetail - onOrder;
 
@@ -2156,11 +2157,13 @@ function renderBuyPlanning() {
   const inv = DB.inventory;
 
   // ── 2.20 OTB Calculator ──
+  const storeCount = CONFIG.stores.length || 1;
+  const eomMultiplier = storeCount >= 3 ? 3.0 : storeCount >= 2 ? 2.5 : 2.25;
   const periodMonths = ST.periodWeeks / 4.33;
   const plannedMonthlySales = s.totalRevenue / periodMonths;
-  const plannedEOM = plannedMonthlySales * 2.25;
+  const plannedEOM = plannedMonthlySales * eomMultiplier;
   const avgMargin = s.grossMargin / 100;
-  const bomInventoryRetail = inv.totalValue / (1 - avgMargin);
+  const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - avgMargin));
   const onOrder = getOnOrder();
   const netOTB = plannedMonthlySales + plannedEOM - bomInventoryRetail - onOrder;
 
@@ -2171,11 +2174,11 @@ function renderBuyPlanning() {
         <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedMonthlySales)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--green-lt)">
-        <span class="otb-formula-label">+ Planned EOM Inventory<br><span style="font-size:10.5px;color:var(--text-3)">Planned Monthly Sales × 2.25 (target 2-2.5mo supply)</span></span>
+        <span class="otb-formula-label">+ Planned EOM Inventory<br><span style="font-size:10.5px;color:var(--text-3)">Planned Monthly Sales × ${eomMultiplier} (${storeCount} stores × ~${fmtDec(eomMultiplier/storeCount, 1)}mo each)</span></span>
         <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedEOM)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--red-lt)">
-        <span class="otb-formula-label">− Beginning Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">Cost ${fmt$(inv.totalValue)} ÷ (1 − ${Math.round(avgMargin * 100)}% margin)</span></span>
+        <span class="otb-formula-label">− Beginning Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">Actual retail value across ${storeCount} stores (${fmt$(inv.totalValue)} at cost)</span></span>
         <span class="otb-formula-value" style="color:var(--red)">${fmt$(bomInventoryRetail)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--bg-card);border:1.5px solid var(--border)">
@@ -2222,18 +2225,18 @@ function renderBuyPlanning() {
     {
       label: 'Months of Supply',
       value: fmtDec(moSupply, 1) + 'mo',
-      sub: 'Inventory retail ÷ monthly sales',
-      target: 'Target: 2–2.5 months',
-      good: moSupply >= 2 && moSupply <= 2.5,
-      warn: moSupply < 3,
+      sub: `Inventory retail ÷ monthly sales (${storeCount} stores)`,
+      target: storeCount >= 3 ? 'Target: 3–4 months (multi-store)' : 'Target: 2–2.5 months',
+      good: storeCount >= 3 ? (moSupply >= 3 && moSupply <= 4) : (moSupply >= 2 && moSupply <= 2.5),
+      warn: storeCount >= 3 ? (moSupply >= 2.5 && moSupply < 5) : (moSupply < 3),
     },
     {
       label: 'Buy Ratio',
       value: '$' + buyRatio.toFixed(2),
-      sub: 'Inventory cost ÷ monthly sales',
-      target: 'Target: ~$0.40 per $1',
-      good: buyRatio >= 0.35 && buyRatio <= 0.45,
-      warn: buyRatio < 0.55,
+      sub: `Inventory cost ÷ monthly sales (${storeCount} stores)`,
+      target: storeCount >= 3 ? 'Target: ~$0.80–1.20 per $1 (multi-store)' : 'Target: ~$0.40 per $1',
+      good: storeCount >= 3 ? (buyRatio >= 0.80 && buyRatio <= 1.20) : (buyRatio >= 0.35 && buyRatio <= 0.45),
+      warn: storeCount >= 3 ? (buyRatio >= 0.60 && buyRatio < 1.50) : (buyRatio < 0.55),
     },
     {
       label: 'Monthly OTB %',
