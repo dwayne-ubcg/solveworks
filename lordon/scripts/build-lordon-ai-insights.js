@@ -173,7 +173,7 @@ function fallbackInsights(st, dashboard, metricsSummary, errorMessage) {
     salesAnalytics: {
       revenueInsight: `${topBrand} and ${topCategory} are driving the top line right now. Push what is already converting instead of spreading buys too wide across weak brands.`,
       brandInsight: `${topBrand} deserves close review for reorder depth, while the lowest sell-through brands should be cut back or marked down. Keep brand decisions simple: grow proven demand, reduce stuck inventory.`,
-      channelInsight: `POS remains the main engine, with online still smaller but usable for targeted sell-through pushes. Use email and Shopify to help clear long-tail product instead of discounting broad assortments in-store.`
+      channelInsight: `All revenue flows through Lightspeed POS across 3 stores. Focus markdown events and promotional pushes on in-store traffic and email marketing.`
     },
     sellThrough: {
       overallInsight: `Current sell-through is early-season and should not be judged like late May. Reorder proven winners fast, but do not overreact by chasing every small sample.`,
