@@ -747,6 +747,14 @@ input,select{font-family:inherit;font-size:13px}
   .topbar-right{gap:8px}
   .live-indicator span{display:none}
   .updated-time{display:none}
+  /* Bigger refresh button on mobile */
+  .refresh-btn{width:40px!important;height:40px!important;font-size:20px!important;border-radius:10px!important}
+  .refresh-btn.spinning{animation:spin .8s linear infinite}
+  /* Pull-to-refresh indicator */
+  .ptr-indicator{position:fixed;top:calc(var(--topbar-h) + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%) translateY(-50px);z-index:900;width:40px;height:40px;border-radius:50%;background:var(--bg-card);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 16px rgba(0,0,0,.12);transition:transform .2s;pointer-events:none;opacity:0}
+  .ptr-indicator.visible{opacity:1}
+  .ptr-indicator.refreshing{animation:spin .8s linear infinite}
+  @keyframes spin{from{transform:translateX(-50%) rotate(0deg)}to{transform:translateX(-50%) rotate(360deg)}}
 
   /* ── Hero KPI strip — horizontal swipeable ── */
   .hero-strip{
@@ -881,6 +889,7 @@ input,select{font-family:inherit;font-size:13px}
 </div>
 
 <!-- APP -->
+<div class="ptr-indicator" id="ptr-indicator">⟳</div>
 <div id="app">
 
   <!-- TOP BAR -->
@@ -912,7 +921,7 @@ input,select{font-family:inherit;font-size:13px}
         <span>Live</span>
       </div>
       <div class="updated-time" id="updated-label">—</div>
-      <button class="topbar-icon-btn" title="Refresh data" onclick="location.reload()">⟳</button>
+      <button class="topbar-icon-btn refresh-btn" id="refresh-btn" title="Refresh data" onclick="refreshDashboard()">⟳</button>
     </div>
   </div>
 
@@ -1842,6 +1851,42 @@ async function loadData() {
     console.error('Data load error:', e);
   }
 }
+
+// Refresh dashboard without full page reload (works in standalone/PWA mode)
+async function refreshDashboard() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.classList.add('spinning'); btn.style.pointerEvents = 'none'; }
+  try {
+    await loadData();
+  } catch(e) { console.error('Refresh failed:', e); }
+  if (btn) { setTimeout(() => { btn.classList.remove('spinning'); btn.style.pointerEvents = ''; }, 500); }
+}
+
+// Pull-to-refresh for standalone PWA
+(function initPullToRefresh() {
+  const main = document.querySelector('.main');
+  if (!main) return;
+  const ptr = document.getElementById('ptr-indicator');
+  let startY = 0, pulling = false, triggered = false;
+  const THRESHOLD = 80;
+  main.addEventListener('touchstart', function(e) {
+    if (main.scrollTop <= 0) { startY = e.touches[0].clientY; pulling = true; triggered = false; }
+  }, { passive: true });
+  main.addEventListener('touchmove', function(e) {
+    if (!pulling) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy > 10 && main.scrollTop <= 0) {
+      const progress = Math.min(dy / THRESHOLD, 1);
+      if (ptr) { ptr.style.transform = 'translateX(-50%) translateY(' + (progress * 50 - 50) + 'px)'; ptr.classList.add('visible'); }
+      if (dy >= THRESHOLD && !triggered) { triggered = true; if (ptr) ptr.classList.add('refreshing'); }
+    } else { pulling = false; if (ptr) { ptr.classList.remove('visible'); ptr.classList.remove('refreshing'); } }
+  }, { passive: true });
+  main.addEventListener('touchend', function() {
+    if (triggered) { refreshDashboard().then(() => { if (ptr) { ptr.classList.remove('refreshing','visible'); ptr.style.transform = ''; } }); }
+    else if (ptr) { ptr.classList.remove('visible'); ptr.style.transform = ''; }
+    pulling = false; triggered = false;
+  }, { passive: true });
+})();
 
 function renderAll() {
   const fns = [updateLastUpdated, renderBriefing, renderSales, renderSellThrough, renderInventory, renderBuyPlanning, renderCustomers, renderMultiStore];
