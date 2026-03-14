@@ -486,6 +486,150 @@ input,select{font-family:inherit;font-size:13px}
 .doc-file-size{font-size:11px;color:var(--text-3)}
 .doc-file-del{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:16px;padding:2px 6px;border-radius:6px;transition:all var(--t)}
 .doc-file-del:hover{background:var(--red-lt);color:var(--red)}
+
+/* ═══════════════════════════════════════════
+   MOBILE POLISH PASS — readability, touch targets, responsive tables
+   All overrides below. Desktop styles untouched.
+═══════════════════════════════════════════ */
+
+/* ── 1. Sidebar backdrop (CSS-only via pseudo-element) ── */
+.sidebar{transition:transform .25s cubic-bezier(.4,0,.2,1)}
+@media(max-width:900px){
+  .sidebar::after{
+    content:'';
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.45);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+    z-index:-1;
+  }
+  .sidebar.open::after{
+    opacity:1;
+    pointer-events:auto;
+    left:var(--sidebar-w); /* starts at sidebar edge */
+    right:0;
+    top:0;
+    bottom:0;
+    z-index:1;
+  }
+}
+
+/* ── 2. General mobile spacing ── */
+@media(max-width:900px){
+  .page-inner{padding:12px}
+  .card{padding:14px}
+  .section{margin-bottom:14px}
+  .section-header{margin-bottom:10px}
+}
+
+/* ── 3. Tiny text — bump content text to 12px minimum ── */
+@media(max-width:900px){
+  .kpi-sub,
+  .kt-meta,
+  .card-sub,
+  .section-title .s-count,
+  .st-style-table th,
+  .st-style-table td,
+  .sku-chip .sku-size,
+  .sku-chip .sku-sold,
+  .sku-chip .sku-st,
+  .sku-chip .sku-action,
+  .chat-time,
+  .rcpt-badge,
+  .doc-cat-desc,
+  .doc-cat-count,
+  .doc-file-size,
+  .size-gap-badge,
+  .otb-formula-label span,
+  .inline-bar-val { font-size:12px; }
+
+  /* badges and labels — readable but don't over-inflate */
+  .badge { font-size:11px; }
+  .st-thead { font-size:11px; }
+}
+
+/* ── 4. Hero strip — keep KPI values readable ── */
+@media(max-width:900px){
+  .hero-metric{padding:14px 12px}
+  .hero-metric .hm-value{font-size:22px}
+  .hero-metric .hm-value.lg{font-size:18px}
+  .hero-metric .hm-label{font-size:9.5px}
+  .hero-metric .hm-sub{font-size:10.5px}
+}
+@media(max-width:500px){
+  .hero-metric .hm-value{font-size:18px}
+  .hero-metric .hm-value.lg{font-size:16px}
+}
+
+/* ── 5. Table touch targets (Apple HIG 44px minimum) ── */
+@media(max-width:900px){
+  .data-table td,
+  .data-table th { min-height:44px; padding:10px 8px; }
+}
+
+/* ── 6. Chat tab mobile fixes ── */
+@media(max-width:900px){
+  .chat-window{height:calc(100vh - var(--topbar-h) - 60px)}
+  .chat-bubble{max-width:90%}
+  .chat-text{font-size:14px}
+  .chat-input-bar{position:sticky;bottom:0;z-index:10}
+}
+
+/* ── 7. OTB formula block — stack on mobile ── */
+@media(max-width:900px){
+  .otb-formula-row{flex-direction:column;align-items:flex-start;gap:2px}
+  .otb-formula-value{font-size:15px}
+}
+
+/* ── 8. Brand sell-through grid — 3 columns on small phones ── */
+@media(max-width:500px){
+  /* Show: Brand name (col1), Sell-Through (col2), Alert (col7 = last before chevron) — hide Revenue, Sold, Remaining, WOS */
+  .st-thead,
+  .st-brand-row{grid-template-columns:2fr 1fr 40px}
+
+  /* Hide columns: sold, revenue, remaining, WOS
+     In the 8-col grid those are cols 3,4,5,6 (1-indexed).
+     At 900px we already hide 3,4,5 — now also hide the 2nd column (was col2 after remap) */
+  .st-thead span:nth-child(2),
+  .st-thead span:nth-child(3),
+  .st-thead span:nth-child(4),
+  .st-thead span:nth-child(5),
+  .st-thead span:nth-child(6),
+  .st-brand-row span:nth-child(2),
+  .st-brand-row span:nth-child(3),
+  .st-brand-row span:nth-child(4),
+  .st-brand-row span:nth-child(5),
+  .st-brand-row span:nth-child(6){display:none}
+}
+
+/* ── 9. Season comparison table — hide SS25 rev, full-season, recommendation cols ── */
+@media(max-width:900px){
+  /* Columns: 1=Brand, 2=SS25 ST%, 3=SS26 ST%, 4=SS25 Full Season, 5=ST% Change, 6=Trend, 7=Recommendation */
+  .season-comp-table thead tr th:nth-child(2),
+  .season-comp-table thead tr th:nth-child(4),
+  .season-comp-table thead tr th:nth-child(7),
+  .season-comp-table tbody tr td:nth-child(2),
+  .season-comp-table tbody tr td:nth-child(4),
+  .season-comp-table tbody tr td:nth-child(7){display:none}
+  .season-comp-table{font-size:12px}
+}
+
+/* ── 10. Customer table — show Name, Spent, Orders, Segment only ── */
+@media(max-width:900px){
+  /* Columns: 1=#, 2=Name, 3=Location, 4=Spent, 5=Orders, 6=Avg Order, 7=Avg Order Value, 8=Segment, 9=Last Order */
+  #cust-table thead tr th:nth-child(1),
+  #cust-table thead tr th:nth-child(3),
+  #cust-table thead tr th:nth-child(6),
+  #cust-table thead tr th:nth-child(7),
+  #cust-table thead tr th:nth-child(9),
+  #cust-table tbody tr td:nth-child(1),
+  #cust-table tbody tr td:nth-child(3),
+  #cust-table tbody tr td:nth-child(6),
+  #cust-table tbody tr td:nth-child(7),
+  #cust-table tbody tr td:nth-child(9){display:none}
+}
 </style>
 </head>
 <body>
