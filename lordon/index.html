@@ -1956,6 +1956,7 @@ const CONFIG = {
 let DB = null;
 let ST = null;
 let STD = null; // sell-through-detail.json
+let AI = null;
 let activeStore = 'all';
 let currentTab = 'briefing';
 let stSeason = 'spring'; // 'spring' | 'fall' | 'all'
@@ -1989,7 +1990,7 @@ if (localStorage.getItem('lordon_auth') === 'true') {
 // ═══════════════════════════════════════════════════════
 // DATA LOADING
 // ═══════════════════════════════════════════════════════
-async function loadData() {
+async function initDashboard() {
   try {
     const [dbRes, stRes, stdRes] = await Promise.all([
       fetch('./data/dashboard.json?t=' + Date.now()),
@@ -1999,11 +2000,14 @@ async function loadData() {
     DB = await dbRes.json();
     ST = await stRes.json();
     STD = await stdRes.json();
+    try { AI = await fetch('./data/ai-insights.json').then(r => r.ok ? r.json() : null); } catch(e) { AI = null; }
     renderAll();
   } catch (e) {
     console.error('Data load error:', e);
   }
 }
+
+const loadData = initDashboard;
 
 // Refresh dashboard without full page reload (works in standalone/PWA mode)
 async function refreshDashboard() {
@@ -2209,6 +2213,9 @@ function renderBriefing() {
 
   // Update date
   const now = new Date();
+  const greetingText = AI?.briefing?.morningGreeting || 'Good morning, Lordon ☀️';
+  const greetingEl = document.querySelector('#page-briefing .page-header-text h2');
+  if (greetingEl) greetingEl.textContent = greetingText;
   $('briefing-date').textContent = now.toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Hero strip row 1: Today's metrics
@@ -2413,10 +2420,9 @@ function renderBriefing() {
   // Yesterday AI
   const topSeller = realSellers[0];
   const topCategory = ST.byCategory.sort((a,b) => b.revenue - a.revenue)[0];
+  const briefingHealthText = AI?.briefing?.healthContext || `Yesterday's <strong>${fmt$(b.yesterdayRevenue)}</strong> came from ${b.yesterdayTransactions} transactions. Your 30-day leader is <strong>${topSeller ? topSeller.name : 'N/A'}</strong> (${topSeller ? fmtN(topSeller.unitsSold) + ' units' : '—'}). Top category all-time: <em>${topCategory.category}</em> at <strong>${fmt$(topCategory.revenue)}</strong> revenue with <strong>${topCategory.sellThrough}%</strong> sell-through.`;
   $('yesterday-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
-    <div class="ai-text">Yesterday's <strong>${fmt$(b.yesterdayRevenue)}</strong> came from ${b.yesterdayTransactions} transactions. 
-    Your 30-day leader is <strong>${topSeller ? topSeller.name : 'N/A'}</strong> (${topSeller ? fmtN(topSeller.unitsSold) + ' units' : '—'}). 
-    Top category all-time: <em>${topCategory.category}</em> at <strong>${fmt$(topCategory.revenue)}</strong> revenue with <strong>${topCategory.sellThrough}%</strong> sell-through.</div>`;
+    <div class="ai-text">${briefingHealthText}</div>`;
 
   // Unfulfilled orders
   const orders = b.unfulfilledOrders || [];
@@ -2595,11 +2601,10 @@ function renderSales() {
       <span class="donut-item-val">${fmt$(cb.inStore + cb.online)}</span>
     </div>
   `;
+  const channelInsightText = AI?.salesAnalytics?.channelInsight || `<strong>${cb.inStorePct}%</strong> of 30-day revenue is in-store. Online drives <em>${fmt$(cb.online)}</em> — consider Shopify campaigns to grow digital share. Your email list of 7,296+ subscribers is an underutilized channel.`;
   $('channel-ai').innerHTML = `<div class="ai-box ai-box-blue">
     <div class="ai-icon-wrap">💡</div>
-    <div class="ai-text"><strong>${cb.inStorePct}%</strong> of 30-day revenue is in-store. 
-    Online drives <em>${fmt$(cb.online)}</em> — consider Shopify campaigns to grow digital share. 
-    Your email list of 7,296+ subscribers is an underutilized channel.</div>
+    <div class="ai-text">${channelInsightText}</div>
   </div>`;
 
   // Brand table (from ST.byBrand)
@@ -3301,12 +3306,9 @@ function renderAgingBuckets() {
   const carryoverCount = rows.filter(r => r.isCarryover).length;
   const carryoverCost = Math.round(rows.filter(r => r.isCarryover).reduce((s, r) => s + r.costTiedUp, 0));
   const newArrivals = rows.filter(r => r.daysOld < 14).length;
+  const agingInsightText = AI?.inventoryHealth?.agingInsight || `<strong>${fmtN(deadAgg.units)} units</strong> in the carryover/90+ day bucket representing <strong>${fmt$(Math.round(deadAgg.cost))}</strong> in cost. ${carryoverCount > 0 ? ` <strong>${carryoverCount} styles are carryover from last season</strong> — ${fmt$(carryoverCost)} in tied-up capital. Prioritize markdown or clearance event.` : ''} ${newArrivals > 0 ? ` <em>${newArrivals} styles arrived in the last 2 weeks — too early to judge.</em>` : ''}`;
   aiEl.innerHTML = `<div class="ai-icon-wrap">⚠️</div>
-    <div class="ai-text">
-      <strong>${fmtN(deadAgg.units)} units</strong> in the carryover/90+ day bucket representing <strong>${fmt$(Math.round(deadAgg.cost))}</strong> in cost.
-      ${carryoverCount > 0 ? ` <strong>${carryoverCount} styles are carryover from last season</strong> — ${fmt$(carryoverCost)} in tied-up capital. Prioritize markdown or clearance event.` : ''}
-      ${newArrivals > 0 ? ` <em>${newArrivals} styles arrived in the last 2 weeks — too early to judge.</em>` : ''}
-    </div>`;
+    <div class="ai-text">${agingInsightText}</div>`;
 
   // Detail table — filter by active bucket
   const displayRows = agingActiveBucket ? rows.filter(r => r.bucket === agingActiveBucket) : rows;
@@ -3533,28 +3535,17 @@ function renderBuyPlanning() {
 
     <div class="ai-box ai-box-default">
       <div class="ai-icon-wrap">💡</div>
-      <div class="ai-text">
-        <strong>${fmtDec(monthsLeft, 1)} months</strong> left in ${seasonLabel} across <strong>${storeCount} stores</strong>.
-        ${growthPct > 0 ? `With your <strong>${growthPct}% growth target</strong>, planned sales are <strong>${fmt$(plannedMonthlySales)}</strong>/mo (up from ${fmt$(plannedMonthlyBase)} baseline). ` : ''}
-        ${netOTB > 0
-          ? `You have <strong>${fmt$(netOTB)}</strong> to spend — prioritize categories running under 4 weeks of supply.`
-          : `Current inventory should carry you through the season. Check the category breakdown below — some categories may still need restocking even if the total looks covered.`}
-      </div>
+      <div class="ai-text">${AI?.buyPlanning?.otbContext || `<strong>${fmtDec(monthsLeft, 1)} months</strong> left in ${seasonLabel} across <strong>${storeCount} stores</strong>. ${growthPct > 0 ? `With your <strong>${growthPct}% growth target</strong>, planned sales are <strong>${fmt$(plannedMonthlySales)}</strong>/mo (up from ${fmt$(plannedMonthlyBase)} baseline). ` : ''}${netOTB > 0 ? `You have <strong>${fmt$(netOTB)}</strong> to spend — prioritize categories running under 4 weeks of supply.` : `Current inventory should carry you through the season. Check the category breakdown below — some categories may still need restocking even if the total looks covered.`}`}</div>
+    </div>
+
+    <div class="ai-box ai-box-sage" style="margin-top:12px;margin-bottom:16px">
+      <div class="ai-icon-wrap">✅</div>
+      <div class="ai-text">${AI?.buyPlanning?.actionItems || '1) Reorder proven winners. 2) Mark down long-tail inventory. 3) Keep receipts tight until spring demand broadens.'}</div>
     </div>
 
     ${ST.periodWeeks <= 14 ? `<div class="ai-box" style="background:linear-gradient(135deg,#EEF4FF,#E8F0FE);border:1.5px solid #C2D7F5;border-radius:12px;padding:16px 18px;margin-bottom:16px">
       <div class="ai-icon-wrap" style="background:#D6E4F9;color:#3B6CB5">📊</div>
-      <div class="ai-text">
-        <strong style="color:#2C5AA0">Early Season Context (${ST.periodWeeks} weeks in)</strong><br>
-        <span style="font-size:12.5px;line-height:1.6;color:#444">
-        You're in the <strong>slow start</strong> of the spring selling season — Jan through mid-March are historically the lowest revenue months. Last spring (2 stores), monthly revenue ramped from <strong>$78K in January → $169K in June</strong> — a <strong>2.2× increase</strong> from start to peak.<br><br>
-        📈 <strong>What this means for your numbers:</strong><br>
-        • <strong>Inventory Turns</strong> will look low now but should reach 3–4× by end of season as peak selling kicks in<br>
-        • <strong>Sell-through %</strong> is only ~20-30% — that's normal at this point. Target 55-65% by June 30<br>
-        • <strong>Months of Supply</strong> looks high because current sales velocity is the slowest it will be all season<br>
-        • <strong>OTB</strong> baseline uses last spring's full-season average ($120K/mo × 1.5 for 3 stores) — not the current cold-weather rate<br><br>
-        💡 <em>Revisit these numbers in mid-April when you have 6+ weeks of real spring selling data. The picture will sharpen considerably.</em>
-        </span>
+      <div class="ai-text">${AI?.buyPlanning?.otbContext || `<strong style="color:#2C5AA0">Early Season Context (${ST.periodWeeks} weeks in)</strong><br><span style="font-size:12.5px;line-height:1.6;color:#444">You're in the <strong>slow start</strong> of the spring selling season — Jan through mid-March are historically the lowest revenue months. Last spring (2 stores), monthly revenue ramped from <strong>$78K in January → $169K in June</strong> — a <strong>2.2× increase</strong> from start to peak.<br><br>📈 <strong>What this means for your numbers:</strong><br>• <strong>Inventory Turns</strong> will look low now but should reach 3–4× by end of season as peak selling kicks in<br>• <strong>Sell-through %</strong> is only ~20-30% — that's normal at this point. Target 55-65% by June 30<br>• <strong>Months of Supply</strong> looks high because current sales velocity is the slowest it will be all season<br>• <strong>OTB</strong> baseline uses last spring's full-season average ($120K/mo × 1.5 for 3 stores) — not the current cold-weather rate<br><br>💡 <em>Revisit these numbers in mid-April when you have 6+ weeks of real spring selling data. The picture will sharpen considerably.</em></span>`}</div>
       </div>
     </div>` : ''}
   `;
@@ -3851,12 +3842,9 @@ function renderBuyPlanning() {
   // Summary AI
   const growList = playbookBrands.filter(b => b.rating === 'grow').slice(0, 5);
   const cutList = playbookBrands.filter(b => b.rating === 'cut' || b.rating === 'watch');
+  const seasonalComparisonText = AI?.buyPlanning?.seasonalComparison || `<strong>Season is ${confidence}% complete.</strong> ${confidence < 50 ? 'Numbers are directional — they\'ll sharpen as peak selling hits April–June.' : confidence < 80 ? 'Trends are solid — these patterns will hold.' : 'This is your buying bible. Trust the data.'} ${growList.length ? ` <strong>Grow for SS27:</strong> ${growList.map(b => b.brand).join(', ')} — high hit rates, strong sell-through.` : ''} ${cutList.length ? ` <strong>Reduce:</strong> ${cutList.map(b => b.brand).join(', ')} — low hit rates, inventory sitting.` : ''}`;
   $('playbook-summary-ai').innerHTML = `<div class="ai-icon-wrap">📋</div>
-    <div class="ai-text">
-      <strong>Season is ${confidence}% complete.</strong> ${confidence < 50 ? 'Numbers are directional — they\'ll sharpen as peak selling hits April–June.' : confidence < 80 ? 'Trends are solid — these patterns will hold.' : 'This is your buying bible. Trust the data.'}
-      ${growList.length ? ` <strong>Grow for SS27:</strong> ${growList.map(b => b.brand).join(', ')} — high hit rates, strong sell-through.` : ''}
-      ${cutList.length ? ` <strong>Reduce:</strong> ${cutList.map(b => b.brand).join(', ')} — low hit rates, inventory sitting.` : ''}
-    </div>`;
+    <div class="ai-text">${seasonalComparisonText}</div>`;
 
   // Category Mix Guide — use ST.byCategory (authoritative)
   const stCats = ST.byCategory || [];
