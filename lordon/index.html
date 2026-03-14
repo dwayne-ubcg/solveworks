@@ -2141,6 +2141,17 @@ function getMonthsRemaining() {
 
 function getBaselineMonthlySales() {
   if (!ST) return 0;
+  // Use SS25 full-season revenue as baseline (captures real spring/summer curve)
+  // instead of just the first 10 cold weeks of SS26
+  const sc = ST.seasonComparison;
+  if (sc && sc.byCategory) {
+    let ss25TotalRev = 0;
+    for (const c of sc.byCategory) {
+      ss25TotalRev += (c.ss25FullSeason?.revenue || 0);
+    }
+    if (ss25TotalRev > 0) return ss25TotalRev / 6; // 6 month spring season
+  }
+  // Fallback to period average
   return ST.summary.totalRevenue / (ST.periodWeeks / 4.33);
 }
 function getPlannedMonthlySales() {
@@ -2322,26 +2333,53 @@ function renderBuyPlanning() {
     if (elpm) elpm.textContent = fmt$(pms);
   };
 
-  // ── 2.21 OTB by Category (recalculated with user's growth plan) ──
-  const otbRows = ST.otb || [];
+  // ── 2.21 OTB by Category (SS25 full-season run rates + user growth) ──
+  // Build SS25 full-season lookup from seasonComparison — gives real seasonal selling
+  // patterns instead of just the first 10 cold weeks of SS26
+  const ss25CatLookup = {};
+  const scData = ST.seasonComparison;
+  if (scData && scData.byCategory) {
+    for (const c of scData.byCategory) {
+      ss25CatLookup[c.category] = c.ss25FullSeason || {};
+    }
+  }
+  const SS25_WEEKS = 26; // full spring season Jan–Jun
+
+  const otbRows = (ST.otb || []).filter(o => o.category !== 'UNKNOWN');
   const growthMult = 1 + getGrowthPct() / 100;
   const weeksLeftSeason = monthsLeft * 4.33;
+
   $('otb-cat-tbody').innerHTML = otbRows.map(o => {
-    // Recalculate with user growth applied to the weekly run rate
-    const adjWeeklyRate = (o.weeklyRunRateCost || 0) * growthMult;
-    const adjWeeklyUnits = (o.weeklyRunRateUnits || 0) * growthMult;
+    const cat = o.category;
+    const ss25 = ss25CatLookup[cat];
+
+    // Use SS25 full-season weekly rate as baseline (captures spring/summer selling curve)
+    // Fall back to SS26-to-date rate if no SS25 data exists
+    let baseWeeklyRevenue, baseWeeklyUnits;
+    if (ss25 && ss25.revenue > 0) {
+      baseWeeklyRevenue = ss25.revenue / SS25_WEEKS;
+      baseWeeklyUnits = (ss25.unitsSold || 0) / SS25_WEEKS;
+    } else {
+      baseWeeklyRevenue = (o.weeklyRunRateCost || 0);
+      baseWeeklyUnits = (o.weeklyRunRateUnits || 0);
+    }
+
+    // Apply user growth target
+    const adjWeeklyRate = baseWeeklyRevenue * growthMult;
+    const adjWeeklyUnits = baseWeeklyUnits * growthMult;
+
     const plannedSalesCost = adjWeeklyRate * weeksLeftSeason;
-    // Target: 2 weeks of inventory at end of season
-    const plannedEOS = adjWeeklyRate * 2;
-    // OTB = what you need − what you have
+    const plannedEOS = adjWeeklyRate * 2; // 2 weeks at end of season
     const catOTB = plannedSalesCost + plannedEOS - (o.currentInventoryCost || 0);
     const wos = adjWeeklyUnits > 0 ? (o.currentStock || 0) / adjWeeklyUnits : 999;
+
     const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason ? 'over' : 'ok';
     const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-amber';
     const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '⚠ Overstocked';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= weeksLeftSeason ? 'var(--green)' : 'var(--text-3)';
+
     return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
-      <td class="strong">${o.category}</td>
+      <td class="strong">${cat}</td>
       <td class="num">${fmtN(o.currentStock)}</td>
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
       <td class="num">${fmt$(adjWeeklyRate)}/wk</td>
