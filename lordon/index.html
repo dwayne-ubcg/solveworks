@@ -2270,31 +2270,33 @@ function renderBuyPlanning() {
     </tr>`;
   }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No OTB data available</td></tr>';
 
-  // ── 2.22 Season-Over-Season Brand Comparison ──
+  // ── 2.22 Season-Over-Season Brand Comparison (Same-Period) ──
   const sc = ST.seasonComparison;
   let scHtml = '';
   if (sc && sc.byBrand && sc.byBrand.length > 0) {
-    const byBrand = sc.byBrand.filter(b => b.ss25?.revenue > 0 || b.ss26?.revenue > 0);
+    const weeksLabel = sc.meta?.ss26WeeksElapsed || 6;
+    const byBrand = sc.byBrand.filter(b => (b.ss25SamePeriod?.revenue || 0) > 0 || (b.ss26?.revenue || 0) > 0);
 
     function trendArrow(trend) {
       if (trend === 'up') return '<span class="trend-arrow trend-up-badge">↑ Up</span>';
       if (trend === 'down') return '<span class="trend-arrow trend-dn-badge">↓ Down</span>';
+      if (trend === 'new') return '<span class="trend-arrow" style="background:var(--blue-lt);color:var(--blue);padding:3px 8px;border-radius:6px;font-size:10.5px;font-weight:700">NEW</span>';
       return '<span class="trend-arrow trend-flat-badge">→ Flat</span>';
     }
 
     const tableRows = byBrand.map(b => {
-      const ss25Rev = b.ss25?.revenue || 0;
+      const ss25Rev = b.ss25SamePeriod?.revenue || 0;
       const ss26Rev = b.ss26?.revenue || 0;
-      const ss26Proj = b.ss26Projected?.revenue || null;
-      const changePct = ss25Rev > 0 ? ((ss26Proj || ss26Rev) - ss25Rev) / ss25Rev * 100 : null;
+      const ss25FullRev = b.ss25FullSeason?.revenue || 0;
+      const changePct = b.pctChangeUnits;
 
       return `<tr>
         <td class="strong">${b.brand}</td>
-        <td class="num">${fmt$(ss25Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss25?.unitsSold || 0} units</span></td>
-        <td class="num">${fmt$(ss26Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} units actual</span></td>
-        <td class="num">${ss26Proj ? fmt$(ss26Proj) + '<br><span style="font-size:10px;color:var(--text-3)">26w projected</span>' : '—'}</td>
+        <td class="num">${fmt$(ss25Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss25SamePeriod?.unitsSold || 0} units</span></td>
+        <td class="num">${fmt$(ss26Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} units</span></td>
+        <td class="num" style="font-size:11px;color:var(--text-3)">${ss25FullRev > 0 ? fmt$(ss25FullRev) : '—'}<br><span style="font-size:10px">${b.ss25FullSeason?.unitsSold || 0} units full</span></td>
         <td class="num">
-          ${changePct != null ? `<span style="color:${changePct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${changePct >= 0 ? '+' : ''}${Math.round(changePct)}%</span>` : '—'}
+          ${ss25Rev > 0 ? `<span style="color:${changePct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${changePct >= 0 ? '+' : ''}${changePct}%</span>` : '—'}
         </td>
         <td>${trendArrow(b.trend)}</td>
         <td style="font-size:11.5px;color:var(--text-2)">${b.recommendation || '—'}</td>
@@ -2304,17 +2306,17 @@ function renderBuyPlanning() {
     // AI insight for season comparison
     const upBrands = byBrand.filter(b => b.trend === 'up').length;
     const downBrands = byBrand.filter(b => b.trend === 'down').length;
-    const topProjected = [...byBrand].filter(b => b.ss26Projected).sort((a, b) => (b.ss26Projected?.revenue || 0) - (a.ss26Projected?.revenue || 0))[0];
+    const flatBrands = byBrand.filter(b => b.trend === 'flat').length;
 
     scHtml = `
       <div style="margin-bottom:12px" class="ai-box ai-box-blue">
         <div class="ai-icon-wrap">📅</div>
         <div class="ai-text">
-          <strong>SS26 vs SS25</strong> (${sc.ss26Period || '6 weeks actual'} → ${sc.ss25Period || '26 weeks SS25'}).
-          <strong style="color:var(--green)">${upBrands} brand${upBrands !== 1 ? 's' : ''} trending up</strong>,
-          <strong style="color:var(--red)">${downBrands} trending down</strong>.
-          ${topProjected ? `<strong>${topProjected.brand}</strong> projects ${fmt$(topProjected.ss26Projected.revenue)} for full SS26.` : ''}
-          Note: SS26 actuals reflect only 6 weeks — projections extrapolated to 26-week season.
+          <strong>Same-Period Comparison</strong> — First ${weeksLabel} weeks of SS26 vs first ${weeksLabel} weeks of SS25 (actual vs actual, no projections).
+          <strong style="color:var(--green)">${upBrands} brand${upBrands !== 1 ? 's' : ''} pacing ahead</strong>,
+          <strong>${flatBrands} tracking flat</strong>,
+          <strong style="color:var(--red)">${downBrands} pacing behind</strong>.
+          Early season — these trends will sharpen as peak selling kicks in (Apr–Jun).
         </div>
       </div>
       <div class="table-wrap">
@@ -2322,9 +2324,9 @@ function renderBuyPlanning() {
           <thead>
             <tr>
               <th onclick="sortTable('season-comp-tbl',0)">Brand ⇅</th>
-              <th class="num" onclick="sortTable('season-comp-tbl',1)">SS25 Revenue ⇅</th>
-              <th class="num" onclick="sortTable('season-comp-tbl',2)">SS26 Actual (6w) ⇅</th>
-              <th class="num" onclick="sortTable('season-comp-tbl',3)">SS26 Projected (26w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',1)">SS25 (${weeksLabel}w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',2)">SS26 (${weeksLabel}w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',3)">SS25 Full Season ⇅</th>
               <th class="num" onclick="sortTable('season-comp-tbl',4)">Change ⇅</th>
               <th>Trend</th>
               <th>Recommendation</th>
