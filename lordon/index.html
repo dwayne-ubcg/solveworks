@@ -1974,22 +1974,55 @@ function renderSellThrough() {
     </div>`;
 
   // ── 2.15 Slow Movers + Dead Stock ──
-  const slow = ST.slowMovers || [];
-  const deadStock = slow.filter(s => s.velocityPerWeek === 0);
+  // Build from sell-through-detail (STD) — has accurate remaining, velocity, floorDate
+  const slowFromDetail = [];
+  if (STD && STD.brands) {
+    for (const brand of STD.brands) {
+      for (const style of brand.styles) {
+        const rem = style.remaining || 0;
+        if (rem === 0) continue; // Not slow if nothing on floor
+        // Estimate cost per unit from brand avg supply price or ~45% of revenue
+        const avgCost = style.sold > 0 ? ((style.revenue || 0) / style.sold) * 0.45 : rem * 40;
+        const costTiedUp = rem * (style.sold > 0 ? (style.revenue / style.sold) * 0.45 : 40);
+        slowFromDetail.push({
+          name: style.name,
+          brand: brand.brand,
+          floorDate: style.floorDate,
+          weeksInStore: style.weeks || 0,
+          sold: style.sold || 0,
+          remaining: rem,
+          sellThrough: style.sellThrough || 0,
+          vel: style.vel || 0,
+          costTiedUp: Math.round(costTiedUp),
+          wos: style.wos || 999,
+        });
+      }
+    }
+  }
+  // Sort: lowest sell-through first, then lowest velocity
+  const slow = slowFromDetail
+    .filter(s => s.weeksInStore >= 4) // at least 4 weeks on floor to judge
+    .sort((a, b) => a.sellThrough - b.sellThrough || a.vel - b.vel)
+    .slice(0, 25);
+  const deadStock = slow.filter(s => s.vel === 0);
   $('slow-count-badge').textContent = deadStock.length + ' dead stock';
-  $('slow-tbody').innerHTML = slow.slice(0, 25).map(s => {
-    const st = s.sellThrough || calcST(s.unitsSold || 0, s.currentStock || 0);
+  $('slow-tbody').innerHTML = slow.map(s => {
+    const st = s.sellThrough;
     const weeksColor = s.weeksInStore >= 8 ? 'var(--red)' : s.weeksInStore >= 4 ? 'var(--amber)' : 'var(--text-3)';
-    const arrivedStr = s.arrivedDate ? new Date(s.arrivedDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : '—';
+    const arrivedStr = s.floorDate ? new Date(s.floorDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const rec = s.vel === 0 && s.weeksInStore >= 8 ? '🔴 Markdown or transfer'
+      : s.vel === 0 ? '⚠️ Monitor — no sales yet'
+      : s.sellThrough < 20 && s.weeksInStore >= 6 ? '🟡 Consider markdown 20%'
+      : '👁 Watch';
     return `<tr>
       <td class="strong">${s.name}</td>
       <td>${s.brand}</td>
       <td>${arrivedStr}</td>
       <td class="num" style="color:${weeksColor};font-weight:600">${fmtDec(s.weeksInStore, 1)}w</td>
-      <td class="num">${s.currentStock}</td>
-      <td class="num"><span class="badge ${st <= 0 ? 'badge-red' : st < 25 ? 'badge-amber' : 'badge-neutral'}">${Math.round(st)}%</span></td>
-      <td class="num" style="font-weight:600;color:var(--red)">${fmt$(s.costTiedUp || 0)}</td>
-      <td style="font-size:11.5px;color:var(--text-2)">${s.recommendation || '—'}</td>
+      <td class="num">${s.remaining}</td>
+      <td class="num"><span class="badge ${st <= 10 ? 'badge-red' : st < 25 ? 'badge-amber' : 'badge-neutral'}">${Math.round(st)}%</span></td>
+      <td class="num" style="font-weight:600;color:var(--red)">${fmt$(s.costTiedUp)}</td>
+      <td style="font-size:11.5px;color:var(--text-2)">${rec}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No slow movers found</td></tr>';
 
