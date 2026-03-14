@@ -2429,13 +2429,19 @@ function renderBriefing() {
   const orders = b.unfulfilledOrders || [];
   $('unfulfilled-badge').textContent = orders.length;
   $('unfulfilled-count-label').textContent = `${orders.length} orders need fulfillment`;
-  $('unfulfilled-list').innerHTML = orders.map(o => `
-    <div class="order-row">
+  $('unfulfilled-list').innerHTML = orders.slice(0, 20).map(o => {
+    const status = o.fulfillmentStatus === 'partial' ? 'Partial' : 'Unfulfilled';
+    const badge = status === 'Partial' ? 'badge-amber' : 'badge-red';
+    const dateStr = o.date ? new Date(o.date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) : '';
+    return `<div class="order-row">
       <span class="order-num">${o.name}</span>
-      <span class="order-item">${o.items}</span>
-      <span class="order-type"><span class="badge ${o.fulfillment === 'Ship' ? 'badge-blue' : 'badge-sage'}">${o.fulfillment}</span></span>
-    </div>
-  `).join('') || '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:16px 0">✓ All orders fulfilled</div>';
+      <span class="order-customer" style="font-size:12px;color:var(--text-2)">${o.customer || ''}</span>
+      <span class="order-item">${o.items} item${o.items !== 1 ? 's' : ''} · ${fmt$(o.total)}</span>
+      <span class="order-date" style="font-size:11px;color:var(--text-3)">${dateStr}</span>
+      <span class="order-type"><span class="badge ${badge}">${status}</span></span>
+    </div>`;
+  }).join('') + (orders.length > 20 ? `<div style="font-size:12px;color:var(--text-3);text-align:center;padding:8px">+ ${orders.length - 20} more</div>` : '')
+  || '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:16px 0">✓ All orders fulfilled</div>';
 
   // Business Health KPIs
   const storeInvData = getStoreInventory();
