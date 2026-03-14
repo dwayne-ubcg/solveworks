@@ -1361,7 +1361,17 @@ function renderBriefing() {
     },
   ];
 
-  const urgentCount = (ST.reorderAlert || []).filter(r => r.urgency === 'urgent').length;
+  // Count OOS from sell-through-detail (STD) — reorderAlert in ST is often empty
+  let urgentCount = (ST.reorderAlert || []).filter(r => r.urgency === 'urgent').length;
+  if (urgentCount === 0 && STD && STD.brands) {
+    for (const brand of STD.brands) {
+      for (const style of brand.styles) {
+        // Sold out (remaining=0, sold>0) OR high ST% with very low stock
+        if (style.remaining === 0 && (style.sold || 0) > 0) urgentCount++;
+        else if ((style.sellThrough || 0) >= 70 && (style.remaining || 0) <= 2 && (style.sold || 0) > 2) urgentCount++;
+      }
+    }
+  }
   const stBlended = Math.round(s.totalUnitsSold / (s.totalUnitsSold + 10202) * 100);
   const totalOTBAvailable = (ST.otb || []).filter(o => o.status === 'open-to-buy' || o.status === 'buy').reduce((sum, o) => sum + o.otbAvailable, 0);
 
@@ -1510,33 +1520,56 @@ function renderBriefing() {
     </div>
   `).join('');
 
-  // OOS Table
-  const urgent = (ST.reorderAlert || []).filter(r => r.urgency === 'urgent');
-  const watchItems = (ST.reorderAlert || []).filter(r => r.urgency !== 'urgent').slice(0, 6);
-  const allAlerts = [...urgent, ...watchItems];
+  // OOS Table — pull from sell-through-detail (STD) when reorderAlert is empty
+  let oosItems = [];
+  if ((ST.reorderAlert || []).length > 0) {
+    const urgent = ST.reorderAlert.filter(r => r.urgency === 'urgent');
+    const watch = ST.reorderAlert.filter(r => r.urgency !== 'urgent').slice(0, 6);
+    oosItems = [...urgent, ...watch].map(r => ({
+      name: r.name, brand: r.brand, onHand: r.onHand, vel: r.weeklyRate,
+      daysOfSupply: r.daysOfSupply, isUrgent: r.urgency === 'urgent',
+      stockedAt: r.stockByLocation ? Object.keys(r.stockByLocation).join(', ') : 'N/A',
+    }));
+  } else if (STD && STD.brands) {
+    // Build OOS from detail: sold out + low stock high performers
+    for (const brand of STD.brands) {
+      for (const style of brand.styles) {
+        const rem = style.remaining || 0;
+        const sold = style.sold || 0;
+        const vel = style.vel || 0;
+        if (rem === 0 && sold > 0) {
+          oosItems.push({ name: style.name, brand: brand.brand, onHand: 0, vel, daysOfSupply: 0, isUrgent: true, stockedAt: '—' });
+        } else if ((style.sellThrough || 0) >= 70 && rem <= 2 && sold > 2) {
+          const dos = vel > 0 ? Math.round((rem / vel) * 7) : 999;
+          oosItems.push({ name: style.name, brand: brand.brand, onHand: rem, vel, daysOfSupply: dos, isUrgent: dos < 14, stockedAt: '—' });
+        }
+      }
+    }
+    // Sort: sold out first, then by velocity descending
+    oosItems.sort((a, b) => a.onHand - b.onHand || (b.vel || 0) - (a.vel || 0));
+  }
 
-  $('oos-count-badge').textContent = urgent.length + ' urgent';
-  $('oos-tbody').innerHTML = allAlerts.map(r => {
-    const typeName = typeof r.type === 'object' ? r.type.name : r.type || '—';
-    const isUrgent = r.urgency === 'urgent';
-    const stockedAt = r.stockByLocation ? Object.keys(r.stockByLocation).join(', ') : 'N/A';
+  const urgentOOS = oosItems.filter(r => r.isUrgent);
+  const watchOOS = oosItems.filter(r => !r.isUrgent);
+  $('oos-count-badge').textContent = urgentOOS.length + ' urgent';
+  $('oos-tbody').innerHTML = oosItems.slice(0, 15).map(r => {
     return `<tr>
       <td class="strong">${r.name}</td>
       <td>${r.brand}</td>
       <td class="num">${r.onHand}</td>
-      <td class="num">${r.weeklyRate ? r.weeklyRate.toFixed(1) + '/wk' : '—'}</td>
+      <td class="num">${r.vel ? r.vel.toFixed(1) + '/wk' : '—'}</td>
       <td class="num" style="color:${r.daysOfSupply < 14 ? 'var(--red)' : 'var(--amber)'}">${r.daysOfSupply}d</td>
-      <td><span class="badge ${isUrgent ? 'badge-red' : 'badge-amber'}">${isUrgent ? '🚨 Urgent' : '⚠ Watch'}</span></td>
-      <td style="font-size:11px;color:var(--text-3)">${stockedAt}</td>
+      <td><span class="badge ${r.isUrgent ? 'badge-red' : 'badge-amber'}">${r.isUrgent ? '🚨 Sold Out' : '⚠ Low Stock'}</span></td>
+      <td style="font-size:11px;color:var(--text-3)">${r.stockedAt}</td>
     </tr>`;
-  }).join('');
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No reorder alerts</td></tr>';
 
   // OOS AI
-  const urgentNames = urgent.slice(0, 3).map(r => r.brand + ' ' + r.name.split('(')[0].trim()).join(', ');
+  const urgentNames = urgentOOS.slice(0, 3).map(r => r.brand + ' ' + r.name.split('(')[0].trim()).join(', ');
   $('oos-ai').innerHTML = `<div class="ai-icon-wrap">🚨</div>
-    <div class="ai-text"><strong>${urgent.length} styles need immediate reorder.</strong> ${urgentNames ? 'Prioritize: <em>' + urgentNames + '</em>.' : ''} 
-    Additionally, <strong>${watchItems.length} styles</strong> are running low. Check vendor lead times — spring season 
-    selling window is closing.</div>`;
+    <div class="ai-text"><strong>${urgentOOS.length} styles are sold out or critically low.</strong> ${urgentNames ? 'Top priority: <em>' + urgentNames + '</em>.' : ''} 
+    ${watchOOS.length > 0 ? `Additionally, <strong>${watchOOS.length} styles</strong> are running low. Check vendor lead times — spring season selling window is closing.` : ''}
+    </div>`;
 }
 
 // ═══════════════════════════════════════════════════════
