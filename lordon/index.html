@@ -1366,9 +1366,9 @@ function renderBriefing() {
     },
   ];
 
-  const urgentCount = ST.reorderAlert.filter(r => r.urgency === 'urgent').length;
+  const urgentCount = (ST.reorderAlert || []).filter(r => r.urgency === 'urgent').length;
   const stBlended = Math.round(s.totalUnitsSold / (s.totalUnitsSold + 10202) * 100);
-  const totalOTBAvailable = ST.otb.filter(o => o.status === 'buy').reduce((sum, o) => sum + o.otbAvailable, 0);
+  const totalOTBAvailable = (ST.otb || []).filter(o => o.status === 'open-to-buy' || o.status === 'buy').reduce((sum, o) => sum + o.otbAvailable, 0);
 
   const heroRow2 = [
     {
@@ -1516,8 +1516,8 @@ function renderBriefing() {
   `).join('');
 
   // OOS Table
-  const urgent = ST.reorderAlert.filter(r => r.urgency === 'urgent');
-  const watchItems = ST.reorderAlert.filter(r => r.urgency !== 'urgent').slice(0, 6);
+  const urgent = (ST.reorderAlert || []).filter(r => r.urgency === 'urgent');
+  const watchItems = (ST.reorderAlert || []).filter(r => r.urgency !== 'urgent').slice(0, 6);
   const allAlerts = [...urgent, ...watchItems];
 
   $('oos-count-badge').textContent = urgent.length + ' urgent';
