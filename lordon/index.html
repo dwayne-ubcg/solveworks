@@ -825,6 +825,36 @@ input,select{font-family:inherit;font-size:13px}
 #ptr-indicator.visible{display:block}
 #ptr-indicator.pulling{transform:translateX(-50%) translateY(0)}
 #ptr-indicator.refreshing{transform:translateX(-50%) translateY(0)}
+/* ── RECEIPTS / EXPENSE TRACKER ── */
+.receipt-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:10px;cursor:pointer;transition:all var(--t);display:flex;align-items:center;gap:14px;box-shadow:var(--shadow-card)}
+.receipt-card:hover{border-color:var(--accent);background:var(--bg-hover);box-shadow:0 0 0 1px var(--accent),0 4px 12px rgba(30,27,24,.08)}
+.receipt-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.receipt-info{flex:1;min-width:0}
+.receipt-vendor{font-size:14px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.receipt-desc{font-size:12px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.receipt-amount{font-size:16px;font-weight:700;color:var(--green);white-space:nowrap}
+.receipt-date{font-size:11px;color:var(--text-3);text-align:right;margin-top:2px}
+.receipt-img-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);flex-shrink:0}
+.receipt-modal{display:none;position:fixed;inset:0;background:rgba(30,27,24,.45);backdrop-filter:blur(4px);z-index:2000;align-items:center;justify-content:center;padding:16px}
+.receipt-modal.open{display:flex}
+.receipt-modal-content{background:var(--bg-card);border-radius:16px;padding:28px 24px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(30,27,24,.18);max-height:90vh;overflow-y:auto;position:relative}
+.receipt-modal-content h2{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;margin:0 0 16px;color:var(--text)}
+.receipt-field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.receipt-field label{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--text-3)}
+.receipt-field input,.receipt-field select,.receipt-field textarea{padding:10px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color var(--t);width:100%;box-sizing:border-box}
+.receipt-field input:focus,.receipt-field select:focus,.receipt-field textarea:focus{border-color:var(--accent)}
+.receipt-field textarea{resize:vertical;min-height:64px}
+.receipt-btn-row{display:flex;gap:10px;margin-top:16px}
+.receipt-btn-primary{flex:1;padding:12px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background var(--t)}
+.receipt-btn-primary:hover{background:var(--accent-dk)}
+.receipt-btn-ghost{padding:12px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all var(--t)}
+.receipt-btn-ghost:hover{background:var(--bg-hover);border-color:var(--accent-dk)}
+.receipt-btn-danger{padding:12px 16px;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all var(--t)}
+.receipt-btn-danger:hover{background:var(--red-lt)}
+.receipt-photo-label{padding:10px 16px;border-radius:8px;border:1px dashed var(--border);background:var(--bg);color:var(--text-2);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all var(--t)}
+.receipt-photo-label:hover{border-color:var(--accent);color:var(--accent)}
+.lordon-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.lordon-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -1619,80 +1649,48 @@ input,select{font-family:inherit;font-size:13px}
     <!-- ═══════════════════════════════════════════ -->
     <div class="page" id="page-receipts">
       <div class="page-header">
-        <h2>🧾 Recent Transactions</h2>
-        <div class="subtitle">Lightspeed POS sales — last 30 transactions</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2>🧾 Receipts</h2>
+            <div class="subtitle">Track expenses for reimbursement · Add receipts with photos, amounts, and categories</div>
+          </div>
+          <button onclick="openReceiptModal()" class="btn btn-primary" style="padding:10px 20px;font-size:13px;gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Receipt
+          </button>
+        </div>
       </div>
 
       <!-- Filter Bar -->
-      <div class="card" style="padding:14px 20px;margin-bottom:16px;">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-          <input type="text" id="rcpt-search" placeholder="Search by invoice or location…" oninput="renderReceipts()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);flex:1;min-width:160px;outline:none;" />
-          <select id="rcpt-location" onchange="renderReceipts()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);">
-            <option value="">All Locations</option>
-            <option value="Saint John">Saint John</option>
-            <option value="Moncton">Moncton</option>
-            <option value="Halifax">Halifax</option>
-          </select>
-          <select id="rcpt-status" onchange="renderReceipts()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;font-family:'DM Sans',sans-serif;color:var(--text);">
-            <option value="">All Statuses</option>
-            <option value="CLOSED">Closed</option>
-            <option value="OPEN">Open</option>
-            <option value="VOIDED">Voided</option>
-          </select>
-        </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+        <select id="receipt-filter-cat" onchange="renderReceipts()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;">
+          <option value="all">All Categories</option>
+          <option value="meals">🍽 Meals &amp; Entertainment</option>
+          <option value="travel">✈️ Travel</option>
+          <option value="office">🏢 Office &amp; Supplies</option>
+          <option value="software">💻 Software &amp; Tech</option>
+          <option value="vehicle">🚗 Vehicle</option>
+          <option value="phone">📱 Phone &amp; Internet</option>
+          <option value="professional">📋 Professional Services</option>
+          <option value="other">📦 Other</option>
+        </select>
+        <select id="receipt-filter-month" onchange="renderReceipts()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-card);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;">
+          <option value="all">All Months</option>
+        </select>
+        <div id="receipt-total" style="margin-left:auto;font-size:13px;font-weight:700;color:var(--text-2);"></div>
       </div>
 
-      <!-- Summary Cards -->
-      <div class="grid-4" style="margin-bottom:20px;">
-        <div class="stat-card">
-          <div class="value" id="rcpt-today-total">—</div>
-          <div class="label">Today's Sales</div>
-          <div class="change" id="rcpt-today-count" style="color:var(--text-3);">— transactions</div>
-        </div>
-        <div class="stat-card">
-          <div class="value" id="rcpt-week-total">—</div>
-          <div class="label">This Week</div>
-          <div class="change" id="rcpt-week-count" style="color:var(--text-3);">— transactions</div>
-        </div>
-        <div class="stat-card">
-          <div class="value" id="rcpt-avg-total">—</div>
-          <div class="label">Avg Transaction</div>
-          <div class="change" style="color:var(--text-3);">last 30 sales</div>
-        </div>
-        <div class="stat-card">
-          <div class="value" id="rcpt-count-total">—</div>
-          <div class="label">Total Transactions</div>
-          <div class="change" style="color:var(--text-3);">in this dataset</div>
-        </div>
+      <!-- Receipts Cards Container -->
+      <div id="receipts-container"></div>
+
+      <!-- Add/Edit Modal -->
+      <div id="receipt-modal" class="receipt-modal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="receipt-modal-content" id="receipt-modal-body"></div>
       </div>
 
-      <!-- Transactions Table / Empty State -->
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div id="rcpt-no-data" style="display:none;text-align:center;padding:48px 32px;">
-          <div style="font-size:40px;margin-bottom:12px;">⏳</div>
-          <div style="font-size:15px;font-weight:600;margin-bottom:8px;">Waiting for data sync</div>
-          <div style="font-size:13px;color:var(--text-3);">Recent transactions will appear here once Lightspeed syncs.</div>
-        </div>
-        <div id="rcpt-no-results" style="display:none;text-align:center;padding:48px 32px;">
-          <div style="font-size:40px;margin-bottom:12px;">🔍</div>
-          <div style="font-size:15px;font-weight:600;margin-bottom:8px;">No matching transactions</div>
-          <div style="font-size:13px;color:var(--text-3);">Try a different filter or search term.</div>
-        </div>
-        <div class="table-wrap" id="rcpt-table-wrap">
-          <table id="rcpt-table">
-            <thead>
-              <tr>
-                <th>Date &amp; Time</th>
-                <th>Invoice</th>
-                <th>Location</th>
-                <th style="text-align:center;">Items</th>
-                <th style="text-align:right;">Total</th>
-                <th style="text-align:center;">Status</th>
-              </tr>
-            </thead>
-            <tbody id="rcpt-tbody"></tbody>
-          </table>
-        </div>
+      <!-- View Modal -->
+      <div id="receipt-view-modal" class="receipt-modal" onclick="if(event.target===this)this.classList.remove('open')">
+        <div class="receipt-modal-content" id="receipt-view-body" style="max-width:560px;"></div>
       </div>
     </div>
 
@@ -4100,101 +4098,229 @@ document.addEventListener('click', (e) => {
 })();
 
 // ═══════════════════════════════════════════════════════
-// RECEIPTS TAB — Lightspeed Transactions
+// RECEIPTS TAB — Expense Reimbursement Tracker
 // ═══════════════════════════════════════════════════════
-function initReceipts() {
-  if (!DB || !DB.recentSales) {
-    const noData = document.getElementById('rcpt-no-data');
-    const tableWrap = document.getElementById('rcpt-table-wrap');
-    if (noData) noData.style.display = 'block';
-    if (tableWrap) tableWrap.style.display = 'none';
-    return;
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function showToast(msg) {
+  let t = document.getElementById('lordon-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'lordon-toast';
+    t.className = 'lordon-toast';
+    document.body.appendChild(t);
   }
-  computeReceiptSummary(DB.recentSales);
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+(function() {
+  const RECEIPT_CATS = {
+    meals: '🍽 Meals & Entertainment',
+    travel: '✈️ Travel',
+    office: '🏢 Office & Supplies',
+    software: '💻 Software & Tech',
+    vehicle: '🚗 Vehicle',
+    phone: '📱 Phone & Internet',
+    professional: '📋 Professional Services',
+    other: '📦 Other'
+  };
+  const RECEIPT_COLORS = {
+    meals: '#C4A882',
+    travel: '#7EA8BE',
+    office: '#8B9E6E',
+    software: '#7B82B5',
+    vehicle: '#C47B5C',
+    phone: '#6BAB8C',
+    professional: '#A8886E',
+    other: '#9B9590'
+  };
+
+  let receipts = [];
+  function loadReceipts() {
+    try { receipts = JSON.parse(localStorage.getItem('lordon-receipts') || '[]'); } catch(e) { receipts = []; }
+  }
+  function saveReceipts() {
+    try { localStorage.setItem('lordon-receipts', JSON.stringify(receipts)); } catch(e) {}
+  }
+  loadReceipts();
+
+  function updateMonthFilter() {
+    const sel = document.getElementById('receipt-filter-month');
+    if (!sel) return;
+    const months = new Set();
+    receipts.forEach(function(r) { if (r.date) months.add(r.date.slice(0, 7)); });
+    const sorted = Array.from(months).sort().reverse();
+    sel.innerHTML = '<option value="all">All Months</option>' + sorted.map(function(m) {
+      return '<option value="' + m + '">' + m + '</option>';
+    }).join('');
+  }
+
+  window.openReceiptModal = function(editId) {
+    loadReceipts();
+    const r = editId ? receipts.find(function(x) { return x.id === editId; }) : null;
+    const m = document.getElementById('receipt-modal-body');
+    if (!m) return;
+    m.innerHTML = '<h2>' + (r ? 'Edit' : '➕ New') + ' Receipt</h2>' +
+      '<div class="receipt-field"><label>Vendor / Merchant</label>' +
+      '<input id="rc-vendor" value="' + (r ? esc(r.vendor) : '') + '" placeholder="e.g. Costco, Shell, Adobe…"></div>' +
+      '<div style="display:flex;gap:10px;">' +
+      '<div class="receipt-field" style="flex:1;"><label>Amount ($)</label>' +
+      '<input id="rc-amount" type="number" step="0.01" min="0" value="' + (r ? r.amount : '') + '" placeholder="0.00"></div>' +
+      '<div class="receipt-field" style="flex:1;"><label>Date</label>' +
+      '<input id="rc-date" type="date" value="' + (r ? r.date : new Date().toISOString().slice(0, 10)) + '"></div>' +
+      '</div>' +
+      '<div class="receipt-field"><label>Category</label>' +
+      '<select id="rc-cat">' +
+      Object.entries(RECEIPT_CATS).map(function(kv) {
+        return '<option value="' + kv[0] + '"' + (r && r.category === kv[0] ? ' selected' : '') + '>' + kv[1] + '</option>';
+      }).join('') +
+      '</select></div>' +
+      '<div class="receipt-field"><label>Notes (optional)</label>' +
+      '<textarea id="rc-notes" rows="2" placeholder="Any additional details…">' + (r ? esc(r.notes || '') : '') + '</textarea></div>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">' +
+      '<label class="receipt-photo-label">📷 Take Photo<input type="file" accept="image/*" capture="environment" style="display:none" onchange="document.getElementById(\'rc-photo-file\').value=\'\';previewReceiptPhoto(this)"></label>' +
+      '<label class="receipt-photo-label">📄 Upload File<input type="file" id="rc-photo-file" accept="image/*,.pdf,.heic,.heif" style="display:none" onchange="previewReceiptPhoto(this)"></label>' +
+      '<span id="rc-photo-name" style="font-size:12px;color:var(--text-3);">' + (r && r.image ? '📎 Photo attached' : '') + '</span>' +
+      '</div>' +
+      '<div id="rc-photo-preview" style="display:' + (r && r.image ? 'block' : 'none') + ';margin-bottom:12px;">' +
+      '<img id="rc-photo-img" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--border);"' + (r && r.image ? ' src="' + r.image + '"' : '') + '></div>' +
+      '<div class="receipt-btn-row">' +
+      '<button class="receipt-btn-primary" onclick="submitReceipt(\'' + (editId || '') + '\')">' + (r ? 'Save Changes' : 'Add Receipt') + '</button>' +
+      (r ? '<button class="receipt-btn-danger" onclick="deleteReceipt(\'' + editId + '\');document.getElementById(\'receipt-modal\').classList.remove(\'open\')">🗑</button>' : '') +
+      '<button class="receipt-btn-ghost" onclick="document.getElementById(\'receipt-modal\').classList.remove(\'open\')">Cancel</button>' +
+      '</div>';
+    document.getElementById('receipt-modal').classList.add('open');
+    setTimeout(function() { const v = document.getElementById('rc-vendor'); if (v) v.focus(); }, 100);
+  };
+
+  window.previewReceiptPhoto = function(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.getElementById('rc-photo-preview');
+        const img = document.getElementById('rc-photo-img');
+        const name = document.getElementById('rc-photo-name');
+        if (preview) preview.style.display = 'block';
+        if (img) img.src = e.target.result;
+        if (name) name.textContent = '📎 ' + input.files[0].name;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  };
+
+  window.submitReceipt = function(editId) {
+    loadReceipts();
+    const vendor = (document.getElementById('rc-vendor') || {}).value || '';
+    const amountVal = (document.getElementById('rc-amount') || {}).value || '';
+    const amount = parseFloat(amountVal);
+    if (!vendor.trim()) { showToast('Vendor name required'); return; }
+    if (isNaN(amount) || amount < 0) { showToast('Valid amount required'); return; }
+    const imgEl = document.getElementById('rc-photo-img');
+    const newImage = imgEl && imgEl.src && imgEl.src.indexOf('data:') === 0 ? imgEl.src : '';
+    const data = {
+      vendor: vendor.trim(),
+      amount: amount,
+      date: (document.getElementById('rc-date') || {}).value || '',
+      category: (document.getElementById('rc-cat') || {}).value || 'other',
+      notes: ((document.getElementById('rc-notes') || {}).value || '').trim(),
+      image: newImage || (editId ? ((receipts.find(function(r) { return r.id === editId; }) || {}).image || '') : '')
+    };
+    if (editId) {
+      const idx = receipts.findIndex(function(r) { return r.id === editId; });
+      if (idx >= 0) Object.assign(receipts[idx], data);
+    } else {
+      data.id = 'r' + Date.now();
+      receipts.unshift(data);
+    }
+    saveReceipts();
+    document.getElementById('receipt-modal').classList.remove('open');
+    renderReceipts();
+    showToast(editId ? 'Receipt updated' : 'Receipt added — $' + amount.toFixed(2));
+  };
+
+  window.deleteReceipt = function(id) {
+    loadReceipts();
+    receipts = receipts.filter(function(r) { return r.id !== id; });
+    saveReceipts();
+    renderReceipts();
+    showToast('Receipt deleted');
+  };
+
+  function viewReceipt(id) {
+    loadReceipts();
+    const r = receipts.find(function(x) { return x.id === id; });
+    if (!r) return;
+    const m = document.getElementById('receipt-view-body');
+    if (!m) return;
+    m.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px;">' +
+      '<div><h2 style="margin:0;font-family:\'Playfair Display\',serif;">' + esc(r.vendor) + '</h2>' +
+      '<div style="font-size:13px;color:var(--text-3);margin-top:4px;">' + esc(r.date) + ' · ' + esc(RECEIPT_CATS[r.category] || r.category) + '</div></div>' +
+      '<div style="font-size:22px;font-weight:800;color:var(--green);">$' + r.amount.toFixed(2) + '</div></div>' +
+      (r.notes ? '<div style="font-size:13px;color:var(--text-2);margin-bottom:16px;line-height:1.6;">' + esc(r.notes) + '</div>' : '') +
+      (r.image ? '<img src="' + r.image + '" style="max-width:100%;border-radius:8px;border:1px solid var(--border);margin-bottom:16px;">' :
+        '<div style="text-align:center;padding:32px;color:var(--text-3);border:1px dashed var(--border);border-radius:8px;margin-bottom:16px;">📷 No photo attached</div>') +
+      '<div class="receipt-btn-row">' +
+      '<button class="receipt-btn-primary" onclick="openReceiptModal(\'' + r.id + '\');document.getElementById(\'receipt-view-modal\').classList.remove(\'open\')">✏️ Edit</button>' +
+      '<button class="receipt-btn-danger" onclick="deleteReceipt(\'' + r.id + '\');document.getElementById(\'receipt-view-modal\').classList.remove(\'open\')">🗑 Delete</button>' +
+      '</div>';
+    document.getElementById('receipt-view-modal').classList.add('open');
+  }
+  window.viewReceipt = viewReceipt;
+
+  window.renderReceipts = function() {
+    loadReceipts();
+    const catF = (document.getElementById('receipt-filter-cat') || {}).value || 'all';
+    const monthF = (document.getElementById('receipt-filter-month') || {}).value || 'all';
+    let filtered = receipts;
+    if (catF !== 'all') filtered = filtered.filter(function(r) { return r.category === catF; });
+    if (monthF !== 'all') filtered = filtered.filter(function(r) { return r.date && r.date.startsWith(monthF); });
+    const total = filtered.reduce(function(s, r) { return s + (r.amount || 0); }, 0);
+    const totalEl = document.getElementById('receipt-total');
+    if (totalEl) totalEl.textContent = filtered.length ? filtered.length + ' receipt' + (filtered.length !== 1 ? 's' : '') + ' · $' + total.toFixed(2) : '';
+    const container = document.getElementById('receipts-container');
+    if (!container) return;
+    if (!filtered.length) {
+      container.innerHTML = '<div style="text-align:center;padding:64px 20px;color:var(--text-3);">' +
+        '<div style="font-size:48px;margin-bottom:16px;">🧾</div>' +
+        '<div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px;">No receipts yet</div>' +
+        '<div style="font-size:13px;margin-bottom:24px;">Tap "+ Add Receipt" to start tracking expenses for reimbursement.</div>' +
+        '<button onclick="openReceiptModal()" class="btn btn-primary" style="padding:10px 20px;font-size:13px;">+ Add Receipt</button>' +
+        '</div>';
+      updateMonthFilter();
+      return;
+    }
+    filtered = filtered.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+    let html = '';
+    filtered.forEach(function(r) {
+      const color = RECEIPT_COLORS[r.category] || '#9B9590';
+      const icon = RECEIPT_CATS[r.category] ? RECEIPT_CATS[r.category].split(' ')[0] : '📦';
+      html += '<div class="receipt-card" onclick="viewReceipt(\'' + r.id + '\')">' +
+        (r.image ? '<img class="receipt-img-thumb" src="' + r.image + '" alt="">' :
+          '<div class="receipt-icon" style="background:' + color + '22;color:' + color + ';">' + icon + '</div>') +
+        '<div class="receipt-info">' +
+        '<div class="receipt-vendor">' + esc(r.vendor) + '</div>' +
+        '<div class="receipt-desc">' + esc(RECEIPT_CATS[r.category] || '') + (r.notes ? ' · ' + esc(r.notes) : '') + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;">' +
+        '<div class="receipt-amount">$' + (r.amount || 0).toFixed(2) + '</div>' +
+        '<div class="receipt-date">' + esc(r.date || '') + '</div>' +
+        '</div></div>';
+    });
+    container.innerHTML = html;
+    updateMonthFilter();
+  };
+
+  // Init on load
+  updateMonthFilter();
+  renderReceipts();
+})();
+
+function initReceipts() {
   renderReceipts();
 }
-
-function computeReceiptSummary(sales) {
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0,10);
-  const weekAgo = new Date(now - 7*24*60*60*1000);
-
-  let todayTotal = 0, todayCount = 0, weekTotal = 0, weekCount = 0, grandTotal = 0;
-  sales.forEach(function(s) {
-    const d = new Date(s.date);
-    const sTotal = s.total || 0;
-    grandTotal += sTotal;
-    if (s.date && s.date.slice(0,10) === todayStr) { todayTotal += sTotal; todayCount++; }
-    if (d >= weekAgo) { weekTotal += sTotal; weekCount++; }
-  });
-  const avg = sales.length ? grandTotal / sales.length : 0;
-
-  function setEl(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
-  setEl('rcpt-today-total', todayCount ? '$' + todayTotal.toFixed(2) : '—');
-  setEl('rcpt-today-count', todayCount + ' transaction' + (todayCount !== 1 ? 's' : ''));
-  setEl('rcpt-week-total', weekCount ? '$' + weekTotal.toFixed(2) : '—');
-  setEl('rcpt-week-count', weekCount + ' transaction' + (weekCount !== 1 ? 's' : ''));
-  setEl('rcpt-avg-total', '$' + avg.toFixed(2));
-  setEl('rcpt-count-total', sales.length);
-}
-
-window.renderReceipts = function() {
-  if (!DB || !DB.recentSales) return;
-  const search = (document.getElementById('rcpt-search') || {}).value || '';
-  const location = (document.getElementById('rcpt-location') || {}).value || '';
-  const status = (document.getElementById('rcpt-status') || {}).value || '';
-  const q = search.toLowerCase();
-
-  let sales = DB.recentSales.filter(function(s) {
-    if (location && s.outlet !== location) return false;
-    if (status && s.status !== status) return false;
-    if (q && !String(s.invoice).toLowerCase().includes(q) && !(s.outlet||'').toLowerCase().includes(q)) return false;
-    return true;
-  });
-
-  const tbody = document.getElementById('rcpt-tbody');
-  const noResults = document.getElementById('rcpt-no-results');
-  const tableWrap = document.getElementById('rcpt-table-wrap');
-  if (!tbody) return;
-
-  if (!sales.length) {
-    if (noResults) noResults.style.display = 'block';
-    if (tableWrap) tableWrap.style.display = 'none';
-    return;
-  }
-  if (noResults) noResults.style.display = 'none';
-  if (tableWrap) tableWrap.style.display = 'block';
-
-  // Sort newest first
-  sales = sales.slice().sort(function(a,b) { return new Date(b.date) - new Date(a.date); });
-
-  tbody.innerHTML = sales.map(function(s, i) {
-    const d = new Date(s.date);
-    const dateStr = d.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
-    const timeStr = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    const statusClass = (s.status||'').toLowerCase();
-    const statusLabel = s.status ? s.status.charAt(0) + s.status.slice(1).toLowerCase() : '—';
-    return '<tr class="rcpt-row" onclick="toggleReceiptDetail(\'rcpt-detail-' + i + '\')" style="cursor:pointer;">' +
-      '<td><div style="font-size:13px;">' + dateStr + '</div><div style="font-size:11px;color:var(--text-3);">' + timeStr + '</div></td>' +
-      '<td><span style="font-family:monospace;font-size:12px;background:var(--bg);padding:2px 8px;border-radius:6px;border:1px solid var(--border);">#' + (s.invoice || '—') + '</span></td>' +
-      '<td>' + (s.outlet || '—') + '</td>' +
-      '<td style="text-align:center;">' + (s.items || 0) + '</td>' +
-      '<td style="text-align:right;font-weight:600;">$' + (s.total||0).toFixed(2) + '</td>' +
-      '<td style="text-align:center;"><span class="rcpt-badge ' + statusClass + '">' + statusLabel + '</span></td>' +
-      '</tr>' +
-      '<tr id="rcpt-detail-' + i + '" class="rcpt-detail-row" style="display:none;"><td colspan="6"><div class="rcpt-detail-inner">' +
-      '<div style="font-weight:600;margin-bottom:6px;">Transaction #' + (s.invoice||'—') + ' · ' + (s.outlet||'—') + '</div>' +
-      '<div style="color:var(--text-3);font-size:11px;margin-bottom:8px;">Tax: $' + (s.tax||0).toFixed(2) + ' · ' + s.items + ' item(s)</div>' +
-      '<div style="font-size:12px;color:var(--text-2);">Line item detail not available in this dataset.</div>' +
-      '</div></td></tr>';
-  }).join('');
-};
-
-window.toggleReceiptDetail = function(id) {
-  const row = document.getElementById(id);
-  if (!row) return;
-  row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-};
 
 // ═══════════════════════════════════════════════════════
 // DOCUMENTS TAB — Document Hub
