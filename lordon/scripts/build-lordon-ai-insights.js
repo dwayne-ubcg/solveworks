@@ -6,7 +6,7 @@ const https = require('https');
 
 const DATA_DIR = path.join(__dirname, '../data');
 const OUT_PATH = path.join(DATA_DIR, 'ai-insights.json');
-const MODEL = 'claude-sonnet-4-20250514';
+const MODEL = 'gpt-4o-mini';
 const MAX_SUMMARY_CHARS = 12000;
 
 const SYSTEM_PROMPT = `You are a senior retail merchandising analyst for Lordon, an independent 3-store boutique clothing retailer in Atlantic Canada (Saint John, Moncton, Halifax). You review their data daily and provide actionable insights.
@@ -198,17 +198,16 @@ function fallbackInsights(st, dashboard, metricsSummary, errorMessage) {
   };
 }
 
-function requestAnthropic(payload, apiKey) {
+function requestOpenAI(payload, apiKey) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(payload);
     const req = https.request({
-      hostname: 'api.anthropic.com',
-      path: '/v1/messages',
+      hostname: 'api.openai.com',
+      path: '/v1/chat/completions',
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
+        'authorization': `Bearer ${apiKey}`,
         'content-length': Buffer.byteLength(body),
       },
     }, (res) => {
@@ -220,11 +219,11 @@ function requestAnthropic(payload, apiKey) {
         try {
           parsed = JSON.parse(raw);
         } catch (err) {
-          reject(new Error(`Anthropic response was not JSON (${res.statusCode}): ${raw.slice(0, 500)}`));
+          reject(new Error(`OpenAI response was not JSON (${res.statusCode}): ${raw.slice(0, 500)}`));
           return;
         }
         if (res.statusCode < 200 || res.statusCode >= 300) {
-          reject(new Error(`Anthropic API ${res.statusCode}: ${parsed.error?.message || raw.slice(0, 500)}`));
+          reject(new Error(`OpenAI API ${res.statusCode}: ${parsed.error?.message || raw.slice(0, 500)}`));
           return;
         }
         resolve(parsed);
@@ -258,7 +257,7 @@ function extractJson(text) {
   if (first >= 0 && last > first) {
     return JSON.parse(cleaned.slice(first, last + 1));
   }
-  throw new Error('Unable to parse JSON from Claude response');
+  throw new Error('Unable to parse JSON from AI response');
 }
 
 function normalizeInsights(obj) {
@@ -303,12 +302,12 @@ async function main() {
   const detail = readJson('sell-through-detail.json');
   const dashboard = readJson('dashboard.json');
   const metricsSummary = buildMetricsSummary(st, detail, dashboard);
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    const fallback = fallbackInsights(st, dashboard, metricsSummary, 'Missing ANTHROPIC_API_KEY');
+    const fallback = fallbackInsights(st, dashboard, metricsSummary, 'Missing OPENAI_API_KEY');
     fs.writeFileSync(OUT_PATH, JSON.stringify(fallback, null, 2));
-    console.log(`Wrote fallback insights to ${OUT_PATH} (missing ANTHROPIC_API_KEY)`);
+    console.log(`Wrote fallback insights to ${OUT_PATH} (missing OPENAI_API_KEY)`);
     return;
   }
 
@@ -333,16 +332,18 @@ async function main() {
   ].join('\n');
 
   try {
-    const response = await requestAnthropic({
+    const response = await requestOpenAI({
       model: MODEL,
       max_tokens: 2500,
       temperature: 0.3,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
     }, apiKey);
 
-    const text = response?.content?.[0]?.text || '';
-    if (!text) throw new Error('Anthropic response missing content[0].text');
+    const text = response?.choices?.[0]?.message?.content || '';
+    if (!text) throw new Error('OpenAI response missing choices[0].message.content');
 
     const parsed = extractJson(text);
     const normalized = normalizeInsights(parsed);
@@ -352,7 +353,7 @@ async function main() {
   } catch (error) {
     const fallback = fallbackInsights(st, dashboard, metricsSummary, error.message);
     fs.writeFileSync(OUT_PATH, JSON.stringify(fallback, null, 2));
-    console.error(`Anthropic failed. Wrote fallback insights to ${OUT_PATH}: ${error.message}`);
+    console.error(`OpenAI failed. Wrote fallback insights to ${OUT_PATH}: ${error.message}`);
   }
 }
 
