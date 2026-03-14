@@ -11,7 +11,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Lordon">
 <meta name="theme-color" content="#C4A882">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -2914,9 +2916,9 @@ function renderInventory() {
     const plannedEOS = wklyRev * 2;
     const catOTB = (wklyRev * ihWeeksLeft) + plannedEOS - (o.currentInventoryCost || 0);
     const wos = wklyUnits > 0 ? (o.currentStock || 0) / wklyUnits : 999;
-    const status = catOTB > 500 ? 'buy' : wos > ihWeeksLeft ? 'covered' : 'ok';
-    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-neutral';
-    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '✓ Covered';
+    const status = catOTB > 500 ? 'buy' : wos > ihWeeksLeft * 2 ? 'over' : wos > ihWeeksLeft ? 'monitor' : 'ok';
+    const statusCls = status === 'buy' ? 'badge-red' : status === 'over' ? 'badge-amber' : status === 'ok' ? 'badge-green' : 'badge-neutral';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠ Overstocked' : status === 'ok' ? '✓ Healthy' : '👁 Monitor';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= ihWeeksLeft ? 'var(--green)' : 'var(--text-2)';
     return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
       <td class="strong">${o.category}</td>
@@ -3344,9 +3346,9 @@ function renderBuyPlanning() {
     const catOTB = plannedSalesCost + plannedEOS - (o.currentInventoryCost || 0);
     const wos = adjWeeklyUnits > 0 ? (o.currentStock || 0) / adjWeeklyUnits : 999;
 
-    const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason ? 'covered' : 'ok';
-    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-neutral';
-    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '✓ Covered';
+    const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason * 2 ? 'over' : wos > weeksLeftSeason ? 'monitor' : 'ok';
+    const statusCls = status === 'buy' ? 'badge-red' : status === 'over' ? 'badge-amber' : status === 'ok' ? 'badge-green' : 'badge-neutral';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠ Overstocked' : status === 'ok' ? '✓ Healthy' : '👁 Monitor';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= weeksLeftSeason ? 'var(--green)' : 'var(--text-3)';
 
     return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
