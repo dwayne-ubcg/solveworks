@@ -2806,15 +2806,16 @@ function renderBuyPlanning() {
   const weeksTotal = 26;
   const confidence = Math.min(100, Math.round((weeksElapsed / weeksTotal) * 100));
 
-  // Build a STD lookup for style-level detail per brand — SS26 floor dates only
+  // Build a STD lookup for style-level detail per brand — ALL styles with remaining stock
+  // (not just SS26 arrivals — we need the full picture for hit rate, repeat, don't-repeat)
   const stdBrandMap = {};
   if (STD && STD.brands) {
     for (const brand of STD.brands) {
       const key = brand.brand.toUpperCase();
       if (key === 'UNKNOWN' || key === 'SIDEWALK SALE' || key === 'GIFT CARD') continue;
-      // Filter to Spring 2026 styles only (floorDate 2026+)
-      const ss26Styles = brand.styles.filter(s => s.floorDate && s.floorDate >= '2026-01-01');
-      if (ss26Styles.length > 0) stdBrandMap[key] = ss26Styles;
+      // Include all styles that have sold or still have stock — gives complete brand picture
+      const activeStyles = brand.styles.filter(s => (s.sold || 0) > 0 || (s.remaining || 0) > 0);
+      if (activeStyles.length > 0) stdBrandMap[key] = activeStyles;
     }
   }
 
