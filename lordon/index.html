@@ -3355,21 +3355,27 @@ function getMonthsRemaining() {
 
 function getBaselineMonthlySales() {
   if (!ST) return 0;
-  // Use SS25 full-season revenue as baseline (captures real spring/summer curve)
-  // SS25 was 2 stores — scale to current store count (3)
+  // SS25 actual monthly revenue from Lightspeed (Jan-Jun 2025, 2 stores):
+  // Jan $78K, Feb $82K, Mar $104K, Apr $123K, May $166K, Jun $169K = $721K total
+  // Average: $120K/mo on 2 stores → scale to 3 stores = $180K/mo
+  // This captures the real spring/summer selling curve (peak Apr-Jun)
+  const SS25_MONTHLY_AVG_2STORE = 120124; // $720,744 / 6 months
   const ss25Stores = 2;
   const currentStores = CONFIG.stores.length || 3;
   const storeScale = currentStores / ss25Stores;
+
+  // First try: SS25 data from seasonal comparison (if populated)
   const sc = ST.seasonComparison;
   if (sc && sc.byCategory) {
     let ss25TotalRev = 0;
     for (const c of sc.byCategory) {
       ss25TotalRev += (c.ss25FullSeason?.revenue || 0);
     }
-    if (ss25TotalRev > 0) return (ss25TotalRev / 6) * storeScale; // 6mo season × store scaling
+    if (ss25TotalRev > 10000) return (ss25TotalRev / 6) * storeScale;
   }
-  // Fallback to period average
-  return ST.summary.totalRevenue / (ST.periodWeeks / 4.33);
+
+  // Second: use known SS25 actuals scaled to 3 stores
+  return Math.round(SS25_MONTHLY_AVG_2STORE * storeScale);
 }
 function getPlannedMonthlySales() {
   const saved = localStorage.getItem('lordon_planned_monthly');
