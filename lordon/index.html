@@ -2914,10 +2914,10 @@ function renderInventory() {
     const plannedEOS = wklyRev * 2;
     const catOTB = (wklyRev * ihWeeksLeft) + plannedEOS - (o.currentInventoryCost || 0);
     const wos = wklyUnits > 0 ? (o.currentStock || 0) / wklyUnits : 999;
-    const status = catOTB > 500 ? 'buy' : wos > ihWeeksLeft ? 'over' : 'ok';
-    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-amber';
-    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '⚠ Overstocked';
-    const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= ihWeeksLeft ? 'var(--green)' : 'var(--amber)';
+    const status = catOTB > 500 ? 'buy' : wos > ihWeeksLeft ? 'covered' : 'ok';
+    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-neutral';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '✓ Covered';
+    const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= ihWeeksLeft ? 'var(--green)' : 'var(--text-2)';
     return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
       <td class="strong">${o.category}</td>
       <td class="num">${fmtN(o.currentStock)}</td>
@@ -3169,7 +3169,7 @@ function recalcOTB() {
   if (moEl) {
     const mos = plannedMonthlySales > 0 ? bomInventoryRetail / plannedMonthlySales : 0;
     moEl.textContent = fmtDec(mos, 1) + 'mo';
-    moEl.style.color = mos <= 4 ? 'var(--green)' : mos <= 5 ? 'var(--amber)' : 'var(--red)';
+    moEl.style.color = mos <= 4 ? 'var(--green)' : mos <= 6 ? 'var(--amber)' : 'var(--text-2)';
   }
 }
 
@@ -3252,9 +3252,9 @@ function renderBuyPlanning() {
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
       <div class="kpi-tile">
         <div class="kt-label">Months of Supply</div>
-        <div class="kt-value" id="otb-mosupply-value" style="color:${moSupply <= 4 ? 'var(--green)' : moSupply <= 5 ? 'var(--amber)' : 'var(--red)'};font-size:20px">${fmtDec(moSupply, 1)}mo</div>
+        <div class="kt-value" id="otb-mosupply-value" style="color:${moSupply <= 4 ? 'var(--green)' : moSupply <= 6 ? 'var(--amber)' : 'var(--text-2)'};font-size:20px">${fmtDec(moSupply, 1)}mo</div>
         <div class="kt-meta" style="font-size:10px;color:var(--text-3)">At planned sales rate</div>
-        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">Target: 2–3 months</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">Typical range: 2–4 months</div>
       </div>
       <div class="kpi-tile">
         <div class="kt-label">Inventory Turns</div>
@@ -3266,7 +3266,7 @@ function renderBuyPlanning() {
         <div class="kt-label">Season OTB %</div>
         <div class="kt-value" style="font-size:20px"><span id="otb-pct-card">${Math.round(plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0)}%</span></div>
         <div class="kt-meta" style="font-size:10px;color:var(--text-3)">Net OTB ÷ monthly plan</div>
-        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">${netOTB > 0 ? '✅ Buying power available' : '🔴 Overbought'}</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">${netOTB > 0 ? '✅ Buying power available' : '✓ Inventory covers the season'}</div>
       </div>
     </div>
 
@@ -3277,7 +3277,7 @@ function renderBuyPlanning() {
         ${growthPct > 0 ? `With your <strong>${growthPct}% growth target</strong>, planned sales are <strong>${fmt$(plannedMonthlySales)}</strong>/mo (up from ${fmt$(plannedMonthlyBase)} baseline). ` : ''}
         ${netOTB > 0
           ? `You have <strong>${fmt$(netOTB)}</strong> to spend — prioritize categories running under 4 weeks of supply.`
-          : `Current inventory covers the rest of the season plus <strong>${fmt$(Math.abs(netOTB))}</strong> extra. Focus on sell-through before buying new.`}
+          : `Current inventory should carry you through the season. Check the category breakdown below — some categories may still need restocking even if the total looks covered.`}
       </div>
     </div>
   `;
@@ -3344,9 +3344,9 @@ function renderBuyPlanning() {
     const catOTB = plannedSalesCost + plannedEOS - (o.currentInventoryCost || 0);
     const wos = adjWeeklyUnits > 0 ? (o.currentStock || 0) / adjWeeklyUnits : 999;
 
-    const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason ? 'over' : 'ok';
-    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-amber';
-    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '⚠ Overstocked';
+    const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason ? 'covered' : 'ok';
+    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-neutral';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '✓ Covered';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= weeksLeftSeason ? 'var(--green)' : 'var(--text-3)';
 
     return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
