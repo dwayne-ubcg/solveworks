@@ -2451,7 +2451,12 @@ function renderBriefing() {
       </div>
       <div class="health-kpi-bar"><div class="health-kpi-bar-fill" style="width:${k.pct}%;background:${k.color}"></div></div>
     </div>
-  `).join('');
+  `).join('') + (ST.periodWeeks <= 14 ? `
+    <div style="background:#FAFAF5;border:1px solid var(--border-light);border-radius:10px;padding:12px 14px;margin-top:8px;grid-column:1/-1">
+      <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+        ⏳ <strong>Week ${ST.periodWeeks} of 26</strong> — These metrics reflect the slow start of spring. Sell-through and turns will improve significantly as April–June peak selling arrives. Last spring ramped 2.2× from start to peak.
+      </div>
+    </div>` : '');
 
   // OOS Table — pull from sell-through-detail (STD) when reorderAlert is empty
   let oosItems = [];
@@ -3516,7 +3521,7 @@ function renderBuyPlanning() {
         <div class="kt-label">Inventory Turns (annualized)</div>
         <div class="kt-value" style="color:${((s.totalCOGS / (ST.periodWeeks || 10) * 52) / (inv.totalValue || 1)) >= 4 ? 'var(--green)' : 'var(--amber)'};font-size:20px">${fmtDec((s.totalCOGS / (ST.periodWeeks || 10) * 52) / (inv.totalValue || 1), 1)}×</div>
         <div class="kt-meta" style="font-size:10px;color:var(--text-3)">(COGS/wk × 52) ÷ inventory</div>
-        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">Target: 4–6×</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">Target: 4–6× · ${ST.periodWeeks <= 14 ? '⏳ Early season — this will climb as peak selling hits' : ''}</div>
       </div>
       <div class="kpi-tile">
         <div class="kt-label">Season OTB %</div>
@@ -3536,6 +3541,22 @@ function renderBuyPlanning() {
           : `Current inventory should carry you through the season. Check the category breakdown below — some categories may still need restocking even if the total looks covered.`}
       </div>
     </div>
+
+    ${ST.periodWeeks <= 14 ? `<div class="ai-box" style="background:linear-gradient(135deg,#EEF4FF,#E8F0FE);border:1.5px solid #C2D7F5;border-radius:12px;padding:16px 18px;margin-bottom:16px">
+      <div class="ai-icon-wrap" style="background:#D6E4F9;color:#3B6CB5">📊</div>
+      <div class="ai-text">
+        <strong style="color:#2C5AA0">Early Season Context (${ST.periodWeeks} weeks in)</strong><br>
+        <span style="font-size:12.5px;line-height:1.6;color:#444">
+        You're in the <strong>slow start</strong> of the spring selling season — Jan through mid-March are historically the lowest revenue months. Last spring (2 stores), monthly revenue ramped from <strong>$78K in January → $169K in June</strong> — a <strong>2.2× increase</strong> from start to peak.<br><br>
+        📈 <strong>What this means for your numbers:</strong><br>
+        • <strong>Inventory Turns</strong> will look low now but should reach 3–4× by end of season as peak selling kicks in<br>
+        • <strong>Sell-through %</strong> is only ~20-30% — that's normal at this point. Target 55-65% by June 30<br>
+        • <strong>Months of Supply</strong> looks high because current sales velocity is the slowest it will be all season<br>
+        • <strong>OTB</strong> baseline uses last spring's full-season average ($120K/mo × 1.5 for 3 stores) — not the current cold-weather rate<br><br>
+        💡 <em>Revisit these numbers in mid-April when you have 6+ weeks of real spring selling data. The picture will sharpen considerably.</em>
+        </span>
+      </div>
+    </div>` : ''}
   `;
 
   // Wire up live formula updates
