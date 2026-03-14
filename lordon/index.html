@@ -974,35 +974,30 @@ input,select{font-family:inherit;font-size:13px}
           </div>
         </div>
 
-        <!-- 2.23 Brand Scorecard (GMROI Focus) -->
+        <!-- 2.23 Season Report Card — SS27 Buy Playbook -->
         <div class="section">
           <div class="section-header">
-            <div class="section-title"><span class="s-icon">🏆</span> Brand Scorecard — GMROI & Performance Rating</div>
-            <span style="font-size:11px;color:var(--text-3)">GMROI = Gross Margin $ ÷ Avg Inventory Cost</span>
+            <div class="section-title"><span class="s-icon">📋</span> Season Report Card — Spring '27 Buy Playbook</div>
+            <span style="font-size:11px;color:var(--text-3)" id="playbook-confidence"></span>
           </div>
-          <div class="card">
-            <div class="card-body">
-              <div class="table-wrap">
-                <table class="data-table" id="brand-scorecard-table">
-                  <thead>
-                    <tr>
-                      <th onclick="sortTable('brand-scorecard-table',0)">Brand <span class="sort-icon">⇅</span></th>
-                      <th onclick="sortTable('brand-scorecard-table',1)" class="num">Sell-Through <span class="sort-icon">⇅</span></th>
-                      <th onclick="sortTable('brand-scorecard-table',2)" class="num">Revenue <span class="sort-icon">⇅</span></th>
-                      <th onclick="sortTable('brand-scorecard-table',3)" class="num">Gross Margin % <span class="sort-icon">⇅</span></th>
-                      <th onclick="sortTable('brand-scorecard-table',4)" class="num">GMROI <span class="sort-icon">⇅</span></th>
-                      <th>Rating</th>
-                      <th>Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody id="brand-scorecard-tbody"></tbody>
-                </table>
-              </div>
-              <div style="margin-top:14px">
-                <div class="ai-box ai-box-default" id="scorecard-ai"></div>
-              </div>
-            </div>
+          <div class="ai-box ai-box-default" id="playbook-summary-ai" style="margin-bottom:16px"></div>
+
+          <!-- Category Mix Guide -->
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>📊 Category Mix Guide</h3><span style="font-size:11px;color:var(--text-3)">Where to shift your buy dollars next season</span></div>
+            <div class="card-body"><div class="table-wrap">
+              <table class="data-table" id="cat-mix-table"><thead><tr>
+                <th onclick="sortTable('cat-mix-table',0)">Category <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable('cat-mix-table',1)" class="num">Current Mix % <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable('cat-mix-table',2)" class="num">ST% <span class="sort-icon">⇅</span></th>
+                <th onclick="sortTable('cat-mix-table',3)" class="num">Margin <span class="sort-icon">⇅</span></th>
+                <th>Signal</th>
+              </tr></thead><tbody id="cat-mix-tbody"></tbody></table>
+            </div></div>
           </div>
+
+          <!-- Per-Brand Buy Cards -->
+          <div id="brand-playbook-cards"></div>
         </div>
 
       </div>
@@ -2568,61 +2563,211 @@ function renderBuyPlanning() {
   }
   $('season-comp-body').innerHTML = scHtml;
 
-  // ── 2.23 Brand Scorecard (GMROI Focus) ──
-  const scorecard = ST.brandScorecard || ST.byBrand;
-  const totalRevAll = scorecard.reduce((s, b) => s + (b.revenue || 0), 0);
+  // ── 2.23 Season Report Card — SS27 Buy Playbook ──
+  // Build brand-level data from sell-through-detail (STD) for current season granularity
+  const playbookBrands = [];
+  const catMix = {};
+  const SS26_START = new Date('2026-01-01');
+  const weeksElapsed = Math.max(1, (new Date() - SS26_START) / (7 * 86400000));
+  const weeksTotal = 26;
+  const confidence = Math.min(100, Math.round((weeksElapsed / weeksTotal) * 100));
 
-  $('brand-scorecard-tbody').innerHTML = scorecard
-    .filter(b => (b.revenue || 0) > 0)
-    .sort((a, b) => b.revenue - a.revenue)
-    .map(b => {
-      // GMROI: (revenue - cogs) / cogs_on_hand  where cogs_on_hand ≈ from byBrand
-      const grossMarginDollars = (b.revenue || 0) - (b.cogs || 0);
-      // Estimate avg inventory cost: currentStock × (cogs / (unitsSold + currentStock))
-      const totalUnits = (b.unitsSold || 0) + (b.currentStock || 0);
-      const avgCostPerUnit = totalUnits > 0 ? (b.cogs || 0) / totalUnits : 0;
-      const cogsOnHand = (b.currentStock || 0) * avgCostPerUnit;
-      const gmroi = cogsOnHand > 0 ? grossMarginDollars / cogsOnHand : null;
+  if (STD && STD.brands) {
+    for (const brand of STD.brands) {
+      let totalStyles = 0, hitsAbove50 = 0, totalSold = 0, totalRemaining = 0;
+      let totalRev = 0, totalCost = 0;
+      const styleDetails = [];
+      const catPerf = {}; // category → {sold, remaining, revenue}
+      const priceRevenue = {}; // price bucket → revenue
 
-      const gmroiColor = gmroi == null ? 'var(--text-3)'
-        : gmroi >= 3 ? 'var(--green)'
-        : gmroi >= 2 ? 'var(--sage)'
-        : gmroi >= 1.5 ? 'var(--amber)'
-        : 'var(--red)';
+      for (const style of brand.styles) {
+        totalStyles++;
+        const sold = style.sold || 0;
+        const rem = style.remaining || 0;
+        const st = sold + rem > 0 ? (sold / (sold + rem)) * 100 : 0;
+        const rev = style.revenue || 0;
+        const avgPrice = sold > 0 ? Math.round(rev / sold) : 0;
+        const costEst = rev * 0.45; // estimated COGS
+        totalSold += sold;
+        totalRemaining += rem;
+        totalRev += rev;
+        totalCost += costEst;
+        if (st >= 50) hitsAbove50++;
 
-      const gmroiLabel = gmroi == null ? '—'
-        : gmroi >= 3 ? `⭐ ${fmtDec(gmroi)}`
-        : gmroi >= 2 ? `✓ ${fmtDec(gmroi)}`
-        : gmroi >= 1.5 ? `◉ ${fmtDec(gmroi)}`
-        : `▼ ${fmtDec(gmroi)}`;
+        // Category performance
+        const cat = (style.type || 'OTHER').toUpperCase();
+        if (!catPerf[cat]) catPerf[cat] = { sold: 0, remaining: 0, revenue: 0 };
+        catPerf[cat].sold += sold;
+        catPerf[cat].remaining += rem;
+        catPerf[cat].revenue += rev;
 
-      const mgStr = b.grossMargin != null
-        ? `<span style="color:${b.grossMargin >= 55 ? 'var(--green)' : b.grossMargin >= 45 ? 'var(--amber)' : 'var(--red)'};font-weight:600">${b.grossMargin}%</span>`
-        : '—';
+        // Price bucket
+        if (avgPrice > 0) {
+          const bucket = avgPrice < 50 ? 'Under $50' : avgPrice < 80 ? '$50-79' : avgPrice < 120 ? '$80-119' : avgPrice < 160 ? '$120-159' : '$160+';
+          if (!priceRevenue[bucket]) priceRevenue[bucket] = { rev: 0, sold: 0, remaining: 0 };
+          priceRevenue[bucket].rev += rev;
+          priceRevenue[bucket].sold += sold;
+          priceRevenue[bucket].remaining += rem;
+        }
 
-      return `<tr>
-        <td class="strong">${b.brand}</td>
-        <td class="num">${inlineBar(b.sellThrough || 0, 100, barColorST(b.sellThrough || 0))}</td>
-        <td class="num">${fmt$(b.revenue)}</td>
-        <td class="num">${mgStr}</td>
-        <td class="num" style="color:${gmroiColor};font-weight:700">${gmroiLabel}</td>
-        <td>${ratingBadge(b.rating)}</td>
-        <td style="font-size:11.5px;color:var(--text-2);max-width:220px">${b.ratingReason || '—'}</td>
-      </tr>`;
-    }).join('');
+        styleDetails.push({ name: style.name, sold, remaining: rem, st: Math.round(st), vel: style.vel || 0, rev, avgPrice, alert: style.alert });
 
-  // Scorecard AI insight
-  const growBrands = scorecard.filter(b => b.rating === 'grow' && (b.revenue || 0) > 10000);
-  const cutBrands = scorecard.filter(b => b.rating === 'cut' || b.rating === 'watch');
-  const topGrow = growBrands.sort((a, b) => b.revenue - a.revenue).slice(0, 3).map(b => `<strong>${b.brand}</strong>`).join(', ');
-  const topCut = cutBrands.sort((a, b) => (a.sellThrough || 0) - (b.sellThrough || 0)).slice(0, 2).map(b => `<strong>${b.brand}</strong>`).join(', ');
+        // Global category mix
+        if (!catMix[cat]) catMix[cat] = { revenue: 0, sold: 0, remaining: 0 };
+        catMix[cat].revenue += rev;
+        catMix[cat].sold += sold;
+        catMix[cat].remaining += rem;
+      }
 
-  $('scorecard-ai').innerHTML = `<div class="ai-icon-wrap">🏆</div>
+      if (totalStyles === 0) continue;
+      const hitRate = Math.round((hitsAbove50 / totalStyles) * 100);
+      const overallST = totalSold + totalRemaining > 0 ? Math.round((totalSold / (totalSold + totalRemaining)) * 100) : 0;
+      const margin = totalRev > 0 ? Math.round(((totalRev - totalCost) / totalRev) * 100) : 0;
+
+      // Sweet spot price: bucket with highest ST%
+      let sweetSpot = null, sweetSpotST = 0;
+      for (const [bucket, d] of Object.entries(priceRevenue)) {
+        const bst = d.sold + d.remaining > 0 ? (d.sold / (d.sold + d.remaining)) * 100 : 0;
+        if (bst > sweetSpotST && d.sold >= 2) { sweetSpot = bucket; sweetSpotST = bst; }
+      }
+
+      // Category winners/losers
+      const catArr = Object.entries(catPerf).map(([cat, d]) => {
+        const cst = d.sold + d.remaining > 0 ? Math.round((d.sold / (d.sold + d.remaining)) * 100) : 0;
+        return { cat, st: cst, rev: d.revenue, sold: d.sold };
+      }).filter(c => c.sold >= 2).sort((a, b) => b.st - a.st);
+
+      // Repeat list (top sellers — high ST, high velocity)
+      const repeats = styleDetails.filter(s => s.st >= 50 && s.sold >= 2).sort((a, b) => b.vel - a.vel).slice(0, 5);
+      // Don't repeat (sat on floor)
+      const dontRepeat = styleDetails.filter(s => s.st < 25 && s.remaining > 0).sort((a, b) => a.st - b.st).slice(0, 3);
+
+      // Concentration risk: % of revenue from top 3 styles
+      const sortedByRev = [...styleDetails].sort((a, b) => b.rev - a.rev);
+      const top3Rev = sortedByRev.slice(0, 3).reduce((s, d) => s + d.rev, 0);
+      const concentrationPct = totalRev > 0 ? Math.round((top3Rev / totalRev) * 100) : 0;
+
+      // Recommended depth for remaining season
+      const weeksRemaining = Math.max(0, weeksTotal - weeksElapsed);
+      const weeklyVelocity = weeksElapsed > 0 ? totalSold / weeksElapsed : 0;
+      const recommendedUnits = Math.round(weeklyVelocity * weeksRemaining);
+
+      playbookBrands.push({
+        brand: brand.brand, totalStyles, hitsAbove50, hitRate, overallST, totalRev, margin,
+        sweetSpot, sweetSpotST: Math.round(sweetSpotST),
+        catWin: catArr[0] || null, catLose: catArr.length > 1 ? catArr[catArr.length - 1] : null,
+        repeats, dontRepeat, concentrationPct, recommendedUnits, weeklyVelocity,
+        totalSold, totalRemaining,
+      });
+    }
+  }
+
+  playbookBrands.sort((a, b) => b.totalRev - a.totalRev);
+
+  // Confidence badge
+  const confEl = $('playbook-confidence');
+  if (confEl) confEl.innerHTML = `<span class="badge ${confidence >= 70 ? 'badge-green' : confidence >= 40 ? 'badge-amber' : 'badge-red'}">${confidence}% confidence</span> — ${Math.round(weeksElapsed)} of ${weeksTotal} weeks complete`;
+
+  // Summary AI
+  const growList = playbookBrands.filter(b => b.hitRate >= 60 && b.overallST >= 50).slice(0, 3);
+  const cutList = playbookBrands.filter(b => b.hitRate < 40 && b.totalStyles >= 3 && b.overallST < 35);
+  $('playbook-summary-ai').innerHTML = `<div class="ai-icon-wrap">📋</div>
     <div class="ai-text">
-      <strong>Grow:</strong> ${topGrow || 'N/A'} — increase next season OTB by 15-20%.
-      ${topCut ? ` <strong>Watch/Reduce:</strong> ${topCut} — lower sell-through or margin warrants careful scrutiny on reorders.` : ''}
-      GMROI target: ≥2.0× = good return on inventory investment. Focus buying dollars on brands with the highest GMROI.
+      <strong>Season is ${confidence}% complete.</strong> ${confidence < 50 ? 'Numbers are directional — they\'ll sharpen as peak selling hits April–June.' : confidence < 80 ? 'Trends are solid — these patterns will hold.' : 'This is your buying bible. Trust the data.'}
+      ${growList.length ? ` <strong>Grow for SS27:</strong> ${growList.map(b => b.brand).join(', ')} — high hit rates, strong sell-through.` : ''}
+      ${cutList.length ? ` <strong>Reduce:</strong> ${cutList.map(b => b.brand).join(', ')} — low hit rates, inventory sitting.` : ''}
     </div>`;
+
+  // Category Mix Guide
+  const totalCatRev = Object.values(catMix).reduce((s, c) => s + c.revenue, 0);
+  const catArr = Object.entries(catMix)
+    .filter(([cat]) => cat !== 'UNKNOWN')
+    .map(([cat, d]) => {
+      const mixPct = totalCatRev > 0 ? (d.revenue / totalCatRev) * 100 : 0;
+      const st = d.sold + d.remaining > 0 ? Math.round((d.sold / (d.sold + d.remaining)) * 100) : 0;
+      const signal = st >= 60 ? '🟢 Grow' : st >= 40 ? '✅ Maintain' : st >= 25 ? '🟡 Watch' : '🔴 Reduce';
+      return { cat, mixPct, st, signal };
+    })
+    .sort((a, b) => b.mixPct - a.mixPct);
+
+  $('cat-mix-tbody').innerHTML = catArr.map(c => `<tr>
+    <td class="strong">${c.cat}</td>
+    <td class="num">${fmtDec(c.mixPct)}%</td>
+    <td class="num"><span style="color:${c.st >= 60 ? 'var(--green)' : c.st >= 40 ? 'var(--amber)' : 'var(--red)'};font-weight:600">${c.st}%</span></td>
+    <td class="num">~${Math.round(c.mixPct * 0.45)}%</td>
+    <td>${c.signal}</td>
+  </tr>`).join('');
+
+  // Per-Brand Buy Cards
+  const cardsHtml = playbookBrands.filter(b => b.totalRev > 500).slice(0, 20).map(b => {
+    const hitColor = b.hitRate >= 60 ? 'var(--green)' : b.hitRate >= 40 ? 'var(--amber)' : 'var(--red)';
+    const verdict = b.hitRate >= 60 && b.overallST >= 50 ? '⬆️ GROW' : b.hitRate >= 40 ? '↔️ MAINTAIN' : '⬇️ REDUCE';
+    const verdictColor = verdict.startsWith('⬆') ? 'badge-green' : verdict.startsWith('↔') ? 'badge-amber' : 'badge-red';
+
+    // Repeat list
+    const repeatHtml = b.repeats.length ? b.repeats.map(s =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border-light)">
+        <span style="font-weight:600;font-size:12px">${s.name}</span>
+        <span style="font-size:11px;color:var(--text-2)">${s.sold} sold · ${Math.round(s.st)}% ST · $${s.avgPrice} avg</span>
+      </div>`
+    ).join('') : '<span style="font-size:11.5px;color:var(--text-3)">No clear repeat winners yet</span>';
+
+    const dontRepeatHtml = b.dontRepeat.length ? b.dontRepeat.map(s =>
+      `<span style="display:inline-block;background:var(--red-lt);color:var(--red);padding:2px 8px;border-radius:6px;font-size:11px;margin:2px">${s.name} (${s.st}% ST)</span>`
+    ).join('') : '<span style="font-size:11.5px;color:var(--text-3)">No clear losers yet</span>';
+
+    // Category signal
+    const catSignalHtml = [b.catWin, b.catLose].filter(Boolean).map(c => {
+      const icon = c.st >= 50 ? '✅' : c.st < 30 ? '❌' : '🟡';
+      return `${icon} ${c.cat}: ${c.st}% ST`;
+    }).join(' &nbsp;·&nbsp; ');
+
+    // Concentration warning
+    const concWarn = b.concentrationPct >= 70 ? `<span style="font-size:11px;color:var(--red)">⚠️ ${b.concentrationPct}% of revenue from top 3 styles — one-trick pony risk</span>` : '';
+
+    return `<div class="card" style="margin-bottom:14px">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h3 style="margin:0">${b.brand}</h3>
+          <span style="font-size:11.5px;color:var(--text-3)">${b.totalStyles} styles · ${fmt$(b.totalRev)} revenue</span>
+        </div>
+        <span class="badge ${verdictColor}" style="font-size:13px;padding:4px 12px">${verdict}</span>
+      </div>
+      <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- Left column: metrics -->
+        <div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-3);letter-spacing:0.5px">Hit Rate</div>
+              <div style="font-size:22px;font-weight:700;color:${hitColor}">${b.hitRate}%</div>
+              <div style="font-size:10px;color:var(--text-3)">${b.hitsAbove50} of ${b.totalStyles} styles hit</div>
+            </div>
+            <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:10px;text-transform:uppercase;color:var(--text-3);letter-spacing:0.5px">Sell-Through</div>
+              <div style="font-size:22px;font-weight:700;color:${b.overallST >= 50 ? 'var(--green)' : b.overallST >= 35 ? 'var(--amber)' : 'var(--red)'}">${b.overallST}%</div>
+            </div>
+          </div>
+          ${b.sweetSpot ? `<div style="font-size:12px;margin-bottom:6px">🎯 <strong>Sweet Spot:</strong> ${b.sweetSpot} (${b.sweetSpotST}% ST)</div>` : ''}
+          ${catSignalHtml ? `<div style="font-size:12px;margin-bottom:6px">${catSignalHtml}</div>` : ''}
+          ${concWarn ? `<div style="margin-bottom:6px">${concWarn}</div>` : ''}
+          <div style="font-size:12px;color:var(--text-2)">📦 Reorder depth for rest of season: <strong>${b.recommendedUnits} units</strong> <span style="font-size:10px">(${fmtDec(b.weeklyVelocity, 1)} units/wk × ${Math.round(Math.max(0, weeksTotal - weeksElapsed))} wks)</span></div>
+        </div>
+        <!-- Right column: repeat / don't repeat -->
+        <div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--green);letter-spacing:0.5px;font-weight:700;margin-bottom:4px">✅ Buy Again</div>
+            ${repeatHtml}
+          </div>
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;color:var(--red);letter-spacing:0.5px;font-weight:700;margin-bottom:4px">❌ Don't Repeat</div>
+            ${dontRepeatHtml}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('brand-playbook-cards').innerHTML = cardsHtml;
 }
 
 // ═══════════════════════════════════════════════════════
