@@ -2606,19 +2606,23 @@ function renderBuyPlanning() {
   const weeksTotal = 26;
   const confidence = Math.min(100, Math.round((weeksElapsed / weeksTotal) * 100));
 
-  // Build a STD lookup for style-level detail per brand
+  // Build a STD lookup for style-level detail per brand — SS26 floor dates only
   const stdBrandMap = {};
   if (STD && STD.brands) {
     for (const brand of STD.brands) {
       const key = brand.brand.toUpperCase();
-      stdBrandMap[key] = brand.styles;
+      if (key === 'UNKNOWN' || key === 'SIDEWALK SALE' || key === 'GIFT CARD') continue;
+      // Filter to Spring 2026 styles only (floorDate 2026+)
+      const ss26Styles = brand.styles.filter(s => s.floorDate && s.floorDate >= '2026-01-01');
+      if (ss26Styles.length > 0) stdBrandMap[key] = ss26Styles;
     }
   }
 
   // Use ST.byBrand as the authoritative source
   const byBrand = ST.byBrand || ST.brandScorecard || [];
   for (const b of byBrand) {
-    if (!b.brand || b.brand === 'UNKNOWN' || b.brand === 'SIDEWALK SALE') continue;
+    const brandUp = (b.brand || '').toUpperCase();
+    if (!b.brand || brandUp === 'UNKNOWN' || brandUp === 'SIDEWALK SALE' || brandUp === 'GIFT CARD') continue;
     if ((b.revenue || 0) < 500) continue;
 
     const overallST = b.sellThrough || 0;
