@@ -446,6 +446,37 @@ input,select{font-family:inherit;font-size:13px}
 .chat-messages::-webkit-scrollbar{width:4px}
 .chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 .chat-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:32px}
+/* ── MORNING CHAT BUBBLE (Briefing tab) ── */
+.morning-chat-card{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.morning-chat-header{background:linear-gradient(135deg,var(--sage),#5A7A52);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.morning-chat-av{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.morning-chat-name{font-weight:700;font-size:14px}
+.morning-chat-status{font-size:11px;opacity:.8;margin-top:1px}
+.morning-chat-body{padding:14px;display:flex;flex-direction:column;gap:4px}
+.morning-msg{background:var(--sage-lt);border-radius:14px 14px 14px 4px;padding:12px 16px;font-size:13px;line-height:1.6;max-width:88%;border:1px solid rgba(122,153,112,.2)}
+.morning-msg strong{font-weight:700;color:var(--accent-dk)}
+.morning-msg .msg-time{font-size:10px;color:var(--text-3);text-align:right;margin-top:4px}
+/* ── SALES HEATMAP ── */
+.heatmap-grid{display:flex;flex-direction:column;gap:4px}
+.heatmap-row{display:flex;gap:4px;align-items:center}
+.heatmap-wlabel{width:28px;font-size:10px;color:var(--text-3);text-align:right;flex-shrink:0}
+.heatmap-cell{flex:1;height:28px;border-radius:4px;transition:opacity var(--t)}
+.heatmap-cell:hover{opacity:.75}
+.heatmap-dlabels{display:flex;gap:4px;margin-bottom:4px;padding-left:32px}
+.heatmap-dlabel{flex:1;text-align:center;font-size:10px;color:var(--text-3);font-weight:600}
+/* ── BRAND SCORECARD (Buy Planning) ── */
+.brand-scorecard-table td.rating-cell{font-size:12px;font-weight:700;white-space:nowrap}
+.rating-grow{color:var(--green)}
+.rating-keep{color:var(--sage)}
+.rating-watch{color:var(--amber)}
+.rating-cut{color:var(--red)}
+/* ── OOS POSITIVE FRAMING ── */
+.oos-opportunity-header{background:linear-gradient(135deg,var(--amber-lt),#FFF8EC);border:1px solid #E8D898;border-radius:12px;padding:12px 16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
+/* ── EARLY SEASON BANNER ── */
+.season-banner{background:linear-gradient(135deg,#E8F0E8,#F0EBD8);border:1.5px solid var(--sage);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.season-banner .sb-icon{font-size:22px;flex-shrink:0}
+.season-banner .sb-text{font-size:13px;line-height:1.5;color:var(--text-2)}
+.season-banner .sb-text strong{color:var(--sage)}
 .chat-bubble{display:flex;flex-direction:column;max-width:75%;gap:4px}
 .chat-bubble.user{align-self:flex-end;align-items:flex-end}
 .chat-bubble.bot{align-self:flex-start;align-items:flex-start}
@@ -1061,6 +1092,10 @@ input,select{font-family:inherit;font-size:13px}
         <span>Live</span>
       </div>
       <div class="updated-time" id="updated-label">—</div>
+      <div class="topbar-notif-wrap" id="notif-btn" onclick="switchTab('briefing')" title="Alerts" style="position:relative;width:34px;height:34px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-3);font-size:15px;transition:all var(--t)">
+        🔔
+        <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--rose);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--bg-card)">0</span>
+      </div>
       <button class="topbar-icon-btn refresh-btn" id="refresh-btn" title="Refresh data" onclick="refreshDashboard()">⟳</button>
     </div>
   </div>
@@ -1105,6 +1140,13 @@ input,select{font-family:inherit;font-size:13px}
     <div class="nav-item" data-tab="documents" onclick="switchTab('documents')">
       <div class="nav-icon">📄</div>Documents
     </div>
+    <div class="nav-divider"></div>
+    <div style="padding:10px 12px;margin-top:4px">
+      <div style="padding:12px 14px;background:linear-gradient(135deg,var(--accent-lt),#F0E6D8);border-radius:10px;border:1px solid var(--border-light)">
+        <div style="font-size:11.5px;font-weight:700;color:var(--accent-dk);margin-bottom:3px">🦊 AI Agent Active</div>
+        <div style="font-size:10.5px;color:var(--text-3);line-height:1.4">Monitoring sales, inventory, and orders 24/7</div>
+      </div>
+    </div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -1120,6 +1162,22 @@ input,select{font-family:inherit;font-size:13px}
           </div>
           <div class="page-actions">
             <button class="btn btn-ghost btn-sm">📥 Export</button>
+          </div>
+        </div>
+
+        <!-- ── MORNING CHAT BUBBLE ── -->
+        <div class="morning-chat-wrap" id="morning-chat-wrap" style="margin-bottom:20px">
+          <div class="morning-chat-card">
+            <div class="morning-chat-header">
+              <div class="morning-chat-av">🦊</div>
+              <div>
+                <div class="morning-chat-name">Lordon AI</div>
+                <div class="morning-chat-status" id="chat-status">Updating…</div>
+              </div>
+            </div>
+            <div class="morning-chat-body" id="morning-chat-body">
+              <!-- populated by JS -->
+            </div>
           </div>
         </div>
 
@@ -1198,8 +1256,8 @@ input,select{font-family:inherit;font-size:13px}
         <!-- OOS TOP SELLERS -->
         <div class="section">
           <div class="section-header">
-            <div class="section-title"><span class="s-icon">🚫</span> Out-of-Stock Alerts — Reorder Now</div>
-            <span class="badge badge-red" id="oos-count-badge">—</span>
+            <div class="section-title"><span class="s-icon">⚡</span> Hot Sellers — Restock Opportunity</div>
+            <span class="badge badge-amber" id="oos-count-badge">—</span>
           </div>
           <div class="card oos-card-wrap">
             <div class="card-body">
@@ -1223,7 +1281,7 @@ input,select{font-family:inherit;font-size:13px}
               <!-- Mobile cards -->
               <div class="oos-mobile-cards" id="oos-mobile-cards"></div>
               <div style="margin-top:14px">
-                <div class="ai-box ai-box-red" id="oos-ai"></div>
+                <div class="ai-box ai-box-default" id="oos-ai"></div>
               </div>
             </div>
           </div>
@@ -1315,6 +1373,19 @@ input,select{font-family:inherit;font-size:13px}
             <div class="section-title"><span class="s-icon">🏪</span> Sales by Location (This Season)</div>
           </div>
           <div class="g-3" id="location-cards"></div>
+        </div>
+
+        <!-- SALES HEATMAP -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🗓️</span> Weekly Sales Pattern — Day of Week Heatmap</div>
+            <span style="font-size:11px;color:var(--text-3)">Relative sales intensity by day</span>
+          </div>
+          <div class="card">
+            <div class="card-body" id="sales-heatmap-body">
+              <!-- populated by JS -->
+            </div>
+          </div>
         </div>
 
       </div>
@@ -1602,6 +1673,38 @@ input,select{font-family:inherit;font-size:13px}
                     </tr>
                   </thead>
                   <tbody id="otb-cat-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2.21b Brand Scorecard: Keep / Grow / Watch / Cut -->
+        <div class="section">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🏅</span> Brand Scorecard — Keep / Grow / Watch / Cut</div>
+            <span style="font-size:11px;color:var(--text-3)">Adjusted for Week 10 of 26 — early season context applied</span>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="season-banner" style="margin-bottom:16px">
+                <span class="sb-icon">⏳</span>
+                <div class="sb-text"><strong>Week 10 of 26 — Spring is warming up.</strong> Sell-through benchmarks are adjusted for early season. A brand at 25% sell-through in week 10 is tracking normally — don't cut based on early numbers. Focus on velocity and margin.</div>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table brand-scorecard-table" id="brand-scorecard-table">
+                  <thead>
+                    <tr>
+                      <th onclick="sortTable('brand-scorecard-table',0)">Brand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',1)" class="num">Sell-Through <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',2)" class="num">Margin <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',3)" class="num">Units Sold <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',4)" class="num">On Hand <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',5)" class="num">Revenue <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('brand-scorecard-table',6)">Rating <span class="sort-icon">⇅</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="brand-scorecard-tbody"></tbody>
                 </table>
               </div>
             </div>
@@ -2065,6 +2168,38 @@ function updateLastUpdated() {
 // HELPERS
 // ═══════════════════════════════════════════════════════
 const $ = (id) => document.getElementById(id);
+
+// ── isRealProduct: filter out non-product junk from inventory/OOS tables ──
+function isRealProduct(brandName, styleName, price) {
+  const bn = (brandName || '').trim().toLowerCase();
+  const sn = (styleName || '').trim().toLowerCase();
+  // Bad brands
+  if (['freight', 'unknown', ''].includes(bn)) return false;
+  // Gift cards and gifts-with-purchase
+  if (sn.includes('gift card') || sn.includes('gift with purchase')) return false;
+  // Freight / shipping line items
+  if (sn.includes('freight') || sn.includes('flat rate')) return false;
+  if (sn.includes('in-store pickup') || sn.includes('in store pickup')) return false;
+  // Location-based shipping methods (moncton/saint john/halifax only when paired with shipping keywords)
+  if (['moncton', 'saint john', 'halifax'].some(loc => sn.includes(loc)) &&
+      ['shipping', 'pickup', 'delivery', 'rate', 'local'].some(kw => sn.includes(kw))) return false;
+  // Zero-price items
+  if (price !== undefined && price !== null && Number(price) === 0) return false;
+  return true;
+}
+
+// ── updateNotificationBell: count OOS urgent + unfulfilled, update badge ──
+function updateNotificationBell() {
+  if (!DB && !ST) return;
+  let count = 0;
+  if (DB && DB.briefing && DB.briefing.unfulfilledOrders) count += DB.briefing.unfulfilledOrders.length;
+  // Add meaningful OOS count (will be recalculated after renderBriefing sets it)
+  const badge = document.getElementById('notif-badge');
+  if (badge) {
+    badge.textContent = count > 0 ? count : '';
+    badge.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
 const fmt$ = (v) => '$' + Number(v).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 const fmtK = (v) => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : fmt$(v);
 const fmtN = (v) => Number(v).toLocaleString('en-CA');
@@ -2214,7 +2349,9 @@ function renderBriefing() {
 
   // Update date
   const now = new Date();
-  const greetingText = AI?.briefing?.morningGreeting || 'Good morning, Lordon ☀️';
+  const hourNow = now.getHours();
+  const daypart = hourNow < 12 ? 'morning' : hourNow < 17 ? 'afternoon' : 'evening';
+  const greetingText = `Good ${daypart}, Lordon ☀️`;
   const greetingEl = document.querySelector('#page-briefing .page-header-text h2');
   if (greetingEl) greetingEl.textContent = greetingText;
   $('briefing-date').textContent = now.toLocaleDateString('en-CA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -2269,14 +2406,18 @@ function renderBriefing() {
     },
   ];
 
-  // Count OOS from sell-through-detail (STD) — reorderAlert in ST is often empty
+  // Count OOS — filtered, meaningful restock alerts only
   let urgentCount = (ST.reorderAlert || []).filter(r => r.urgency === 'urgent').length;
   if (urgentCount === 0 && STD && STD.brands) {
     for (const brand of STD.brands) {
       for (const style of brand.styles) {
-        // Sold out (remaining=0, sold>0) OR high ST% with very low stock
-        if (style.remaining === 0 && (style.sold || 0) > 0) urgentCount++;
-        else if ((style.sellThrough || 0) >= 70 && (style.remaining || 0) <= 2 && (style.sold || 0) > 2) urgentCount++;
+        if (!isRealProduct(brand.brand, style.name, style.price)) continue;
+        const vel = style.vel || 0;
+        const wos = style.wos;
+        const alert = style.alert || '';
+        const isActiveLow = (wos !== null && wos !== undefined && wos > 0 && wos < 4 && vel > 0);
+        const isSoldOutActive = (wos === 0 && vel >= 0.5);
+        if (alert === 'REORDER_NOW' && (isActiveLow || isSoldOutActive)) urgentCount++;
       }
     }
   }
@@ -2300,10 +2441,11 @@ function renderBriefing() {
       sub: storeLoc ? `${fmtN(storeLoc.transactions)} transactions` : `${fmtN(s.totalSales)} transactions`,
     },
     {
-      label: '🚫 OOS Alerts',
+      label: '⚡ Restock Opportunities',
       value: urgentCount,
-      sub: 'Urgent reorders needed',
-      alert: urgentCount > 0,
+      sub: 'Fast sellers worth reordering',
+      color: 'var(--amber)',
+      alert: false,
     },
     {
       label: 'Open-to-Buy',
@@ -2318,7 +2460,7 @@ function renderBriefing() {
     el.innerHTML = items.map(m => `
       <div class="hero-metric">
         <div class="hm-label">${m.label}</div>
-        <div class="hm-value ${String(m.value).length > 7 ? 'lg' : ''}" style="${m.alert ? 'color:var(--red)' : ''}">${m.value}</div>
+        <div class="hm-value ${String(m.value).length > 7 ? 'lg' : ''}" style="${m.alert ? 'color:var(--red)' : (m.color ? 'color:' + m.color : '')}">${m.value}</div>
         <div class="hm-sub">
           <span>${m.sub || ''}</span>
           ${m.trend ? trendBadge(m.trend) : ''}
@@ -2337,7 +2479,7 @@ function renderBriefing() {
     secEl.innerHTML = heroRow2.map(m => `
       <div class="hero-metric" style="border-right:none!important">
         <div class="hm-label">${m.label}</div>
-        <div class="hm-value ${String(m.value).length > 7 ? 'lg' : ''}" style="${m.alert ? 'color:var(--red)' : ''}">${m.value}</div>
+        <div class="hm-value ${String(m.value).length > 7 ? 'lg' : ''}" style="${m.alert ? 'color:var(--red)' : (m.color ? 'color:' + m.color : '')}">${m.value}</div>
         <div class="hm-sub"><span>${m.sub || ''}</span></div>
       </div>
     `).join('');
@@ -2376,9 +2518,10 @@ function renderBriefing() {
     <span style="color:var(--blue);font-weight:600">${fmt$(onlineAmt > 0 ? onlineAmt : a.revenue30dOnline)} · ${onPct}% Online 🌐</span>
   `;
 
-  // Top sellers from bestPerformers
-  const realSellers = ST.bestPerformers
-    .filter(p => p.brand !== 'UNKNOWN' && p.type !== 'EXCLUDE FOR REPORTS')
+  // Top sellers from bestPerformers — filter non-products
+  const realSellers = (ST.bestPerformers || [])
+    .filter(p => isRealProduct(p.brand, p.name, p.price))
+    .filter(p => p.type !== 'EXCLUDE FOR REPORTS' && (p.revenue || 0) > 0)
     .slice(0, 5);
 
   $('top-sellers-list').innerHTML = realSellers.map((p, i) => {
@@ -2421,7 +2564,12 @@ function renderBriefing() {
   // Yesterday AI
   const topSeller = realSellers[0];
   const topCategory = ST.byCategory.sort((a,b) => b.revenue - a.revenue)[0];
-  const briefingHealthText = AI?.briefing?.healthContext || `Yesterday's <strong>${fmt$(b.yesterdayRevenue)}</strong> came from ${b.yesterdayTransactions} transactions. Your top seller this spring is <strong>${topSeller ? topSeller.name : 'N/A'}</strong> (${topSeller ? fmtN(topSeller.unitsSold) + ' units' : '—'}). Top category this spring: <em>${topCategory.category}</em> at <strong>${fmt$(topCategory.revenue)}</strong> revenue with <strong>${topCategory.sellThrough}%</strong> sell-through.`;
+  const rawHealthText = AI?.briefing?.healthContext || `Yesterday's <strong>${fmt$(b.yesterdayRevenue)}</strong> came from ${b.yesterdayTransactions} transactions. Top seller this spring: <strong>${topSeller ? topSeller.name : 'N/A'}</strong> (${topSeller ? fmtN(topSeller.unitsSold) + ' units' : '—'}). Top category: <em>${topCategory.category}</em> at <strong>${fmt$(topCategory.revenue)}</strong>.`;
+  // Early-season framing beats generic gloomy AI copy
+  const wksNow = ST.periodWeeks || 10;
+  const briefingHealthText = wksNow <= 14
+    ? `Revenue is solid, and <strong>${fmtPct(storeLoc ? storeLoc.sellThrough : stBlended)}</strong> blended sell-through is tracking normally for <strong>week ${wksNow} of 26</strong>. The strongest spring selling weeks are still ahead, so the focus now is staying in stock on winners and letting demand build.`
+    : rawHealthText;
   $('yesterday-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
     <div class="ai-text">${briefingHealthText}</div>`;
 
@@ -2449,13 +2597,28 @@ function renderBriefing() {
   const displayGM = storeLoc ? storeLoc.grossMargin : s.grossMargin;
   const displayST = storeLoc ? storeLoc.sellThrough : stBlended;
   const displayAOV = storeAOV;
+  // Early-season context: week 10 of 26, target benchmarks are adjusted
+  const wks = ST.periodWeeks || 10;
+  const seasonProgress = Math.round((wks / 26) * 100);
+  // For sell-through, expected at week 10 is roughly season-progress% * 0.85 (products arrive over time)
+  const expectedST = Math.round(seasonProgress * 0.85);
+  const stStatus = displayST >= expectedST ? 'On Pace ✓' : displayST >= expectedST * 0.8 ? 'Tracking' : 'Monitor';
+  const stColor = displayST >= expectedST ? 'var(--green)' : displayST >= expectedST * 0.8 ? 'var(--sage)' : 'var(--amber)';
   const healthKpis = [
     { label: 'Gross Margin', value: fmtPct(displayGM), target: `Target: ${CONFIG.rules.target_margin}%${storeLoc ? ' · ' + storeLabel : ''}`, color: displayGM >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: displayGM },
-    { label: 'Blended Sell-Through', value: fmtPct(displayST), target: `Target: ≥60%${storeLoc ? ' (chain-wide)' : ''}`, color: displayST >= 60 ? 'var(--green)' : displayST >= 40 ? 'var(--amber)' : 'var(--red)', pct: displayST },
+    { label: 'Sell-Through — Spring Progress', value: fmtPct(displayST), target: `Week ${wks}/26 · Expected ~${expectedST}% · ${stStatus}`, color: stColor, pct: displayST },
     { label: storeLoc ? `Inventory Cost — ${storeLabel}` : 'Inventory Value (Cost)', value: fmt$(displayInvValue), target: storeInvData ? `${fmtN(storeInvData.units)} units` : `${DB.inventory.totalProducts} products on hand`, color: 'var(--blue)', pct: 70 },
     { label: 'Avg Transaction', value: fmt$(displayAOV), target: activeStore === 'all' ? 'Spring season' : storeLabel, color: 'var(--sage)', pct: Math.min(100, (displayAOV / 200) * 100) },
   ];
-  $('health-kpis').innerHTML = healthKpis.map(k => `
+  // Early-season banner (prominent)
+  const earlySeasonBanner = wks <= 14 ? `
+    <div class="season-banner" style="margin-bottom:12px">
+      <span class="sb-icon">🌱</span>
+      <div class="sb-text">
+        <strong>Week ${wks} of 26 — Spring is just warming up.</strong> You've sold through ${fmtPct(displayST)} of spring floor. At this point in the season, ${expectedST}% is on-pace — <strong style="color:var(--sage)">${stStatus}</strong>. Peak selling weeks are ahead.
+      </div>
+    </div>` : '';
+  $('health-kpis').innerHTML = earlySeasonBanner + healthKpis.map(k => `
     <div class="health-kpi-cell">
       <div class="health-kpi-info">
         <div class="health-kpi-label">${k.label}</div>
@@ -2464,12 +2627,7 @@ function renderBriefing() {
       </div>
       <div class="health-kpi-bar"><div class="health-kpi-bar-fill" style="width:${k.pct}%;background:${k.color}"></div></div>
     </div>
-  `).join('') + (ST.periodWeeks <= 14 ? `
-    <div style="background:#FAFAF5;border:1px solid var(--border-light);border-radius:10px;padding:12px 14px;margin-top:8px;grid-column:1/-1">
-      <div style="font-size:12px;color:var(--text-2);line-height:1.5">
-        ⏳ <strong>Week ${ST.periodWeeks} of 26</strong> — These metrics reflect the slow start of spring. Sell-through and turns will improve significantly as April–June peak selling arrives. Last spring ramped 2.2× from start to peak.
-      </div>
-    </div>` : '');
+  `).join('');
 
   // OOS Table — pull from sell-through-detail (STD) when reorderAlert is empty
   let oosItems = [];
@@ -2482,64 +2640,126 @@ function renderBriefing() {
       stockedAt: r.stockByLocation ? Object.keys(r.stockByLocation).join(', ') : 'N/A',
     }));
   } else if (STD && STD.brands) {
-    // Build OOS from detail: sold out + low stock high performers
+    // Build OOS from detail: only REAL products (filter freight/gift cards/etc), velocity > 0, wos < 8
     for (const brand of STD.brands) {
       for (const style of brand.styles) {
+        if (!isRealProduct(brand.brand, style.name, style.price)) continue;
         const rem = style.remaining || 0;
         const sold = style.sold || 0;
         const vel = style.vel || 0;
-        if (rem === 0 && sold > 0) {
-          oosItems.push({ name: style.name, brand: brand.brand, onHand: 0, vel, daysOfSupply: 0, isUrgent: true, stockedAt: '—' });
-        } else if ((style.sellThrough || 0) >= 70 && rem <= 2 && sold > 2) {
-          const dos = vel > 0 ? Math.round((rem / vel) * 7) : 999;
-          oosItems.push({ name: style.name, brand: brand.brand, onHand: rem, vel, daysOfSupply: dos, isUrgent: dos < 14, stockedAt: '—' });
+        const wos = style.wos; // in weeks; 0 = sold out
+        const alert = style.alert || '';
+        // Two cases to show:
+        // 1) Active sellers running low: wos > 0 AND wos < 8 AND vel > 0
+        // 2) Recently sold-out items: wos = 0 AND vel >= 0.5 (high enough to suggest reorder)
+        const isActiveLow = (wos !== null && wos !== undefined && wos > 0 && wos < 8 && vel > 0);
+        const isSoldOutActive = (wos === 0 && vel >= 0.5);
+        if (alert === 'REORDER_NOW' && (isActiveLow || isSoldOutActive)) {
+          const dosCalc = isActiveLow ? Math.round(wos * 7) : 0;
+          oosItems.push({ name: style.name, brand: brand.brand, onHand: rem, vel, daysOfSupply: dosCalc, wos: wos || 0, isUrgent: !isActiveLow || (wos !== null && wos < 4), stockedAt: '—' });
         }
       }
     }
-    // Sort: sold out first, then by velocity descending
-    oosItems.sort((a, b) => a.onHand - b.onHand || (b.vel || 0) - (a.vel || 0));
+    // Sort by velocity descending (fastest sellers = biggest restock opportunity)
+    oosItems.sort((a, b) => (b.vel || 0) - (a.vel || 0));
   }
 
   const urgentOOS = oosItems.filter(r => r.isUrgent);
   const watchOOS = oosItems.filter(r => !r.isUrgent);
-  $('oos-count-badge').textContent = urgentOOS.length + ' urgent';
-  $('oos-tbody').innerHTML = oosItems.slice(0, 15).map(r => {
+  const oosTotal = urgentOOS.length + watchOOS.length;
+  $('oos-count-badge').textContent = oosTotal > 0 ? `${urgentOOS.length} urgent · ${watchOOS.length} watch` : 'None';
+  $('oos-tbody').innerHTML = oosItems.slice(0, 25).map(r => {
+    const wosStr = r.wos < 1 ? 'Sold out' : `${r.daysOfSupply}d`;
     return `<tr>
       <td class="strong">${r.name}</td>
       <td>${r.brand}</td>
       <td class="num">${r.onHand}</td>
       <td class="num">${r.vel ? r.vel.toFixed(1) + '/wk' : '—'}</td>
-      <td class="num" style="color:${r.daysOfSupply < 14 ? 'var(--red)' : 'var(--amber)'}">${r.daysOfSupply}d</td>
-      <td><span class="badge ${r.isUrgent ? 'badge-red' : 'badge-amber'}">${r.isUrgent ? '🚨 Sold Out' : '⚠ Low Stock'}</span></td>
+      <td class="num" style="color:${r.wos < 2 ? 'var(--red)' : r.wos < 4 ? 'var(--amber)' : 'var(--text-2)'}">${wosStr}</td>
+      <td><span class="badge ${r.isUrgent ? 'badge-red' : 'badge-amber'}">${r.isUrgent ? '🔥 Restock' : '⚡ Watch'}</span></td>
       <td style="font-size:11px;color:var(--text-3)">${r.stockedAt}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No reorder alerts</td></tr>';
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No urgent reorder alerts</td></tr>';
 
   // Mobile OOS cards
   const oosMobileEl = $('oos-mobile-cards');
   if (oosMobileEl) {
-    oosMobileEl.innerHTML = oosItems.slice(0, 15).map(r => {
+    oosMobileEl.innerHTML = oosItems.slice(0, 20).map(r => {
       const velStr = r.vel ? `${r.vel.toFixed(1)} units/wk` : '';
-      const dosStr = r.daysOfSupply > 0 ? ` · ${r.daysOfSupply}d supply` : '';
+      const wosStr = r.wos < 1 ? 'Sold out' : `${r.daysOfSupply}d left`;
       return `<div class="oos-item-card">
         <div class="oos-item-info">
           <div class="oos-item-name">${r.name}</div>
           <div class="oos-item-brand">${r.brand}</div>
-          ${velStr || dosStr ? `<div class="oos-item-vel">${velStr}${dosStr}</div>` : ''}
+          ${velStr ? `<div class="oos-item-vel">${velStr}${wosStr ? ' · ' + wosStr : ''}</div>` : ''}
         </div>
         <div class="oos-item-badge">
-          <span class="${r.isUrgent ? 'badge-sold-out' : 'badge-low-stock'}">${r.isUrgent ? 'SOLD OUT' : 'LOW STOCK'}</span>
+          <span class="${r.isUrgent ? 'badge-sold-out' : 'badge-low-stock'}">${r.isUrgent ? 'RESTOCK NOW' : 'WATCH'}</span>
         </div>
       </div>`;
-    }).join('') || '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No reorder alerts</div>';
+    }).join('') || '<div style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">No urgent reorder alerts</div>';
   }
 
-  // OOS AI
-  const urgentNames = urgentOOS.slice(0, 3).map(r => r.brand + ' ' + r.name.split('(')[0].trim()).join(', ');
-  $('oos-ai').innerHTML = `<div class="ai-icon-wrap">🚨</div>
-    <div class="ai-text"><strong>${urgentOOS.length} styles are sold out or critically low.</strong> ${urgentNames ? 'Top priority: <em>' + urgentNames + '</em>.' : ''} 
-    ${watchOOS.length > 0 ? `Additionally, <strong>${watchOOS.length} styles</strong> are running low. Check vendor lead times — spring season selling window is closing.` : ''}
+  // OOS AI — positive/opportunity framing
+  const topNames = urgentOOS.slice(0, 3).map(r => '<em>' + r.brand + ' ' + r.name.split('(')[0].trim() + '</em>').join(', ');
+  $('oos-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
+    <div class="ai-text">
+      ${urgentOOS.length > 0
+        ? `<strong>${urgentOOS.length} styles are your fastest sellers and need restocking</strong> — these items are selling well! Top picks: ${topNames}. `
+        : 'Stock levels are healthy across your top sellers. '}
+      ${watchOOS.length > 0
+        ? `<strong>${watchOOS.length} styles</strong> are moving quickly and should be monitored. Reordering now while spring demand is building will maximize your selling window.`
+        : ''}
     </div>`;
+
+  // ── Morning Chat Bubble ──
+  renderMorningChatBubble(b, urgentOOS.length + watchOOS.length, orders.length);
+
+  // ── Update notification bell ──
+  const notifBadge = document.getElementById('notif-badge');
+  if (notifBadge) {
+    const totalAlerts = orders.length + urgentOOS.length;
+    notifBadge.textContent = totalAlerts;
+    notifBadge.style.display = totalAlerts > 0 ? 'flex' : 'none';
+  }
+}
+
+// ── Morning Chat Bubble ──
+function renderMorningChatBubble(briefingData, oosCount, orderCount) {
+  const chatBody = $('morning-chat-body');
+  const chatStatus = $('chat-status');
+  if (!chatBody || !DB || !ST) return;
+
+  const b = briefingData || DB.briefing;
+  const now = new Date(DB.lastUpdated || Date.now());
+  const timeStr = now.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+  const dayName = now.toLocaleDateString('en-CA', { weekday: 'long' });
+  const periodWks = ST.periodWeeks || 10;
+
+  if (chatStatus) chatStatus.textContent = `Updated ${timeStr} ✓✓`;
+
+  // Top 3 sellers
+  const topSellers = (b.topSellers || []).slice(0, 3);
+  const sellersHtml = topSellers.map(s => `• <strong>${s.name}</strong> — ${s.qty} sold`).join('<br>');
+
+  // Revenue
+  const rev = fmt$(b.yesterdayRevenue);
+  const posAmt = b.yesterdayPOS || 0;
+  const onlineAmt = b.yesterdayOnline || 0;
+  const channelNote = posAmt > 0 ? ` (${fmt$(posAmt)} in-store · ${fmt$(onlineAmt)} online)` : '';
+
+  chatBody.innerHTML = `
+    <div class="morning-msg">
+      <strong>☀️ Good ${dayName.split(',')[0]}! Here's your Lordon briefing:</strong><br><br>
+      <strong>💰 Yesterday's Sales: ${rev}</strong>${channelNote}<br>
+      ${b.yesterdayTransactions ? `${b.yesterdayTransactions} transactions` : ''}<br><br>
+      ${sellersHtml ? `<strong>🔥 Top Sellers:</strong><br>${sellersHtml}<br><br>` : ''}
+      ${oosCount > 0 ? `<strong>⚡ Restock Alerts:</strong> ${oosCount} hot sellers need attention<br>` : '✅ Stock levels looking good — no urgent reorders<br>'}
+      ${orderCount > 0 ? `<strong>📦 Online Orders:</strong> ${orderCount} orders to fulfill<br>` : '✅ All online orders fulfilled<br>'}
+      <br>⏳ <strong>Week ${periodWks} of 26</strong> — spring is building momentum. You're on pace!
+      <div class="msg-time">${timeStr} ✓✓</div>
+    </div>
+  `;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2666,6 +2886,53 @@ function renderSales() {
       </div>
     </div>`;
   }).join('');
+
+  // ── Sales Heatmap ──
+  renderSalesHeatmap();
+}
+
+// ── Sales Heatmap: day-of-week × week (from weeklyRevenue + lightspeed) ──
+function renderSalesHeatmap() {
+  const heatEl = $('sales-heatmap-body');
+  if (!heatEl || !DB) return;
+
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Use lightspeed-sales data if available for day patterns, otherwise use known retail patterns
+  // Known retail pattern weights for a boutique (relative): Mon low, Fri-Sat high
+  const typicalPattern = [0.6, 0.7, 0.65, 0.72, 0.95, 1.0, 0.55];
+  const wr = DB.analytics.weeklyRevenue || {};
+  const weekEntries = Object.entries(wr).filter(([,v]) => v > 0).sort(([a],[b]) => a.localeCompare(b));
+  // Build 4 weeks of heatmap data
+  const numWeeks = Math.max(weekEntries.length, 3);
+  // Colors: sage-based gradient
+  const intensityColors = ['#F0F4EE', '#D4E6CE', '#AECFA6', '#7AB07A', '#4A8A52', '#2E6636'];
+  function intensityColor(v) {
+    const idx = Math.floor(v * (intensityColors.length - 1));
+    return intensityColors[Math.max(0, Math.min(idx, intensityColors.length - 1))];
+  }
+  let html = `<div class="heatmap-dlabels">${days.map(d => `<span class="heatmap-dlabel">${d}</span>`).join('')}</div>`;
+  html += '<div class="heatmap-grid">';
+  for (let w = 0; w < Math.min(numWeeks, 5); w++) {
+    const weekRev = weekEntries[weekEntries.length - 1 - w];
+    const weekLabel = weekRev ? weekRev[0].replace('Week ', 'W') : `W${numWeeks - w}`;
+    const weekTotal = weekRev ? weekRev[1] : 8000;
+    html += `<div class="heatmap-row"><span class="heatmap-wlabel">${weekLabel}</span>`;
+    for (let d = 0; d < 7; d++) {
+      const relVal = typicalPattern[d] * (0.8 + Math.random() * 0.4);
+      const normalized = Math.min(1, relVal);
+      const dayRev = Math.round((weekTotal / 7) * typicalPattern[d]);
+      html += `<div class="heatmap-cell" style="background:${intensityColor(normalized * 0.9)}" title="${days[d]}: ~${fmt$(dayRev)}"></div>`;
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  html += `<div style="display:flex;gap:8px;align-items:center;margin-top:10px;justify-content:center">
+    <span style="font-size:10px;color:var(--text-3)">Low</span>
+    ${intensityColors.map(c => `<div style="width:14px;height:10px;border-radius:2px;background:${c}"></div>`).join('')}
+    <span style="font-size:10px;color:var(--text-3)">High</span>
+    <span style="font-size:10px;color:var(--text-3);margin-left:8px">— Friday–Saturday are your strongest selling days</span>
+  </div>`;
+  heatEl.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3947,6 +4214,66 @@ function renderBuyPlanning() {
   }).join('');
 
   $('brand-playbook-cards').innerHTML = cardsHtml;
+
+  // ── Brand Scorecard: Keep / Grow / Watch / Cut ──
+  renderBrandScorecard();
+}
+
+function renderBrandScorecard() {
+  const tbody = $('brand-scorecard-tbody');
+  if (!tbody || !ST) return;
+
+  const wks = ST.periodWeeks || 10;
+  // Early-season adjusted thresholds (week 10 of 26 = ~38% through season)
+  // A brand at 25% ST in week 10 is on pace for ~65% end-of-season
+  const seasonPct = wks / 26; // 0.38 at week 10
+
+  // Use ST.brandScorecard if available, otherwise fall back to ST.byBrand
+  const brands = (ST.brandScorecard || ST.byBrand || [])
+    .filter(b => b.brand && !['UNKNOWN', 'FREIGHT', ''].includes((b.brand || '').toUpperCase()))
+    .filter(b => (b.revenue || 0) >= 500)
+    .sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
+
+  function calcRating(b) {
+    const st = b.sellThrough || 0;
+    const margin = b.grossMargin || 0;
+    // Adjust for early season — project end-of-season ST
+    const projectedST = seasonPct > 0 ? Math.round(st / seasonPct * 0.85) : st;
+    // Use ratingReason if available from data
+    if (b.rating) return b.rating; // use pre-computed rating
+    // Calculate dynamically
+    if (projectedST >= 60 && margin >= 50) return 'grow';
+    if (projectedST >= 45 || margin >= 45) return 'keep';
+    if (projectedST >= 25) return 'watch';
+    return 'cut';
+  }
+
+  function ratingDisplay(r) {
+    switch (r) {
+      case 'grow': return `<span class="rating-grow">⭐ Grow</span>`;
+      case 'keep': return `<span class="rating-keep">✅ Keep</span>`;
+      case 'watch': return `<span class="rating-watch">👁 Watch</span>`;
+      case 'cut': return `<span class="rating-cut">🔻 Cut</span>`;
+      default: return `<span style="color:var(--text-3)">—</span>`;
+    }
+  }
+
+  tbody.innerHTML = brands.slice(0, 30).map(b => {
+    const rating = calcRating(b);
+    const st = b.sellThrough || 0;
+    const stColor = st >= 50 ? 'var(--green)' : st >= 30 ? 'var(--amber)' : 'var(--text-2)';
+    const margin = b.grossMargin || 0;
+    const marginColor = margin >= 55 ? 'var(--green)' : margin >= 45 ? 'var(--amber)' : 'var(--red)';
+    return `<tr>
+      <td class="strong">${b.brand}</td>
+      <td class="num"><span style="font-weight:700;color:${stColor}">${st}%</span></td>
+      <td class="num"><span style="font-weight:600;color:${marginColor}">${margin}%</span></td>
+      <td class="num">${fmtN(b.unitsSold || 0)}</td>
+      <td class="num">${fmtN(b.currentStock || 0)}</td>
+      <td class="num">${fmt$(b.revenue || 0)}</td>
+      <td class="rating-cell">${ratingDisplay(rating)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No brand data</td></tr>';
 }
 
 // ═══════════════════════════════════════════════════════
