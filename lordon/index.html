@@ -1717,9 +1717,12 @@ function renderSellThrough() {
   const seasonStyles = getSeasonStyles();
 
   // ── 2.12 Season Summary Cards ──
-  const totalSold = seasonStyles.reduce((s, x) => s + (x.sold || 0), 0);
+  // Blended ST always from sell-through.json aggregates (has full historical sold counts)
+  // Per-style detail only tracks current floor movements — undercounts sales
+  const aggSold = (ST.byBrand || []).reduce((s, b) => s + (b.unitsSold || 0), 0);
+  const aggRemaining = (ST.byBrand || []).reduce((s, b) => s + (b.currentStock || 0), 0);
+  const blendedST = calcST(aggSold, aggRemaining);
   const totalRemaining = seasonStyles.reduce((s, x) => s + (x.remaining || 0), 0);
-  const blendedST = calcST(totalSold, totalRemaining);
   const reorderNowCount = seasonStyles.filter(s => s.alert === 'REORDER_NOW').length;
   const repeatWorthyCount = seasonStyles.filter(s => s.alert === 'REPEAT_WORTHY').length;
   const watchCount = seasonStyles.filter(s => s.alert === 'WATCH').length;
