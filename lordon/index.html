@@ -1899,6 +1899,27 @@ function renderSellThrough() {
 
   // ── 2.14 Size Sell-Through Curves ──
   const sa = ST.sizeAnalysis;
+
+  // If currentStock is empty (build-order race condition), rebuild from sell-through-detail
+  if (STD && STD.brands && Object.keys(sa.currentStock || {}).length === 0) {
+    const stockBySize = {};
+    for (const brand of STD.brands) {
+      for (const style of brand.styles) {
+        for (const sku of (style.skus || [])) {
+          const sz = (sku.label || '').toUpperCase().trim();
+          if (!sz) continue;
+          // Canonical size mapping (inline)
+          const SM = { XS:['XS','XSMALL'], S:['S','SMALL','SM'], 'S/M':['S/M','S-M'], M:['M','MED','MEDIUM'], 'M/L':['M/L','M-L','ML'], L:['L','LG','LRG','LARGE'], XL:['XL','XLARGE','X-LARGE'], XXL:['XXL','2XL','2X'] };
+          let canon = /^\d{2}$/.test(sz) ? sz : null;
+          if (!canon) { for (const [c, vs] of Object.entries(SM)) { if (vs.includes(sz) || c === sz) { canon = c; break; } } }
+          if (canon) stockBySize[canon] = (stockBySize[canon] || 0) + (sku.remaining || 0);
+        }
+      }
+    }
+    sa.currentStock = stockBySize;
+    console.log('Size stock rebuilt from detail:', stockBySize);
+  }
+
   const standardSizes = ['XS', 'S', 'S/M', 'M', 'M/L', 'L', 'XL', 'XXL'];
   const numericSizes = ['24','25','26','27','28','29','30','31','32','33','36','37','38','39','40','41'];
 
