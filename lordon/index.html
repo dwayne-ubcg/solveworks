@@ -1934,6 +1934,7 @@ const CONFIG = {
     chat_id: 8792958490,
   },
   rules: {
+    distribution_delay_days: 5, // Ships to one location first, then distributes to stores
     store_hours: { open: 9, close: 18 },
     target_margin: 55,
     target_turns: { low: 4, high: 6 },
@@ -3016,8 +3017,9 @@ function renderSellThrough() {
       for (const style of brand.styles) {
         if ((style.remaining || 0) <= 0) continue;
         if ((style.sellThrough || 0) >= 30) continue; // not slow
-        const daysOld = Math.round((new Date() - new Date(style.floorDate)) / 86400000);
-        if (daysOld < 21) continue; // give new arrivals 3 weeks
+        const rawDays = Math.round((new Date() - new Date(style.floorDate)) / 86400000);
+        const daysOld = Math.max(0, rawDays - (CONFIG.rules.distribution_delay_days || 0)); // account for shipping to stores
+        if (daysOld < 21) continue; // give new arrivals 3 weeks after hitting the floor
         const costPerUnit = style.revenue > 0 && style.sold > 0
           ? (style.revenue / style.sold) * avgCostRatio
           : 30;
@@ -3241,7 +3243,8 @@ function buildAgingData() {
       }
       // Cap: anything before this season start is "carryover"
       const isCarryover = effectiveDate < seasonStart;
-      const daysOld = Math.round((now - effectiveDate) / 86400000);
+      const rawDaysOld = Math.round((now - effectiveDate) / 86400000);
+      const daysOld = Math.max(0, rawDaysOld - (CONFIG.rules.distribution_delay_days || 0)); // shipping buffer
       // For aging buckets, use days since season start for carryover items
       const agingDays = isCarryover ? Math.round((now - seasonStart) / 86400000) : daysOld;
       const bucket = agingDays < 30 ? '0-30' : agingDays < 60 ? '30-60' : agingDays < 90 ? '60-90' : '90+';
