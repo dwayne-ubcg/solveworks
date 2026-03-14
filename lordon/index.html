@@ -3051,28 +3051,28 @@ function renderCustomers() {
     </div>
   `).join('');
 
-  // Customer Segments
-  const topC = c.topCustomers || [];
-  const vipCustomers = topC.filter(cu => getCustomerSegment(cu) === 'VIP');
-  const regularCustomers = topC.filter(cu => getCustomerSegment(cu) === 'Regular');
-  const oneTimeCustomers = topC.filter(cu => getCustomerSegment(cu) === 'One-Time');
-  const vipAvgSpend = vipCustomers.length > 0 ? vipCustomers.reduce((s, cu) => s + cu.spent, 0) / vipCustomers.length : 0;
-  const regularAvgSpend = regularCustomers.length > 0 ? regularCustomers.reduce((s, cu) => s + cu.spent, 0) / regularCustomers.length : 0;
+  // Customer Segments — use pre-computed from dashboard.json (full customer list, not just top 15)
+  const seg = c.segments || {};
+  const vipCount = seg.vip?.count || 0;
+  const regularCount = seg.regular?.count || 0;
+  const oneTimeCount = seg.oneTime?.count || 0;
+  const vipAvgSpend = seg.vip?.avgSpend || 0;
+  const regularAvgSpend = seg.regular?.avgSpend || 0;
   const segEl = $('cust-segments');
   if (segEl) {
     segEl.innerHTML = [
       {
-        icon: '👑', label: 'VIP', count: vipCustomers.length, color: 'var(--accent)',
-        sub: `≥$500 spent + 3+ orders · avg ${fmt$(Math.round(vipAvgSpend))}/customer`,
+        icon: '👑', label: 'VIP', count: vipCount, color: 'var(--accent)',
+        sub: `≥$500 spent + 3+ orders · avg ${fmt$(vipAvgSpend)}/customer`,
         badge: 'badge-amber',
       },
       {
-        icon: '🔄', label: 'Regular', count: regularCustomers.length, color: 'var(--sage)',
-        sub: `2+ orders · avg ${fmt$(Math.round(regularAvgSpend))}/customer`,
+        icon: '🔄', label: 'Regular', count: regularCount, color: 'var(--sage)',
+        sub: `2+ orders · avg ${fmt$(regularAvgSpend)}/customer`,
         badge: 'badge-sage',
       },
       {
-        icon: '✨', label: 'One-Time', count: oneTimeCustomers.length, color: 'var(--blue)',
+        icon: '✨', label: 'One-Time', count: oneTimeCount, color: 'var(--blue)',
         sub: 'Single purchase — re-engagement opportunity',
         badge: 'badge-blue',
       },
