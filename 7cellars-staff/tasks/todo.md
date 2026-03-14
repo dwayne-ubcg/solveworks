@@ -1,0 +1,5 @@
+- [ ] Inspect real dashboard data + current asset files
+- [ ] Rebuild index.html with premium dark luxury UI, auth, tabs, mobile nav, and robust renderers
+- [ ] Wire all parsers to actual JSON structures under ../7cellars/data/
+- [ ] Verify HTML parses and no JS syntax issues remain
+- [ ] Add review notes with what was checked

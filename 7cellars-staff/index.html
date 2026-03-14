@@ -2,516 +2,1654 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>7 Cellars — Sales Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>7 Cellars Staff Dashboard</title>
 <meta name="theme-color" content="#0D1B2A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="7 Cellars">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-512.jpg">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icon.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#070d14;--surface:#0c1520;--surface2:#111d2b;--surface3:#172536;
-  --border:#1e3048;--text:#e4e8ec;--text2:#8898b0;--accent:#0D1B2A;
-  --yellow:#f0c040;--green:#40c080;--blue:#4080f0;--red:#f04060;
-  --radius:10px;
+  --bg:#0D1B2A;
+  --bg-2:#0a1522;
+  --surface:#070d14;
+  --surface-2:#0c1420;
+  --surface-3:#111c2b;
+  --surface-4:#162336;
+  --line:rgba(201,169,110,.18);
+  --line-soft:rgba(255,255,255,.08);
+  --text:#E4E8EC;
+  --text-soft:#8898b0;
+  --text-faint:#63758f;
+  --gold:#C9A96E;
+  --gold-2:#e1c18b;
+  --success:#4cc38a;
+  --warn:#d3ac54;
+  --danger:#d36666;
+  --shadow:0 20px 50px rgba(0,0,0,.34);
+  --radius:22px;
+  --radius-sm:16px;
+  --radius-xs:12px;
+  --touch:44px;
+  --max:1480px;
 }
-body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-::selection{background:var(--accent);color:#fff}
-
-/* Login */
-#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
-.login-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:90%;max-width:360px;text-align:center}
-.login-box h1{font-size:24px;margin-bottom:4px}
-.login-box .login-sub{font-size:12px;color:var(--text2);margin-bottom:24px;text-transform:uppercase;letter-spacing:2px}
-.login-box input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;font-family:inherit;outline:none}
-.login-box input:focus{border-color:var(--blue)}
-.login-box button{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;font-family:inherit}
-.login-box button:hover{opacity:.9}
-.login-err{color:var(--red);font-size:13px;margin-top:8px;display:none}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:linear-gradient(180deg,#0D1B2A 0%,#09111a 100%);color:var(--text);font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100%;scroll-behavior:smooth}
+body{min-height:100vh}
+a{color:inherit}
+button,input,select{font:inherit}
+button{cursor:pointer}
+img{max-width:100%;display:block}
 .hidden{display:none!important}
+.muted{color:var(--text-soft)}
+.gold{color:var(--gold)}
+.small{font-size:12px}
+.app-shell{min-height:100vh;padding-bottom:96px}
 
-/* Header */
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-.header h1{font-size:20px;display:flex;align-items:center;gap:10px}
-.header-logo{font-size:20px}
-.header-right{display:flex;align-items:center;gap:12px}
-.btn-logout{padding:6px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit}
-.btn-logout:hover{color:var(--text);background:var(--surface3)}
+.login-screen{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:28px;
+  background:
+    radial-gradient(circle at top left, rgba(201,169,110,.14), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255,255,255,.05), transparent 30%),
+    linear-gradient(180deg, #0D1B2A, #070d14 62%);
+}
+.login-card{
+  width:min(100%,420px);
+  background:linear-gradient(180deg,rgba(13,27,42,.92),rgba(7,13,20,.94));
+  border:1px solid var(--line);
+  border-radius:32px;
+  box-shadow:var(--shadow);
+  padding:34px 28px 28px;
+  position:relative;
+  overflow:hidden;
+}
+.login-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(201,169,110,.12),transparent 36%,transparent 68%,rgba(201,169,110,.08));
+  pointer-events:none;
+}
+.login-brand{display:flex;flex-direction:column;align-items:center;gap:14px;margin-bottom:24px;text-align:center;position:relative;z-index:1}
+.login-brand img{width:74px;height:74px;border-radius:20px;box-shadow:0 12px 24px rgba(0,0,0,.35)}
+.login-brand h1{margin:0;font-size:32px;letter-spacing:.02em}
+.login-brand p{margin:0;color:var(--text-soft);line-height:1.5}
+.login-form{display:grid;gap:14px;position:relative;z-index:1}
+.input-shell{
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:18px;
+  padding:14px 16px;
+}
+.input-shell label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint);margin-bottom:8px}
+.input-shell input{width:100%;border:none;outline:none;background:transparent;color:var(--text);font-size:16px}
+.input-shell input::placeholder{color:#6d7c92}
+.btn{
+  min-height:var(--touch);
+  border:none;
+  border-radius:16px;
+  padding:12px 18px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-weight:700;
+  letter-spacing:.01em;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease, border-color .18s ease;
+}
+.btn:active{transform:translateY(1px) scale(.995)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#21170a;box-shadow:0 16px 30px rgba(201,169,110,.22)}
+.btn-gold:hover{box-shadow:0 18px 32px rgba(201,169,110,.28)}
+.btn-ghost{background:rgba(255,255,255,.03);color:var(--text);border:1px solid rgba(255,255,255,.08)}
+.btn-ghost:hover{background:rgba(255,255,255,.06)}
+.btn-soft{background:rgba(201,169,110,.12);color:var(--gold);border:1px solid rgba(201,169,110,.25)}
+.btn-danger{background:rgba(211,102,102,.12);color:#efb1b1;border:1px solid rgba(211,102,102,.24)}
+.login-error{display:none;color:#efb1b1;background:rgba(211,102,102,.12);border:1px solid rgba(211,102,102,.24);padding:12px 14px;border-radius:14px;font-size:13px}
+.login-note{font-size:12px;color:var(--text-faint);text-align:center;margin-top:4px}
 
-/* Tabs */
-.tabs{display:flex;gap:2px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
-.tab{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;white-space:nowrap;transition:all .15s}
-.tab.active{background:var(--surface3);color:var(--text)}
-.tab:hover:not(.active){background:var(--surface2);color:var(--text)}
+.pull-indicator{
+  position:fixed;
+  top:max(10px,env(safe-area-inset-top));
+  left:50%;
+  transform:translate(-50%,-120%);
+  z-index:90;
+  background:rgba(7,13,20,.96);
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:10px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--text-soft);
+  box-shadow:var(--shadow);
+  transition:transform .24s ease, opacity .24s ease;
+  opacity:0;
+}
+.pull-indicator.visible{transform:translate(-50%,0);opacity:1}
+.pull-dot{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 6px rgba(201,169,110,.12)}
 
-/* Main content */
-.main{padding:24px;max-width:1200px;margin:0 auto}
-.section{display:none;animation:fadeIn .2s ease}
-.section.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.header-wrap{position:sticky;top:0;z-index:40;background:rgba(7,13,20,.76);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.04)}
+.header-accent{height:2px;background:linear-gradient(90deg,transparent,rgba(201,169,110,.9),transparent)}
+.header{
+  width:min(calc(100% - 24px),var(--max));
+  margin:0 auto;
+  padding:18px 0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.brand img{width:48px;height:48px;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.28)}
+.brand-copy{min-width:0}
+.brand-copy h1{margin:0;font-size:22px;white-space:nowrap}
+.brand-copy p{margin:4px 0 0;color:var(--text-soft);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.header-actions .btn{min-width:var(--touch)}
+.desktop-new-sale{padding-inline:20px}
 
-/* KPI Cards */
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-@media(max-width:768px){.kpis{grid-template-columns:repeat(2,1fr)}}
-.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
-.kpi-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-.kpi-val{font-size:26px;font-weight:700}
-.kpi-sub{font-size:12px;margin-top:4px;color:var(--text2)}
-.kpi-up{color:var(--green)}
-.kpi-down{color:var(--red)}
+.top-tabs-wrap{border-top:1px solid rgba(255,255,255,.03)}
+.top-tabs{
+  width:min(calc(100% - 24px),var(--max));
+  margin:0 auto;
+  display:flex;
+  gap:10px;
+  overflow:auto;
+  padding:12px 0 14px;
+  scrollbar-width:none;
+}
+.top-tabs::-webkit-scrollbar{display:none}
+.tab-btn{
+  border:none;
+  background:rgba(255,255,255,.03);
+  color:var(--text-soft);
+  border:1px solid transparent;
+  border-radius:999px;
+  min-height:var(--touch);
+  padding:10px 18px;
+  white-space:nowrap;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600;
+}
+.tab-btn.active{color:var(--text);background:rgba(201,169,110,.12);border-color:rgba(201,169,110,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
+.tab-badge{background:rgba(201,169,110,.14);color:var(--gold);padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
 
-/* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden}
-.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-header h3{font-size:15px;font-weight:600}
-.card-body{padding:18px}
+.main{
+  width:min(calc(100% - 24px),var(--max));
+  margin:0 auto;
+  padding:22px 0 40px;
+}
+.tab-panel{display:none;animation:panelIn .26s ease}
+.tab-panel.active{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* Tables */
-table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:10px 14px;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-weight:600}
-td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(30,48,72,.5)}
-tr:last-child td{border-bottom:none}
-tr:hover{background:var(--surface2)}
+.hero-banner{
+  background:
+    radial-gradient(circle at top right, rgba(201,169,110,.13), transparent 28%),
+    linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.02)),
+    linear-gradient(180deg, rgba(13,27,42,.92), rgba(7,13,20,.96));
+  border:1px solid var(--line);
+  border-radius:30px;
+  padding:26px;
+  box-shadow:var(--shadow);
+  display:grid;
+  grid-template-columns:1.35fr .95fr;
+  gap:18px;
+  margin-bottom:18px;
+}
+.hero-copy h2{margin:0;font-size:30px;line-height:1.06}
+.hero-copy p{margin:12px 0 0;color:var(--text-soft);line-height:1.6;max-width:64ch}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.hero-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-content:start}
+.hero-stat{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:18px}
+.hero-stat .label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint);margin-bottom:8px}
+.hero-stat .value{font-size:28px;font-weight:800}
+.hero-stat .sub{margin-top:6px;font-size:12px;color:var(--text-soft)}
 
-/* Tags/Badges */
-.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
-.badge-green{background:rgba(64,192,128,.15);color:var(--green)}
-.badge-yellow{background:rgba(240,192,64,.15);color:var(--yellow)}
-.badge-red{background:rgba(240,64,96,.15);color:var(--red)}
-.badge-blue{background:rgba(64,128,240,.15);color:var(--blue)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+.kpi-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:24px;
+  padding:20px;
+  box-shadow:0 14px 32px rgba(0,0,0,.22);
+}
+.kpi-card .label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint);margin-bottom:10px}
+.kpi-card .value{font-size:34px;font-weight:800;line-height:1}
+.kpi-card .sub{margin-top:10px;color:var(--text-soft);font-size:13px;line-height:1.45}
+.kpi-card.alert .value{color:var(--gold)}
 
-/* Kanban */
-.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
-.kanban-col{min-width:240px;flex:1;background:var(--surface2);border-radius:var(--radius);padding:12px}
-.kanban-col-title{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
-.kanban-col-count{font-size:11px;background:var(--surface3);padding:2px 8px;border-radius:10px}
-.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:background .15s}
-.kanban-card:hover{background:var(--surface3)}
-.kanban-card h4{font-size:13px;font-weight:600;margin-bottom:4px}
-.kanban-card p{font-size:12px;color:var(--text2);line-height:1.4}
-.kanban-card .kc-meta{display:flex;gap:8px;margin-top:8px;font-size:11px;color:var(--text2)}
+.grid-2{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:26px;
+  box-shadow:0 12px 28px rgba(0,0,0,.18);
+  overflow:hidden;
+}
+.card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.card-header h3{margin:0;font-size:17px}
+.card-header p{margin:3px 0 0;color:var(--text-soft);font-size:13px}
+.card-body{padding:18px 20px 20px}
+.stack{display:grid;gap:14px}
 
-/* Inventory bars */
-.stock-bar{width:80px;height:6px;background:var(--surface3);border-radius:3px;display:inline-block;vertical-align:middle}
-.stock-fill{height:6px;border-radius:3px}
+.activity-list,.customer-list,.task-list,.list-clean{display:grid;gap:12px}
+.list-item{
+  padding:14px 16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+}
+.list-item-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.list-item h4{margin:0 0 6px;font-size:15px}
+.list-item p{margin:0;color:var(--text-soft);line-height:1.55;font-size:13px}
 
-/* Order status */
-.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+.table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{text-align:left;padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint);font-weight:700}
+td{font-size:14px}
+tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+tr:hover td{background:rgba(201,169,110,.05)}
+.table-title{font-weight:700}
+.table-sub{display:block;color:var(--text-soft);font-size:12px;margin-top:4px}
 
-/* Search */
-.search-bar{width:100%;padding:10px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:16px}
-.search-bar:focus{border-color:var(--blue)}
-.search-bar::placeholder{color:var(--text2)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.badge.gold{background:rgba(201,169,110,.16);color:var(--gold);border:1px solid rgba(201,169,110,.22)}
+.badge.green{background:rgba(76,195,138,.14);color:#8fe2b5;border:1px solid rgba(76,195,138,.2)}
+.badge.yellow{background:rgba(211,172,84,.14);color:#e7cb90;border:1px solid rgba(211,172,84,.2)}
+.badge.red{background:rgba(211,102,102,.14);color:#f0b0b0;border:1px solid rgba(211,102,102,.2)}
+.badge.blue{background:rgba(102,157,211,.14);color:#a3caef;border:1px solid rgba(102,157,211,.2)}
 
-/* Responsive */
-@media(max-width:600px){
-  .header{flex-direction:column;gap:10px;align-items:stretch}
-  .tabs{padding:8px 16px}
-  .main{padding:16px}
-  .kpis{grid-template-columns:1fr 1fr}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.search{flex:1 1 280px;position:relative}
+.search input,.select,.text-input,.number-input,.textarea{
+  width:100%;
+  min-height:var(--touch);
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);
+  color:var(--text);
+  border-radius:16px;
+  padding:12px 14px;
+  outline:none;
+}
+.search input{padding-left:42px}
+.search::before{content:"⌕";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-faint);font-size:18px}
+.select{width:auto;min-width:160px;padding-right:40px}
+.select option{background:#0c1520;color:var(--text)}
+.filter-pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{
+  min-height:40px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  color:var(--text-soft);
+  font-weight:600;
+}
+.pill.active{background:rgba(201,169,110,.12);border-color:rgba(201,169,110,.22);color:var(--text)}
+
+.catalog-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.wine-card{
+  padding:18px;
+  border-radius:24px;
+  background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.07);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-height:238px;
+}
+.wine-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.wine-type{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint)}
+.wine-title{font-size:16px;font-weight:700;line-height:1.35;margin:0}
+.wine-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text-soft);font-size:12px}
+.wine-price{font-size:28px;font-weight:800;color:var(--gold);line-height:1}
+.wine-card .btn{width:100%}
+.stock-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.stock-fill{height:100%;border-radius:999px}
+.stock-fill.green{background:linear-gradient(90deg,#2f8f61,#65dba3)}
+.stock-fill.yellow{background:linear-gradient(90deg,#b18733,#e0c07a)}
+.stock-fill.red{background:linear-gradient(90deg,#9c4343,#da7a7a)}
+
+.sale-layout{display:grid;grid-template-columns:1.25fr .95fr;gap:16px;align-items:start}
+.sale-flow{display:grid;gap:16px}
+.step-card{border-radius:28px;overflow:hidden}
+.step-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.step-no{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:rgba(201,169,110,.14);color:var(--gold);font-weight:800}
+.step-title-wrap{display:flex;align-items:center;gap:12px}
+.step-title-wrap h3{margin:0;font-size:17px}
+.customer-picker,.wine-picker{display:grid;gap:12px}
+.selectable-list{display:grid;gap:10px;max-height:360px;overflow:auto;padding-right:4px}
+.selectable-item{
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);
+  border-radius:18px;
+  padding:14px 15px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+}
+.selectable-item.active{border-color:rgba(201,169,110,.3);background:rgba(201,169,110,.1)}
+.selectable-main{min-width:0}
+.selectable-main h4{margin:0 0 6px;font-size:15px}
+.selectable-main p{margin:0;color:var(--text-soft);font-size:12px;line-height:1.45}
+.selectable-item .btn{padding:10px 14px;min-height:40px}
+.order-lines{display:grid;gap:12px;max-height:430px;overflow:auto;padding-right:4px}
+.line-item{
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);
+  border-radius:20px;
+  padding:16px;
+  display:grid;
+  gap:12px;
+}
+.line-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.line-title{margin:0;font-size:15px;font-weight:700}
+.line-sub{margin-top:6px;color:var(--text-soft);font-size:12px}
+.qty-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.qty-btn{
+  width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);color:var(--text);font-size:20px;display:inline-flex;align-items:center;justify-content:center;
+}
+.qty-value{min-width:54px;text-align:center;font-weight:800;font-size:18px}
+.sale-summary{position:sticky;top:136px}
+.summary-totals{display:grid;gap:12px}
+.total-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:15px}
+.total-row.grand{font-size:22px;font-weight:800;color:var(--gold);padding-top:8px;border-top:1px solid rgba(255,255,255,.08)}
+.summary-actions{display:grid;gap:10px;margin-top:18px}
+.confirm-card{display:grid;gap:16px;text-align:center}
+.confirm-icon{font-size:64px;line-height:1}
+
+.pending-wrap{display:grid;gap:14px;margin-bottom:18px}
+.pending-card{padding:18px;border-radius:22px;border:1px solid rgba(201,169,110,.25);background:linear-gradient(180deg,rgba(201,169,110,.08),rgba(201,169,110,.04))}
+.pending-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.pending-title{margin:0;font-size:17px}
+.pending-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text-soft);font-size:13px}
+.pending-lines{display:grid;gap:8px;margin-top:12px}
+.pending-line{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--text-soft)}
+
+.customer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.customer-card{padding:18px;border-radius:24px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);display:grid;gap:14px}
+.customer-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.customer-name{margin:0;font-size:17px}
+.customer-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.customer-stat{padding:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)}
+.customer-stat .label{font-size:11px;text-transform:uppercase;letter-spacing:.11em;color:var(--text-faint);margin-bottom:6px}
+.customer-stat .value{font-size:17px;font-weight:700}
+.mini-orders{display:grid;gap:10px}
+.mini-order{padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05)}
+.mini-order-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;font-size:13px;margin-bottom:6px}
+.mini-order-items{color:var(--text-soft);font-size:12px;line-height:1.5}
+
+.kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.kanban-col{border-radius:26px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);padding:16px;display:grid;gap:12px;align-content:start}
+.kanban-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:6px}
+.kanban-head h3{margin:0;font-size:15px}
+.kanban-count{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--text-soft);font-size:12px;font-weight:700}
+.kanban-task{padding:15px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.025));border:1px solid rgba(255,255,255,.06);display:grid;gap:10px}
+.kanban-task h4{margin:0;font-size:15px;line-height:1.4}
+.kanban-task p{margin:0;color:var(--text-soft);font-size:13px;line-height:1.55}
+.kanban-meta{display:flex;flex-wrap:wrap;gap:8px}
+
+.empty-state{
+  text-align:center;
+  padding:34px 16px;
+  border:1px dashed rgba(201,169,110,.2);
+  border-radius:24px;
+  background:rgba(255,255,255,.02);
+}
+.empty-state .emoji{font-size:34px;margin-bottom:10px}
+.empty-state h4{margin:0 0 8px;font-size:18px}
+.empty-state p{margin:0;color:var(--text-soft);line-height:1.6;max-width:46ch;margin-inline:auto}
+
+.mobile-bottom-nav{
+  position:fixed;
+  left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+  z-index:50;
+  background:rgba(7,13,20,.94);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:26px;
+  box-shadow:var(--shadow);
+  padding:8px;
+  display:none;
+  grid-template-columns:repeat(6,1fr);
+  gap:6px;
+  backdrop-filter:blur(18px);
+}
+.mobile-nav-btn{
+  min-height:60px;
+  border:none;
+  border-radius:18px;
+  background:transparent;
+  color:var(--text-faint);
+  display:grid;
+  place-items:center;
+  gap:4px;
+  padding:6px 4px;
+  font-size:11px;
+  font-weight:700;
+}
+.mobile-nav-btn .icon{font-size:18px;line-height:1}
+.mobile-nav-btn.active{background:rgba(201,169,110,.12);color:var(--gold)}
+
+.fab{
+  position:fixed;
+  right:18px;
+  bottom:calc(96px + env(safe-area-inset-bottom));
+  width:68px;height:68px;border-radius:50%;
+  border:none;
+  z-index:55;
+  background:linear-gradient(135deg,var(--gold),var(--gold-2));
+  color:#23190a;
+  box-shadow:0 20px 36px rgba(201,169,110,.3);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  font-weight:300;
+}
+
+@media (max-width:1190px){
+  .catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:980px){
+  .hero-banner,.grid-2,.sale-layout{grid-template-columns:1fr}
+  .hero-stats{grid-template-columns:repeat(2,1fr)}
+  .sale-summary{position:static}
+  .customer-grid{grid-template-columns:1fr}
+}
+@media (max-width:767px){
+  .header{padding:14px 0 12px;align-items:flex-start}
+  .brand img{width:42px;height:42px}
+  .brand-copy h1{font-size:20px}
+  .brand-copy p{white-space:normal}
+  .top-tabs-wrap{display:none}
+  .mobile-bottom-nav{display:grid}
+  .fab{display:flex}
+  .desktop-new-sale{display:none}
+  .header-actions{width:100%;justify-content:flex-start}
+  .header-actions .btn{flex:1 1 auto}
+  .main{padding:18px 0 26px}
+  .hero-banner{padding:20px;border-radius:24px}
+  .hero-copy h2{font-size:24px}
+  .hero-stats,.kpi-grid,.grid-3,.kanban{grid-template-columns:1fr}
+  .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card,.step-card{border-radius:22px}
+  .table-wrap table{min-width:660px}
+}
+@media (max-width:520px){
+  .login-card{padding:28px 22px 22px}
+  .catalog-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .wine-card{padding:15px;min-height:220px}
+  .customer-stats{grid-template-columns:1fr}
+  .toolbar{align-items:stretch}
+  .select{width:100%}
 }
 </style>
 </head>
 <body>
+<div id="pullIndicator" class="pull-indicator" aria-hidden="true">
+  <span class="pull-dot"></span>
+  <span id="pullIndicatorText">Pull to refresh</span>
+</div>
 
-<!-- LOGIN -->
-<div id="login">
-  <div class="login-box">
-    <h1><img src="icon.jpg" alt="" style="width:40px;height:40px;border-radius:8px"> 7 Cellars</h1>
-    <div class="login-sub">Sales Dashboard</div>
-    <input type="password" id="pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryLogin()">
-    <button onclick="tryLogin()">Sign In</button>
-    <div class="login-err" id="loginErr">Incorrect password</div>
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <img src="icon.jpg" alt="7 Cellars logo">
+      <div>
+        <h1>7 Cellars</h1>
+        <p>Staff dashboard for premium wholesale wine sales in Grand Cayman.</p>
+      </div>
+    </div>
+    <div class="login-form">
+      <div class="input-shell">
+        <label for="passwordInput">Staff password</label>
+        <input id="passwordInput" type="password" placeholder="Enter password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-gold" id="loginButton" type="button">Enter Dashboard</button>
+      <div id="loginError" class="login-error">Incorrect password. Please try again.</div>
+      <div class="login-note">Optimized for iPhone and iPad daily sales use.</div>
+    </div>
   </div>
 </div>
 
-<!-- APP -->
-<div id="app" class="hidden">
-  <div class="header">
-    <h1><img src="icon.jpg" alt="7 Cellars" style="width:32px;height:32px;border-radius:6px"> 7 Cellars</h1>
-    <div class="header-right">
-      <button class="btn-logout" onclick="refreshData()" id="refreshBtn">↻ Refresh</button>
-      <button class="btn-logout" onclick="logout()">Sign Out</button>
+<div id="appShell" class="app-shell hidden">
+  <div class="header-wrap">
+    <div class="header-accent"></div>
+    <header class="header">
+      <div class="brand">
+        <img src="icon.jpg" alt="7 Cellars logo">
+        <div class="brand-copy">
+          <h1>7 Cellars Staff</h1>
+          <p>Browse inventory, build wholesale orders fast, and stay on top of the day.</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-gold desktop-new-sale" type="button" data-open-sale>✦ New Sale</button>
+        <button class="btn btn-ghost" type="button" id="refreshButton">↻ Refresh</button>
+        <button class="btn btn-ghost" type="button" id="logoutButton">Sign Out</button>
+      </div>
+    </header>
+    <div class="top-tabs-wrap">
+      <nav class="top-tabs" id="topTabs"></nav>
     </div>
   </div>
 
-  <div class="tabs" id="tabBar">
-    <button class="tab active" onclick="showTab('overview')">Overview</button>
-    <button class="tab" onclick="showTab('sales')">Sales</button>
-    <button class="tab" onclick="showTab('inventory')">Inventory</button>
-    <button class="tab" onclick="showTab('orders')">Orders</button>
-    <button class="tab" onclick="showTab('tasks')">Tasks</button>
-    <button class="tab" onclick="showTab('catalog')">Wine Catalog</button>
-    <button class="tab" onclick="showTab('customers')">Customers</button>
-  </div>
+  <main class="main">
+    <section id="panel-overview" class="tab-panel active"></section>
+    <section id="panel-catalog" class="tab-panel"></section>
+    <section id="panel-new-sale" class="tab-panel"></section>
+    <section id="panel-orders" class="tab-panel"></section>
+    <section id="panel-customers" class="tab-panel"></section>
+    <section id="panel-tasks" class="tab-panel"></section>
+  </main>
 
-  <div class="main">
+  <button class="fab" type="button" aria-label="Create new sale" data-open-sale>+</button>
 
-    <!-- OVERVIEW -->
-    <div class="section active" id="tab-overview">
-      <div class="kpis" id="overviewKpis"></div>
-      <div class="card">
-        <div class="card-header"><h3>Recent Activity</h3></div>
-        <div class="card-body" id="recentActivity"><div style="color:var(--text2)">Loading...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Upcoming Tasks</h3></div>
-        <div class="card-body" id="upcomingTasks"><div style="color:var(--text2)">Loading...</div></div>
-      </div>
-    </div>
-
-    <!-- SALES -->
-    <div class="section" id="tab-sales">
-      <div class="kpis" id="salesKpis"></div>
-      <div class="card">
-        <div class="card-header"><h3>Recent Orders — Revenue</h3></div>
-        <div style="overflow-x:auto">
-          <table id="salesTable">
-            <thead><tr><th>Date</th><th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
-            <tbody id="salesBody"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><h3>Top Sellers — Last 30 Days</h3></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>Wine</th><th>Units Sold</th><th>Revenue</th><th>Sell-Through</th></tr></thead>
-            <tbody id="topSellersBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- INVENTORY -->
-    <div class="section" id="tab-inventory">
-      <input class="search-bar" id="invSearch" placeholder="Search inventory..." oninput="renderInventory()">
-      <div class="card">
-        <div class="card-header"><h3>Current Stock</h3><span id="invCount" style="font-size:13px;color:var(--text2)"></span></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>Wine</th><th>SKU</th><th>In Stock</th><th>Committed</th><th>Available</th><th>Status</th></tr></thead>
-            <tbody id="invBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ORDERS -->
-    <div class="section" id="tab-orders">
-      <div class="kpis" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px" id="orderKpis"></div>
-      <div class="card">
-        <div class="card-header"><h3>All Orders</h3></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>Order #</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Fulfillment</th></tr></thead>
-            <tbody id="ordersBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- TASKS -->
-    <div class="section" id="tab-tasks">
-      <div class="kanban" id="taskKanban"></div>
-    </div>
-
-    <!-- WINE CATALOG -->
-    <div class="section" id="tab-catalog">
-      <input class="search-bar" id="catalogSearch" placeholder="Search wines..." oninput="renderCatalog()">
-      <div class="card">
-        <div class="card-header"><h3>Wine Catalog</h3><span id="catCount" style="font-size:13px;color:var(--text2)"></span></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>Wine</th><th>Type</th><th>Region</th><th>Vintage</th><th>Price</th><th>In Stock</th></tr></thead>
-            <tbody id="catalogBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- CUSTOMERS -->
-    <div class="section" id="tab-customers">
-      <input class="search-bar" id="custSearch" placeholder="Search customers..." oninput="renderCustomers()">
-      <div class="card">
-        <div class="card-header"><h3>Customer List</h3><span id="custCount" style="font-size:13px;color:var(--text2)"></span></div>
-        <div style="overflow-x:auto">
-          <table>
-            <thead><tr><th>Name</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Last Order</th></tr></thead>
-            <tbody id="custBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-  </div>
+  <nav class="mobile-bottom-nav" id="mobileBottomNav"></nav>
 </div>
 
 <script>
-// ─── AUTH ───
-const PW_HASH='68e5f9dd988d6c20319da2838813f63b3b9f7926231ad1897da400a6d8023923';
-async function sha256(s){const b=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
+const PASSWORD_HASH = '68e5f9dd988d6c20319da2838813f63b3b9f7926231ad1897da400a6d8023923';
+const AUTH_KEY = '7c_staff_auth';
+const PENDING_ORDERS_KEY = '7c_pending_orders';
+const EXTRA_CUSTOMERS_KEY = '7c_extra_customers';
+const DRAFT_SALE_KEY = '7c_sale_draft';
+const tabs = [
+  { id:'overview', label:'Overview', icon:'⌂' },
+  { id:'catalog', label:'Wine Catalog', icon:'🍷' },
+  { id:'new-sale', label:'New Sale', icon:'✦' },
+  { id:'orders', label:'Orders', icon:'🧾' },
+  { id:'customers', label:'Customers', icon:'👥' },
+  { id:'tasks', label:'Tasks', icon:'☑' }
+];
+
+const state = {
+  activeTab: 'overview',
+  loading: false,
+  refreshing: false,
+  data: {
+    products: [],
+    orders: [],
+    customers: [],
+    tasks: [],
+    activity: [],
+    shopifyOrders: [],
+    cin7Inventory: []
+  },
+  pendingOrders: [],
+  extraCustomers: [],
+  draftSale: {
+    customer: null,
+    items: [],
+    step: 'customer',
+    confirmation: null
+  },
+  filters: {
+    catalogSearch: '',
+    catalogType: 'all',
+    catalogSort: 'name',
+    customerSearch: '',
+    ordersSearch: '',
+    newSaleCustomerSearch: '',
+    newSaleWineSearch: ''
+  },
+  pull: {
+    startY: 0,
+    engaged: false,
+    ready: false
+  }
+};
+
+const els = {
+  loginScreen: document.getElementById('loginScreen'),
+  appShell: document.getElementById('appShell'),
+  passwordInput: document.getElementById('passwordInput'),
+  loginButton: document.getElementById('loginButton'),
+  loginError: document.getElementById('loginError'),
+  refreshButton: document.getElementById('refreshButton'),
+  logoutButton: document.getElementById('logoutButton'),
+  topTabs: document.getElementById('topTabs'),
+  mobileBottomNav: document.getElementById('mobileBottomNav'),
+  pullIndicator: document.getElementById('pullIndicator'),
+  pullIndicatorText: document.getElementById('pullIndicatorText'),
+  panels: Object.fromEntries(tabs.map(tab => [tab.id, document.getElementById(`panel-${tab.id}`)]))
+};
+
+function currency(value){
+  const num = Number(value || 0);
+  return new Intl.NumberFormat('en-KY',{ style:'currency', currency:'KYD', maximumFractionDigits:2 }).format(num);
+}
+function shortDate(value){
+  if(!value) return '—';
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-KY',{ month:'short', day:'numeric', year:'numeric' }).format(date);
+}
+function shortDateTime(value){
+  if(!value) return '—';
+  const date = new Date(value);
+  if(Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-KY',{ month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }).format(date);
+}
+function escapeHtml(value){
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+}
+function normalize(text){ return String(text || '').toLowerCase().trim(); }
+function sum(arr, get = v => v){ return arr.reduce((acc, item) => acc + Number(get(item) || 0), 0); }
+function uniq(arr){ return [...new Set(arr)]; }
+function readJsonStorage(key, fallback){
+  try{ return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); }
+  catch{ return fallback; }
+}
+function writeJsonStorage(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+function getStockBadge(quantity){
+  if(quantity <= 0) return { label:'Out', cls:'red' };
+  if(quantity <= 24) return { label:'Low', cls:'yellow' };
+  return { label:'In Stock', cls:'green' };
+}
+function productType(title){
+  const t = normalize(title);
+  if(/gin|rum|vodka|tequila|whisk|whisky|bourbon|mezcal|cognac|liqueur|amaro|spirit/.test(t)) return 'spirits';
+  if(/ros[eé]|rose/.test(t)) return 'rosé';
+  if(/champagne|prosecco|franciacorta|cava|sparkling|brut|saten|cremant|cuvee/.test(t)) return 'sparkling';
+  if(/bianco|blanc|vernaccia|gavi|pinot grigio|chardonnay|riesling|sauvignon|white/.test(t)) return 'white';
+  if(/rosso|rouge|chianti|nebbiolo|barolo|barbaresco|cabernet|merlot|syrah|pinot noir|sangiovese|malbec|red/.test(t)) return 'red';
+  return 'wine';
+}
+function parseRegion(title){
+  const t = String(title || '');
+  const regions = ['Toscana','Franciacorta','Provence','Gavi','San Gimignano','Burgundy','Mâcon','Piemonte','Barolo','Chianti','Bolgheri','Veneto','Sicilia','Cayman'];
+  return regions.find(region => t.toLowerCase().includes(region.toLowerCase())) || 'Imported Selection';
+}
+function safeLines(order){ return Array.isArray(order?.Lines) ? order.Lines : []; }
+function orderItemCount(order){ return sum(safeLines(order), line => line.Quantity); }
+function lowStockCount(){ return state.data.products.filter(product => Number(product.inventoryQuantity || product.totalInventory || 0) > 0 && Number(product.inventoryQuantity || product.totalInventory || 0) <= 24).length; }
+function totalRevenue(){ return sum(state.data.orders, order => order.Total); }
+function todayIso(){ return new Date().toISOString(); }
+
+async function sha256(text){
+  const data = new TextEncoder().encode(text);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2,'0')).join('');
+}
+
+function bootstrapNav(){
+  const top = tabs.map(tab => {
+    const badge = tab.id === 'orders' && state.pendingOrders.length ? `<span class="tab-badge">${state.pendingOrders.length}</span>` : '';
+    return `<button class="tab-btn ${state.activeTab === tab.id ? 'active' : ''}" data-tab="${tab.id}" type="button">${escapeHtml(tab.label)} ${badge}</button>`;
+  }).join('');
+  const mobile = tabs.map(tab => {
+    const badge = tab.id === 'orders' && state.pendingOrders.length ? `<span class="tab-badge">${state.pendingOrders.length}</span>` : '';
+    return `<button class="mobile-nav-btn ${state.activeTab === tab.id ? 'active' : ''}" data-tab="${tab.id}" type="button"><span class="icon">${tab.icon}</span><span>${escapeHtml(tab.label)}</span>${badge}</button>`;
+  }).join('');
+  els.topTabs.innerHTML = top;
+  els.mobileBottomNav.innerHTML = mobile;
+  [...els.topTabs.querySelectorAll('[data-tab]'), ...els.mobileBottomNav.querySelectorAll('[data-tab]')].forEach(button => {
+    button.addEventListener('click', () => setActiveTab(button.dataset.tab));
+  });
+}
+
+function setActiveTab(tabId){
+  state.activeTab = tabId;
+  Object.entries(els.panels).forEach(([id, panel]) => panel.classList.toggle('active', id === tabId));
+  bootstrapNav();
+  if(tabId === 'new-sale') renderNewSale();
+  if(tabId === 'orders') renderOrders();
+}
+
+function hydrateLocalState(){
+  state.pendingOrders = readJsonStorage(PENDING_ORDERS_KEY, []);
+  state.extraCustomers = readJsonStorage(EXTRA_CUSTOMERS_KEY, []);
+  const savedDraft = readJsonStorage(DRAFT_SALE_KEY, state.draftSale);
+  state.draftSale = {
+    customer: savedDraft?.customer || null,
+    items: Array.isArray(savedDraft?.items) ? savedDraft.items : [],
+    step: savedDraft?.step || 'customer',
+    confirmation: savedDraft?.confirmation || null
+  };
+}
+function persistPendingOrders(){ writeJsonStorage(PENDING_ORDERS_KEY, state.pendingOrders); bootstrapNav(); }
+function persistExtraCustomers(){ writeJsonStorage(EXTRA_CUSTOMERS_KEY, state.extraCustomers); }
+function persistDraftSale(){ writeJsonStorage(DRAFT_SALE_KEY, state.draftSale); }
+
+async function loadData(){
+  state.loading = true;
+  hydrateLocalState();
+  const [productsRaw, ordersRaw, customersRaw, tasksRaw, activityRaw, shopifyOrdersRaw, cin7InventoryRaw] = await Promise.all([
+    fetch('../7cellars/data/shopify-inventory.json').then(r => r.json()),
+    fetch('../7cellars/data/cin7-orders.json').then(r => r.json()),
+    fetch('../7cellars/data/customers.json').then(r => r.json()),
+    fetch('../7cellars/data/tasks.json').then(r => r.json()),
+    fetch('../7cellars/data/activity.json').then(r => r.json()),
+    fetch('../7cellars/data/shopify-orders.json').then(r => r.json()).catch(() => ({ data:{ orders:{ edges:[] } } })),
+    fetch('../7cellars/data/cin7-inventory.json').then(r => r.json()).catch(() => ({ Products:[] }))
+  ]);
+
+  const products = productsRaw.data.products.edges.map(e => ({
+    title: e.node.title,
+    totalInventory: e.node.totalInventory,
+    price: e.node.variants.edges[0]?.node.price || '0',
+    inventoryQuantity: e.node.variants.edges[0]?.node.inventoryQuantity || 0
+  }));
+  const orders = ordersRaw.SaleList || [];
+  const customers = await Promise.resolve(customersRaw);
+  const tasks = await Promise.resolve(tasksRaw);
+  const activity = await Promise.resolve(activityRaw);
+  const shopifyOrders = (shopifyOrdersRaw?.data?.orders?.edges || []).map(edge => edge.node || edge);
+  const cin7Inventory = cin7InventoryRaw?.Products || [];
+
+  const mergedCustomers = [...customers, ...state.extraCustomers.filter(extra => !customers.some(customer => normalize(customer.name) === normalize(extra.name)))].map(customer => ({
+    ...customer,
+    totalRevenue: Number(customer.totalRevenue || 0),
+    orderCount: Number(customer.orderCount || (Array.isArray(customer.orders) ? customer.orders.length : 0)),
+    orders: Array.isArray(customer.orders) ? customer.orders : [],
+    extra: !customer.id
+  }));
+
+  state.data = {
+    products,
+    orders,
+    customers: mergedCustomers,
+    tasks: Array.isArray(tasks) ? tasks : [],
+    activity: Array.isArray(activity) ? activity : [],
+    shopifyOrders,
+    cin7Inventory
+  };
+  state.loading = false;
+  ensureDraftCustomerStillExists();
+  renderAll();
+}
+
+function ensureDraftCustomerStillExists(){
+  if(!state.draftSale.customer) return;
+  const exists = state.data.customers.some(customer => normalize(customer.name) === normalize(state.draftSale.customer.name));
+  if(!exists){
+    state.draftSale.customer = null;
+    state.draftSale.step = 'customer';
+    persistDraftSale();
+  }
+}
+
+function renderAll(){
+  bootstrapNav();
+  renderOverview();
+  renderCatalog();
+  renderNewSale();
+  renderOrders();
+  renderCustomers();
+  renderTasks();
+}
+
+function renderOverview(){
+  const revenue = totalRevenue();
+  const orderCount = state.data.orders.length;
+  const skuCount = state.data.products.length;
+  const lowStock = lowStockCount();
+  const pending = state.pendingOrders.length;
+  const topCustomers = [...state.data.customers].sort((a,b) => (b.totalRevenue || 0) - (a.totalRevenue || 0)).slice(0,5);
+  const taskSummary = {
+    todo: state.data.tasks.filter(task => normalize(task.status) === 'todo').length,
+    progress: state.data.tasks.filter(task => /progress|doing/.test(normalize(task.status))).length,
+    done: state.data.tasks.filter(task => /done|complete/.test(normalize(task.status))).length
+  };
+  els.panels.overview.innerHTML = `
+    <div class="hero-banner">
+      <div class="hero-copy">
+        <h2>Built for the floor, the cellar, and the close.</h2>
+        <p>Move from customer selection to submitted wholesale order in under a minute. Browse the live portfolio, quote confidently, and keep every rep focused on sales.</p>
+        <div class="hero-actions">
+          <button class="btn btn-gold" type="button" data-open-sale>Start a New Sale</button>
+          <button class="btn btn-soft" type="button" data-go-tab="catalog">Browse Portfolio</button>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="label">Pending Orders</div>
+          <div class="value">${pending}</div>
+          <div class="sub">Saved locally and ready to action</div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Wholesale Accounts</div>
+          <div class="value">${state.data.customers.length}</div>
+          <div class="sub">Customer roster with revenue history</div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Average Order</div>
+          <div class="value">${currency(orderCount ? revenue / orderCount : 0)}</div>
+          <div class="sub">Based on Cin7 order history</div>
+        </div>
+        <div class="hero-stat">
+          <div class="label">Today Focus</div>
+          <div class="value">${lowStock}</div>
+          <div class="sub">Low-stock wines needing attention</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="label">Total Revenue</div>
+        <div class="value">${currency(revenue)}</div>
+        <div class="sub">From ${orderCount} Cin7 wholesale orders.</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Order Count</div>
+        <div class="value">${orderCount}</div>
+        <div class="sub">Real order history ready for quick reference.</div>
+      </div>
+      <div class="kpi-card">
+        <div class="label">Active SKUs</div>
+        <div class="value">${skuCount}</div>
+        <div class="sub">Live Shopify catalog used as the sales bible.</div>
+      </div>
+      <div class="kpi-card alert">
+        <div class="label">Low Stock Alerts</div>
+        <div class="value">${lowStock}</div>
+        <div class="sub">Bottles at 24 units or fewer and still available.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Recent Activity</h3>
+            <p>What the team has been moving recently.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="activity-list">
+            ${state.data.activity.length ? state.data.activity.slice().reverse().slice(0,6).map(item => `
+              <div class="list-item">
+                <div class="list-item-top">
+                  <div>
+                    <h4>${escapeHtml(item.action)}</h4>
+                    <p>${escapeHtml(item.detail)}</p>
+                  </div>
+                  <span class="badge gold">${escapeHtml(item.who || 'Team')}</span>
+                </div>
+                <p class="small">${escapeHtml(shortDateTime(item.time))}</p>
+              </div>
+            `).join('') : emptyState('🥂','No recent activity yet','Once updates flow in, this feed will highlight the latest operational wins.')}
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Task Snapshot</h3>
+            <p>What needs movement across the team.</p>
+          </div>
+        </div>
+        <div class="card-body stack">
+          <div class="grid-3">
+            <div class="list-item"><h4>${taskSummary.todo}</h4><p>To Do</p></div>
+            <div class="list-item"><h4>${taskSummary.progress}</h4><p>In Progress</p></div>
+            <div class="list-item"><h4>${taskSummary.done}</h4><p>Done</p></div>
+          </div>
+          <div class="task-list">
+            ${state.data.tasks.slice(0,5).map(task => `
+              <div class="list-item">
+                <div class="list-item-top">
+                  <div>
+                    <h4>${escapeHtml(task.title)}</h4>
+                    <p>${escapeHtml(task.description || 'No extra detail')}</p>
+                  </div>
+                  ${priorityBadge(task.priority)}
+                </div>
+                <p class="small">${escapeHtml(task.assignee || 'Unassigned')} · ${escapeHtml(task.board || 'General')}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="grid-2" style="margin-top:16px;">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Top Accounts</h3>
+            <p>Highest revenue wholesale relationships.</p>
+          </div>
+        </div>
+        <div class="card-body customer-list">
+          ${topCustomers.map(customer => `
+            <div class="list-item">
+              <div class="list-item-top">
+                <div>
+                  <h4>${escapeHtml(customer.name)}</h4>
+                  <p>Last order ${escapeHtml(shortDate(customer.lastOrderDate))}</p>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-weight:800;font-size:18px">${currency(customer.totalRevenue)}</div>
+                  <div class="small muted">${customer.orderCount} orders</div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </article>
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3>Need-to-Know Inventory</h3>
+            <p>Portfolio items reps should watch closely.</p>
+          </div>
+        </div>
+        <div class="card-body list-clean">
+          ${state.data.products.filter(product => Number(product.inventoryQuantity) <= 24).slice(0,6).map(product => {
+            const quantity = Number(product.inventoryQuantity || product.totalInventory || 0);
+            const badge = getStockBadge(quantity);
+            return `
+              <div class="list-item">
+                <div class="list-item-top">
+                  <div>
+                    <h4>${escapeHtml(product.title)}</h4>
+                    <p>${escapeHtml(parseRegion(product.title))} · ${capitalize(productType(product.title))}</p>
+                  </div>
+                  <span class="badge ${badge.cls}">${badge.label}</span>
+                </div>
+                <p class="small">${quantity} units on hand · ${currency(product.price)}</p>
+              </div>
+            `;
+          }).join('') || emptyState('🍷','Inventory is healthy','No low stock wines right now — the floor is fully armed.')}
+        </div>
+      </article>
+    </div>
+  `;
+  bindGlobalPanelActions(els.panels.overview);
+}
+
+function renderCatalog(){
+  const search = normalize(state.filters.catalogSearch);
+  const type = state.filters.catalogType;
+  const sort = state.filters.catalogSort;
+  let products = state.data.products.map(product => ({
+    ...product,
+    qty: Number(product.inventoryQuantity || product.totalInventory || 0),
+    priceNumber: Number(product.price || 0),
+    type: productType(product.title),
+    region: parseRegion(product.title)
+  }));
+
+  if(search){
+    products = products.filter(product => normalize(product.title).includes(search) || normalize(product.region).includes(search) || normalize(product.type).includes(search));
+  }
+  if(type !== 'all'){
+    products = products.filter(product => product.type === type || (type === 'red' && product.type === 'wine' && /rosso|red/.test(normalize(product.title))) || (type === 'white' && product.type === 'wine' && /white|bianco/.test(normalize(product.title))));
+  }
+  products.sort((a,b) => {
+    if(sort === 'price') return a.priceNumber - b.priceNumber;
+    if(sort === 'stock') return b.qty - a.qty;
+    return a.title.localeCompare(b.title);
+  });
+
+  els.panels.catalog.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Wine Catalog</h3>
+          <p>The portfolio reps can browse, quote, and add straight into an order.</p>
+        </div>
+        <span class="badge gold">${products.length} visible</span>
+      </div>
+      <div class="card-body">
+        <div class="toolbar">
+          <div class="search"><input id="catalogSearchInput" type="search" placeholder="Search wine, region, or style" value="${escapeHtml(state.filters.catalogSearch)}"></div>
+          <select id="catalogSortSelect" class="select">
+            <option value="name" ${sort === 'name' ? 'selected' : ''}>Sort: Name</option>
+            <option value="price" ${sort === 'price' ? 'selected' : ''}>Sort: Price</option>
+            <option value="stock" ${sort === 'stock' ? 'selected' : ''}>Sort: Stock Level</option>
+          </select>
+        </div>
+        <div class="filter-pills" id="catalogTypePills">
+          ${[
+            ['all','All'],['red','Red'],['white','White'],['sparkling','Sparkling'],['rosé','Rosé'],['spirits','Spirits']
+          ].map(([value,label]) => `<button class="pill ${type === value ? 'active' : ''}" data-type="${value}" type="button">${label}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="catalog-grid" style="margin-top:16px;">
+      ${products.length ? products.map(product => wineCard(product)).join('') : emptyState('🍷','No wines match this search','Try a broader term or switch your category filter.')}
+    </div>
+  `;
+
+  const root = els.panels.catalog;
+  root.querySelector('#catalogSearchInput').addEventListener('input', event => { state.filters.catalogSearch = event.target.value; renderCatalog(); });
+  root.querySelector('#catalogSortSelect').addEventListener('change', event => { state.filters.catalogSort = event.target.value; renderCatalog(); });
+  root.querySelectorAll('[data-type]').forEach(button => button.addEventListener('click', () => { state.filters.catalogType = button.dataset.type; renderCatalog(); }));
+  root.querySelectorAll('[data-add-product]').forEach(button => button.addEventListener('click', () => quickAddProduct(button.dataset.addProduct)));
+}
+
+function wineCard(product){
+  const badge = getStockBadge(product.qty);
+  const stockPercent = Math.max(6, Math.min(100, product.qty > 120 ? 100 : (product.qty / 120) * 100));
+  return `
+    <article class="wine-card">
+      <div class="wine-head">
+        <div>
+          <div class="wine-type">${escapeHtml(capitalize(product.type === 'wine' ? 'selection' : product.type))}</div>
+          <h4 class="wine-title">${escapeHtml(product.title)}</h4>
+        </div>
+        <span class="badge ${badge.cls}">${badge.label}</span>
+      </div>
+      <div class="wine-meta">
+        <span>${escapeHtml(product.region)}</span>
+        <span>${product.qty} in stock</span>
+      </div>
+      <div class="wine-price">${currency(product.priceNumber)}</div>
+      <div class="stock-meter"><div class="stock-fill ${badge.cls}" style="width:${stockPercent}%"></div></div>
+      <button class="btn btn-soft" type="button" data-add-product="${escapeHtml(product.title)}">Add to Order</button>
+    </article>
+  `;
+}
+
+function renderNewSale(){
+  const draft = state.draftSale;
+  const customerSearch = normalize(state.filters.newSaleCustomerSearch);
+  const wineSearch = normalize(state.filters.newSaleWineSearch);
+  const visibleCustomers = state.data.customers.filter(customer => !customerSearch || normalize(customer.name).includes(customerSearch));
+  const visibleProducts = state.data.products.filter(product => !wineSearch || normalize(product.title).includes(wineSearch));
+  const total = draft.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+  const itemCount = draft.items.reduce((acc, item) => acc + item.quantity, 0);
+
+  els.panels['new-sale'].innerHTML = `
+    <div class="sale-layout">
+      <div class="sale-flow">
+        <article class="card step-card">
+          <div class="step-head">
+            <div class="step-title-wrap"><span class="step-no">1</span><div><h3>Pick Customer</h3><div class="small muted">Search accounts or add a new one on the fly.</div></div></div>
+            ${draft.customer ? '<span class="badge gold">Selected</span>' : ''}
+          </div>
+          <div class="card-body customer-picker">
+            <div class="toolbar">
+              <div class="search"><input id="saleCustomerSearchInput" type="search" placeholder="Search wholesale account" value="${escapeHtml(state.filters.newSaleCustomerSearch)}"></div>
+              <button class="btn btn-ghost" type="button" id="addCustomerButton">＋ Add New Customer</button>
+            </div>
+            <div class="selectable-list">
+              ${visibleCustomers.length ? visibleCustomers.map(customer => `
+                <div class="selectable-item ${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'active' : ''}">
+                  <div class="selectable-main">
+                    <h4>${escapeHtml(customer.name)}</h4>
+                    <p>Last order ${escapeHtml(shortDate(customer.lastOrderDate))} · ${customer.orderCount || 0} orders · ${currency(customer.totalRevenue || 0)}</p>
+                  </div>
+                  <button class="btn ${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'btn-soft' : 'btn-ghost'}" type="button" data-select-customer="${escapeHtml(customer.name)}">${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'Selected' : 'Choose'}</button>
+                </div>
+              `).join('') : emptyState('🥂','No customer found','Try another search or add a new wholesale account below.')}
+            </div>
+          </div>
+        </article>
+
+        <article class="card step-card">
+          <div class="step-head">
+            <div class="step-title-wrap"><span class="step-no">2</span><div><h3>Add Wines</h3><div class="small muted">Tap to add cases fast. Default quantity is 12.</div></div></div>
+            <span class="badge ${draft.items.length ? 'green' : 'blue'}">${draft.items.length} line${draft.items.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="card-body wine-picker">
+            <div class="search"><input id="saleWineSearchInput" type="search" placeholder="Search wine catalog" value="${escapeHtml(state.filters.newSaleWineSearch)}" ${draft.customer ? '' : 'disabled'}></div>
+            ${draft.customer ? `
+              <div class="selectable-list">
+                ${visibleProducts.slice(0,60).map(product => {
+                  const quantity = Number(product.inventoryQuantity || product.totalInventory || 0);
+                  const badge = getStockBadge(quantity);
+                  return `
+                    <div class="selectable-item">
+                      <div class="selectable-main">
+                        <h4>${escapeHtml(product.title)}</h4>
+                        <p>${currency(product.price)} · ${quantity} in stock · ${escapeHtml(parseRegion(product.title))}</p>
+                      </div>
+                      <button class="btn btn-soft" type="button" data-sale-add-product="${escapeHtml(product.title)}"><span>${badge.label}</span> Add</button>
+                    </div>
+                  `;
+                }).join('') || emptyState('🍷','No wines found','Try a broader search to pull the right bottle.')}
+              </div>
+            ` : emptyState('🍷','Choose a customer first','Once the account is selected, the wine picker becomes live for fast order building.')}
+
+            ${draft.items.length ? `
+              <div>
+                <h4 style="margin:4px 0 12px;">Current Order Lines</h4>
+                <div class="order-lines">
+                  ${draft.items.map(item => `
+                    <div class="line-item">
+                      <div class="line-top">
+                        <div>
+                          <div class="line-title">${escapeHtml(item.title)}</div>
+                          <div class="line-sub">${currency(item.price)} each · ${item.stock} available</div>
+                        </div>
+                        <button class="btn btn-danger" type="button" data-remove-line="${escapeHtml(item.title)}">Remove</button>
+                      </div>
+                      <div class="qty-controls">
+                        <button class="qty-btn" type="button" data-change-qty="${escapeHtml(item.title)}" data-delta="-1">−</button>
+                        <div class="qty-value">${item.quantity}</div>
+                        <button class="qty-btn" type="button" data-change-qty="${escapeHtml(item.title)}" data-delta="1">+</button>
+                        <span class="muted small">Subtotal ${currency(item.quantity * item.price)}</span>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </article>
+      </div>
+
+      <aside class="sale-summary card">
+        <div class="card-header">
+          <div>
+            <h3>3. Review & Submit</h3>
+            <p>${draft.customer ? escapeHtml(draft.customer.name) : 'Select an account to begin'}</p>
+          </div>
+          <span class="badge gold">${itemCount} units</span>
+        </div>
+        <div class="card-body">
+          ${draft.confirmation ? confirmationView(draft.confirmation) : `
+            <div class="summary-totals">
+              <div class="list-item">
+                <div class="list-item-top">
+                  <div>
+                    <h4>Customer</h4>
+                    <p>${draft.customer ? escapeHtml(draft.customer.name) : 'Not selected yet'}</p>
+                  </div>
+                  ${draft.customer ? '<span class="badge green">Ready</span>' : '<span class="badge red">Missing</span>'}
+                </div>
+              </div>
+              <div class="list-item">
+                <h4 style="margin:0 0 10px;">Order Summary</h4>
+                <div class="stack">
+                  ${draft.items.length ? draft.items.map(item => `
+                    <div class="total-row"><span>${item.quantity} × ${escapeHtml(item.title)}</span><strong>${currency(item.quantity * item.price)}</strong></div>
+                  `).join('') : '<p class="muted" style="margin:0;">No wines added yet.</p>'}
+                </div>
+              </div>
+              <div class="list-item">
+                <div class="total-row"><span>Line Items</span><strong>${draft.items.length}</strong></div>
+                <div class="total-row"><span>Total Units</span><strong>${itemCount}</strong></div>
+                <div class="total-row grand"><span>Grand Total</span><strong>${currency(total)}</strong></div>
+              </div>
+            </div>
+            <div class="summary-actions">
+              <button class="btn btn-gold" id="submitOrderButton" type="button" ${draft.customer && draft.items.length ? '' : 'disabled'}>Submit Order</button>
+              <button class="btn btn-ghost" id="clearDraftButton" type="button" ${draft.customer || draft.items.length ? '' : 'disabled'}>Clear Draft</button>
+            </div>
+          `}
+        </div>
+      </aside>
+    </div>
+  `;
+
+  const root = els.panels['new-sale'];
+  root.querySelector('#saleCustomerSearchInput').addEventListener('input', event => { state.filters.newSaleCustomerSearch = event.target.value; renderNewSale(); });
+  root.querySelector('#addCustomerButton').addEventListener('click', addNewCustomer);
+  root.querySelectorAll('[data-select-customer]').forEach(button => button.addEventListener('click', () => selectCustomer(button.dataset.selectCustomer)));
+  const wineSearchInput = root.querySelector('#saleWineSearchInput');
+  if(wineSearchInput){ wineSearchInput.addEventListener('input', event => { state.filters.newSaleWineSearch = event.target.value; renderNewSale(); }); }
+  root.querySelectorAll('[data-sale-add-product]').forEach(button => button.addEventListener('click', () => addProductToDraft(button.dataset.saleAddProduct)));
+  root.querySelectorAll('[data-change-qty]').forEach(button => button.addEventListener('click', () => changeDraftQuantity(button.dataset.changeQty, Number(button.dataset.delta))));
+  root.querySelectorAll('[data-remove-line]').forEach(button => button.addEventListener('click', () => removeDraftLine(button.dataset.removeLine)));
+  const submitButton = root.querySelector('#submitOrderButton');
+  if(submitButton) submitButton.addEventListener('click', submitDraftOrder);
+  const clearButton = root.querySelector('#clearDraftButton');
+  if(clearButton) clearButton.addEventListener('click', clearDraftSale);
+  root.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
+  root.querySelectorAll('[data-go-orders]').forEach(button => button.addEventListener('click', () => setActiveTab('orders')));
+}
+
+function selectCustomer(name){
+  const customer = state.data.customers.find(item => normalize(item.name) === normalize(name));
+  if(!customer) return;
+  state.draftSale.customer = { name: customer.name, id: customer.id || null, lastOrderDate: customer.lastOrderDate || '' };
+  state.draftSale.step = 'wines';
+  state.draftSale.confirmation = null;
+  persistDraftSale();
+  renderNewSale();
+}
+
+function addNewCustomer(){
+  const name = window.prompt('New wholesale account name');
+  if(!name || !name.trim()) return;
+  const clean = name.trim();
+  const exists = state.data.customers.some(customer => normalize(customer.name) === normalize(clean));
+  if(!exists){
+    state.extraCustomers.unshift({
+      name: clean,
+      id: `local-${Date.now()}`,
+      totalRevenue: 0,
+      orderCount: 0,
+      lastOrderDate: '',
+      orders: []
+    });
+    persistExtraCustomers();
+  }
+  loadData().then(() => selectCustomer(clean));
+}
+
+function quickAddProduct(title){
+  if(!state.draftSale.customer){
+    setActiveTab('new-sale');
+    addProductToDraft(title);
+    return;
+  }
+  addProductToDraft(title);
+  setActiveTab('new-sale');
+}
+
+function addProductToDraft(title){
+  const product = state.data.products.find(item => item.title === title);
+  if(!product) return;
+  const price = Number(product.price || 0);
+  const stock = Number(product.inventoryQuantity || product.totalInventory || 0);
+  const existing = state.draftSale.items.find(item => item.title === title);
+  if(existing){
+    existing.quantity += 12;
+    existing.stock = stock;
+  }else{
+    state.draftSale.items.push({ title, price, stock, quantity:12 });
+  }
+  state.draftSale.step = 'review';
+  state.draftSale.confirmation = null;
+  persistDraftSale();
+  renderCatalog();
+  renderNewSale();
+}
+
+function changeDraftQuantity(title, delta){
+  const item = state.draftSale.items.find(line => line.title === title);
+  if(!item) return;
+  item.quantity = Math.max(1, item.quantity + delta);
+  state.draftSale.confirmation = null;
+  persistDraftSale();
+  renderNewSale();
+}
+function removeDraftLine(title){
+  state.draftSale.items = state.draftSale.items.filter(item => item.title !== title);
+  state.draftSale.confirmation = null;
+  persistDraftSale();
+  renderNewSale();
+}
+function clearDraftSale(){
+  state.draftSale = { customer:null, items:[], step:'customer', confirmation:null };
+  persistDraftSale();
+  renderNewSale();
+}
+function startFreshSale(){
+  clearDraftSale();
+  setActiveTab('new-sale');
+}
+
+function submitDraftOrder(){
+  if(!state.draftSale.customer || !state.draftSale.items.length) return;
+  const total = state.draftSale.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+  const pending = {
+    id: `pending-${Date.now()}`,
+    createdAt: todayIso(),
+    status: 'PENDING',
+    customer: state.draftSale.customer.name,
+    customerId: state.draftSale.customer.id || null,
+    total,
+    lines: state.draftSale.items.map(item => ({ ...item, subtotal: item.quantity * item.price }))
+  };
+  state.pendingOrders.unshift(pending);
+  persistPendingOrders();
+  state.draftSale.confirmation = pending;
+  state.draftSale.items = [];
+  state.draftSale.customer = null;
+  state.draftSale.step = 'customer';
+  persistDraftSale();
+  renderAll();
+}
+
+function confirmationView(order){
+  return `
+    <div class="confirm-card">
+      <div class="confirm-icon">✅</div>
+      <div>
+        <h3 style="margin:0 0 8px;">Pending order saved</h3>
+        <p class="muted" style="margin:0;">${escapeHtml(order.customer)} · ${currency(order.total)} · ${shortDateTime(order.createdAt)}</p>
+      </div>
+      <div class="list-item" style="text-align:left;">
+        <div class="stack">
+          ${order.lines.map(line => `<div class="total-row"><span>${line.quantity} × ${escapeHtml(line.title)}</span><strong>${currency(line.subtotal)}</strong></div>`).join('')}
+          <div class="total-row grand"><span>Total</span><strong>${currency(order.total)}</strong></div>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button class="btn btn-gold" type="button" data-open-sale>New Order</button>
+        <button class="btn btn-ghost" type="button" data-go-orders>View Pending Orders</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderOrders(){
+  const search = normalize(state.filters.ordersSearch);
+  const liveOrders = state.data.orders.filter(order => !search || normalize(order.Customer).includes(search) || normalize(order.OrderNumber).includes(search) || safeLines(order).some(line => normalize(line.Name).includes(search)));
+  const pendingOrders = state.pendingOrders.filter(order => !search || normalize(order.customer).includes(search) || order.lines.some(line => normalize(line.title).includes(search)));
+  const orderedTotal = sum(state.data.orders, order => order.Total);
+  const pendingTotal = sum(state.pendingOrders, order => order.total);
+
+  els.panels.orders.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="label">Pending Orders</div><div class="value">${state.pendingOrders.length}</div><div class="sub">Saved locally and waiting for follow-up.</div></div>
+      <div class="kpi-card"><div class="label">Pending Value</div><div class="value">${currency(pendingTotal)}</div><div class="sub">Quick-sale pipeline not yet entered elsewhere.</div></div>
+      <div class="kpi-card"><div class="label">Cin7 Orders</div><div class="value">${state.data.orders.length}</div><div class="sub">Historical wholesale orders.</div></div>
+      <div class="kpi-card"><div class="label">Cin7 Revenue</div><div class="value">${currency(orderedTotal)}</div><div class="sub">From the current sales dataset.</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Orders</h3>
+          <p>Pending first, then full Cin7 history.</p>
+        </div>
+        <div class="search" style="max-width:320px;"><input id="ordersSearchInput" type="search" placeholder="Search customer, order, or wine" value="${escapeHtml(state.filters.ordersSearch)}"></div>
+      </div>
+      <div class="card-body">
+        <div class="pending-wrap">
+          ${pendingOrders.length ? pendingOrders.map(order => `
+            <div class="pending-card">
+              <div class="pending-head">
+                <div>
+                  <h4 class="pending-title">${escapeHtml(order.customer)}</h4>
+                  <div class="pending-meta">
+                    <span>${shortDateTime(order.createdAt)}</span>
+                    <span>${order.lines.length} line${order.lines.length === 1 ? '' : 's'}</span>
+                    <span>${order.lines.reduce((acc, line) => acc + line.quantity, 0)} units</span>
+                  </div>
+                </div>
+                <div style="text-align:right;display:grid;gap:8px;justify-items:end;">
+                  <span class="badge gold">Pending</span>
+                  <strong style="font-size:20px;">${currency(order.total)}</strong>
+                </div>
+              </div>
+              <div class="pending-lines">
+                ${order.lines.map(line => `<div class="pending-line"><span>${line.quantity} × ${escapeHtml(line.title)}</span><strong>${currency(line.subtotal || (line.quantity * line.price))}</strong></div>`).join('')}
+              </div>
+            </div>
+          `).join('') : emptyState('🧾','No pending orders','New quick-sale submissions will appear here with a gold pending badge.')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-header">
+        <div>
+          <h3>Cin7 Order History</h3>
+          <p>Reference every wholesale order already in the system.</p>
+        </div>
+      </div>
+      <div class="card-body table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Date</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${liveOrders.map(order => `
+              <tr>
+                <td><span class="table-title">${escapeHtml(order.OrderNumber)}</span><span class="table-sub">${safeLines(order).length} line${safeLines(order).length === 1 ? '' : 's'}</span></td>
+                <td>${escapeHtml(shortDate(order.OrderDate))}</td>
+                <td>${escapeHtml(order.Customer)}</td>
+                <td>${safeLines(order).slice(0,2).map(line => escapeHtml(`${line.Quantity} × ${line.Name}`)).join('<br>')}${safeLines(order).length > 2 ? `<span class="table-sub">+${safeLines(order).length - 2} more</span>` : ''}</td>
+                <td><strong>${currency(order.Total)}</strong></td>
+                <td>${statusBadge(order.Status)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  const root = els.panels.orders;
+  root.querySelector('#ordersSearchInput').addEventListener('input', event => { state.filters.ordersSearch = event.target.value; renderOrders(); });
+}
+
+function renderCustomers(){
+  const search = normalize(state.filters.customerSearch);
+  const customers = state.data.customers.filter(customer => !search || normalize(customer.name).includes(search));
+  els.panels.customers.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Wholesale Accounts</h3>
+          <p>Revenue, history, and last-touch context for every account.</p>
+        </div>
+        <div class="search" style="max-width:320px;"><input id="customersSearchInput" type="search" placeholder="Search accounts" value="${escapeHtml(state.filters.customerSearch)}"></div>
+      </div>
+      <div class="card-body">
+        <div class="customer-grid">
+          ${customers.length ? customers.map(customer => `
+            <article class="customer-card">
+              <div class="customer-top">
+                <div>
+                  <h3 class="customer-name">${escapeHtml(customer.name)}</h3>
+                  <div class="small muted">Last order ${escapeHtml(shortDate(customer.lastOrderDate))}</div>
+                </div>
+                ${customer.extra ? '<span class="badge gold">Local</span>' : '<span class="badge blue">Wholesale</span>'}
+              </div>
+              <div class="customer-stats">
+                <div class="customer-stat"><div class="label">Revenue</div><div class="value">${currency(customer.totalRevenue || 0)}</div></div>
+                <div class="customer-stat"><div class="label">Orders</div><div class="value">${customer.orderCount || 0}</div></div>
+                <div class="customer-stat"><div class="label">Last Order</div><div class="value">${customer.lastOrderDate ? shortDate(customer.lastOrderDate) : '—'}</div></div>
+              </div>
+              <div>
+                <h4 style="margin:0 0 10px;">Recent Orders</h4>
+                <div class="mini-orders">
+                  ${(customer.orders || []).slice(0,3).map(order => `
+                    <div class="mini-order">
+                      <div class="mini-order-top"><strong>${escapeHtml(order.orderNumber)}</strong><span>${currency(order.total || 0)}</span></div>
+                      <div class="mini-order-items">${escapeHtml(shortDate(order.date))} · ${(order.items || []).slice(0,2).map(item => `${item.qty} × ${item.name}`).join(' · ') || 'No line detail'}</div>
+                    </div>
+                  `).join('') || '<div class="mini-order"><div class="mini-order-items">No recorded orders yet for this account.</div></div>'}
+                </div>
+              </div>
+            </article>
+          `).join('') : emptyState('👥','No customers found','Try another search term to pull the right account.')}
+        </div>
+      </div>
+    </div>
+  `;
+  els.panels.customers.querySelector('#customersSearchInput').addEventListener('input', event => { state.filters.customerSearch = event.target.value; renderCustomers(); });
+}
+
+function renderTasks(){
+  const columns = [
+    { key:'todo', title:'To Do', matcher: task => normalize(task.status) === 'todo' },
+    { key:'progress', title:'In Progress', matcher: task => /progress|doing/.test(normalize(task.status)) },
+    { key:'done', title:'Done', matcher: task => /done|complete/.test(normalize(task.status)) }
+  ];
+  els.panels.tasks.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Task Board</h3>
+          <p>Operational work, organized for quick scanning on the go.</p>
+        </div>
+        <span class="badge gold">${state.data.tasks.length} tasks</span>
+      </div>
+      <div class="card-body">
+        <div class="kanban">
+          ${columns.map(column => {
+            const items = state.data.tasks.filter(column.matcher);
+            return `
+              <div class="kanban-col">
+                <div class="kanban-head">
+                  <h3>${column.title}</h3>
+                  <span class="kanban-count">${items.length}</span>
+                </div>
+                ${items.length ? items.map(task => `
+                  <article class="kanban-task">
+                    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                      <h4>${escapeHtml(task.title)}</h4>
+                      ${priorityBadge(task.priority)}
+                    </div>
+                    <p>${escapeHtml(task.description || 'No extra detail provided.')}</p>
+                    <div class="kanban-meta">
+                      <span class="badge blue">${escapeHtml(task.board || 'General')}</span>
+                      <span class="badge green">${escapeHtml(task.assignee || 'Unassigned')}</span>
+                      ${task.dueDate ? `<span class="badge yellow">Due ${escapeHtml(shortDate(task.dueDate))}</span>` : ''}
+                    </div>
+                  </article>
+                `).join('') : emptyState('🥂',`No tasks in ${column.title.toLowerCase()}`,'Everything is clear in this lane right now.')}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function emptyState(emoji, title, body){
+  return `<div class="empty-state"><div class="emoji">${emoji}</div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(body)}</p></div>`;
+}
+function capitalize(value){ return value ? value.charAt(0).toUpperCase() + value.slice(1) : ''; }
+function priorityBadge(priority){
+  const level = normalize(priority || 'medium');
+  const cls = level === 'high' ? 'red' : level === 'low' ? 'green' : 'yellow';
+  return `<span class="badge ${cls}">${escapeHtml(level || 'medium')}</span>`;
+}
+function statusBadge(status){
+  const value = normalize(status || 'pending');
+  const cls = /complete|fulfilled|paid/.test(value) ? 'green' : /cancel/.test(value) ? 'red' : /order/.test(value) ? 'gold' : 'blue';
+  return `<span class="badge ${cls}">${escapeHtml(status || 'Pending')}</span>`;
+}
+
+function bindGlobalPanelActions(root){
+  root.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
+  root.querySelectorAll('[data-go-tab]').forEach(button => button.addEventListener('click', () => setActiveTab(button.dataset.goTab)));
+}
+
 async function tryLogin(){
-  const pw=document.getElementById('pw').value;
-  if(await sha256(pw)===PW_HASH){localStorage.setItem('7c_staff_auth','1');showApp()}
-  else{document.getElementById('loginErr').style.display='block'}
+  const value = els.passwordInput.value;
+  const hashed = await sha256(value);
+  if(hashed === PASSWORD_HASH){
+    localStorage.setItem(AUTH_KEY, 'true');
+    els.loginError.style.display = 'none';
+    showApp();
+    return;
+  }
+  els.loginError.style.display = 'block';
 }
-function logout(){localStorage.removeItem('7c_staff_auth');location.reload()}
-function showApp(){document.getElementById('login').classList.add('hidden');document.getElementById('app').classList.remove('hidden');init()}
-if(localStorage.getItem('7c_staff_auth')==='1')showApp();
-
-// ─── TABS ───
-function showTab(id){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  event.target.classList.add('active');
+function showApp(){
+  els.loginScreen.classList.add('hidden');
+  els.appShell.classList.remove('hidden');
+  if(!state.data.products.length) loadData().catch(handleLoadError);
 }
-
-// ─── DATA ───
-let shopifyOrders=[],cin7Orders=[],inventory=[],shopifyInv=[],tasks=[],customers=[],activity=[];
-const fmt=n=>'$'+Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtInt=n=>'$'+Number(n||0).toLocaleString();
-
-async function loadJSON(p){try{const r=await fetch('../7cellars/data/'+p+'?_='+Date.now());if(!r.ok)return null;return r.json()}catch(e){return null}}
+function logout(){
+  localStorage.removeItem(AUTH_KEY);
+  els.appShell.classList.add('hidden');
+  els.loginScreen.classList.remove('hidden');
+  els.passwordInput.value = '';
+}
 
 async function refreshData(){
-  const btn=document.getElementById('refreshBtn');
-  btn.textContent='⟳ Loading...';btn.disabled=true;
-  await init();
-  btn.textContent='↻ Refresh';btn.disabled=false;
+  if(state.refreshing) return;
+  state.refreshing = true;
+  els.refreshButton.textContent = 'Refreshing…';
+  try{
+    await loadData();
+    flashPull('Updated');
+  }catch(error){
+    console.error(error);
+    flashPull('Refresh failed');
+  }finally{
+    state.refreshing = false;
+    els.refreshButton.textContent = '↻ Refresh';
+  }
+}
+function handleLoadError(error){
+  console.error(error);
+  Object.values(els.panels).forEach(panel => panel.innerHTML = emptyState('🍷','Unable to load dashboard data','Check the local data files and refresh the page.'));
 }
 
-// Pull-to-refresh
-let pullStart=0,pulling=false;
-document.addEventListener('touchstart',e=>{if(window.scrollY===0){pullStart=e.touches[0].clientY;pulling=true}});
-document.addEventListener('touchmove',e=>{if(!pulling)return;const d=e.touches[0].clientY-pullStart;if(d>120){pulling=false;refreshData()}});
-document.addEventListener('touchend',()=>{pulling=false});
-
-async function init(){
-  const [so,co,si,ci,t,c,a]=await Promise.all([
-    loadJSON('shopify-orders.json'),
-    loadJSON('cin7-orders.json'),
-    loadJSON('shopify-inventory.json'),
-    loadJSON('cin7-inventory.json'),
-    loadJSON('tasks.json'),
-    loadJSON('customers.json'),
-    loadJSON('activity.json')
-  ]);
-  shopifyOrders=(so&&so.orders)||[];
-  cin7Orders=(co&&co.orders)||[];
-  inventory=(ci&&ci.products)||[];
-  shopifyInv=(si&&si.products)||[];
-  tasks=(t&&t.tasks)||[];
-  customers=(c&&c.customers)||[];
-  activity=(a&&a.entries)||[];
-
-  renderOverview();
-  renderSales();
-  renderInventory();
-  renderOrders();
-  renderTasks();
-  renderCatalog();
-  renderCustomers();
+function setupInteractions(){
+  els.loginButton.addEventListener('click', tryLogin);
+  els.passwordInput.addEventListener('keydown', event => { if(event.key === 'Enter') tryLogin(); });
+  els.refreshButton.addEventListener('click', refreshData);
+  els.logoutButton.addEventListener('click', logout);
+  document.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
+  setupPullToRefresh();
 }
 
-// ─── OVERVIEW ───
-function renderOverview(){
-  const allOrders=[...shopifyOrders,...cin7Orders];
-  const totalRev=allOrders.reduce((a,o)=>a+Number(o.total||o.total_price||0),0);
-  const totalOrders=allOrders.length;
-  const lowStock=inventory.filter(p=>(p.available||p.stock||0)<6).length+shopifyInv.filter(p=>(p.available||p.inventory_quantity||0)<6).length;
-  const openTasks=tasks.filter(t=>t.status!=='done'&&t.status!=='completed').length;
-
-  document.getElementById('overviewKpis').innerHTML=`
-    <div class="kpi"><div class="kpi-label">Total Revenue</div><div class="kpi-val">${fmtInt(totalRev)}</div></div>
-    <div class="kpi"><div class="kpi-label">Orders</div><div class="kpi-val">${totalOrders}</div></div>
-    <div class="kpi"><div class="kpi-label">Low Stock Items</div><div class="kpi-val" style="color:${lowStock>0?'var(--yellow)':'var(--green)'}">${lowStock}</div></div>
-    <div class="kpi"><div class="kpi-label">Open Tasks</div><div class="kpi-val">${openTasks}</div></div>`;
-
-  // Recent activity
-  const recentAct=activity.slice(0,8);
-  document.getElementById('recentActivity').innerHTML=recentAct.length?
-    recentAct.map(a=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--text2)">${a.time||a.date||''}</span> — ${a.note||a.text||a.description||''}</div>`).join(''):
-    '<div style="color:var(--text2)">No recent activity</div>';
-
-  // Upcoming tasks
-  const upcoming=tasks.filter(t=>t.status!=='done'&&t.status!=='completed').slice(0,5);
-  document.getElementById('upcomingTasks').innerHTML=upcoming.length?
-    upcoming.map(t=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between"><span>${t.title||t.name||''}</span><span class="badge ${t.priority==='high'?'badge-red':t.priority==='medium'?'badge-yellow':'badge-blue'}">${t.priority||'normal'}</span></div>`).join(''):
-    '<div style="color:var(--text2)">No open tasks</div>';
+function setupStaticButtons(){
+  document.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
 }
 
-// ─── SALES ───
-function renderSales(){
-  const allOrders=[...shopifyOrders,...cin7Orders].sort((a,b)=>new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0));
-  const totalRev=allOrders.reduce((a,o)=>a+Number(o.total||o.total_price||0),0);
-  const avgOrder=allOrders.length?totalRev/allOrders.length:0;
-
-  document.getElementById('salesKpis').innerHTML=`
-    <div class="kpi"><div class="kpi-label">Total Revenue</div><div class="kpi-val">${fmtInt(totalRev)}</div></div>
-    <div class="kpi"><div class="kpi-label">Total Orders</div><div class="kpi-val">${allOrders.length}</div></div>
-    <div class="kpi"><div class="kpi-label">Avg Order Value</div><div class="kpi-val">${fmt(avgOrder)}</div></div>
-    <div class="kpi"><div class="kpi-label">Shopify / Cin7</div><div class="kpi-val">${shopifyOrders.length} / ${cin7Orders.length}</div></div>`;
-
-  document.getElementById('salesBody').innerHTML=allOrders.slice(0,30).map(o=>{
-    const date=o.created_at||o.date||'';
-    const d=date?new Date(date).toLocaleDateString():'—';
-    const num=o.order_number||o.name||o.id||'—';
-    const cust=o.customer_name||o.customer||(o.customer&&o.customer.first_name)||'—';
-    const items=o.line_items?o.line_items.length:(o.items||1);
-    const total=fmt(o.total||o.total_price||0);
-    const status=o.financial_status||o.status||'—';
-    const sc=status==='paid'?'green':status==='pending'?'yellow':'blue';
-    return `<tr><td>${d}</td><td>${num}</td><td>${cust}</td><td>${items}</td><td>${total}</td><td><span class="badge badge-${sc}">${status}</span></td></tr>`;
-  }).join('')||'<tr><td colspan="6" style="color:var(--text2)">No orders found</td></tr>';
-
-  // Top sellers - aggregate from line items
-  const productSales={};
-  allOrders.forEach(o=>{
-    (o.line_items||[]).forEach(li=>{
-      const name=li.title||li.name||'Unknown';
-      if(!productSales[name])productSales[name]={name,units:0,revenue:0};
-      productSales[name].units+=Number(li.quantity||1);
-      productSales[name].revenue+=Number(li.price||0)*Number(li.quantity||1);
-    });
-  });
-  const topSellers=Object.values(productSales).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
-  document.getElementById('topSellersBody').innerHTML=topSellers.map(p=>{
-    return `<tr><td>${p.name}</td><td>${p.units}</td><td>${fmt(p.revenue)}</td><td>—</td></tr>`;
-  }).join('')||'<tr><td colspan="4" style="color:var(--text2)">No sales data</td></tr>';
+function setupPullToRefresh(){
+  let lastY = 0;
+  window.addEventListener('touchstart', event => {
+    if(window.scrollY > 0) return;
+    state.pull.startY = event.touches[0].clientY;
+    state.pull.engaged = true;
+    state.pull.ready = false;
+  }, { passive:true });
+  window.addEventListener('touchmove', event => {
+    if(!state.pull.engaged || state.refreshing) return;
+    lastY = event.touches[0].clientY;
+    const delta = lastY - state.pull.startY;
+    if(delta > 12 && window.scrollY <= 0){
+      els.pullIndicator.classList.add('visible');
+      state.pull.ready = delta > 82;
+      els.pullIndicatorText.textContent = state.pull.ready ? 'Release to refresh' : 'Pull to refresh';
+    }else{
+      els.pullIndicator.classList.remove('visible');
+    }
+  }, { passive:true });
+  window.addEventListener('touchend', () => {
+    if(state.pull.ready){ refreshData(); }
+    state.pull.engaged = false;
+    state.pull.ready = false;
+    if(!state.refreshing) els.pullIndicator.classList.remove('visible');
+  }, { passive:true });
+}
+function flashPull(text){
+  els.pullIndicatorText.textContent = text;
+  els.pullIndicator.classList.add('visible');
+  setTimeout(() => els.pullIndicator.classList.remove('visible'), 1300);
 }
 
-// ─── INVENTORY ───
-function renderInventory(){
-  const q=(document.getElementById('invSearch').value||'').toLowerCase();
-  const allInv=[...inventory.map(p=>({
-    name:p.name||p.product_name||'',
-    sku:p.sku||p.code||'',
-    stock:Number(p.stock||p.quantity||0),
-    committed:Number(p.committed||0),
-    available:Number(p.available||p.stock||p.quantity||0),
-    source:'cin7'
-  })),...shopifyInv.map(p=>({
-    name:p.title||p.name||'',
-    sku:p.sku||p.variant_sku||'',
-    stock:Number(p.inventory_quantity||p.stock||0),
-    committed:0,
-    available:Number(p.inventory_quantity||p.stock||0),
-    source:'shopify'
-  }))];
-  const filtered=q?allInv.filter(p=>p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q)):allInv;
-  document.getElementById('invCount').textContent=filtered.length+' items';
-  document.getElementById('invBody').innerHTML=filtered.slice(0,50).map(p=>{
-    const statusClass=p.available<=0?'badge-red':p.available<6?'badge-yellow':'badge-green';
-    const statusText=p.available<=0?'Out of Stock':p.available<6?'Low Stock':'In Stock';
-    return `<tr><td>${p.name}</td><td style="color:var(--text2)">${p.sku}</td><td>${p.stock}</td><td>${p.committed}</td><td>${p.available}</td><td><span class="badge ${statusClass}">${statusText}</span></td></tr>`;
-  }).join('')||'<tr><td colspan="6" style="color:var(--text2)">No inventory data</td></tr>';
+function init(){
+  hydrateLocalState();
+  bootstrapNav();
+  setupInteractions();
+  setupStaticButtons();
+  if(localStorage.getItem(AUTH_KEY) === 'true'){
+    showApp();
+  }else{
+    els.passwordInput.focus();
+  }
 }
 
-// ─── ORDERS ───
-function renderOrders(){
-  const allOrders=[...shopifyOrders.map(o=>({...o,source:'shopify'})),...cin7Orders.map(o=>({...o,source:'cin7'}))].sort((a,b)=>new Date(b.created_at||b.date||0)-new Date(a.created_at||a.date||0));
-  const pending=allOrders.filter(o=>(o.fulfillment_status||o.status)==='unfulfilled'||(o.fulfillment_status||o.status)==='pending').length;
-  const fulfilled=allOrders.filter(o=>(o.fulfillment_status||o.status)==='fulfilled'||(o.fulfillment_status||o.status)==='completed').length;
-
-  document.getElementById('orderKpis').innerHTML=`
-    <div class="kpi"><div class="kpi-label">Total Orders</div><div class="kpi-val">${allOrders.length}</div></div>
-    <div class="kpi"><div class="kpi-label">Pending Fulfillment</div><div class="kpi-val" style="color:var(--yellow)">${pending}</div></div>
-    <div class="kpi"><div class="kpi-label">Fulfilled</div><div class="kpi-val" style="color:var(--green)">${fulfilled}</div></div>`;
-
-  document.getElementById('ordersBody').innerHTML=allOrders.slice(0,40).map(o=>{
-    const date=o.created_at||o.date||'';
-    const d=date?new Date(date).toLocaleDateString():'—';
-    const num=o.order_number||o.name||o.id||'—';
-    const cust=o.customer_name||o.customer||(o.customer&&o.customer.first_name)||'—';
-    const items=o.line_items?o.line_items.length:(o.items||1);
-    const total=fmt(o.total||o.total_price||0);
-    const fs=o.financial_status||o.status||'—';
-    const ff=o.fulfillment_status||'pending';
-    const fsc=fs==='paid'?'green':fs==='pending'?'yellow':'blue';
-    const ffc=ff==='fulfilled'||ff==='completed'?'green':ff==='partial'?'yellow':'blue';
-    return `<tr><td>${num}</td><td>${d}</td><td>${cust}</td><td>${items}</td><td>${total}</td><td><span class="badge badge-${fsc}">${fs}</span></td><td><span class="badge badge-${ffc}">${ff}</span></td></tr>`;
-  }).join('')||'<tr><td colspan="7" style="color:var(--text2)">No orders</td></tr>';
-}
-
-// ─── TASKS ───
-function renderTasks(){
-  const cols={todo:[],in_progress:[],done:[]};
-  tasks.forEach(t=>{
-    const s=t.status||'todo';
-    if(s==='done'||s==='completed')cols.done.push(t);
-    else if(s==='in_progress'||s==='in-progress'||s==='active')cols.in_progress.push(t);
-    else cols.todo.push(t);
-  });
-  const renderCol=(title,items,color)=>`
-    <div class="kanban-col">
-      <div class="kanban-col-title">${title}<span class="kanban-col-count">${items.length}</span></div>
-      ${items.map(t=>`
-        <div class="kanban-card">
-          <h4>${t.title||t.name||''}</h4>
-          <p>${t.description||t.notes||''}</p>
-          <div class="kc-meta">
-            ${t.assignee?'<span>👤 '+t.assignee+'</span>':''}
-            ${t.due?'<span>📅 '+t.due+'</span>':''}
-            ${t.priority?'<span class="badge badge-'+(t.priority==='high'?'red':t.priority==='medium'?'yellow':'blue')+'">'+t.priority+'</span>':''}
-          </div>
-        </div>`).join('')}
-    </div>`;
-  document.getElementById('taskKanban').innerHTML=
-    renderCol('To Do',cols.todo,'blue')+
-    renderCol('In Progress',cols.in_progress,'yellow')+
-    renderCol('Done',cols.done.slice(0,10),'green');
-}
-
-// ─── WINE CATALOG ───
-function renderCatalog(){
-  const q=(document.getElementById('catalogSearch').value||'').toLowerCase();
-  const allWines=[...shopifyInv.map(p=>({
-    name:p.title||p.name||'',
-    type:p.product_type||p.type||'',
-    region:p.vendor||'',
-    vintage:p.tags||'',
-    price:p.price||p.variant_price||0,
-    stock:p.inventory_quantity||p.stock||0
-  })),...inventory.map(p=>({
-    name:p.name||p.product_name||'',
-    type:p.category||p.type||'',
-    region:p.brand||p.region||'',
-    vintage:'',
-    price:p.price||p.retail_price||0,
-    stock:p.stock||p.available||0
-  }))];
-  const filtered=q?allWines.filter(w=>w.name.toLowerCase().includes(q)||w.type.toLowerCase().includes(q)||w.region.toLowerCase().includes(q)):allWines;
-  document.getElementById('catCount').textContent=filtered.length+' wines';
-  document.getElementById('catalogBody').innerHTML=filtered.slice(0,50).map(w=>{
-    const sc=Number(w.stock)<=0?'badge-red':Number(w.stock)<6?'badge-yellow':'badge-green';
-    return `<tr><td style="font-weight:500">${w.name}</td><td>${w.type}</td><td>${w.region}</td><td>${w.vintage}</td><td>${w.price?fmt(w.price):'—'}</td><td><span class="badge ${sc}">${w.stock}</span></td></tr>`;
-  }).join('')||'<tr><td colspan="6" style="color:var(--text2)">No wines found</td></tr>';
-}
-
-// ─── CUSTOMERS ───
-function renderCustomers(){
-  const q=(document.getElementById('custSearch').value||'').toLowerCase();
-  const filtered=q?customers.filter(c=>(c.name||c.first_name||'').toLowerCase().includes(q)||(c.email||'').toLowerCase().includes(q)):customers;
-  document.getElementById('custCount').textContent=filtered.length+' customers';
-  document.getElementById('custBody').innerHTML=filtered.slice(0,40).map(c=>{
-    const name=c.name||((c.first_name||'')+' '+(c.last_name||'')).trim()||'—';
-    const email=c.email||'—';
-    const orders=c.orders_count||c.order_count||0;
-    const spent=c.total_spent||0;
-    const last=c.last_order_date||c.last_order||'—';
-    const d=last!=='—'?new Date(last).toLocaleDateString():last;
-    return `<tr><td style="font-weight:500">${name}</td><td style="color:var(--text2)">${email}</td><td>${orders}</td><td>${fmt(spent)}</td><td>${d}</td></tr>`;
-  }).join('')||'<tr><td colspan="5" style="color:var(--text2)">No customers found</td></tr>';
-}
+init();
 </script>
 <script>
-// Unregister any stale service workers so fresh data loads
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
   caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
