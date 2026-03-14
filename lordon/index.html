@@ -1842,14 +1842,10 @@ async function loadData() {
 }
 
 function renderAll() {
-  updateLastUpdated();
-  renderBriefing();
-  renderSales();
-  renderSellThrough();
-  renderInventory();
-  renderBuyPlanning();
-  renderCustomers();
-  renderMultiStore();
+  const fns = [updateLastUpdated, renderBriefing, renderSales, renderSellThrough, renderInventory, renderBuyPlanning, renderCustomers, renderMultiStore];
+  for (const fn of fns) {
+    try { fn(); } catch (e) { console.error('Render error in ' + fn.name + ':', e); }
+  }
 }
 
 function updateLastUpdated() {
@@ -3739,6 +3735,7 @@ function renderCustomers() {
     `).join('');
   }
 
+  const topC = c.topCustomers || [];
   $('cust-tbody').innerHTML = topC.map((cust, i) => {
     const avg = cust.orders > 0 ? cust.spent / cust.orders : 0;
     const cls = i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
