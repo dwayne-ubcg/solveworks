@@ -2077,17 +2077,44 @@ function renderInventory() {
   `).join('');
 
   // OTB Table
-  $('otb-tbody').innerHTML = ST.otb.map(o => {
-    const statusCls = o.status === 'buy' ? 'badge-red' : o.status === 'healthy' ? 'badge-green' : 'badge-amber';
-    const statusLabel = o.status === 'buy' ? '🛒 Buy Now' : o.status === 'healthy' ? '✓ Healthy' : '⚠ Overstocked';
-    return `<tr>
+  // Same SS25 full-season logic as Buy Planning tab — 2→3 store scaling + growth
+  const ihSS25CatLookup = {};
+  const ihSC = ST.seasonComparison;
+  if (ihSC && ihSC.byCategory) {
+    for (const c of ihSC.byCategory) ihSS25CatLookup[c.category] = c.ss25FullSeason || {};
+  }
+  const IH_SS25_WEEKS = 26;
+  const IH_SS25_STORES = 2;
+  const IH_CURRENT_STORES = CONFIG.stores.length || 3;
+  const ihStoreScale = IH_CURRENT_STORES / IH_SS25_STORES;
+  const ihGrowthMult = 1 + getGrowthPct() / 100;
+  const ihWeeksLeft = getMonthsRemaining() * 4.33;
+
+  $('otb-tbody').innerHTML = ST.otb.filter(o => o.category !== 'UNKNOWN').map(o => {
+    const ss25 = ihSS25CatLookup[o.category];
+    let wklyRev, wklyUnits;
+    if (ss25 && ss25.revenue > 0) {
+      wklyRev = (ss25.revenue / IH_SS25_WEEKS) * ihStoreScale * ihGrowthMult;
+      wklyUnits = ((ss25.unitsSold || 0) / IH_SS25_WEEKS) * ihStoreScale * ihGrowthMult;
+    } else {
+      wklyRev = (o.weeklyRunRateCost || 0) * ihGrowthMult;
+      wklyUnits = (o.weeklyRunRateUnits || 0) * ihGrowthMult;
+    }
+    const plannedEOS = wklyRev * 2;
+    const catOTB = (wklyRev * ihWeeksLeft) + plannedEOS - (o.currentInventoryCost || 0);
+    const wos = wklyUnits > 0 ? (o.currentStock || 0) / wklyUnits : 999;
+    const status = catOTB > 500 ? 'buy' : wos > ihWeeksLeft ? 'over' : 'ok';
+    const statusCls = status === 'buy' ? 'badge-red' : status === 'ok' ? 'badge-green' : 'badge-amber';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'ok' ? '✓ Healthy' : '⚠ Overstocked';
+    const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= ihWeeksLeft ? 'var(--green)' : 'var(--amber)';
+    return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
       <td class="strong">${o.category}</td>
       <td class="num">${fmtN(o.currentStock)}</td>
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
-      <td class="num">${fmt$(o.weeklyRunRate)}/wk</td>
-      <td class="num" style="color:${o.weeksOfSupply < 4 ? 'var(--red)' : o.weeksOfSupply > 16 ? 'var(--amber)' : 'var(--green)'}">${fmtDec(o.weeksOfSupply)}w</td>
-      <td class="num">${fmt$(o.plannedEOM)}</td>
-      <td class="num" style="color:${o.otbAvailable > 0 ? 'var(--green)' : 'var(--text-3)'};font-weight:700">${fmt$(Math.max(0, o.otbAvailable))}</td>
+      <td class="num">${fmt$(wklyRev)}/wk</td>
+      <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(wos, 1)}w</span></td>
+      <td class="num">${fmt$(plannedEOS)}</td>
+      <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--text-3)'};font-weight:700">${fmt$(Math.max(0, catOTB))}</span></td>
       <td><span class="badge ${statusCls}">${statusLabel}</span></td>
     </tr>`;
   }).join('');
