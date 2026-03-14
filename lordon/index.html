@@ -2275,7 +2275,8 @@ function renderBuyPlanning() {
   let scHtml = '';
   if (sc && sc.byBrand && sc.byBrand.length > 0) {
     const weeksLabel = sc.meta?.ss26WeeksElapsed || 6;
-    const byBrand = sc.byBrand.filter(b => (b.ss25SamePeriod?.revenue || 0) > 0 || (b.ss26?.revenue || 0) > 0);
+    const byBrand = sc.byBrand.filter(b => (b.ss25SamePeriod?.revenue || 0) > 0 || (b.ss26?.revenue || 0) > 0)
+      .sort((a, b) => (b.stDiff || 0) - (a.stDiff || 0));
 
     function trendArrow(trend) {
       if (trend === 'up') return '<span class="trend-arrow trend-up-badge">↑ Up</span>';
@@ -2292,8 +2293,8 @@ function renderBuyPlanning() {
 
       return `<tr>
         <td class="strong">${b.brand}</td>
-        <td class="num"><span style="font-size:18px;font-weight:700">${ss25ST}%</span><br><span style="font-size:10px;color:var(--text-3)">${b.ss25SamePeriod?.unitsSold || 0} sold · ${fmt$(b.ss25SamePeriod?.revenue || 0)}</span></td>
-        <td class="num"><span style="font-size:18px;font-weight:700">${ss26ST}%</span><br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} sold · ${fmt$(b.ss26?.revenue || 0)}</span></td>
+        <td class="num"><span style="font-size:14px;font-weight:500">${ss25ST}%</span><br><span style="font-size:10px;color:var(--text-3)">${b.ss25SamePeriod?.unitsSold || 0} sold · ${fmt$(b.ss25SamePeriod?.revenue || 0)}</span></td>
+        <td class="num"><span style="font-size:14px;font-weight:500">${ss26ST}%</span><br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} sold · ${fmt$(b.ss26?.revenue || 0)}</span></td>
         <td class="num" style="font-size:11px;color:var(--text-3)">${ss25FullRev > 0 ? fmt$(ss25FullRev) : '—'}<br><span style="font-size:10px">${b.ss25FullSeason?.unitsSold || 0} units full</span></td>
         <td class="num">
           ${ss25ST > 0 ? `<span style="color:${stDiff >= 0 ? 'var(--green)' : 'var(--red)'};font-size:16px;font-weight:700">${stDiff >= 0 ? '+' : ''}${stDiff}pts</span>` : '—'}
