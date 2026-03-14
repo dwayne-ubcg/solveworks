@@ -2344,24 +2344,44 @@ let agingActiveBucket = null; // null = all
 function buildAgingData() {
   if (!STD || !STD.brands || !ST) return [];
   const now = new Date();
-  const avgCostRatio = ST.summary.totalCOGS / ST.summary.totalRevenue;
+  const avgCostRatio = ST.summary.totalCOGS > 0 ? ST.summary.totalCOGS / ST.summary.totalRevenue : 0.45;
+  // Season start: Jan 1 of current year — cap floor dates to this for aging purposes
+  const seasonStart = new Date(now.getFullYear(), 0, 1);
   const rows = [];
   for (const brand of STD.brands) {
     if (EXCLUDED_BRANDS.includes(brand.brand)) continue;
     for (const style of brand.styles) {
       if ((style.remaining || 0) <= 0) continue;
-      const floorDate = new Date(style.floorDate);
-      const daysOld = Math.round((now - floorDate) / 86400000);
-      const bucket = daysOld < 30 ? '0-30' : daysOld < 60 ? '30-60' : daysOld < 90 ? '60-90' : '90+';
+      // floorDate comes from Shopify created_at — unreliable for true "on floor" date
+      // Use first sale date as better proxy; fall back to floorDate if no sales
+      let effectiveDate;
+      if (style.firstSaleDate) {
+        effectiveDate = new Date(style.firstSaleDate);
+      } else {
+        effectiveDate = new Date(style.floorDate);
+      }
+      // Cap: anything before this season start is "carryover"
+      const isCarryover = effectiveDate < seasonStart;
+      const daysOld = Math.round((now - effectiveDate) / 86400000);
+      // For aging buckets, use days since season start for carryover items
+      const agingDays = isCarryover ? Math.round((now - seasonStart) / 86400000) : daysOld;
+      const bucket = agingDays < 30 ? '0-30' : agingDays < 60 ? '30-60' : agingDays < 90 ? '60-90' : '90+';
       const costPerUnit = (style.revenue > 0 && (style.sold + style.remaining) > 0)
         ? (style.revenue / (style.sold + style.remaining)) * avgCostRatio
         : 30;
       const costTiedUp = style.remaining * costPerUnit;
-      let rec = 'Monitor';
-      if (daysOld >= 90) rec = '30%+ markdown or clearance';
-      else if (daysOld >= 60 && (style.sellThrough || 0) < 30) rec = '20% markdown recommended';
-      else if (daysOld >= 30 && (style.sellThrough || 0) < 30) rec = 'Consider 15% markdown';
-      rows.push({ name: style.name, brand: brand.brand, daysOld, bucket, remaining: style.remaining, sellThrough: style.sellThrough || 0, costTiedUp, rec });
+      // Only flag items with enough time to have proven themselves
+      let rec = 'Monitor — too early';
+      const st = style.sellThrough || 0;
+      if (isCarryover && st < 30) rec = '🏷️ Carryover — markdown or clearance';
+      else if (isCarryover) rec = 'Carryover — selling through';
+      else if (agingDays < 14) rec = 'Just arrived — monitor';
+      else if (agingDays >= 60 && st < 20) rec = '30%+ markdown or clearance';
+      else if (agingDays >= 45 && st < 25) rec = '20% markdown recommended';
+      else if (agingDays >= 30 && st < 25) rec = 'Consider 15% markdown';
+      else if (agingDays >= 14 && st < 15) rec = 'Slow start — watch closely';
+      else rec = 'Monitor';
+      rows.push({ name: style.name, brand: brand.brand, daysOld: agingDays, isCarryover, bucket, remaining: style.remaining, sellThrough: st, costTiedUp, rec });
     }
   }
   return rows;
@@ -2379,7 +2399,7 @@ function renderAgingBuckets() {
     { key: '0-30', label: '0–30 Days', color: 'var(--green)', bg: 'var(--green-lt,#edfaee)' },
     { key: '30-60', label: '30–60 Days', color: 'var(--amber)', bg: 'var(--amber-lt,#fff8e6)' },
     { key: '60-90', label: '60–90 Days', color: 'var(--red)', bg: 'var(--red-lt,#fdecea)' },
-    { key: '90+', label: '90+ Days (Dead Stock)', color: 'var(--red)', bg: 'var(--red-lt,#fdecea)' },
+    { key: '90+', label: 'Carryover / 90+ Days', color: 'var(--red)', bg: 'var(--red-lt,#fdecea)' },
   ];
 
   // Aggregate by bucket
@@ -2404,23 +2424,34 @@ function renderAgingBuckets() {
 
   // AI insight on 90+ bucket
   const deadAgg = bucketAgg['90+'];
+  const carryoverCount = rows.filter(r => r.isCarryover).length;
+  const carryoverCost = Math.round(rows.filter(r => r.isCarryover).reduce((s, r) => s + r.costTiedUp, 0));
+  const newArrivals = rows.filter(r => r.daysOld < 14).length;
   aiEl.innerHTML = `<div class="ai-icon-wrap">⚠️</div>
-    <div class="ai-text">You have <strong>${fmtN(deadAgg.units)} units</strong> in the 90+ day bucket representing <strong>${fmt$(Math.round(deadAgg.cost))}</strong> in cost. These are dead stock. Recommend a targeted markdown event to recover capital before end of season.</div>`;
+    <div class="ai-text">
+      <strong>${fmtN(deadAgg.units)} units</strong> in the carryover/90+ day bucket representing <strong>${fmt$(Math.round(deadAgg.cost))}</strong> in cost.
+      ${carryoverCount > 0 ? ` <strong>${carryoverCount} styles are carryover from last season</strong> — ${fmt$(carryoverCost)} in tied-up capital. Prioritize markdown or clearance event.` : ''}
+      ${newArrivals > 0 ? ` <em>${newArrivals} styles arrived in the last 2 weeks — too early to judge.</em>` : ''}
+    </div>`;
 
   // Detail table — filter by active bucket
   const displayRows = agingActiveBucket ? rows.filter(r => r.bucket === agingActiveBucket) : rows;
   displayRows.sort((a, b) => b.costTiedUp - a.costTiedUp);
 
   const bucketColor = { '0-30': 'badge-green', '30-60': 'badge-amber', '60-90': 'badge-red', '90+': 'badge-red' };
-  tbodyEl.innerHTML = displayRows.map(r => `<tr>
+  tbodyEl.innerHTML = displayRows.map(r => {
+    const dayLabel = r.isCarryover ? `<span class="badge badge-red" title="Pre-season carryover">Carryover</span>` : `<span class="badge ${bucketColor[r.bucket]}">${r.daysOld}d</span>`;
+    const stBadge = r.daysOld < 14 ? `<span class="badge badge-neutral" title="Too early to judge">New</span>` : `<span class="badge ${r.sellThrough >= 50 ? 'badge-green' : r.sellThrough >= 25 ? 'badge-amber' : 'badge-red'}">${Math.round(r.sellThrough)}%</span>`;
+    return `<tr>
     <td class="strong">${r.name}</td>
     <td>${r.brand}</td>
-    <td class="num"><span class="badge ${bucketColor[r.bucket]}">${r.daysOld}d</span></td>
+    <td class="num">${dayLabel}</td>
     <td class="num">${fmtN(r.remaining)}</td>
-    <td class="num"><span class="badge ${r.sellThrough >= 50 ? 'badge-green' : r.sellThrough >= 25 ? 'badge-amber' : 'badge-red'}">${Math.round(r.sellThrough)}%</span></td>
+    <td class="num">${stBadge}</td>
     <td class="num" style="font-weight:600;color:var(--red)">${fmt$(Math.round(r.costTiedUp))}</td>
     <td style="font-size:11.5px;color:var(--text-2)">${r.rec}</td>
-  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No items in this bucket</td></tr>';
+  </tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-3);padding:20px">No items in this bucket</td></tr>';
 }
 
 function setAgingBucket(bucket) {
