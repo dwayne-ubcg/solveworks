@@ -2139,28 +2139,60 @@ function getMonthsRemaining() {
   return Math.max(0.5, (end - now) / (30.44 * 24 * 3600 * 1000));
 }
 
+function getBaselineMonthlySales() {
+  if (!ST) return 0;
+  return ST.summary.totalRevenue / (ST.periodWeeks / 4.33);
+}
+function getPlannedMonthlySales() {
+  const saved = localStorage.getItem('lordon_planned_monthly');
+  if (saved && Number(saved) > 0) return Number(saved);
+  return Math.round(getBaselineMonthlySales());
+}
+function savePlannedMonthlySales(val) {
+  localStorage.setItem('lordon_planned_monthly', val);
+}
+function getGrowthPct() {
+  const saved = localStorage.getItem('lordon_growth_pct');
+  return saved !== null ? Number(saved) : 10;
+}
+function saveGrowthPct(val) {
+  localStorage.setItem('lordon_growth_pct', val);
+}
+
 function recalcOTB() {
   if (!DB || !ST) return;
-  const s = ST.summary;
   const inv = DB.inventory;
   const monthsLeft = getMonthsRemaining();
-  const periodMonths = ST.periodWeeks / 4.33;
-  const plannedMonthlySales = s.totalRevenue / periodMonths;
+  const basePlanned = getPlannedMonthlySales();
+  const growthPct = getGrowthPct();
+  const plannedMonthlySales = basePlanned * (1 + growthPct / 100);
   const plannedSalesRemaining = plannedMonthlySales * monthsLeft;
-  const plannedEOS = plannedMonthlySales * 0.5; // target light at end of season (~2 weeks)
-  const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - (s.grossMargin / 100)));
+  const plannedEOS = plannedMonthlySales * 0.5;
+  const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - (ST.summary.grossMargin / 100)));
   const onOrder = getOnOrder();
   const netOTB = plannedSalesRemaining + plannedEOS - bomInventoryRetail - onOrder;
 
-  // Update result display
   const resultEl = document.getElementById('otb-result-value');
-  const otbPct = plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0;
   if (resultEl) {
     resultEl.textContent = fmt$(netOTB);
     resultEl.style.color = netOTB > 0 ? 'var(--green)' : 'var(--red)';
   }
   const otbPctEl = document.getElementById('otb-pct-card');
-  if (otbPctEl) otbPctEl.textContent = Math.round(otbPct) + '%';
+  if (otbPctEl) otbPctEl.textContent = Math.round(plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0) + '%';
+  // Update planned monthly display
+  const pmEl = document.getElementById('otb-planned-monthly-display');
+  if (pmEl) pmEl.textContent = fmt$(plannedMonthlySales);
+  const psEl = document.getElementById('otb-planned-remaining-display');
+  if (psEl) psEl.textContent = fmt$(plannedSalesRemaining);
+  const eosEl = document.getElementById('otb-eos-display');
+  if (eosEl) eosEl.textContent = fmt$(plannedEOS);
+  // Update months of supply with new planned sales
+  const moEl = document.getElementById('otb-mosupply-value');
+  if (moEl) {
+    const mos = plannedMonthlySales > 0 ? bomInventoryRetail / plannedMonthlySales : 0;
+    moEl.textContent = fmtDec(mos, 1) + 'mo';
+    moEl.style.color = mos <= 4 ? 'var(--green)' : mos <= 5 ? 'var(--amber)' : 'var(--red)';
+  }
 }
 
 function renderBuyPlanning() {
@@ -2168,40 +2200,69 @@ function renderBuyPlanning() {
   const s = ST.summary;
   const inv = DB.inventory;
 
-  // ── 2.20 OTB Calculator (Season-Aware) ──
+  // ── 2.20 OTB Calculator (Season-Aware + Editable) ──
   const storeCount = CONFIG.stores.length || 1;
   const monthsLeft = getMonthsRemaining();
   const seasonEnd = getSeasonEnd();
   const seasonLabel = seasonEnd.getMonth() === 5 ? 'Spring (Jun 30)' : 'Fall (Dec 31)';
-  const periodMonths = ST.periodWeeks / 4.33;
-  const plannedMonthlySales = s.totalRevenue / periodMonths;
+  const baseline = Math.round(getBaselineMonthlySales());
+  const growthPct = getGrowthPct();
+  const plannedMonthlyBase = getPlannedMonthlySales();
+  const plannedMonthlySales = plannedMonthlyBase * (1 + growthPct / 100);
   const plannedSalesRemaining = plannedMonthlySales * monthsLeft;
-  const plannedEOS = plannedMonthlySales * 0.5; // target ~2 weeks inventory at season end
+  const plannedEOS = plannedMonthlySales * 0.5;
   const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - (s.grossMargin / 100)));
   const onOrder = getOnOrder();
   const netOTB = plannedSalesRemaining + plannedEOS - bomInventoryRetail - onOrder;
+  const moSupply = plannedMonthlySales > 0 ? bomInventoryRetail / plannedMonthlySales : 0;
 
   $('otb-calc-body').innerHTML = `
-    <div class="otb-formula-block">
+    <div style="background:var(--bg);border-radius:12px;padding:20px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-2);margin-bottom:16px">📋 Your Plan</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:6px">Planned Monthly Sales (retail)</label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:14px;color:var(--text-3);font-weight:600">$</span>
+            <input type="number" min="0" step="1000" value="${plannedMonthlyBase}" id="otb-planned-input"
+              style="width:140px;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;color:var(--text);background:var(--bg-card);text-align:right;outline:none"
+              oninput="savePlannedMonthlySales(this.value); recalcOTB(); renderOTBFormula();">
+          </div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:4px">Historical baseline: ${fmt$(baseline)}/mo</div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);display:block;margin-bottom:6px">YoY Growth Target</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="range" min="0" max="50" step="5" value="${growthPct}" id="otb-growth-slider"
+              style="flex:1;accent-color:var(--accent)"
+              oninput="document.getElementById('otb-growth-label').textContent=this.value+'%'; saveGrowthPct(this.value); recalcOTB(); renderOTBFormula();">
+            <span id="otb-growth-label" style="font-size:16px;font-weight:700;min-width:42px">${growthPct}%</span>
+          </div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:4px">Applies to planned monthly: ${fmt$(plannedMonthlyBase)} → <strong id="otb-planned-monthly-display">${fmt$(plannedMonthlySales)}</strong>/mo</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="otb-formula-block" id="otb-formula-display">
       <div class="otb-formula-row" style="background:var(--green-lt)">
-        <span class="otb-formula-label">+ Planned Sales (rest of season)<br><span style="font-size:10.5px;color:var(--text-3)">${fmt$(plannedMonthlySales)}/mo × ${fmtDec(monthsLeft, 1)} months left until ${seasonLabel}</span></span>
-        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedSalesRemaining)}</span>
+        <span class="otb-formula-label">+ Planned Sales (rest of season)<br><span style="font-size:10.5px;color:var(--text-3)"><span id="otb-planned-monthly-display2">${fmt$(plannedMonthlySales)}</span>/mo × ${fmtDec(monthsLeft, 1)} months left → ${seasonLabel}</span></span>
+        <span class="otb-formula-value" style="color:var(--green)" id="otb-planned-remaining-display">${fmt$(plannedSalesRemaining)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--green-lt)">
-        <span class="otb-formula-label">+ Target End-of-Season Inventory<br><span style="font-size:10.5px;color:var(--text-3)">~2 weeks of sales (clearance-ready level)</span></span>
-        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedEOS)}</span>
+        <span class="otb-formula-label">+ Target End-of-Season Inventory<br><span style="font-size:10.5px;color:var(--text-3)">~2 weeks of sales (clearance-ready)</span></span>
+        <span class="otb-formula-value" style="color:var(--green)" id="otb-eos-display">${fmt$(plannedEOS)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--red-lt)">
-        <span class="otb-formula-label">− Current Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">${storeCount} stores: ${fmt$(inv.totalValue)} cost / ${fmt$(bomInventoryRetail)} retail</span></span>
+        <span class="otb-formula-label">− Current Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">${storeCount} stores — ${fmt$(inv.totalValue)} cost</span></span>
         <span class="otb-formula-value" style="color:var(--red)">${fmt$(bomInventoryRetail)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--bg-card);border:1.5px solid var(--border)">
-        <span class="otb-formula-label">− On Order<br><span style="font-size:10.5px;color:var(--text-3)">Enter your current purchase orders</span></span>
+        <span class="otb-formula-label">− On Order<br><span style="font-size:10.5px;color:var(--text-3)">Current purchase orders at retail</span></span>
         <div class="otb-on-order-wrap">
           <span style="font-size:14px;color:var(--text-3);font-weight:600">$</span>
           <input class="otb-on-order-input" id="on-order-input" type="number" min="0" step="100"
             value="${onOrder}" placeholder="0"
-            oninput="saveOnOrder(this.value); recalcOTB();">
+            oninput="saveOnOrder(this.value); recalcOTB(); renderOTBFormula();">
         </div>
       </div>
       <div class="otb-formula-row">
@@ -2209,65 +2270,57 @@ function renderBuyPlanning() {
         <span class="otb-formula-value" id="otb-result-value" style="font-size:24px;color:${netOTB > 0 ? 'var(--green)' : 'var(--red)'}">${fmt$(netOTB)}</span>
       </div>
     </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="kpi-tile">
+        <div class="kt-label">Months of Supply</div>
+        <div class="kt-value" id="otb-mosupply-value" style="color:${moSupply <= 4 ? 'var(--green)' : moSupply <= 5 ? 'var(--amber)' : 'var(--red)'};font-size:20px">${fmtDec(moSupply, 1)}mo</div>
+        <div class="kt-meta" style="font-size:10px;color:var(--text-3)">At planned sales rate</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">Target: 2–3 months</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kt-label">Inventory Turns</div>
+        <div class="kt-value" style="color:${(s.totalCOGS / (inv.totalValue || 1)) >= 4 ? 'var(--green)' : 'var(--amber)'};font-size:20px">${fmtDec(s.totalCOGS / (inv.totalValue || 1), 1)}×</div>
+        <div class="kt-meta" style="font-size:10px;color:var(--text-3)">Annual COGS ÷ inventory</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">Target: 4–6×</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kt-label">Season OTB %</div>
+        <div class="kt-value" style="font-size:20px"><span id="otb-pct-card">${Math.round(plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0)}%</span></div>
+        <div class="kt-meta" style="font-size:10px;color:var(--text-3)">Net OTB ÷ monthly plan</div>
+        <div style="font-size:10px;font-weight:600;color:var(--text-3);margin-top:4px">${netOTB > 0 ? '✅ Buying power available' : '🔴 Overbought'}</div>
+      </div>
+    </div>
+
     <div class="ai-box ai-box-default">
       <div class="ai-icon-wrap">💡</div>
       <div class="ai-text">
         <strong>${fmtDec(monthsLeft, 1)} months</strong> left in ${seasonLabel} across <strong>${storeCount} stores</strong>.
-        At <strong>${fmt$(plannedMonthlySales)}</strong>/month, you need <strong>${fmt$(plannedSalesRemaining)}</strong> in sell-through to finish the season.
+        ${growthPct > 0 ? `With your <strong>${growthPct}% growth target</strong>, planned sales are <strong>${fmt$(plannedMonthlySales)}</strong>/mo (up from ${fmt$(plannedMonthlyBase)} baseline). ` : ''}
         ${netOTB > 0
-          ? `You have <em>${fmt$(netOTB)}</em> to spend — prioritize categories with WOS below 4 weeks.`
-          : `Your current inventory already covers the rest of the season plus ${fmt$(Math.abs(netOTB))} extra — focus on selling down, not buying new.`}
+          ? `You have <strong>${fmt$(netOTB)}</strong> to spend — prioritize categories running under 4 weeks of supply.`
+          : `Current inventory covers the rest of the season plus <strong>${fmt$(Math.abs(netOTB))}</strong> extra. Focus on sell-through before buying new.`}
       </div>
     </div>
   `;
 
-  // Health cards
-  const invTurns = s.totalCOGS / (inv.totalValue || 1);
-  const moSupply = plannedMonthlySales > 0 ? (bomInventoryRetail / plannedMonthlySales) : 0;
-  const buyRatio = plannedMonthlySales > 0 ? inv.totalValue / plannedMonthlySales : 0;
-  const otbPct = plannedMonthlySales > 0 ? (Math.max(0, netOTB) / plannedMonthlySales) * 100 : 0;
-
-  $('otb-health-cards').innerHTML = [
-    {
-      label: 'Inventory Turns',
-      value: fmtDec(invTurns, 1) + '×',
-      sub: 'Annual COGS ÷ inventory cost',
-      target: 'Target: 4–6×',
-      good: invTurns >= 4 && invTurns <= 6,
-      warn: invTurns > 2 && invTurns < 4,
-    },
-    {
-      label: 'Months of Supply',
-      value: fmtDec(moSupply, 1) + 'mo',
-      sub: `Inventory retail ÷ monthly sales (${storeCount} stores)`,
-      target: storeCount >= 3 ? 'Target: 3–4 months (multi-store)' : 'Target: 2–2.5 months',
-      good: storeCount >= 3 ? (moSupply >= 3 && moSupply <= 4) : (moSupply >= 2 && moSupply <= 2.5),
-      warn: storeCount >= 3 ? (moSupply >= 2.5 && moSupply < 5) : (moSupply < 3),
-    },
-    {
-      label: 'Buy Ratio',
-      value: '$' + buyRatio.toFixed(2),
-      sub: `Inventory cost ÷ monthly sales (${storeCount} stores)`,
-      target: storeCount >= 3 ? 'Target: ~$0.80–1.20 per $1 (multi-store)' : 'Target: ~$0.40 per $1',
-      good: storeCount >= 3 ? (buyRatio >= 0.80 && buyRatio <= 1.20) : (buyRatio >= 0.35 && buyRatio <= 0.45),
-      warn: storeCount >= 3 ? (buyRatio >= 0.60 && buyRatio < 1.50) : (buyRatio < 0.55),
-    },
-    {
-      label: 'Monthly OTB %',
-      value: '<span id="otb-pct-card">' + Math.round(otbPct) + '%</span>',
-      sub: 'Net OTB ÷ planned monthly sales',
-      target: 'Target: 35–45%',
-      good: otbPct >= 35 && otbPct <= 45,
-      warn: otbPct > 0 && otbPct < 60,
-    },
-  ].map(k => `
-    <div class="kpi-tile">
-      <div class="kt-label">${k.label}</div>
-      <div class="kt-value" style="color:${k.good ? 'var(--green)' : k.warn ? 'var(--amber)' : 'var(--red)'};font-size:20px">${k.value}</div>
-      <div class="kt-meta" style="font-size:11px;color:var(--text-3)">${k.sub}</div>
-      <div style="font-size:10px;font-weight:600;color:${k.good ? 'var(--green)' : 'var(--text-3)'};margin-top:4px">${k.target}</div>
-    </div>
-  `).join('');
+  // Wire up live formula updates
+  window.renderOTBFormula = function() {
+    const base = getPlannedMonthlySales();
+    const g = getGrowthPct();
+    const pms = base * (1 + g / 100);
+    const ml = getMonthsRemaining();
+    const psr = pms * ml;
+    const eos = pms * 0.5;
+    const el2 = document.getElementById('otb-planned-monthly-display2');
+    if (el2) el2.textContent = fmt$(pms);
+    const elr = document.getElementById('otb-planned-remaining-display');
+    if (elr) elr.textContent = fmt$(psr);
+    const ele = document.getElementById('otb-eos-display');
+    if (ele) ele.textContent = fmt$(eos);
+    const elpm = document.getElementById('otb-planned-monthly-display');
+    if (elpm) elpm.textContent = fmt$(pms);
+  };
 
   // ── 2.21 OTB by Category ──
   const otbRows = ST.otb || [];
