@@ -2127,18 +2127,30 @@ function saveOnOrder(val) {
   localStorage.setItem('lordon_on_order', val);
 }
 
+function getSeasonEnd() {
+  const now = new Date();
+  const m = now.getMonth(); // 0-based
+  // Spring: Jan-Jun (end Jun 30), Fall: Jul-Dec (end Dec 31)
+  return m <= 5 ? new Date(now.getFullYear(), 5, 30) : new Date(now.getFullYear(), 11, 31);
+}
+function getMonthsRemaining() {
+  const now = new Date();
+  const end = getSeasonEnd();
+  return Math.max(0.5, (end - now) / (30.44 * 24 * 3600 * 1000));
+}
+
 function recalcOTB() {
   if (!DB || !ST) return;
   const s = ST.summary;
   const inv = DB.inventory;
-  const storeCount = CONFIG.stores.length || 1;
-  const eomMultiplier = storeCount >= 3 ? 3.0 : storeCount >= 2 ? 2.5 : 2.25;
+  const monthsLeft = getMonthsRemaining();
   const periodMonths = ST.periodWeeks / 4.33;
   const plannedMonthlySales = s.totalRevenue / periodMonths;
-  const plannedEOM = plannedMonthlySales * eomMultiplier;
+  const plannedSalesRemaining = plannedMonthlySales * monthsLeft;
+  const plannedEOS = plannedMonthlySales * 0.5; // target light at end of season (~2 weeks)
   const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - (s.grossMargin / 100)));
   const onOrder = getOnOrder();
-  const netOTB = plannedMonthlySales + plannedEOM - bomInventoryRetail - onOrder;
+  const netOTB = plannedSalesRemaining + plannedEOS - bomInventoryRetail - onOrder;
 
   // Update result display
   const resultEl = document.getElementById('otb-result-value');
@@ -2156,29 +2168,31 @@ function renderBuyPlanning() {
   const s = ST.summary;
   const inv = DB.inventory;
 
-  // ── 2.20 OTB Calculator ──
+  // ── 2.20 OTB Calculator (Season-Aware) ──
   const storeCount = CONFIG.stores.length || 1;
-  const eomMultiplier = storeCount >= 3 ? 3.0 : storeCount >= 2 ? 2.5 : 2.25;
+  const monthsLeft = getMonthsRemaining();
+  const seasonEnd = getSeasonEnd();
+  const seasonLabel = seasonEnd.getMonth() === 5 ? 'Spring (Jun 30)' : 'Fall (Dec 31)';
   const periodMonths = ST.periodWeeks / 4.33;
   const plannedMonthlySales = s.totalRevenue / periodMonths;
-  const plannedEOM = plannedMonthlySales * eomMultiplier;
-  const avgMargin = s.grossMargin / 100;
-  const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - avgMargin));
+  const plannedSalesRemaining = plannedMonthlySales * monthsLeft;
+  const plannedEOS = plannedMonthlySales * 0.5; // target ~2 weeks inventory at season end
+  const bomInventoryRetail = inv.totalRetail || (inv.totalValue / (1 - (s.grossMargin / 100)));
   const onOrder = getOnOrder();
-  const netOTB = plannedMonthlySales + plannedEOM - bomInventoryRetail - onOrder;
+  const netOTB = plannedSalesRemaining + plannedEOS - bomInventoryRetail - onOrder;
 
   $('otb-calc-body').innerHTML = `
     <div class="otb-formula-block">
       <div class="otb-formula-row" style="background:var(--green-lt)">
-        <span class="otb-formula-label">+ Planned Monthly Sales<br><span style="font-size:10.5px;color:var(--text-3)">Total Revenue ÷ ${fmtDec(periodMonths, 1)} months of data</span></span>
-        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedMonthlySales)}</span>
+        <span class="otb-formula-label">+ Planned Sales (rest of season)<br><span style="font-size:10.5px;color:var(--text-3)">${fmt$(plannedMonthlySales)}/mo × ${fmtDec(monthsLeft, 1)} months left until ${seasonLabel}</span></span>
+        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedSalesRemaining)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--green-lt)">
-        <span class="otb-formula-label">+ Planned EOM Inventory<br><span style="font-size:10.5px;color:var(--text-3)">Planned Monthly Sales × ${eomMultiplier} (${storeCount} stores × ~${fmtDec(eomMultiplier/storeCount, 1)}mo each)</span></span>
-        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedEOM)}</span>
+        <span class="otb-formula-label">+ Target End-of-Season Inventory<br><span style="font-size:10.5px;color:var(--text-3)">~2 weeks of sales (clearance-ready level)</span></span>
+        <span class="otb-formula-value" style="color:var(--green)">${fmt$(plannedEOS)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--red-lt)">
-        <span class="otb-formula-label">− Beginning Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">Actual retail value across ${storeCount} stores (${fmt$(inv.totalValue)} at cost)</span></span>
+        <span class="otb-formula-label">− Current Inventory at Retail<br><span style="font-size:10.5px;color:var(--text-3)">${storeCount} stores: ${fmt$(inv.totalValue)} cost / ${fmt$(bomInventoryRetail)} retail</span></span>
         <span class="otb-formula-value" style="color:var(--red)">${fmt$(bomInventoryRetail)}</span>
       </div>
       <div class="otb-formula-row" style="background:var(--bg-card);border:1.5px solid var(--border)">
@@ -2198,11 +2212,11 @@ function renderBuyPlanning() {
     <div class="ai-box ai-box-default">
       <div class="ai-icon-wrap">💡</div>
       <div class="ai-text">
-        Based on <strong>${fmt$(s.totalRevenue)}</strong> revenue over <strong>${fmtDec(periodMonths, 1)} months</strong>
-        (avg <strong>${fmt$(plannedMonthlySales)}</strong>/month).
+        <strong>${fmtDec(monthsLeft, 1)} months</strong> left in ${seasonLabel} across <strong>${storeCount} stores</strong>.
+        At <strong>${fmt$(plannedMonthlySales)}</strong>/month, you need <strong>${fmt$(plannedSalesRemaining)}</strong> in sell-through to finish the season.
         ${netOTB > 0
-          ? `You have <em>${fmt$(netOTB)}</em> in theoretical buying power. Prioritize categories with WOS below 4 weeks.`
-          : `Your inventory <strong>exceeds</strong> planned levels by ${fmt$(Math.abs(netOTB))} — focus on sell-through before committing new orders.`}
+          ? `You have <em>${fmt$(netOTB)}</em> to spend — prioritize categories with WOS below 4 weeks.`
+          : `Your current inventory already covers the rest of the season plus ${fmt$(Math.abs(netOTB))} extra — focus on selling down, not buying new.`}
       </div>
     </div>
   `;
