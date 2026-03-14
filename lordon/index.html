@@ -2597,7 +2597,8 @@ function renderBuyPlanning() {
   $('season-comp-body').innerHTML = scHtml;
 
   // ── 2.23 Season Report Card — SS27 Buy Playbook ──
-  // Build brand-level data from sell-through-detail (STD) for current season granularity
+  // Use ST.byBrand (62-week sell-through.json) for brand-level metrics
+  // Use STD (sell-through-detail) for style-level drill-down only
   const playbookBrands = [];
   const catMix = {};
   const SS26_START = new Date('2026-01-01');
@@ -2605,94 +2606,106 @@ function renderBuyPlanning() {
   const weeksTotal = 26;
   const confidence = Math.min(100, Math.round((weeksElapsed / weeksTotal) * 100));
 
+  // Build a STD lookup for style-level detail per brand
+  const stdBrandMap = {};
   if (STD && STD.brands) {
     for (const brand of STD.brands) {
-      let totalStyles = 0, hitsAbove50 = 0, totalSold = 0, totalRemaining = 0;
-      let totalRev = 0, totalCost = 0;
-      const styleDetails = [];
-      const catPerf = {}; // category → {sold, remaining, revenue}
-      const priceRevenue = {}; // price bucket → revenue
-
-      for (const style of brand.styles) {
-        totalStyles++;
-        const sold = style.sold || 0;
-        const rem = style.remaining || 0;
-        const st = sold + rem > 0 ? (sold / (sold + rem)) * 100 : 0;
-        const rev = style.revenue || 0;
-        const avgPrice = sold > 0 ? Math.round(rev / sold) : 0;
-        const costEst = rev * 0.45; // estimated COGS
-        totalSold += sold;
-        totalRemaining += rem;
-        totalRev += rev;
-        totalCost += costEst;
-        if (st >= 50) hitsAbove50++;
-
-        // Category performance
-        const cat = (style.type || 'OTHER').toUpperCase();
-        if (!catPerf[cat]) catPerf[cat] = { sold: 0, remaining: 0, revenue: 0 };
-        catPerf[cat].sold += sold;
-        catPerf[cat].remaining += rem;
-        catPerf[cat].revenue += rev;
-
-        // Price bucket
-        if (avgPrice > 0) {
-          const bucket = avgPrice < 50 ? 'Under $50' : avgPrice < 80 ? '$50-79' : avgPrice < 120 ? '$80-119' : avgPrice < 160 ? '$120-159' : '$160+';
-          if (!priceRevenue[bucket]) priceRevenue[bucket] = { rev: 0, sold: 0, remaining: 0 };
-          priceRevenue[bucket].rev += rev;
-          priceRevenue[bucket].sold += sold;
-          priceRevenue[bucket].remaining += rem;
-        }
-
-        styleDetails.push({ name: style.name, sold, remaining: rem, st: Math.round(st), vel: style.vel || 0, rev, avgPrice, alert: style.alert });
-
-        // Global category mix
-        if (!catMix[cat]) catMix[cat] = { revenue: 0, sold: 0, remaining: 0 };
-        catMix[cat].revenue += rev;
-        catMix[cat].sold += sold;
-        catMix[cat].remaining += rem;
-      }
-
-      if (totalStyles === 0) continue;
-      const hitRate = Math.round((hitsAbove50 / totalStyles) * 100);
-      const overallST = totalSold + totalRemaining > 0 ? Math.round((totalSold / (totalSold + totalRemaining)) * 100) : 0;
-      const margin = totalRev > 0 ? Math.round(((totalRev - totalCost) / totalRev) * 100) : 0;
-
-      // Sweet spot price: bucket with highest ST%
-      let sweetSpot = null, sweetSpotST = 0;
-      for (const [bucket, d] of Object.entries(priceRevenue)) {
-        const bst = d.sold + d.remaining > 0 ? (d.sold / (d.sold + d.remaining)) * 100 : 0;
-        if (bst > sweetSpotST && d.sold >= 2) { sweetSpot = bucket; sweetSpotST = bst; }
-      }
-
-      // Category winners/losers
-      const catArr = Object.entries(catPerf).map(([cat, d]) => {
-        const cst = d.sold + d.remaining > 0 ? Math.round((d.sold / (d.sold + d.remaining)) * 100) : 0;
-        return { cat, st: cst, rev: d.revenue, sold: d.sold };
-      }).filter(c => c.sold >= 2).sort((a, b) => b.st - a.st);
-
-      // Repeat list (top sellers — high ST, high velocity)
-      const repeats = styleDetails.filter(s => s.st >= 50 && s.sold >= 2).sort((a, b) => b.vel - a.vel).slice(0, 5);
-      // Don't repeat (sat on floor)
-      const dontRepeat = styleDetails.filter(s => s.st < 25 && s.remaining > 0).sort((a, b) => a.st - b.st).slice(0, 3);
-
-      // Concentration risk: % of revenue from top 3 styles
-      const sortedByRev = [...styleDetails].sort((a, b) => b.rev - a.rev);
-      const top3Rev = sortedByRev.slice(0, 3).reduce((s, d) => s + d.rev, 0);
-      const concentrationPct = totalRev > 0 ? Math.round((top3Rev / totalRev) * 100) : 0;
-
-      // Recommended depth for remaining season
-      const weeksRemaining = Math.max(0, weeksTotal - weeksElapsed);
-      const weeklyVelocity = weeksElapsed > 0 ? totalSold / weeksElapsed : 0;
-      const recommendedUnits = Math.round(weeklyVelocity * weeksRemaining);
-
-      playbookBrands.push({
-        brand: brand.brand, totalStyles, hitsAbove50, hitRate, overallST, totalRev, margin,
-        sweetSpot, sweetSpotST: Math.round(sweetSpotST),
-        catWin: catArr[0] || null, catLose: catArr.length > 1 ? catArr[catArr.length - 1] : null,
-        repeats, dontRepeat, concentrationPct, recommendedUnits, weeklyVelocity,
-        totalSold, totalRemaining,
-      });
+      const key = brand.brand.toUpperCase();
+      stdBrandMap[key] = brand.styles;
     }
+  }
+
+  // Use ST.byBrand as the authoritative source
+  const byBrand = ST.byBrand || ST.brandScorecard || [];
+  for (const b of byBrand) {
+    if (!b.brand || b.brand === 'UNKNOWN' || b.brand === 'SIDEWALK SALE') continue;
+    if ((b.revenue || 0) < 500) continue;
+
+    const overallST = b.sellThrough || 0;
+    const totalRev = b.revenue || 0;
+    const margin = b.grossMargin || 0;
+    const totalSold = b.unitsSold || 0;
+    const totalRemaining = b.currentStock || 0;
+
+    // Get style-level detail from STD for repeat/don't repeat analysis
+    const styles = stdBrandMap[b.brand.toUpperCase()] || stdBrandMap[b.brand] || [];
+    const totalStyles = styles.length || 1;
+    let hitsAbove50 = 0;
+    const styleDetails = [];
+    const catPerf = {};
+    const priceRevenue = {};
+
+    for (const style of styles) {
+      const sold = style.sold || 0;
+      const rem = style.remaining || 0;
+      const st = sold + rem > 0 ? (sold / (sold + rem)) * 100 : 0;
+      const rev = style.revenue || 0;
+      const avgPrice = sold > 0 ? Math.round(rev / sold) : 0;
+      if (st >= 50) hitsAbove50++;
+
+      const cat = (style.type || 'OTHER').toUpperCase();
+      if (!catPerf[cat]) catPerf[cat] = { sold: 0, remaining: 0, revenue: 0 };
+      catPerf[cat].sold += sold;
+      catPerf[cat].remaining += rem;
+      catPerf[cat].revenue += rev;
+
+      if (avgPrice > 0) {
+        const bucket = avgPrice < 50 ? 'Under $50' : avgPrice < 80 ? '$50-79' : avgPrice < 120 ? '$80-119' : avgPrice < 160 ? '$120-159' : '$160+';
+        if (!priceRevenue[bucket]) priceRevenue[bucket] = { rev: 0, sold: 0, remaining: 0 };
+        priceRevenue[bucket].rev += rev;
+        priceRevenue[bucket].sold += sold;
+        priceRevenue[bucket].remaining += rem;
+      }
+
+      styleDetails.push({ name: style.name, sold, remaining: rem, st: Math.round(st), vel: style.vel || 0, rev, avgPrice, alert: style.alert });
+
+      if (!catMix[cat]) catMix[cat] = { revenue: 0, sold: 0, remaining: 0 };
+      catMix[cat].revenue += rev;
+      catMix[cat].sold += sold;
+      catMix[cat].remaining += rem;
+    }
+
+    const hitRate = styles.length > 0 ? Math.round((hitsAbove50 / styles.length) * 100) : 0;
+
+    // Sweet spot price
+    let sweetSpot = null, sweetSpotST = 0;
+    for (const [bucket, d] of Object.entries(priceRevenue)) {
+      const bst = d.sold + d.remaining > 0 ? (d.sold / (d.sold + d.remaining)) * 100 : 0;
+      if (bst > sweetSpotST && d.sold >= 2) { sweetSpot = bucket; sweetSpotST = bst; }
+    }
+
+    // Category winners/losers
+    const catArr = Object.entries(catPerf).map(([cat, d]) => {
+      const cst = d.sold + d.remaining > 0 ? Math.round((d.sold / (d.sold + d.remaining)) * 100) : 0;
+      return { cat, st: cst, rev: d.revenue, sold: d.sold };
+    }).filter(c => c.sold >= 2).sort((a, b) => b.st - a.st);
+
+    // Repeat list (high performers)
+    const repeats = styleDetails.filter(s => s.st >= 50 && s.sold >= 2).sort((a, b) => b.vel - a.vel).slice(0, 5);
+    // Don't repeat
+    const dontRepeat = styleDetails.filter(s => s.st < 25 && s.remaining > 0).sort((a, b) => a.st - b.st).slice(0, 3);
+
+    // Concentration risk
+    const sortedByRev = [...styleDetails].sort((a, b) => b.rev - a.rev);
+    const top3Rev = sortedByRev.slice(0, 3).reduce((s, d) => s + d.rev, 0);
+    const concentrationPct = totalRev > 0 ? Math.round((top3Rev / totalRev) * 100) : 0;
+
+    // Recommended depth
+    const weeksRemaining = Math.max(0, weeksTotal - weeksElapsed);
+    const weeklyVelocity = weeksElapsed > 0 ? totalSold / weeksElapsed : 0;
+    const recommendedUnits = Math.round(weeklyVelocity * weeksRemaining);
+
+    // Verdict from ST.byBrand rating
+    const rating = b.rating || 'keep';
+
+    playbookBrands.push({
+      brand: b.brand, totalStyles: styles.length || '—', hitsAbove50, hitRate,
+      overallST, totalRev, margin,
+      sweetSpot, sweetSpotST: Math.round(sweetSpotST),
+      catWin: catArr[0] || null, catLose: catArr.length > 1 ? catArr[catArr.length - 1] : null,
+      repeats, dontRepeat, concentrationPct, recommendedUnits, weeklyVelocity,
+      totalSold, totalRemaining, rating,
+    });
   }
 
   playbookBrands.sort((a, b) => b.totalRev - a.totalRev);
@@ -2702,8 +2715,8 @@ function renderBuyPlanning() {
   if (confEl) confEl.innerHTML = `<span class="badge ${confidence >= 70 ? 'badge-green' : confidence >= 40 ? 'badge-amber' : 'badge-red'}">${confidence}% confidence</span> — ${Math.round(weeksElapsed)} of ${weeksTotal} weeks complete`;
 
   // Summary AI
-  const growList = playbookBrands.filter(b => b.hitRate >= 60 && b.overallST >= 50).slice(0, 3);
-  const cutList = playbookBrands.filter(b => b.hitRate < 40 && b.totalStyles >= 3 && b.overallST < 35);
+  const growList = playbookBrands.filter(b => b.rating === 'grow').slice(0, 5);
+  const cutList = playbookBrands.filter(b => b.rating === 'cut' || b.rating === 'watch');
   $('playbook-summary-ai').innerHTML = `<div class="ai-icon-wrap">📋</div>
     <div class="ai-text">
       <strong>Season is ${confidence}% complete.</strong> ${confidence < 50 ? 'Numbers are directional — they\'ll sharpen as peak selling hits April–June.' : confidence < 80 ? 'Trends are solid — these patterns will hold.' : 'This is your buying bible. Trust the data.'}
@@ -2711,15 +2724,17 @@ function renderBuyPlanning() {
       ${cutList.length ? ` <strong>Reduce:</strong> ${cutList.map(b => b.brand).join(', ')} — low hit rates, inventory sitting.` : ''}
     </div>`;
 
-  // Category Mix Guide
-  const totalCatRev = Object.values(catMix).reduce((s, c) => s + c.revenue, 0);
-  const catArr = Object.entries(catMix)
-    .filter(([cat]) => cat !== 'UNKNOWN')
-    .map(([cat, d]) => {
-      const mixPct = totalCatRev > 0 ? (d.revenue / totalCatRev) * 100 : 0;
-      const st = d.sold + d.remaining > 0 ? Math.round((d.sold / (d.sold + d.remaining)) * 100) : 0;
+  // Category Mix Guide — use ST.byCategory (authoritative)
+  const stCats = ST.byCategory || [];
+  const totalCatRev = stCats.reduce((s, c) => s + (c.revenue || 0), 0);
+  const catArr = stCats
+    .filter(c => c.category !== 'UNKNOWN')
+    .map(c => {
+      const mixPct = totalCatRev > 0 ? (c.revenue / totalCatRev) * 100 : 0;
+      const st = c.sellThrough || 0;
+      const mg = c.grossMargin || 0;
       const signal = st >= 60 ? '🟢 Grow' : st >= 40 ? '✅ Maintain' : st >= 25 ? '🟡 Watch' : '🔴 Reduce';
-      return { cat, mixPct, st, signal };
+      return { cat: c.category, mixPct, st, mg, signal };
     })
     .sort((a, b) => b.mixPct - a.mixPct);
 
@@ -2727,15 +2742,15 @@ function renderBuyPlanning() {
     <td class="strong">${c.cat}</td>
     <td class="num">${fmtDec(c.mixPct)}%</td>
     <td class="num"><span style="color:${c.st >= 60 ? 'var(--green)' : c.st >= 40 ? 'var(--amber)' : 'var(--red)'};font-weight:600">${c.st}%</span></td>
-    <td class="num">~${Math.round(c.mixPct * 0.45)}%</td>
+    <td class="num"><span style="color:${c.mg >= 55 ? 'var(--green)' : c.mg >= 45 ? 'var(--amber)' : 'var(--red)'}">${c.mg}%</span></td>
     <td>${c.signal}</td>
   </tr>`).join('');
 
   // Per-Brand Buy Cards
   const cardsHtml = playbookBrands.filter(b => b.totalRev > 500).slice(0, 20).map(b => {
     const hitColor = b.hitRate >= 60 ? 'var(--green)' : b.hitRate >= 40 ? 'var(--amber)' : 'var(--red)';
-    const verdict = b.hitRate >= 60 && b.overallST >= 50 ? '⬆️ GROW' : b.hitRate >= 40 ? '↔️ MAINTAIN' : '⬇️ REDUCE';
-    const verdictColor = verdict.startsWith('⬆') ? 'badge-green' : verdict.startsWith('↔') ? 'badge-amber' : 'badge-red';
+    const verdict = b.rating === 'grow' ? '⬆️ GROW' : b.rating === 'keep' ? '↔️ MAINTAIN' : b.rating === 'watch' ? '👁 WATCH' : '⬇️ REDUCE';
+    const verdictColor = b.rating === 'grow' ? 'badge-green' : b.rating === 'keep' ? 'badge-amber' : 'badge-red';
 
     // Repeat list
     const repeatHtml = b.repeats.length ? b.repeats.map(s =>
