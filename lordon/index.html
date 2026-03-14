@@ -2285,18 +2285,18 @@ function renderBuyPlanning() {
     }
 
     const tableRows = byBrand.map(b => {
-      const ss25Rev = b.ss25SamePeriod?.revenue || 0;
-      const ss26Rev = b.ss26?.revenue || 0;
+      const ss25ST = b.ss25SamePeriod?.sellThrough || 0;
+      const ss26ST = b.ss26?.sellThrough || 0;
+      const stDiff = b.stDiff || 0;
       const ss25FullRev = b.ss25FullSeason?.revenue || 0;
-      const changePct = b.pctChangeUnits;
 
       return `<tr>
         <td class="strong">${b.brand}</td>
-        <td class="num">${fmt$(ss25Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss25SamePeriod?.unitsSold || 0} units</span></td>
-        <td class="num">${fmt$(ss26Rev)}<br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} units</span></td>
+        <td class="num"><span style="font-size:18px;font-weight:700">${ss25ST}%</span><br><span style="font-size:10px;color:var(--text-3)">${b.ss25SamePeriod?.unitsSold || 0} sold · ${fmt$(b.ss25SamePeriod?.revenue || 0)}</span></td>
+        <td class="num"><span style="font-size:18px;font-weight:700">${ss26ST}%</span><br><span style="font-size:10px;color:var(--text-3)">${b.ss26?.unitsSold || 0} sold · ${fmt$(b.ss26?.revenue || 0)}</span></td>
         <td class="num" style="font-size:11px;color:var(--text-3)">${ss25FullRev > 0 ? fmt$(ss25FullRev) : '—'}<br><span style="font-size:10px">${b.ss25FullSeason?.unitsSold || 0} units full</span></td>
         <td class="num">
-          ${ss25Rev > 0 ? `<span style="color:${changePct >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${changePct >= 0 ? '+' : ''}${changePct}%</span>` : '—'}
+          ${ss25ST > 0 ? `<span style="color:${stDiff >= 0 ? 'var(--green)' : 'var(--red)'};font-size:16px;font-weight:700">${stDiff >= 0 ? '+' : ''}${stDiff}pts</span>` : '—'}
         </td>
         <td>${trendArrow(b.trend)}</td>
         <td style="font-size:11.5px;color:var(--text-2)">${b.recommendation || '—'}</td>
@@ -2312,11 +2312,10 @@ function renderBuyPlanning() {
       <div style="margin-bottom:12px" class="ai-box ai-box-blue">
         <div class="ai-icon-wrap">📅</div>
         <div class="ai-text">
-          <strong>Same-Period Comparison</strong> — First ${weeksLabel} weeks of SS26 vs first ${weeksLabel} weeks of SS25 (actual vs actual, no projections).
-          <strong style="color:var(--green)">${upBrands} brand${upBrands !== 1 ? 's' : ''} pacing ahead</strong>,
-          <strong>${flatBrands} tracking flat</strong>,
-          <strong style="color:var(--red)">${downBrands} pacing behind</strong>.
-          Early season — these trends will sharpen as peak selling kicks in (Apr–Jun).
+          <strong>Sell-Through % Comparison</strong> — First ${weeksLabel} weeks of SS26 vs first ${weeksLabel} weeks of SS25. Compares what % of inventory moved, not raw dollars — so buy depth doesn't skew the picture.
+          <strong style="color:var(--green)">${upBrands} brand${upBrands !== 1 ? 's' : ''} selling through faster</strong>,
+          <strong>${flatBrands} tracking similar</strong>,
+          <strong style="color:var(--red)">${downBrands} selling through slower</strong>.
         </div>
       </div>
       <div class="table-wrap">
@@ -2324,10 +2323,10 @@ function renderBuyPlanning() {
           <thead>
             <tr>
               <th onclick="sortTable('season-comp-tbl',0)">Brand ⇅</th>
-              <th class="num" onclick="sortTable('season-comp-tbl',1)">SS25 (${weeksLabel}w) ⇅</th>
-              <th class="num" onclick="sortTable('season-comp-tbl',2)">SS26 (${weeksLabel}w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',1)">SS25 ST% (${weeksLabel}w) ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',2)">SS26 ST% (${weeksLabel}w) ⇅</th>
               <th class="num" onclick="sortTable('season-comp-tbl',3)">SS25 Full Season ⇅</th>
-              <th class="num" onclick="sortTable('season-comp-tbl',4)">Change ⇅</th>
+              <th class="num" onclick="sortTable('season-comp-tbl',4)">ST% Change ⇅</th>
               <th>Trend</th>
               <th>Recommendation</th>
             </tr>
