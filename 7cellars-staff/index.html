@@ -646,7 +646,8 @@ const state = {
     done: true
   },
   activeTaskColumn: 'todo',
-  showNewCustomerForm: false
+  showNewCustomerForm: false,
+  showCustomerRequestForm: false
 };
 
 const els = {
@@ -1632,9 +1633,32 @@ function renderCustomers(){
           <h3>Wholesale Accounts</h3>
           <p>Revenue, history, and last-touch context for every account.</p>
         </div>
-        <div class="search" style="max-width:320px;"><input id="customersSearchInput" type="search" placeholder="Search accounts" value="${escapeHtml(state.filters.customerSearch)}"></div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="search" style="max-width:320px;"><input id="customersSearchInput" type="search" placeholder="Search accounts" value="${escapeHtml(state.filters.customerSearch)}"></div>
+          <button class="btn btn-ghost" type="button" id="custRequestButton">＋ Request New Account</button>
+        </div>
       </div>
       <div class="card-body">
+        ${state.showCustomerRequestForm ? `
+          <form id="custNewForm" class="new-customer-form" onsubmit="return false" style="margin-bottom:18px">
+            <h4 style="margin:0 0 4px">Request New Wholesale Account</h4>
+            <p class="small muted" style="margin:0 0 14px">Tallyn will review and add to Cin7. The account will appear here once created.</p>
+            <div class="form-grid">
+              <div class="form-field"><label>Business Name *</label><input name="bizName" type="text" placeholder="Restaurant / bar name" required></div>
+              <div class="form-field"><label>Contact Name</label><input name="contactName" type="text" placeholder="Primary contact"></div>
+              <div class="form-field"><label>Phone</label><input name="phone" type="tel" placeholder="(345) ..."></div>
+              <div class="form-field"><label>Email</label><input name="email" type="email" placeholder="orders@..."></div>
+              <div class="form-field full"><label>Address</label><input name="address" type="text" placeholder="Street, city"></div>
+              <div class="form-field"><label>Trade License #</label><input name="license" type="text" placeholder="License number"></div>
+              <div class="form-field"><label>Payment Terms</label><input name="terms" type="text" placeholder="e.g. Net 30, COD"></div>
+              <div class="form-field full"><label>Notes</label><textarea name="notes" rows="2" placeholder="Any extra info for Tallyn"></textarea></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn" type="button" id="custSubmitRequest">Send Request</button>
+              <button class="btn btn-ghost" type="button" id="custCancelRequest">Cancel</button>
+            </div>
+          </form>
+        ` : ''}
         <div class="customer-grid">
           ${customers.length ? customers.map(customer => `
             <article class="customer-card">
@@ -1668,6 +1692,34 @@ function renderCustomers(){
     </div>
   `;
   els.panels.customers.querySelector('#customersSearchInput').addEventListener('input', event => { state.filters.customerSearch = event.target.value; renderCustomers(); });
+  const crBtn = els.panels.customers.querySelector('#custRequestButton');
+  if(crBtn) crBtn.addEventListener('click', () => { state.showCustomerRequestForm = true; renderCustomers(); });
+  const csBtn = els.panels.customers.querySelector('#custSubmitRequest');
+  if(csBtn) csBtn.addEventListener('click', () => {
+    const form = document.getElementById('custNewForm');
+    if(!form) return;
+    const data = {
+      businessName: form.querySelector('[name="bizName"]').value.trim(),
+      contactName: form.querySelector('[name="contactName"]').value.trim(),
+      phone: form.querySelector('[name="phone"]').value.trim(),
+      email: form.querySelector('[name="email"]').value.trim(),
+      address: form.querySelector('[name="address"]').value.trim(),
+      licenseNumber: form.querySelector('[name="license"]').value.trim(),
+      paymentTerms: form.querySelector('[name="terms"]').value.trim(),
+      notes: form.querySelector('[name="notes"]').value.trim(),
+      requestedBy: 'Staff App',
+      requestedAt: new Date().toISOString()
+    };
+    if(!data.businessName){ alert('Business name is required'); return; }
+    const requests = JSON.parse(localStorage.getItem('7c_customer_requests') || '[]');
+    requests.unshift(data);
+    localStorage.setItem('7c_customer_requests', JSON.stringify(requests));
+    state.showCustomerRequestForm = false;
+    alert('Request sent to Tallyn. The account will appear here once added to Cin7.');
+    renderCustomers();
+  });
+  const ccBtn = els.panels.customers.querySelector('#custCancelRequest');
+  if(ccBtn) ccBtn.addEventListener('click', () => { state.showCustomerRequestForm = false; renderCustomers(); });
 }
 
 function renderTaskCards(items, columnKey){
