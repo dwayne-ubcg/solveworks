@@ -408,6 +408,11 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .kanban-task h4{margin:0;font-size:15px;line-height:1.4}
 .kanban-task p{margin:0;color:var(--text-soft);font-size:13px;line-height:1.55}
 .kanban-meta{display:flex;flex-wrap:wrap;gap:8px}
+.kanban-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:4px}
+.btn-sm{padding:8px 14px;min-height:36px;font-size:13px;border-radius:10px;font-weight:600}
+.btn-muted{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);color:var(--text-soft)}
+.kanban-toggle::after{content:"▾";float:right;font-size:14px;color:var(--text-faint);transition:transform .2s}
+.kanban-col[data-collapsed='true'] .kanban-toggle::after{transform:rotate(-90deg)}
 
 .empty-state{
   text-align:center;
@@ -1594,7 +1599,13 @@ function renderTasks(){
                   </div>
                 </button>
                 <div class="kanban-body">
-                ${items.length ? items.map(task => `
+                ${items.length ? items.map(task => {
+                  const moveOptions = column.key === 'todo'
+                    ? `<button class="btn btn-sm" data-move-task="${escapeHtml(task.title)}" data-to="In Progress">→ In Progress</button>`
+                    : column.key === 'progress'
+                    ? `<button class="btn btn-sm" data-move-task="${escapeHtml(task.title)}" data-to="Done">✓ Done</button><button class="btn btn-sm btn-muted" data-move-task="${escapeHtml(task.title)}" data-to="To Do">← To Do</button>`
+                    : `<button class="btn btn-sm btn-muted" data-move-task="${escapeHtml(task.title)}" data-to="In Progress">← Reopen</button>`;
+                  return `
                   <article class="kanban-task">
                     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
                       <h4>${escapeHtml(task.title)}</h4>
@@ -1606,8 +1617,9 @@ function renderTasks(){
                       <span class="badge green">${escapeHtml(task.assignee || 'Unassigned')}</span>
                       ${task.dueDate ? `<span class="badge yellow">Due ${escapeHtml(shortDate(task.dueDate))}</span>` : ''}
                     </div>
+                    <div class="kanban-actions">${moveOptions}</div>
                   </article>
-                `).join('') : emptyState('🥂',`No tasks in ${column.title.toLowerCase()}`,'Everything is clear in this lane right now.')}
+                `}).join('') : emptyState('🥂',`No tasks in ${column.title.toLowerCase()}`,'Everything is clear in this lane right now.')}
                 </div>
               </div>
             `;
@@ -1620,6 +1632,15 @@ function renderTasks(){
     const key = button.dataset.toggleColumn;
     state.taskSections[key] = !state.taskSections[key];
     renderTasks();
+  }));
+  els.panels.tasks.querySelectorAll('[data-move-task]').forEach(button => button.addEventListener('click', () => {
+    const title = button.dataset.moveTask;
+    const toStatus = button.dataset.to;
+    const task = state.data.tasks.find(t => t.title === title);
+    if(task){
+      task.status = toStatus;
+      renderTasks();
+    }
   }));
 }
 
