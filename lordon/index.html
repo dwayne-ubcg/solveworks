@@ -2956,8 +2956,10 @@ function getSeasonStyles() {
       allStyles.push({ ...style, brandName: brand.brand });
     }
   }
-  if (stSeason === 'all') return allStyles;
-  return allStyles.filter(s => {
+  // Exclude carryover from sell-through — carryover lives in aging section only
+  const currentOnly = allStyles.filter(s => !s.carryover);
+  if (stSeason === 'all') return currentOnly;
+  return currentOnly.filter(s => {
     if (!s.floorDate) return false;
     const month = new Date(s.floorDate).getMonth() + 1;
     return stSeason === 'spring' ? (month >= 1 && month <= 6) : (month >= 7 && month <= 12);
