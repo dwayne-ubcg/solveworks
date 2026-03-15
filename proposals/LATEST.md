@@ -1,6 +1,6 @@
 # Gold Standard Template
 
-**Current:** `todd-royale-proposal.html` (Todd Royale, Royale Floors & Surfaces — Commercial Flooring Estimating — Mar 4, 2026)
+**Current:** `stephane-morin-folkshr-proposal.html` (Stéphane Morin, Folks HR — BDR Agent Proposal — Mar 15, 2026)
 
 ## Rule
 The most recently built proposal is always the gold standard. Every time a new proposal is completed, update this file to point to it.
