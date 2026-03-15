@@ -775,17 +775,26 @@ async function loadData(){
   ]);
 
   const cin7Inventory = cin7InventoryRaw?.Products || [];
-  const products = cin7Inventory.map(p => ({
-    title: p.Name || '',
-    totalInventory: 0,
-    price: String(p.PriceTier2 || p.AverageCost || 0),
-    retailPrice: String(p.PriceTier1 || 0),
-    inventoryQuantity: 0,
-    sku: p.SKU || '',
-    brand: p.Brand || '',
-    category: p.Category || '',
-    source: 'cin7'
-  }));
+  const products = cin7Inventory
+    .filter(p => {
+      const name = (p.Name || '').toLowerCase();
+      const tags = (p.Tags || '').toLowerCase();
+      // Exclude cases, clusters, multi-packs, large formats — bottles only
+      if (name.includes('cluster') || name.includes(' case') || name.includes('pack')) return false;
+      if (tags.includes('3l') || tags.includes('magnum') || tags.includes('jeroboam')) return false;
+      return true;
+    })
+    .map(p => ({
+      title: p.Name || '',
+      totalInventory: 0,
+      price: String(p.PriceTier2 || p.AverageCost || 0),
+      retailPrice: String(p.PriceTier1 || 0),
+      inventoryQuantity: 0,
+      sku: p.SKU || '',
+      brand: p.Brand || '',
+      category: p.Category || '',
+      source: 'cin7'
+    }));
   const orders = ordersRaw.SaleList || [];
   const customers = await Promise.resolve(customersRaw);
   const tasks = await Promise.resolve(tasksRaw);
