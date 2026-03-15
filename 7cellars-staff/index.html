@@ -782,13 +782,15 @@ function persistDraftSale(){
 async function loadData(){
   state.loading = true;
   hydrateLocalState();
-  const [cin7InventoryRaw, ordersRaw, customersRaw, tasksRaw, activityRaw] = await Promise.all([
+  const [cin7InventoryRaw, ordersRaw, customersRaw, tasksRaw, activityRaw, cin7StockRaw] = await Promise.all([
     fetch('../7cellars/data/cin7-inventory.json').then(r => r.json()).catch(() => ({ Products:[] })),
     fetch('../7cellars/data/cin7-orders.json').then(r => r.json()),
     fetch('../7cellars/data/customers.json').then(r => r.json()),
     fetch('../7cellars/data/tasks.json').then(r => r.json()),
-    fetch('../7cellars/data/activity.json').then(r => r.json())
+    fetch('../7cellars/data/activity.json').then(r => r.json()),
+    fetch('../7cellars/data/cin7-stock.json').then(r => r.json()).catch(() => ({ stock:{} }))
   ]);
+  const stockLookup = cin7StockRaw?.stock || {};
 
   const cin7Inventory = cin7InventoryRaw?.Products || [];
   const products = cin7Inventory
@@ -804,13 +806,17 @@ async function loadData(){
       // Strip HTML tags from description for tasting notes
       const rawDesc = p.Description || '';
       const cleanDesc = rawDesc.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const sku = p.SKU || '';
+      const soh = stockLookup[sku];
       return {
         title: p.Name || '',
-        totalInventory: 0,
+        totalInventory: soh ? soh.available : 0,
         price: String(p.PriceTier2 || p.AverageCost || 0),
         retailPrice: String(p.PriceTier1 || 0),
-        inventoryQuantity: -1,
-        sku: p.SKU || '',
+        inventoryQuantity: soh ? soh.onHand : 0,
+        available: soh ? soh.available : 0,
+        allocated: soh ? soh.allocated : 0,
+        sku: sku,
         brand: p.Brand || '',
         category: p.Category || '',
         description: cleanDesc,
@@ -926,10 +932,10 @@ function renderOverview(){
         <div class="value">${skuCount}</div>
         <div class="sub">Cin7 inventory — your wholesale catalog.</div>
       </div>
-      <div class="kpi-card">
-        <div class="label">Categories</div>
-        <div class="value">${new Set(state.data.products.map(p => p.category).filter(Boolean)).size}</div>
-        <div class="sub">Wine types in the portfolio.</div>
+      <div class="kpi-card alert">
+        <div class="label">Low Stock</div>
+        <div class="value">${lowStock}</div>
+        <div class="sub">Wines at 24 units or fewer.</div>
       </div>
     </div>
 
@@ -1018,25 +1024,26 @@ function renderOverview(){
       <article class="card">
         <div class="card-header">
           <div>
-            <h3>Wine Portfolio</h3>
-            <p>Top selections from the wholesale catalog.</p>
+            <h3>Low Stock Wines</h3>
+            <p>Items to reorder or watch closely.</p>
           </div>
         </div>
         <div class="card-body list-clean">
-          ${state.data.products.slice(0,6).map(product => {
+          ${state.data.products.filter(p => Number(p.inventoryQuantity) <= 24 && Number(p.inventoryQuantity) >= 0).slice(0,6).map(product => {
+            const qty = Number(product.inventoryQuantity || 0);
+            const badge = getStockBadge(qty);
             return `
               <div class="list-item">
                 <div class="list-item-top">
                   <div>
                     <h4>${escapeHtml(product.title)}</h4>
-                    <p>${escapeHtml(product.category || parseRegion(product.title))} · ${escapeHtml(product.brand || '')}</p>
+                    <p>${escapeHtml(product.category || parseRegion(product.title))} · ${qty} on hand</p>
                   </div>
-                  <strong class="gold">${currency(product.price)}</strong>
+                  <span class="badge ${badge.cls}">${badge.label}</span>
                 </div>
-                ${product.shortDescription ? `<p class="small muted">${escapeHtml(product.shortDescription.slice(0,100))}${product.shortDescription.length > 100 ? '…' : ''}</p>` : ''}
               </div>
             `;
-          }).join('') || emptyState('🍷','No products loaded','Check Cin7 data connection.')}
+          }).join('') || emptyState('🍷','Stock looks good','No wines running low right now.')}
         </div>
       </article>
     </div>
@@ -1064,7 +1071,7 @@ function renderCatalog(){
   }
   products.sort((a,b) => {
     if(sort === 'price') return a.priceNumber - b.priceNumber;
-    if(sort === 'brand') return (a.brand || '').localeCompare(b.brand || '');
+    if(sort === 'stock') return a.qty - b.qty;
     return a.title.localeCompare(b.title);
   });
 
@@ -1083,7 +1090,7 @@ function renderCatalog(){
           <select id="catalogSortSelect" class="select">
             <option value="name" ${sort === 'name' ? 'selected' : ''}>Sort: Name</option>
             <option value="price" ${sort === 'price' ? 'selected' : ''}>Sort: Price</option>
-            <option value="brand" ${sort === 'brand' ? 'selected' : ''}>Sort: Brand</option>
+            <option value="stock" ${sort === 'stock' ? 'selected' : ''}>Sort: Stock Level</option>
           </select>
         </div>
         <div class="filter-pills" id="catalogTypePills">
@@ -1113,6 +1120,8 @@ function renderCatalog(){
 function wineCard(product){
   const desc = product.shortDescription || product.description || '';
   const truncDesc = desc.length > 120 ? desc.slice(0, 120) + '…' : desc;
+  const badge = getStockBadge(product.qty);
+  const stockPercent = Math.max(6, Math.min(100, product.qty > 120 ? 100 : (product.qty / 120) * 100));
   return `
     <article class="wine-card">
       <div class="wine-head">
@@ -1120,12 +1129,14 @@ function wineCard(product){
           <div class="wine-type">${escapeHtml(product.category || capitalize(product.type === 'wine' ? 'selection' : product.type))}</div>
           <h4 class="wine-title">${escapeHtml(product.title)}</h4>
         </div>
+        <span class="badge ${badge.cls}">${badge.label}</span>
       </div>
       ${truncDesc ? `<p class="wine-notes">${escapeHtml(truncDesc)}</p>` : ''}
       <div class="wine-meta">
         <span>${escapeHtml(product.region)}</span>
-        ${product.brand ? `<span>${escapeHtml(product.brand)}</span>` : ''}
+        <span>${product.qty} avail</span>
       </div>
+      <div class="stock-meter"><div class="stock-fill ${badge.cls}" style="width:${stockPercent}%"></div></div>
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto">
         <div>
           <div class="wine-price">${currency(product.priceNumber)}</div>
