@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Your AI Agent — SolveWorks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* === RESET & BASE === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @page {
+            size: letter;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #1a1a2e;
+            line-height: 1.6;
+            background: #0a0a1a;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* === PAGE STRUCTURE === */
+        .page {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #0d1117;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media screen {
+            .page {
+                margin-bottom: 2px;
+            }
+            body {
+                padding: 0;
+            }
+        }
+
+        @media print {
+            body { background: white; }
+            .page {
+                max-width: 8.5in;
+                min-height: 11in;
+                page-break-after: always;
+                page-break-inside: avoid;
+                margin: 0;
+            }
+            .page:last-child {
+                page-break-after: auto;
+            }
+            .cover {
+                height: 11in;
+            }
+        }
+
+        /* === COVER PAGE === */
+        .cover {
+            background: linear-gradient(135deg, #050507 0%, #0a0a1a 40%, #0d1528 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 80px 72px;
+            min-height: 600px;
+            position: relative;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -15%;
+            right: -5%;
+            width: 55%;
+            height: 75%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.08), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: 15%;
+            width: 45%;
+            height: 55%;
+            background: radial-gradient(ellipse, rgba(14, 165, 233, 0.05), transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .cover-logo {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 56px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-eyebrow {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            position: relative;
+            z-index: 1;
+            color: white;
+        }
+
+        .cover h1 span {
+            color: #0ea5e9;
+        }
+
+        .cover-subtitle {
+            font-size: 18px;
+            color: #94a3b8;
+            font-weight: 400;
+            line-height: 1.6;
+            max-width: 480px;
+            margin-bottom: 72px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(14, 165, 233, 0.1);
+            border: 1px solid rgba(14, 165, 233, 0.25);
+            border-radius: 100px;
+            padding: 8px 18px;
+            font-size: 12px;
+            color: #7dd3fc;
+            font-weight: 500;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #0ea5e9;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .cover-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1, transparent);
+        }
+
+        /* === CONTENT PAGES === */
+        .content-page {
+            background: #0d1117;
+            color: #e2e8f0;
+            padding: 56px 72px;
+            position: relative;
+        }
+
+        .content-page.light {
+            background: #f8fafc;
+            color: #1a1a2e;
+        }
+
+        /* === PAGE HEADER === */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 40px;
+        }
+
+        .light .page-header {
+            border-bottom-color: #e2e8f0;
+        }
+
+        .page-header-logo {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+        }
+
+        .page-header-label {
+            font-size: 10px;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .light .page-header-label {
+            color: #94a3b8;
+        }
+
+        /* === SECTION HEADINGS === */
+        .section-number {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #0ea5e9;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 30px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+            line-height: 1.15;
+        }
+
+        .light h2 {
+            color: #0a0a1a;
+        }
+
+        h2 .accent {
+            color: #0ea5e9;
+        }
+
+        .section-intro {
+            font-size: 15px;
+            color: #94a3b8;
+            margin-bottom: 36px;
+            max-width: 560px;
+            line-height: 1.7;
+        }
+
+        .light .section-intro {
+            color: #64748b;
+        }
+
+        h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+        .light h3 {
+            color: #0a0a1a;
+        }
+
+        p {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 14px;
+            line-height: 1.7;
+        }
+
+        .light p {
+            color: #374151;
+        }
+
+        /* === GETTING STARTED ITEMS === */
+        .getting-started-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .gs-item {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 20px 24px;
+        }
+
+        .gs-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .gs-content h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .gs-content p {
+            font-size: 13.5px;
+            color: #94a3b8;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .security-callout {
+            background: rgba(14, 165, 233, 0.06);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin-top: 28px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .security-callout .lock-icon {
+            font-size: 22px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .security-callout p {
+            font-size: 13.5px;
+            color: #7dd3fc;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .security-callout p strong {
+            color: #0ea5e9;
+            font-weight: 700;
+        }
+
+        /* === CAPABILITIES GRID === */
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .cap-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 22px;
+            transition: border-color 0.2s;
+        }
+
+        .cap-card:hover {
+            border-color: rgba(14, 165, 233, 0.3);
+        }
+
+        .cap-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .cap-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .cap-card-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .cap-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .cap-list li {
+            font-size: 13px;
+            color: #94a3b8;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .cap-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #0ea5e9;
+            font-size: 11px;
+            top: 1px;
+        }
+
+        /* === PRO TIPS === */
+        .prompts-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .prompt-comparison {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .prompt-bad {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .prompt-good {
+            padding: 14px 18px;
+            background: rgba(14, 165, 233, 0.04);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .prompt-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .prompt-label.bad { color: #f87171; }
+        .prompt-label.good { color: #4ade80; }
+
+        .prompt-text {
+            font-size: 13.5px;
+            line-height: 1.5;
+            font-family: 'Inter', monospace;
+        }
+
+        .prompt-bad .prompt-text { color: #94a3b8; }
+        .prompt-good .prompt-text { color: #e2e8f0; font-weight: 500; }
+
+        .tips-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tip-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .tip-bullet {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .tip-item p {
+            font-size: 14px;
+            color: #94a3b8;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .tip-item p strong {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        /* === EXPECTATIONS === */
+        .expectation-block {
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .expectation-block.works-great {
+            background: rgba(74, 222, 128, 0.04);
+            border: 1px solid rgba(74, 222, 128, 0.15);
+        }
+
+        .expectation-block.avoid {
+            background: rgba(248, 113, 113, 0.04);
+            border: 1px solid rgba(248, 113, 113, 0.15);
+        }
+
+        .expectation-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .expectation-header h3 {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .works-great .expectation-header h3 { color: #4ade80; }
+        .avoid .expectation-header h3 { color: #f87171; }
+
+        .expectation-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .expectation-list li {
+            font-size: 13.5px;
+            color: #94a3b8;
+            line-height: 1.6;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .works-great .expectation-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: 700;
+        }
+
+        .avoid .expectation-list li::before {
+            content: '×';
+            position: absolute;
+            left: 0;
+            color: #f87171;
+            font-weight: 700;
+        }
+
+        /* === DASHBOARD === */
+        .dashboard-sections {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin: 28px 0;
+        }
+
+        .dash-pill {
+            background: rgba(14, 165, 233, 0.08);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 10px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+
+        .dash-pill-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .dash-pill-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #7dd3fc;
+            letter-spacing: 0.5px;
+        }
+
+        .screenshot-placeholder {
+            background: rgba(255,255,255,0.02);
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 48px 24px;
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .screenshot-placeholder p {
+            color: #475569;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        /* === SECURITY === */
+        .security-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .security-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .security-card-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .security-card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .security-card p {
+            font-size: 13px;
+            color: #94a3b8;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(14, 165, 233, 0.06);
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 24px;
+        }
+
+        .trust-badge-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .trust-badge p {
+            font-size: 13.5px;
+            color: #7dd3fc;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .trust-badge p strong {
+            color: #0ea5e9;
+        }
+
+        /* === HELP PAGE === */
+        .help-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .help-card {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 22px 24px;
+        }
+
+        .help-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0ea5e9, #0369a1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .help-card-content h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .help-card-content p {
+            font-size: 13.5px;
+            color: #94a3b8;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .help-card-content a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .closing-message {
+            text-align: center;
+            padding: 36px 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            margin-top: 8px;
+        }
+
+        .closing-message p {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0 0 8px;
+        }
+
+        .closing-message .sign-off {
+            font-size: 15px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .closing-message .brand-sign-off {
+            font-size: 13px;
+            color: #0ea5e9;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        /* === BOTTOM BAR === */
+        .page-bar {
+            height: 3px;
+            background: linear-gradient(90deg, #0ea5e9, #0369a1, transparent);
+        }
+
+        /* === MOBILE === */
+        @media (max-width: 680px) {
+            .content-page {
+                padding: 36px 24px;
+            }
+
+            .cover {
+                padding: 48px 24px;
+                min-height: auto;
+            }
+
+            .cover h1 {
+                font-size: 32px;
+            }
+
+            .cover-subtitle {
+                font-size: 15px;
+                margin-bottom: 48px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .capabilities-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .security-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-sections {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .getting-started-list .gs-item {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .help-card {
+                flex-direction: column;
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .dashboard-sections {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 1: COVER -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="cover">
+            <div class="cover-logo">SOLVEWORKS</div>
+
+            <div class="cover-eyebrow">Your Deployment Guide</div>
+
+            <h1>Welcome to Your<br><span>AI Agent.</span></h1>
+
+            <p class="cover-subtitle">
+                Everything you need to know to get the most out of your new team member. Built for you. Running 24/7.
+            </p>
+
+            <div class="cover-badge">
+                Agent online and ready
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 2: GETTING STARTED -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Getting Started</div>
+            </div>
+
+            <div class="section-number">01 — GETTING STARTED</div>
+            <h2>Your Command<br><span class="accent">Center is Telegram.</span></h2>
+            <p class="section-intro">You don't need a new app. You don't need to log into a dashboard. Your agent lives in Telegram — the same app you already use.</p>
+
+            <div class="getting-started-list">
+
+                <div class="gs-item">
+                    <div class="gs-icon">💬</div>
+                    <div class="gs-content">
+                        <h3>Talk to it like a person</h3>
+                        <p>Open Telegram, find your agent's chat, and start typing. Plain English. No commands, no syntax. Just say what you need: "Draft a follow-up email to the team about Thursday's meeting." That's it.</p>
+                    </div>
+                </div>
+
+                <div class="gs-item">
+                    <div class="gs-icon">🕐</div>
+                    <div class="gs-content">
+                        <h3>Always on — 24 hours, 7 days a week</h3>
+                        <p>Your agent doesn't have office hours. Send it a task at midnight before a big pitch, or at 6am before anyone else is awake. It's ready when you are, every time.</p>
+                    </div>
+                </div>
+
+                <div class="gs-item">
+                    <div class="gs-icon">🧠</div>
+                    <div class="gs-content">
+                        <h3>It knows your business</h3>
+                        <p>We've already loaded your agent with context about your business — your products, your customers, your processes, and how you like things done. It's not starting from zero. It's starting from your reality.</p>
+                    </div>
+                </div>
+
+                <div class="gs-item">
+                    <div class="gs-icon">🎙️</div>
+                    <div class="gs-content">
+                        <h3>Voice messages work too</h3>
+                        <p>Don't want to type? Just hold and talk. Your agent transcribes your voice message and responds in text. Ideal for when you're in the car, at your desk, or thinking faster than you can type.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="security-callout">
+                <div class="lock-icon">🔐</div>
+                <p><strong>Security — the one rule that matters:</strong> Only YOU can give your agent instructions. It only takes commands from your authenticated Telegram chat. Nobody else can task it — not your team, not SolveWorks, nobody. Period.</p>
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 3: WHAT IT CRUSHES -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Capabilities</div>
+            </div>
+
+            <div class="section-number">02 — CAPABILITIES</div>
+            <h2>What Your Agent<br><span class="accent">Crushes.</span></h2>
+            <p class="section-intro">Five categories. Hundreds of tasks. This is what your agent was built to handle so you don't have to.</p>
+
+            <div class="capabilities-grid">
+
+                <div class="cap-card">
+                    <div class="cap-card-header">
+                        <div class="cap-icon">🔭</div>
+                        <h3>Research &amp; Intelligence</h3>
+                    </div>
+                    <ul class="cap-list">
+                        <li>Competitive analysis and market research</li>
+                        <li>Lead prospecting and qualification</li>
+                        <li>Industry news monitoring</li>
+                        <li>Company and person research before meetings</li>
+                    </ul>
+                </div>
+
+                <div class="cap-card">
+                    <div class="cap-card-header">
+                        <div class="cap-icon">✍️</div>
+                        <h3>Writing &amp; Communication</h3>
+                    </div>
+                    <ul class="cap-list">
+                        <li>Emails — drafting, responding, follow-ups</li>
+                        <li>Proposals and reports</li>
+                        <li>Social media content</li>
+                        <li>Meeting summaries and action items</li>
+                    </ul>
+                </div>
+
+                <div class="cap-card">
+                    <div class="cap-card-header">
+                        <div class="cap-icon">📊</div>
+                        <h3>Data &amp; Operations</h3>
+                    </div>
+                    <ul class="cap-list">
+                        <li>CRM updates and pipeline management</li>
+                        <li>Spreadsheet analysis</li>
+                        <li>Report generation</li>
+                        <li>Dashboard monitoring and alerts</li>
+                    </ul>
+                </div>
+
+                <div class="cap-card">
+                    <div class="cap-card-header">
+                        <div class="cap-icon">📅</div>
+                        <h3>Scheduling &amp; Organization</h3>
+                    </div>
+                    <ul class="cap-list">
+                        <li>Calendar management</li>
+                        <li>Reminders and follow-ups</li>
+                        <li>Task tracking</li>
+                        <li>Morning briefings</li>
+                    </ul>
+                </div>
+
+                <div class="cap-card" style="grid-column: 1 / -1;">
+                    <div class="cap-card-header">
+                        <div class="cap-icon">🚀</div>
+                        <h3>Sales &amp; Outreach</h3>
+                    </div>
+                    <ul class="cap-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px;">
+                        <li>Lead list building</li>
+                        <li>Follow-up automation</li>
+                        <li>Personalized outreach sequences</li>
+                        <li>Pipeline board management</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 4: PRO TIPS -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Pro Tips</div>
+            </div>
+
+            <div class="section-number">03 — PRO TIPS</div>
+            <h2>Better Prompts,<br><span class="accent">Better Results.</span></h2>
+            <p class="section-intro">The #1 thing that makes your agent more powerful: specificity. Here's what that looks like in practice.</p>
+
+            <div class="prompts-section">
+
+                <div class="prompt-comparison">
+                    <div class="prompt-bad">
+                        <span class="prompt-label bad">✗ WEAK</span>
+                        <span class="prompt-text">"Write me an email"</span>
+                    </div>
+                    <div class="prompt-good">
+                        <span class="prompt-label good">✓ STRONG</span>
+                        <span class="prompt-text">"Write a follow-up email to John at Acme Corp about the pricing we discussed Tuesday. Friendly tone, mention the 15% volume discount."</span>
+                    </div>
+                </div>
+
+                <div class="prompt-comparison">
+                    <div class="prompt-bad">
+                        <span class="prompt-label bad">✗ WEAK</span>
+                        <span class="prompt-text">"Find me leads"</span>
+                    </div>
+                    <div class="prompt-good">
+                        <span class="prompt-label good">✓ STRONG</span>
+                        <span class="prompt-text">"Find 20 HR directors at manufacturing companies in Ontario with 100–500 employees. Include email and LinkedIn."</span>
+                    </div>
+                </div>
+
+                <div class="prompt-comparison">
+                    <div class="prompt-bad">
+                        <span class="prompt-label bad">✗ WEAK</span>
+                        <span class="prompt-text">"Make a report"</span>
+                    </div>
+                    <div class="prompt-good">
+                        <span class="prompt-label good">✓ STRONG</span>
+                        <span class="prompt-text">"Pull last month's sales data and create a report showing top 10 clients by revenue, with month-over-month comparison."</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="tips-list">
+
+                <div class="tip-item">
+                    <div class="tip-bullet">1</div>
+                    <p><strong>Be specific</strong> — context makes everything better. The more you give, the better the output.</p>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-bullet">2</div>
+                    <p><strong>Give background</strong> — "We just had a meeting with X and they mentioned Y." Your agent uses this context to get it right the first time.</p>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-bullet">3</div>
+                    <p><strong>Ask it to confirm before sending</strong> — tell it to show you the output first. "Draft this, but don't send it." Good habit, especially early on.</p>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-bullet">4</div>
+                    <p><strong>Correct it when it's off</strong> — say "that's not quite right, here's what I meant." It adjusts immediately and remembers your preferences going forward.</p>
+                </div>
+
+                <div class="tip-item">
+                    <div class="tip-bullet">5</div>
+                    <p><strong>Use voice when typing is slow</strong> — hold the microphone button in Telegram, talk naturally. It transcribes and responds just like text.</p>
+                </div>
+
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 5: WHAT TO EXPECT -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Setting Expectations</div>
+            </div>
+
+            <div class="section-number">04 — WHAT TO EXPECT</div>
+            <h2>Honest Answers,<br><span class="accent">No Surprises.</span></h2>
+            <p class="section-intro">Your agent is remarkably capable. Here's what to expect as you get going — and a few situations where a human touch still makes sense.</p>
+
+            <div class="expectation-block works-great">
+                <div class="expectation-header">
+                    <span style="font-size: 20px;">⚡</span>
+                    <h3>Works great — a few things to know</h3>
+                </div>
+                <ul class="expectation-list">
+                    <li>Complex responses take 30–60 seconds — it's thinking carefully, not frozen. Wait for it.</li>
+                    <li>First-time tasks take a little longer while it learns your patterns and preferences.</li>
+                    <li>It may ask clarifying questions before acting — that's intentional. A good question now beats a wrong answer later.</li>
+                    <li>Always review before it sends anything to clients on your behalf — you're the final check.</li>
+                </ul>
+            </div>
+
+            <div class="expectation-block avoid">
+                <div class="expectation-header">
+                    <span style="font-size: 20px;">⚠️</span>
+                    <h3>Best to avoid these scenarios</h3>
+                </div>
+                <ul class="expectation-list">
+                    <li>Visual website builders like Wix or Squarespace — their drag-and-drop editors are iframe-based and don't play well with AI automation.</li>
+                    <li>Directly editing live financial or accounting systems without reviewing the changes first.</li>
+                    <li>Tasks requiring real-time phone conversations — your agent is text-based (and excellent at it).</li>
+                    <li>Decisions that require your judgment — your agent will research, analyze, and recommend. You make the call.</li>
+                </ul>
+            </div>
+
+            <div class="security-callout" style="margin-top: 0;">
+                <div class="lock-icon">💡</div>
+                <p>The most successful clients treat their agent like a brilliant new hire — one that needs good instructions at first, but gets faster and smarter about your business every single week.</p>
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 6: MISSION CONTROL -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Mission Control</div>
+            </div>
+
+            <div class="section-number">05 — MISSION CONTROL</div>
+            <h2>Your Business,<br><span class="accent">Live on One Screen.</span></h2>
+            <p class="section-intro">Your agent isn't just a chat assistant — it powers a live dashboard showing what matters most, updated in real time.</p>
+
+            <p style="color: #94a3b8; font-size: 14px; line-height: 1.7; margin-bottom: 28px;">
+                Mission Control is your command dashboard. It pulls together your pipeline, calendar, tasks, and business intelligence into one clean view — no more switching between apps to figure out where the day stands.
+            </p>
+
+            <div class="dashboard-sections">
+
+                <div class="dash-pill">
+                    <div class="dash-pill-icon">📈</div>
+                    <div class="dash-pill-label">Pipeline</div>
+                </div>
+
+                <div class="dash-pill">
+                    <div class="dash-pill-icon">📅</div>
+                    <div class="dash-pill-label">Calendar</div>
+                </div>
+
+                <div class="dash-pill">
+                    <div class="dash-pill-icon">🌤️</div>
+                    <div class="dash-pill-label">Weather</div>
+                </div>
+
+                <div class="dash-pill">
+                    <div class="dash-pill-icon">📰</div>
+                    <div class="dash-pill-label">News</div>
+                </div>
+
+                <div class="dash-pill">
+                    <div class="dash-pill-icon">✅</div>
+                    <div class="dash-pill-label">Tasks</div>
+                </div>
+
+            </div>
+
+            <p style="color: #94a3b8; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+                Your agent keeps it current. When a deal moves in your pipeline, the dashboard reflects it. When a meeting lands on your calendar, it shows up. Think of it as a living snapshot of your business — always open, always accurate.
+            </p>
+
+            <div class="screenshot-placeholder">
+                <p>📸 Your personalized Mission Control screenshot will be added here during onboarding.</p>
+            </div>
+
+            <div class="security-callout" style="margin-top: 24px; margin-bottom: 0;">
+                <div class="lock-icon">👋</div>
+                <p>We'll walk you through Mission Control and customize it to your business during your onboarding call. Come with questions — this is where most clients get excited.</p>
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 7: SECURITY & PRIVACY -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Security &amp; Privacy</div>
+            </div>
+
+            <div class="section-number">06 — SECURITY &amp; PRIVACY</div>
+            <h2>Your Data Stays<br><span class="accent">Yours. Always.</span></h2>
+            <p class="section-intro">We built this system with privacy as a first principle — not as an afterthought. Here's exactly how it works.</p>
+
+            <div class="security-grid">
+
+                <div class="security-card">
+                    <div class="security-card-icon">🖥️</div>
+                    <h3>Runs on your hardware</h3>
+                    <p>Your agent lives on a dedicated Mac Mini — in your office or home. It's not running on a shared server somewhere. It's yours.</p>
+                </div>
+
+                <div class="security-card">
+                    <div class="security-card-icon">🔒</div>
+                    <h3>Data stays local</h3>
+                    <p>Your business data never leaves your machine. We don't collect it, store it in the cloud, or have access to it unless you explicitly share it for support.</p>
+                </div>
+
+                <div class="security-card">
+                    <div class="security-card-icon">📲</div>
+                    <h3>Telegram authentication</h3>
+                    <p>Only messages from your authenticated Telegram account are treated as instructions. Someone else typing to your agent does nothing.</p>
+                </div>
+
+                <div class="security-card">
+                    <div class="security-card-icon">🛡️</div>
+                    <h3>Injection-resistant</h3>
+                    <p>Your agent is trained to recognize and reject prompt injection attempts — when external content tries to hijack it with fake instructions. It flags these and ignores them.</p>
+                </div>
+
+            </div>
+
+            <div class="trust-badge">
+                <div class="trust-badge-icon">🔐</div>
+                <p><strong>The bottom line:</strong> We don't see your data unless you explicitly share it with us for support. Your agent's intelligence is powered by AI models, but your business information lives on your machine, behind your door.</p>
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PAGE 8: NEED HELP -->
+    <!-- ============================================================ -->
+    <div class="page">
+        <div class="content-page">
+            <div class="page-header">
+                <div class="page-header-logo">SOLVEWORKS</div>
+                <div class="page-header-label">Support</div>
+            </div>
+
+            <div class="section-number">07 — SUPPORT</div>
+            <h2>We're Here<br><span class="accent">When You Need Us.</span></h2>
+            <p class="section-intro">Most questions answer themselves. But when they don't, we're easy to reach.</p>
+
+            <div class="help-cards">
+
+                <div class="help-card">
+                    <div class="help-card-icon">💬</div>
+                    <div class="help-card-content">
+                        <h3>Ask your agent first</h3>
+                        <p>Seriously — text your agent and describe the problem. It can often diagnose issues, find workarounds, and resolve things faster than any support ticket. Start here.</p>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-icon">👥</div>
+                    <div class="help-card-content">
+                        <h3>SolveWorks support via Telegram</h3>
+                        <p>You've been added to a dedicated Telegram group with your SolveWorks ops team. For anything your agent can't handle, post there. We respond the same business day.</p>
+                    </div>
+                </div>
+
+                <div class="help-card">
+                    <div class="help-card-icon">🌐</div>
+                    <div class="help-card-content">
+                        <h3>SolveWorks online</h3>
+                        <p>Documentation, updates, and more at <a href="https://solveworks.io">solveworks.io</a></p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="closing-message">
+                <p>Welcome to the team. This is just the beginning.</p>
+                <p class="sign-off">— The SolveWorks Team</p>
+                <p class="brand-sign-off">SOLVEWORKS · solveworks.io</p>
+            </div>
+        </div>
+        <div class="page-bar"></div>
+    </div>
+
+</body>
+</html>
