@@ -776,18 +776,35 @@ async function loadData(){
     fetch('../7cellars/data/cin7-inventory.json').then(r => r.json()).catch(() => ({ Products:[] }))
   ]);
 
-  const products = productsRaw.data.products.edges.map(e => ({
+  const shopifyProducts = productsRaw.data.products.edges.map(e => ({
     title: e.node.title,
     totalInventory: e.node.totalInventory,
     price: e.node.variants.edges[0]?.node.price || '0',
-    inventoryQuantity: e.node.variants.edges[0]?.node.inventoryQuantity || 0
+    inventoryQuantity: e.node.variants.edges[0]?.node.inventoryQuantity || 0,
+    source: 'shopify'
   }));
+  const cin7Inventory = cin7InventoryRaw?.Products || [];
+  const cin7Products = cin7Inventory.map(p => ({
+    title: p.Name || '',
+    totalInventory: 0,
+    price: String(p.PriceTier1 || p.AverageCost || 0),
+    inventoryQuantity: 0,
+    sku: p.SKU || '',
+    brand: p.Brand || '',
+    category: p.Category || '',
+    source: 'cin7'
+  }));
+  /* Merge: Shopify wins on duplicates (has live stock/pricing), Cin7 fills in the rest */
+  const shopifyTitles = new Set(shopifyProducts.map(p => normalize(p.title)));
+  const products = [
+    ...shopifyProducts,
+    ...cin7Products.filter(p => !shopifyTitles.has(normalize(p.title)))
+  ];
   const orders = ordersRaw.SaleList || [];
   const customers = await Promise.resolve(customersRaw);
   const tasks = await Promise.resolve(tasksRaw);
   const activity = await Promise.resolve(activityRaw);
   const shopifyOrders = (shopifyOrdersRaw?.data?.orders?.edges || []).map(edge => edge.node || edge);
-  const cin7Inventory = cin7InventoryRaw?.Products || [];
 
   const mergedCustomers = [...customers, ...state.extraCustomers.filter(extra => !customers.some(customer => normalize(customer.name) === normalize(extra.name)))].map(customer => ({
     ...customer,
@@ -1026,7 +1043,7 @@ function renderCatalog(){
   }));
 
   if(search){
-    products = products.filter(product => normalize(product.title).includes(search) || normalize(product.region).includes(search) || normalize(product.type).includes(search));
+    products = products.filter(product => normalize(product.title).includes(search) || normalize(product.region).includes(search) || normalize(product.type).includes(search) || normalize(product.brand || '').includes(search) || normalize(product.sku || '').includes(search));
   }
   if(type !== 'all'){
     products = products.filter(product => product.type === type || (type === 'red' && product.type === 'wine' && /rosso|red/.test(normalize(product.title))) || (type === 'white' && product.type === 'wine' && /white|bianco/.test(normalize(product.title))));
