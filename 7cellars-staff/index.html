@@ -316,8 +316,9 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .wine-type{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint)}
 .wine-title{font-size:18px;font-weight:700;line-height:1.35;margin:0}
 .wine-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text-soft);font-size:12px}
-.wine-price{font-size:32px;font-weight:800;color:var(--gold);line-height:1}
-.wine-card .btn{width:100%}
+.wine-notes{margin:0;font-size:13px;line-height:1.5;color:var(--text-soft)}
+.wine-price{font-size:26px;font-weight:800;color:var(--gold);line-height:1}
+.wine-card .btn-sm{white-space:nowrap}
 .stock-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
 .stock-fill{height:100%;border-radius:999px}
 .stock-fill.green{background:linear-gradient(90deg,#2f8f61,#65dba3)}
@@ -799,17 +800,24 @@ async function loadData(){
       if (tags.includes('3l') || tags.includes('magnum') || tags.includes('jeroboam')) return false;
       return true;
     })
-    .map(p => ({
-      title: p.Name || '',
-      totalInventory: 0,
-      price: String(p.PriceTier2 || p.AverageCost || 0),
-      retailPrice: String(p.PriceTier1 || 0),
-      inventoryQuantity: 0,
-      sku: p.SKU || '',
-      brand: p.Brand || '',
-      category: p.Category || '',
-      source: 'cin7'
-    }));
+    .map(p => {
+      // Strip HTML tags from description for tasting notes
+      const rawDesc = p.Description || '';
+      const cleanDesc = rawDesc.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      return {
+        title: p.Name || '',
+        totalInventory: 0,
+        price: String(p.PriceTier2 || p.AverageCost || 0),
+        retailPrice: String(p.PriceTier1 || 0),
+        inventoryQuantity: -1,
+        sku: p.SKU || '',
+        brand: p.Brand || '',
+        category: p.Category || '',
+        description: cleanDesc,
+        shortDescription: p.ShortDescription || '',
+        source: 'cin7'
+      };
+    });
   const orders = ordersRaw.SaleList || [];
   const customers = await Promise.resolve(customersRaw);
   const tasks = await Promise.resolve(tasksRaw);
@@ -895,9 +903,9 @@ function renderOverview(){
           <div class="sub">Based on Cin7 order history</div>
         </div>
         <div class="hero-stat">
-          <div class="label">Today Focus</div>
-          <div class="value">${lowStock}</div>
-          <div class="sub">Low-stock wines needing attention</div>
+          <div class="label">Catalog</div>
+          <div class="value">${skuCount}</div>
+          <div class="sub">Wines in wholesale catalog</div>
         </div>
       </div>
     </div>
@@ -918,10 +926,10 @@ function renderOverview(){
         <div class="value">${skuCount}</div>
         <div class="sub">Cin7 inventory — your wholesale catalog.</div>
       </div>
-      <div class="kpi-card alert">
-        <div class="label">Low Stock Alerts</div>
-        <div class="value">${lowStock}</div>
-        <div class="sub">Bottles at 24 units or fewer and still available.</div>
+      <div class="kpi-card">
+        <div class="label">Categories</div>
+        <div class="value">${new Set(state.data.products.map(p => p.category).filter(Boolean)).size}</div>
+        <div class="sub">Wine types in the portfolio.</div>
       </div>
     </div>
 
@@ -1010,27 +1018,25 @@ function renderOverview(){
       <article class="card">
         <div class="card-header">
           <div>
-            <h3>Need-to-Know Inventory</h3>
-            <p>Portfolio items reps should watch closely.</p>
+            <h3>Wine Portfolio</h3>
+            <p>Top selections from the wholesale catalog.</p>
           </div>
         </div>
         <div class="card-body list-clean">
-          ${state.data.products.filter(product => Number(product.inventoryQuantity) <= 24).slice(0,6).map(product => {
-            const quantity = Number(product.inventoryQuantity || product.totalInventory || 0);
-            const badge = getStockBadge(quantity);
+          ${state.data.products.slice(0,6).map(product => {
             return `
               <div class="list-item">
                 <div class="list-item-top">
                   <div>
                     <h4>${escapeHtml(product.title)}</h4>
-                    <p>${escapeHtml(parseRegion(product.title))} · ${capitalize(productType(product.title))}</p>
+                    <p>${escapeHtml(product.category || parseRegion(product.title))} · ${escapeHtml(product.brand || '')}</p>
                   </div>
-                  <span class="badge ${badge.cls}">${badge.label}</span>
+                  <strong class="gold">${currency(product.price)}</strong>
                 </div>
-                <p class="small">${quantity} units on hand · ${currency(product.price)}</p>
+                ${product.shortDescription ? `<p class="small muted">${escapeHtml(product.shortDescription.slice(0,100))}${product.shortDescription.length > 100 ? '…' : ''}</p>` : ''}
               </div>
             `;
-          }).join('') || emptyState('🍷','Inventory is healthy','No low stock wines right now — the floor is fully armed.')}
+          }).join('') || emptyState('🍷','No products loaded','Check Cin7 data connection.')}
         </div>
       </article>
     </div>
@@ -1051,14 +1057,14 @@ function renderCatalog(){
   }));
 
   if(search){
-    products = products.filter(product => normalize(product.title).includes(search) || normalize(product.region).includes(search) || normalize(product.type).includes(search) || normalize(product.brand || '').includes(search) || normalize(product.sku || '').includes(search));
+    products = products.filter(product => normalize(product.title).includes(search) || normalize(product.region).includes(search) || normalize(product.type).includes(search) || normalize(product.brand || '').includes(search) || normalize(product.sku || '').includes(search) || normalize(product.category || '').includes(search) || normalize(product.shortDescription || '').includes(search));
   }
   if(type !== 'all'){
     products = products.filter(product => product.type === type || (type === 'red' && product.type === 'wine' && /rosso|red/.test(normalize(product.title))) || (type === 'white' && product.type === 'wine' && /white|bianco/.test(normalize(product.title))));
   }
   products.sort((a,b) => {
     if(sort === 'price') return a.priceNumber - b.priceNumber;
-    if(sort === 'stock') return b.qty - a.qty;
+    if(sort === 'brand') return (a.brand || '').localeCompare(b.brand || '');
     return a.title.localeCompare(b.title);
   });
 
@@ -1077,7 +1083,7 @@ function renderCatalog(){
           <select id="catalogSortSelect" class="select">
             <option value="name" ${sort === 'name' ? 'selected' : ''}>Sort: Name</option>
             <option value="price" ${sort === 'price' ? 'selected' : ''}>Sort: Price</option>
-            <option value="stock" ${sort === 'stock' ? 'selected' : ''}>Sort: Stock Level</option>
+            <option value="brand" ${sort === 'brand' ? 'selected' : ''}>Sort: Brand</option>
           </select>
         </div>
         <div class="filter-pills" id="catalogTypePills">
@@ -1105,25 +1111,28 @@ function renderCatalog(){
 }
 
 function wineCard(product){
-  const badge = getStockBadge(product.qty);
-  const stockPercent = Math.max(6, Math.min(100, product.qty > 120 ? 100 : (product.qty / 120) * 100));
+  const desc = product.shortDescription || product.description || '';
+  const truncDesc = desc.length > 120 ? desc.slice(0, 120) + '…' : desc;
   return `
     <article class="wine-card">
       <div class="wine-head">
         <div>
-          <div class="wine-type">${escapeHtml(capitalize(product.type === 'wine' ? 'selection' : product.type))}</div>
+          <div class="wine-type">${escapeHtml(product.category || capitalize(product.type === 'wine' ? 'selection' : product.type))}</div>
           <h4 class="wine-title">${escapeHtml(product.title)}</h4>
         </div>
-        <span class="badge ${badge.cls}">${badge.label}</span>
       </div>
+      ${truncDesc ? `<p class="wine-notes">${escapeHtml(truncDesc)}</p>` : ''}
       <div class="wine-meta">
         <span>${escapeHtml(product.region)}</span>
-        <span>${product.qty} in stock</span>
+        ${product.brand ? `<span>${escapeHtml(product.brand)}</span>` : ''}
       </div>
-      <div class="wine-price">${currency(product.priceNumber)}</div>
-      <div class="muted small">Wholesale per bottle</div>
-      <div class="stock-meter"><div class="stock-fill ${badge.cls}" style="width:${stockPercent}%"></div></div>
-      <button class="btn btn-soft" type="button" data-add-product="${escapeHtml(product.title)}">Add to Order</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto">
+        <div>
+          <div class="wine-price">${currency(product.priceNumber)}</div>
+          <div class="muted small">Wholesale</div>
+        </div>
+        <button class="btn btn-sm" type="button" data-add-product="${escapeHtml(product.title)}">+ Order</button>
+      </div>
     </article>
   `;
 }
