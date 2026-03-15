@@ -39,7 +39,7 @@
   --max:1480px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;background:linear-gradient(180deg,#0D1B2A 0%,#09111a 100%);color:var(--text);font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100%;scroll-behavior:smooth}
+html,body{margin:0;padding:0;background:linear-gradient(180deg,#0D1B2A 0%,#09111a 100%);color:var(--text);font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100%;scroll-behavior:smooth;overscroll-behavior-y:contain}
 body{min-height:100vh}
 a{color:inherit}
 button,input,select{font:inherit}
@@ -1671,10 +1671,11 @@ function setupStaticButtons(){
   document.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
 }
 
+function getScrollTop(){ return Math.max(0, window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0); }
 function setupPullToRefresh(){
   let lastY = 0;
   window.addEventListener('touchstart', event => {
-    if(window.scrollY > 0) return;
+    if(getScrollTop() > 5) return;
     state.pull.startY = event.touches[0].clientY;
     state.pull.engaged = true;
     state.pull.ready = false;
@@ -1683,7 +1684,7 @@ function setupPullToRefresh(){
     if(!state.pull.engaged || state.refreshing) return;
     lastY = event.touches[0].clientY;
     const delta = lastY - state.pull.startY;
-    if(delta > 12 && window.scrollY <= 0){
+    if(delta > 12 && getScrollTop() <= 5){
       els.pullIndicator.classList.add('visible');
       state.pull.ready = delta > 82;
       els.pullIndicatorText.textContent = state.pull.ready ? 'Release to refresh' : 'Pull to refresh';
