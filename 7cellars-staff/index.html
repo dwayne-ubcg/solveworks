@@ -413,6 +413,11 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .btn-muted{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);color:var(--text-soft)}
 .kanban-toggle::after{content:"▾";float:right;font-size:14px;color:var(--text-faint);transition:transform .2s}
 .kanban-col[data-collapsed='true'] .kanban-toggle::after{transform:rotate(-90deg)}
+.kanban-tabs{display:none}
+.kanban-tab{padding:10px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--text-soft);font-size:14px;font-weight:600;white-space:nowrap}
+.kanban-tab.active{background:rgba(201,169,110,.14);border-color:rgba(201,169,110,.25);color:var(--gold)}
+.kanban-tab .tab-count{margin-left:6px;opacity:.7;font-weight:700}
+.kanban-swipe{display:none}
 
 .empty-state{
   text-align:center;
@@ -496,9 +501,11 @@ tr:hover td{background:rgba(201,169,110,.05)}
   .hero-banner{padding:20px;border-radius:24px}
   .hero-copy h2{font-size:24px}
   .hero-stats,.kpi-grid,.grid-3{grid-template-columns:1fr}
-  .kanban{grid-template-columns:1fr}
-  .kanban-col{padding:14px 16px}
-  .kanban-col[data-collapsed='true'] .kanban-body{display:none}
+  .kanban{display:none}
+  .kanban-tabs{display:flex;gap:8px;overflow-x:auto;padding:0 4px 12px;-webkit-overflow-scrolling:touch}
+  .kanban-swipe{display:block}
+  .kanban-swipe .kanban-body{display:grid;gap:12px}
+  .kanban-swipe .kanban-col{border:none;background:none;padding:0}
   .catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .card,.step-card{border-radius:22px}
   .table-wrap table{min-width:660px}
@@ -627,7 +634,8 @@ const state = {
     todo: true,
     progress: true,
     done: true
-  }
+  },
+  activeTaskColumn: 'todo'
 };
 
 const els = {
@@ -1571,22 +1579,66 @@ function renderCustomers(){
   els.panels.customers.querySelector('#customersSearchInput').addEventListener('input', event => { state.filters.customerSearch = event.target.value; renderCustomers(); });
 }
 
+function renderTaskCards(items, columnKey){
+  if(!items.length) return emptyState('🥂','No tasks here','Everything is clear in this lane.');
+  return items.map(task => {
+    const moveOptions = columnKey === 'todo'
+      ? `<button class="btn btn-sm" data-move-task="${escapeHtml(task.title)}" data-to="In Progress">→ In Progress</button>`
+      : columnKey === 'progress'
+      ? `<button class="btn btn-sm" data-move-task="${escapeHtml(task.title)}" data-to="Done">✓ Done</button><button class="btn btn-sm btn-muted" data-move-task="${escapeHtml(task.title)}" data-to="To Do">← To Do</button>`
+      : `<button class="btn btn-sm btn-muted" data-move-task="${escapeHtml(task.title)}" data-to="In Progress">← Reopen</button>`;
+    return `
+      <article class="kanban-task">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+          <h4>${escapeHtml(task.title)}</h4>
+          ${priorityBadge(task.priority)}
+        </div>
+        <p>${escapeHtml(task.description || 'No extra detail provided.')}</p>
+        <div class="kanban-meta">
+          <span class="badge blue">${escapeHtml(task.board || 'General')}</span>
+          <span class="badge green">${escapeHtml(task.assignee || 'Unassigned')}</span>
+          ${task.dueDate ? `<span class="badge yellow">Due ${escapeHtml(shortDate(task.dueDate))}</span>` : ''}
+        </div>
+        <div class="kanban-actions">${moveOptions}</div>
+      </article>
+    `;
+  }).join('');
+}
+
 function renderTasks(){
   const columns = [
     { key:'todo', title:'To Do', matcher: task => normalize(task.status) === 'todo' },
     { key:'progress', title:'In Progress', matcher: task => /progress|doing/.test(normalize(task.status)) },
     { key:'done', title:'Done', matcher: task => /done|complete/.test(normalize(task.status)) }
   ];
+  const activeCol = state.activeTaskColumn || 'todo';
+  const activeColumn = columns.find(c => c.key === activeCol) || columns[0];
+  const activeItems = state.data.tasks.filter(activeColumn.matcher);
+
   els.panels.tasks.innerHTML = `
     <div class="card">
       <div class="card-header">
         <div>
           <h3>Task Board</h3>
-          <p>Operational work, organized for quick scanning on the go.</p>
         </div>
         <span class="badge gold">${state.data.tasks.length} tasks</span>
       </div>
       <div class="card-body">
+        <!-- Mobile: Trello-style tabs -->
+        <div class="kanban-tabs">
+          ${columns.map(column => {
+            const count = state.data.tasks.filter(column.matcher).length;
+            return `<button class="kanban-tab ${column.key === activeCol ? 'active' : ''}" data-task-tab="${column.key}" type="button">${column.title}<span class="tab-count">${count}</span></button>`;
+          }).join('')}
+        </div>
+        <div class="kanban-swipe">
+          <div class="kanban-col">
+            <div class="kanban-body">
+              ${renderTaskCards(activeItems, activeCol)}
+            </div>
+          </div>
+        </div>
+        <!-- Desktop: 3-column kanban -->
         <div class="kanban">
           ${columns.map(column => {
             const items = state.data.tasks.filter(column.matcher);
@@ -1599,27 +1651,7 @@ function renderTasks(){
                   </div>
                 </button>
                 <div class="kanban-body">
-                ${items.length ? items.map(task => {
-                  const moveOptions = column.key === 'todo'
-                    ? `<button class="btn btn-sm" data-move-task="${escapeHtml(task.title)}" data-to="In Progress">→ In Progress</button>`
-                    : column.key === 'progress'
-                    ? `<button class="btn btn-sm" data-move-task="${escapeHtml(task.title)}" data-to="Done">✓ Done</button><button class="btn btn-sm btn-muted" data-move-task="${escapeHtml(task.title)}" data-to="To Do">← To Do</button>`
-                    : `<button class="btn btn-sm btn-muted" data-move-task="${escapeHtml(task.title)}" data-to="In Progress">← Reopen</button>`;
-                  return `
-                  <article class="kanban-task">
-                    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
-                      <h4>${escapeHtml(task.title)}</h4>
-                      ${priorityBadge(task.priority)}
-                    </div>
-                    <p>${escapeHtml(task.description || 'No extra detail provided.')}</p>
-                    <div class="kanban-meta">
-                      <span class="badge blue">${escapeHtml(task.board || 'General')}</span>
-                      <span class="badge green">${escapeHtml(task.assignee || 'Unassigned')}</span>
-                      ${task.dueDate ? `<span class="badge yellow">Due ${escapeHtml(shortDate(task.dueDate))}</span>` : ''}
-                    </div>
-                    <div class="kanban-actions">${moveOptions}</div>
-                  </article>
-                `}).join('') : emptyState('🥂',`No tasks in ${column.title.toLowerCase()}`,'Everything is clear in this lane right now.')}
+                  ${renderTaskCards(items, column.key)}
                 </div>
               </div>
             `;
@@ -1628,11 +1660,18 @@ function renderTasks(){
       </div>
     </div>
   `;
+  // Desktop: column toggle
   els.panels.tasks.querySelectorAll('[data-toggle-column]').forEach(button => button.addEventListener('click', () => {
     const key = button.dataset.toggleColumn;
     state.taskSections[key] = !state.taskSections[key];
     renderTasks();
   }));
+  // Mobile: tab switching
+  els.panels.tasks.querySelectorAll('[data-task-tab]').forEach(button => button.addEventListener('click', () => {
+    state.activeTaskColumn = button.dataset.taskTab;
+    renderTasks();
+  }));
+  // Move task buttons (both views)
   els.panels.tasks.querySelectorAll('[data-move-task]').forEach(button => button.addEventListener('click', () => {
     const title = button.dataset.moveTask;
     const toStatus = button.dataset.to;
