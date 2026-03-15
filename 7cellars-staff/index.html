@@ -812,10 +812,10 @@ async function loadData(){
   hydrateLocalState();
   const [cin7InventoryRaw, ordersRaw, customersRaw, tasksRaw, activityRaw, cin7StockRaw] = await Promise.all([
     fetch('../7cellars/data/cin7-inventory.json').then(r => r.json()).catch(() => ({ Products:[] })),
-    fetch('../7cellars/data/cin7-orders.json').then(r => r.json()),
-    fetch('../7cellars/data/customers.json').then(r => r.json()),
-    fetch('../7cellars/data/tasks.json').then(r => r.json()),
-    fetch('../7cellars/data/activity.json').then(r => r.json()),
+    fetch('../7cellars/data/cin7-orders.json').then(r => r.json()).catch(() => ({ SaleList:[] })),
+    fetch('../7cellars/data/customers.json').then(r => r.json()).catch(() => []),
+    fetch('../7cellars/data/tasks.json').then(r => r.json()).catch(() => []),
+    fetch('../7cellars/data/activity.json').then(r => r.json()).catch(() => []),
     fetch('../7cellars/data/cin7-stock.json').then(r => r.json()).catch(() => ({ stock:{} }))
   ]);
   const stockLookup = cin7StockRaw?.stock || {};
@@ -835,7 +835,7 @@ async function loadData(){
       const rawDesc = p.Description || '';
       const cleanDesc = rawDesc.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
       const sku = p.SKU || '';
-      const soh = stockLookup[sku] || stockLookup[product.Barcode] || stockLookup[product.SKU];
+      const soh = stockLookup[sku] || stockLookup[p.Barcode] || stockLookup[p.SKU];
       return {
         title: p.Name || '',
         totalInventory: soh ? soh.available : 0,
