@@ -3519,9 +3519,9 @@ function buildAgingData() {
       const isCarryover = effectiveDate < seasonStart;
       const rawDaysOld = Math.round((now - effectiveDate) / 86400000);
       const daysOld = Math.max(0, rawDaysOld - (CONFIG.rules.distribution_delay_days || 0)); // shipping buffer
-      // For aging buckets, use days since season start for carryover items
-      const agingDays = isCarryover ? Math.round((now - seasonStart) / 86400000) : daysOld;
-      const bucket = agingDays < 30 ? '0-30' : agingDays < 60 ? '30-60' : agingDays < 90 ? '60-90' : '90+';
+      // For aging buckets, carryover items always go to 90+ bucket
+      const agingDays = isCarryover ? Math.round((now - effectiveDate) / 86400000) : daysOld;
+      const bucket = isCarryover ? '90+' : (agingDays < 30 ? '0-30' : agingDays < 60 ? '30-60' : agingDays < 90 ? '60-90' : '90+');
       const costPerUnit = (style.revenue > 0 && (style.sold + style.remaining) > 0)
         ? (style.revenue / (style.sold + style.remaining)) * avgCostRatio
         : 30;
