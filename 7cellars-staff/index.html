@@ -316,7 +316,9 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .wine-type{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--text-faint)}
 .wine-title{font-size:18px;font-weight:700;line-height:1.35;margin:0}
 .wine-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text-soft);font-size:12px}
+.wine-notes-wrap{display:grid;gap:4px}
 .wine-notes{margin:0;font-size:13px;line-height:1.5;color:var(--text-soft)}
+.wine-notes-toggle{background:none;border:none;color:var(--gold);font-size:12px;font-weight:600;padding:0;cursor:pointer;text-align:left}
 .wine-price{font-size:26px;font-weight:800;color:var(--gold);line-height:1}
 .wine-card .btn-sm{white-space:nowrap}
 .stock-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
@@ -1115,15 +1117,28 @@ function renderCatalog(){
   root.querySelector('#catalogSortSelect').addEventListener('change', event => { state.filters.catalogSort = event.target.value; renderCatalog(); });
   root.querySelectorAll('[data-type]').forEach(button => button.addEventListener('click', () => { state.filters.catalogType = button.dataset.type; renderCatalog(); }));
   root.querySelectorAll('[data-add-product]').forEach(button => button.addEventListener('click', () => quickAddProduct(button.dataset.addProduct)));
+  root.querySelectorAll('[data-toggle-notes]').forEach(button => button.addEventListener('click', () => {
+    const card = document.getElementById(button.dataset.toggleNotes);
+    if(!card) return;
+    const short = card.querySelector('.wine-notes');
+    const full = card.querySelector('.wine-notes-full');
+    if(!full) return;
+    const showing = full.style.display !== 'none';
+    short.style.display = showing ? '' : 'none';
+    full.style.display = showing ? 'none' : '';
+    button.textContent = showing ? 'Show more' : 'Show less';
+  }));
 }
 
 function wineCard(product){
-  const desc = product.shortDescription || product.description || '';
-  const truncDesc = desc.length > 120 ? desc.slice(0, 120) + '…' : desc;
+  const short = product.shortDescription || '';
+  const full = product.description || '';
+  const hasMore = short && full && full.length > short.length;
   const badge = getStockBadge(product.qty);
   const stockPercent = Math.max(6, Math.min(100, product.qty > 120 ? 100 : (product.qty / 120) * 100));
+  const cardId = 'wc-' + (product.sku || '').replace(/[^a-zA-Z0-9]/g, '');
   return `
-    <article class="wine-card">
+    <article class="wine-card" id="${cardId}">
       <div class="wine-head">
         <div>
           <div class="wine-type">${escapeHtml(product.category || capitalize(product.type === 'wine' ? 'selection' : product.type))}</div>
@@ -1131,7 +1146,13 @@ function wineCard(product){
         </div>
         <span class="badge ${badge.cls}">${badge.label}</span>
       </div>
-      ${truncDesc ? `<p class="wine-notes">${escapeHtml(truncDesc)}</p>` : ''}
+      ${(short || full) ? `
+        <div class="wine-notes-wrap">
+          <p class="wine-notes">${escapeHtml(short || full)}</p>
+          ${hasMore ? `<p class="wine-notes wine-notes-full" style="display:none">${escapeHtml(full)}</p>
+          <button class="wine-notes-toggle" type="button" data-toggle-notes="${cardId}">Show more</button>` : ''}
+        </div>
+      ` : ''}
       <div class="wine-meta">
         <span>${escapeHtml(product.region)}</span>
         <span>${product.qty} avail</span>
