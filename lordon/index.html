@@ -381,6 +381,7 @@ input,select{font-family:inherit;font-size:13px}
 .alert-REPEAT_WORTHY{background:var(--green-lt);color:var(--green)}
 .alert-WATCH{background:var(--amber-lt);color:var(--amber)}
 .alert-NEW{background:var(--blue-lt);color:var(--blue)}
+.alert-CARRYOVER{background:#f3e8ff;color:#7c3aed}
 
 /* ── SIZE CURVES ── */
 .size-curve-grid{display:flex;flex-direction:column;gap:8px;padding:4px 0}
@@ -2969,13 +2970,14 @@ function alertBadgeHtml(alert) {
     REPEAT_WORTHY: ['alert-REPEAT_WORTHY', '🟢 Repeat Worthy'],
     WATCH: ['alert-WATCH', '🟡 Watch'],
     NEW: ['alert-NEW', '🔵 New'],
+    CARRYOVER: ['alert-CARRYOVER', '🟣 Carryover'],
   };
   const [cls, label] = map[alert] || ['badge-neutral', alert || '—'];
   return `<span class="badge ${cls}" style="font-size:10px">${label}</span>`;
 }
 
 function alertPriority(alert) {
-  return { REORDER_NOW: 0, REPEAT_WORTHY: 1, WATCH: 2, NEW: 3 }[alert] ?? 4;
+  return { REORDER_NOW: 0, REPEAT_WORTHY: 1, WATCH: 2, NEW: 3, CARRYOVER: 4 }[alert] ?? 5;
 }
 
 function renderSellThrough() {
@@ -3005,6 +3007,7 @@ function renderSellThrough() {
   const repeatWorthyCount = seasonStyles.filter(s => s.alert === 'REPEAT_WORTHY').length;
   const watchCount = seasonStyles.filter(s => s.alert === 'WATCH').length;
   const newCount = seasonStyles.filter(s => s.alert === 'NEW').length;
+  const carryoverCount = seasonStyles.filter(s => s.alert === 'CARRYOVER').length;
   const productsOnFloor = seasonStyles.length;
 
   const seasonLabel = stSeason === 'spring' ? "Spring '26" : stSeason === 'fall' ? "Fall '25" : 'All Current Floor';
@@ -3026,6 +3029,7 @@ function renderSellThrough() {
     { label: '🟢 Repeat Worthy', value: repeatWorthyCount, sub: '≥60% in ≤4w or ≥40% in ≤3w', color: 'var(--green)' },
     { label: '🟡 Watch', value: watchCount, sub: '≥25% sell-through', color: 'var(--amber)' },
     { label: '🔵 New (No Sales Yet)', value: newCount, sub: 'Too early to judge', color: 'var(--blue)' },
+    { label: '🟣 Carryover', value: carryoverCount, sub: 'Pre-season inventory', color: '#7c3aed' },
   ].map(k => `
     <div class="kpi-tile">
       <div class="kt-label">${k.label}</div>
@@ -3500,8 +3504,12 @@ function buildAgingData() {
   if (!STD || !STD.brands || !ST) return [];
   const now = new Date();
   const avgCostRatio = ST.summary.totalCOGS > 0 ? ST.summary.totalCOGS / ST.summary.totalRevenue : 0.45;
-  // Season start: Jan 1 of current year — cap floor dates to this for aging purposes
-  const seasonStart = new Date(now.getFullYear(), 0, 1);
+  // Season logic: Spring = Jan–Jun (carryover before Jan 1), Fall = Jul–Dec (carryover before Jul 1)
+  const currentMonth = now.getMonth();
+  const isSpring = currentMonth < 6;
+  const seasonStart = isSpring
+    ? new Date(now.getFullYear(), 0, 1)
+    : new Date(now.getFullYear(), 6, 1);
   const rows = [];
   for (const brand of STD.brands) {
     if (EXCLUDED_BRANDS.includes(brand.brand)) continue;

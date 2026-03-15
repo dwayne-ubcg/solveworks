@@ -181,8 +181,16 @@ function getSeasonKey(dateStr) {
   return m < 6 ? 'sp' + y : 'fa' + y;
 }
 
-// ─── Season start: only include styles arriving this season ────────────────────
-const SEASON_START = new Date(new Date().getFullYear(), 0, 1); // Jan 1 current year
+// ─── Season logic ──────────────────────────────────────────────────────────────
+// Spring = Jan–Jun (carryover = arrived before Jan 1)
+// Fall   = Jul–Dec (carryover = arrived before Jul 1)
+const NOW = new Date();
+const CURRENT_MONTH = NOW.getMonth(); // 0-indexed
+const IS_SPRING = CURRENT_MONTH < 6;
+const SEASON_START = IS_SPRING
+  ? new Date(NOW.getFullYear(), 0, 1)   // Jan 1
+  : new Date(NOW.getFullYear(), 6, 1);  // Jul 1
+const SEASON_LABEL = IS_SPRING ? 'Spring' : 'Fall';
 
 // ─── Size integrity check ─────────────────────────────────────────────────────
 // Returns true if sales are spread across sizes (not a single-size oddity)
@@ -397,8 +405,8 @@ async function main() {
     let brandSold = 0, brandRemaining = 0, brandRevenue = 0;
 
     for (const [styleName, styleData] of Object.entries(styles)) {
-      // Season filter: skip styles that arrived before current season
-      if (new Date(styleData.floorDate) < SEASON_START) continue;
+      // Season filter: mark carryover but keep them in the data
+      const isCarryover = new Date(styleData.floorDate) < SEASON_START;
 
       const weeks = weeksOnFloor(styleData.floorDate);
 
@@ -424,7 +432,8 @@ async function main() {
         ? Math.round((totalRemaining / vel) * 10) / 10
         : (totalRemaining > 0 ? 99 : 0);
 
-      const alert = calcAlert(totalSold, totalRemaining, sellThrough, wos, weeks, skuList);
+      // Carryover items get their own alert; current-season items use normal logic
+      const alert = isCarryover ? 'CARRYOVER' : calcAlert(totalSold, totalRemaining, sellThrough, wos, weeks, skuList);
 
       // Aggregate per-season sold counts across all products for this style
       const seasonSold = {};
@@ -446,6 +455,7 @@ async function main() {
         vel:         parseFloat(vel.toFixed(2)),
         wos:         wos,
         alert:       alert,
+        carryover:   isCarryover,
         skus:        skuList,
         seasonSold:  seasonSold,
       });
@@ -456,7 +466,7 @@ async function main() {
     }
 
     // Sort styles: REORDER_NOW first, then by revenue desc
-    const alertOrder = { REORDER_NOW: 0, REPEAT_WORTHY: 1, WATCH: 2, OK: 3, NEW: 4 };
+    const alertOrder = { REORDER_NOW: 0, REPEAT_WORTHY: 1, WATCH: 2, OK: 3, NEW: 4, CARRYOVER: 5 };
     brandEntry.styles.sort((a, b) => {
       const ao = alertOrder[a.alert] ?? 5;
       const bo = alertOrder[b.alert] ?? 5;
@@ -478,21 +488,25 @@ async function main() {
   output.sort((a, b) => b.revenue - a.revenue);
 
   // ── Step 6: Summary counts ─────────────────────────────────────────────────
-  let totalStyles = 0, reorderNow = 0, repeatWorthy = 0;
+  let totalStyles = 0, reorderNow = 0, repeatWorthy = 0, carryoverCount = 0;
   for (const b of output) {
     for (const s of b.styles) {
       totalStyles++;
       if (s.alert === 'REORDER_NOW')   reorderNow++;
       if (s.alert === 'REPEAT_WORTHY') repeatWorthy++;
+      if (s.alert === 'CARRYOVER')     carryoverCount++;
     }
   }
 
   const result = {
     generatedAt:  today.toISOString(),
+    season:       SEASON_LABEL,
+    seasonStart:  SEASON_START.toISOString().slice(0, 10),
     totalBrands:  output.length,
     totalStyles:  totalStyles,
     reorderNow:   reorderNow,
     repeatWorthy: repeatWorthy,
+    carryover:    carryoverCount,
     brands:       output,
   };
 
@@ -500,10 +514,12 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(result, null, 2));
 
   console.log('\n═══ Done ═══');
+  console.log(`Season:        ${SEASON_LABEL} (starts ${SEASON_START.toISOString().slice(0, 10)})`);
   console.log(`Brands:        ${output.length}`);
-  console.log(`Styles:        ${totalStyles}`);
+  console.log(`Styles:        ${totalStyles} (${totalStyles - carryoverCount} current + ${carryoverCount} carryover)`);
   console.log(`REORDER_NOW:   ${reorderNow}`);
   console.log(`REPEAT_WORTHY: ${repeatWorthy}`);
+  console.log(`CARRYOVER:     ${carryoverCount}`);
   console.log(`Output:        ${outPath}`);
 }
 
