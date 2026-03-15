@@ -591,7 +591,7 @@ const state = {
     customers: [],
     tasks: [],
     activity: [],
-    shopifyOrders: [],
+
     cin7Inventory: []
   },
   pendingOrders: [],
@@ -766,25 +766,16 @@ function persistDraftSale(){
 async function loadData(){
   state.loading = true;
   hydrateLocalState();
-  const [productsRaw, ordersRaw, customersRaw, tasksRaw, activityRaw, shopifyOrdersRaw, cin7InventoryRaw] = await Promise.all([
-    fetch('../7cellars/data/shopify-inventory.json').then(r => r.json()),
+  const [cin7InventoryRaw, ordersRaw, customersRaw, tasksRaw, activityRaw] = await Promise.all([
+    fetch('../7cellars/data/cin7-inventory.json').then(r => r.json()).catch(() => ({ Products:[] })),
     fetch('../7cellars/data/cin7-orders.json').then(r => r.json()),
     fetch('../7cellars/data/customers.json').then(r => r.json()),
     fetch('../7cellars/data/tasks.json').then(r => r.json()),
-    fetch('../7cellars/data/activity.json').then(r => r.json()),
-    fetch('../7cellars/data/shopify-orders.json').then(r => r.json()).catch(() => ({ data:{ orders:{ edges:[] } } })),
-    fetch('../7cellars/data/cin7-inventory.json').then(r => r.json()).catch(() => ({ Products:[] }))
+    fetch('../7cellars/data/activity.json').then(r => r.json())
   ]);
 
-  const shopifyProducts = productsRaw.data.products.edges.map(e => ({
-    title: e.node.title,
-    totalInventory: e.node.totalInventory,
-    price: e.node.variants.edges[0]?.node.price || '0',
-    inventoryQuantity: e.node.variants.edges[0]?.node.inventoryQuantity || 0,
-    source: 'shopify'
-  }));
   const cin7Inventory = cin7InventoryRaw?.Products || [];
-  const cin7Products = cin7Inventory.map(p => ({
+  const products = cin7Inventory.map(p => ({
     title: p.Name || '',
     totalInventory: 0,
     price: String(p.PriceTier1 || p.AverageCost || 0),
@@ -794,17 +785,10 @@ async function loadData(){
     category: p.Category || '',
     source: 'cin7'
   }));
-  /* Merge: Shopify wins on duplicates (has live stock/pricing), Cin7 fills in the rest */
-  const shopifyTitles = new Set(shopifyProducts.map(p => normalize(p.title)));
-  const products = [
-    ...shopifyProducts,
-    ...cin7Products.filter(p => !shopifyTitles.has(normalize(p.title)))
-  ];
   const orders = ordersRaw.SaleList || [];
   const customers = await Promise.resolve(customersRaw);
   const tasks = await Promise.resolve(tasksRaw);
   const activity = await Promise.resolve(activityRaw);
-  const shopifyOrders = (shopifyOrdersRaw?.data?.orders?.edges || []).map(edge => edge.node || edge);
 
   const mergedCustomers = [...customers, ...state.extraCustomers.filter(extra => !customers.some(customer => normalize(customer.name) === normalize(extra.name)))].map(customer => ({
     ...customer,
@@ -820,7 +804,6 @@ async function loadData(){
     customers: mergedCustomers,
     tasks: Array.isArray(tasks) ? tasks : [],
     activity: Array.isArray(activity) ? activity : [],
-    shopifyOrders,
     cin7Inventory
   };
   state.loading = false;
@@ -908,7 +891,7 @@ function renderOverview(){
       <div class="kpi-card">
         <div class="label">Active SKUs</div>
         <div class="value">${skuCount}</div>
-        <div class="sub">Live Shopify catalog used as the sales bible.</div>
+        <div class="sub">Cin7 inventory — your wholesale catalog.</div>
       </div>
       <div class="kpi-card alert">
         <div class="label">Low Stock Alerts</div>
