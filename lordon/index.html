@@ -3057,10 +3057,12 @@ function renderSellThrough() {
     const avgWOS = activeStyles.length > 0
       ? activeStyles.reduce((s, x) => s + (x.wos || 0), 0) / activeStyles.length
       : null;
-    // Worst alert (lowest priority number)
-    const worstAlert = styles.reduce((best, s) => {
+    // Best alert (lowest priority number = most urgent)
+    // If ALL styles are carryover, brand alert = CARRYOVER (not NEW)
+    const allCarryover = styles.every(s => s.alert === 'CARRYOVER');
+    const worstAlert = allCarryover ? 'CARRYOVER' : styles.reduce((best, s) => {
       return alertPriority(s.alert) < alertPriority(best) ? s.alert : best;
-    }, 'NEW');
+    }, 'CARRYOVER'); // start from least urgent so any real alert wins
     return { brand, styles, sold, remaining, revenue, st, avgWOS, worstAlert };
   }).sort((a, b) => b.revenue - a.revenue);
 
