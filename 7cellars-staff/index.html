@@ -366,6 +366,8 @@ tr:hover td{background:rgba(201,169,110,.05)}
   background:rgba(255,255,255,.04);color:var(--text);font-size:26px;display:inline-flex;align-items:center;justify-content:center;
 }
 .qty-value{min-width:64px;text-align:center;font-weight:800;font-size:24px}
+.qty-input{width:80px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:var(--text);padding:8px 4px;-moz-appearance:textfield}
+.qty-input::-webkit-outer-spin-button,.qty-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .sale-summary{position:sticky;top:136px}
 .summary-totals{display:grid;gap:12px}
 .total-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:15px}
@@ -1193,7 +1195,7 @@ function renderNewSale(){
                       </div>
                       <div class="qty-controls">
                         <button class="qty-btn" type="button" data-change-qty="${escapeHtml(item.title)}" data-delta="-1">−</button>
-                        <div class="qty-value">${item.quantity}</div>
+                        <input type="number" class="qty-value qty-input" value="${item.quantity}" min="1" data-set-qty="${escapeHtml(item.title)}" inputmode="numeric" pattern="[0-9]*">
                         <button class="qty-btn" type="button" data-change-qty="${escapeHtml(item.title)}" data-delta="1">+</button>
                         <span class="muted small">Subtotal ${currency(lineItemTotal(item))}</span>
                       </div>
@@ -1266,6 +1268,10 @@ function renderNewSale(){
   }); }
   root.querySelectorAll('[data-sale-add-product]').forEach(button => button.addEventListener('click', () => addProductToDraft(button.dataset.saleAddProduct)));
   root.querySelectorAll('[data-change-qty]').forEach(button => button.addEventListener('click', () => changeDraftQuantity(button.dataset.changeQty, Number(button.dataset.delta))));
+  root.querySelectorAll('[data-set-qty]').forEach(input => {
+    input.addEventListener('change', event => setDraftQuantity(event.target.dataset.setQty, Number(event.target.value)));
+    input.addEventListener('blur', event => setDraftQuantity(event.target.dataset.setQty, Number(event.target.value)));
+  });
   root.querySelectorAll('[data-line-price]').forEach(input => input.addEventListener('input', event => updateDraftPrice(event.target.dataset.linePrice, event.target.value)));
   root.querySelectorAll('[data-remove-line]').forEach(button => button.addEventListener('click', () => removeDraftLine(button.dataset.removeLine)));
   const submitButton = root.querySelector('#submitOrderButton');
@@ -1340,6 +1346,14 @@ function changeDraftQuantity(title, delta){
   const item = state.draftSale.items.find(line => line.title === title);
   if(!item) return;
   item.quantity = Math.max(1, Number(item.quantity || 1) + delta);
+  state.draftSale.confirmation = null;
+  persistDraftSale();
+  renderNewSale();
+}
+function setDraftQuantity(title, qty){
+  const item = state.draftSale.items.find(line => line.title === title);
+  if(!item) return;
+  item.quantity = Math.max(1, Math.round(qty) || 1);
   state.draftSale.confirmation = null;
   persistDraftSale();
   renderNewSale();
