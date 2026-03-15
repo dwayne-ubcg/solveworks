@@ -1246,21 +1246,31 @@ function renderNewSale(){
                 </div>
               </form>
             ` : `
+            ${draft.customer ? `
+            <div class="selectable-item active">
+              <div class="selectable-main">
+                <h4>${escapeHtml(draft.customer.name)}</h4>
+                <p>Last order ${escapeHtml(shortDate(draft.customer.lastOrderDate))} · ${draft.customer.orderCount || 0} orders · ${currency(draft.customer.totalRevenue || 0)}</p>
+              </div>
+              <button class="btn btn-ghost" type="button" id="changeCustomerButton">Change</button>
+            </div>
+            ` : `
             <div class="toolbar">
               <div class="search"><input id="saleCustomerSearchInput" type="search" placeholder="Search wholesale account" value="${escapeHtml(state.filters.newSaleCustomerSearch)}"></div>
               <button class="btn btn-ghost" type="button" id="requestCustomerButton">＋ Request New Account</button>
             </div>
             <div class="selectable-list">
               ${visibleCustomers.length ? visibleCustomers.map(customer => `
-                <div class="selectable-item ${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'active' : ''}">
+                <div class="selectable-item">
                   <div class="selectable-main">
                     <h4>${escapeHtml(customer.name)}</h4>
                     <p>Last order ${escapeHtml(shortDate(customer.lastOrderDate))} · ${customer.orderCount || 0} orders · ${currency(customer.totalRevenue || 0)}</p>
                   </div>
-                  <button class="btn ${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'btn-soft' : 'btn-ghost'}" type="button" data-select-customer="${escapeHtml(customer.name)}">${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'Selected' : 'Choose'}</button>
+                  <button class="btn btn-ghost" type="button" data-select-customer="${escapeHtml(customer.name)}">Choose</button>
                 </div>
               `).join('') : emptyState('🥂','No customer found','Try another search or request a new account.')}
             </div>
+            `}
             `}
           </div>
         </article>
@@ -1367,11 +1377,14 @@ function renderNewSale(){
   `;
 
   const root = els.panels['new-sale'];
-  root.querySelector('#saleCustomerSearchInput').addEventListener('input', event => {
+  const custSearchInput = root.querySelector('#saleCustomerSearchInput');
+  if(custSearchInput) custSearchInput.addEventListener('input', event => {
     state.filters.newSaleCustomerSearch = event.target.value;
     renderNewSale();
     refocusInput('saleCustomerSearchInput', event.target.selectionStart ?? event.target.value.length);
   });
+  const changeBtn = root.querySelector('#changeCustomerButton');
+  if(changeBtn) changeBtn.addEventListener('click', () => { state.draft.customer = null; renderNewSale(); });
   const reqBtn = root.querySelector('#requestCustomerButton');
   if(reqBtn) reqBtn.addEventListener('click', requestNewCustomer);
   const submitReqBtn = root.querySelector('#submitCustomerRequest');
