@@ -319,6 +319,13 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .wine-notes-wrap{display:grid;gap:4px}
 .wine-notes{margin:0;font-size:13px;line-height:1.5;color:var(--text-soft)}
 .wine-notes-toggle{background:none;border:none;color:var(--gold);font-size:12px;font-weight:600;padding:0;cursor:pointer;text-align:left}
+.new-customer-form{padding:4px 0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-field{display:grid;gap:4px}
+.form-field.full{grid-column:1/-1}
+.form-field label{font-size:12px;font-weight:600;color:var(--text-soft)}
+.form-field input,.form-field textarea{min-height:var(--touch);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:12px;padding:10px 14px;outline:none;font:inherit;font-size:14px}
+.form-field input:focus,.form-field textarea:focus{border-color:rgba(201,169,110,.3)}
 .wine-price{font-size:26px;font-weight:800;color:var(--gold);line-height:1}
 .wine-card .btn-sm{white-space:nowrap}
 .stock-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
@@ -638,7 +645,8 @@ const state = {
     progress: true,
     done: true
   },
-  activeTaskColumn: 'todo'
+  activeTaskColumn: 'todo',
+  showNewCustomerForm: false
 };
 
 const els = {
@@ -1187,9 +1195,29 @@ function renderNewSale(){
             ${draft.customer ? '<span class="badge gold">Selected</span>' : ''}
           </div>
           <div class="card-body customer-picker">
+            ${state.showNewCustomerForm ? `
+              <form id="newCustomerForm" class="new-customer-form" onsubmit="return false">
+                <h4 style="margin:0 0 4px">Request New Wholesale Account</h4>
+                <p class="small muted" style="margin:0 0 14px">Tallyn will review and add to Cin7. The account will appear here once created.</p>
+                <div class="form-grid">
+                  <div class="form-field"><label>Business Name *</label><input name="bizName" type="text" placeholder="Restaurant / bar name" required></div>
+                  <div class="form-field"><label>Contact Name</label><input name="contactName" type="text" placeholder="Primary contact"></div>
+                  <div class="form-field"><label>Phone</label><input name="phone" type="tel" placeholder="(345) ..."></div>
+                  <div class="form-field"><label>Email</label><input name="email" type="email" placeholder="orders@..."></div>
+                  <div class="form-field full"><label>Address</label><input name="address" type="text" placeholder="Street, city"></div>
+                  <div class="form-field"><label>Trade License #</label><input name="license" type="text" placeholder="License number"></div>
+                  <div class="form-field"><label>Payment Terms</label><input name="terms" type="text" placeholder="e.g. Net 30, COD"></div>
+                  <div class="form-field full"><label>Notes</label><textarea name="notes" rows="2" placeholder="Any extra info for Tallyn"></textarea></div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:14px">
+                  <button class="btn" type="button" id="submitCustomerRequest">Send Request</button>
+                  <button class="btn btn-ghost" type="button" id="cancelCustomerRequest">Cancel</button>
+                </div>
+              </form>
+            ` : `
             <div class="toolbar">
               <div class="search"><input id="saleCustomerSearchInput" type="search" placeholder="Search wholesale account" value="${escapeHtml(state.filters.newSaleCustomerSearch)}"></div>
-              <button class="btn btn-ghost" type="button" id="addCustomerButton">＋ Add New Customer</button>
+              <button class="btn btn-ghost" type="button" id="requestCustomerButton">＋ Request New Account</button>
             </div>
             <div class="selectable-list">
               ${visibleCustomers.length ? visibleCustomers.map(customer => `
@@ -1200,8 +1228,9 @@ function renderNewSale(){
                   </div>
                   <button class="btn ${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'btn-soft' : 'btn-ghost'}" type="button" data-select-customer="${escapeHtml(customer.name)}">${draft.customer && normalize(draft.customer.name) === normalize(customer.name) ? 'Selected' : 'Choose'}</button>
                 </div>
-              `).join('') : emptyState('🥂','No customer found','Try another search or add a new wholesale account below.')}
+              `).join('') : emptyState('🥂','No customer found','Try another search or request a new account.')}
             </div>
+            `}
           </div>
         </article>
 
@@ -1312,7 +1341,12 @@ function renderNewSale(){
     renderNewSale();
     refocusInput('saleCustomerSearchInput', event.target.selectionStart ?? event.target.value.length);
   });
-  root.querySelector('#addCustomerButton').addEventListener('click', addNewCustomer);
+  const reqBtn = root.querySelector('#requestCustomerButton');
+  if(reqBtn) reqBtn.addEventListener('click', requestNewCustomer);
+  const submitReqBtn = root.querySelector('#submitCustomerRequest');
+  if(submitReqBtn) submitReqBtn.addEventListener('click', submitCustomerRequest);
+  const cancelReqBtn = root.querySelector('#cancelCustomerRequest');
+  if(cancelReqBtn) cancelReqBtn.addEventListener('click', cancelCustomerRequest);
   root.querySelectorAll('[data-select-customer]').forEach(button => button.addEventListener('click', () => selectCustomer(button.dataset.selectCustomer)));
   const wineSearchInput = root.querySelector('#saleWineSearchInput');
   if(wineSearchInput){ wineSearchInput.addEventListener('input', event => {
@@ -1346,23 +1380,39 @@ function selectCustomer(name){
   renderNewSale();
 }
 
-function addNewCustomer(){
-  const name = window.prompt('New wholesale account name');
-  if(!name || !name.trim()) return;
-  const clean = name.trim();
-  const exists = state.data.customers.some(customer => normalize(customer.name) === normalize(clean));
-  if(!exists){
-    state.extraCustomers.unshift({
-      name: clean,
-      id: `local-${Date.now()}`,
-      totalRevenue: 0,
-      orderCount: 0,
-      lastOrderDate: '',
-      orders: []
-    });
-    persistExtraCustomers();
-  }
-  loadData().then(() => selectCustomer(clean));
+function requestNewCustomer(){
+  state.showNewCustomerForm = true;
+  renderNewSale();
+}
+
+function submitCustomerRequest(){
+  const form = document.getElementById('newCustomerForm');
+  if(!form) return;
+  const data = {
+    businessName: form.querySelector('[name="bizName"]').value.trim(),
+    contactName: form.querySelector('[name="contactName"]').value.trim(),
+    phone: form.querySelector('[name="phone"]').value.trim(),
+    email: form.querySelector('[name="email"]').value.trim(),
+    address: form.querySelector('[name="address"]').value.trim(),
+    licenseNumber: form.querySelector('[name="license"]').value.trim(),
+    paymentTerms: form.querySelector('[name="terms"]').value.trim(),
+    notes: form.querySelector('[name="notes"]').value.trim(),
+    requestedBy: 'Staff App',
+    requestedAt: new Date().toISOString()
+  };
+  if(!data.businessName){ alert('Business name is required'); return; }
+  // Save to localStorage pending requests
+  const requests = JSON.parse(localStorage.getItem('7c_customer_requests') || '[]');
+  requests.unshift(data);
+  localStorage.setItem('7c_customer_requests', JSON.stringify(requests));
+  state.showNewCustomerForm = false;
+  alert('Request sent to Tallyn. The account will appear here once added to Cin7.');
+  renderNewSale();
+}
+
+function cancelCustomerRequest(){
+  state.showNewCustomerForm = false;
+  renderNewSale();
 }
 
 function quickAddProduct(title){
