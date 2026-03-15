@@ -660,6 +660,7 @@ const state = {
     done: true
   },
   activeTaskColumn: 'todo',
+  taskAssigneeFilter: '',
   showNewCustomerForm: false,
   showCustomerRequestForm: false,
   lastCustomerRequest: null,
@@ -1886,6 +1887,9 @@ function renderTaskCards(items, columnKey){
 }
 
 function renderTasks(){
+  const assignees = [...new Set(state.data.tasks.map(t => t.assignee || 'Unassigned'))].sort();
+  const af = state.taskAssigneeFilter;
+  const filteredTasks = af ? state.data.tasks.filter(t => (t.assignee || 'Unassigned') === af) : state.data.tasks;
   const columns = [
     { key:'todo', title:'To Do', matcher: task => normalize(task.status) === 'todo' },
     { key:'progress', title:'In Progress', matcher: task => /progress|doing/.test(normalize(task.status)) },
@@ -1893,7 +1897,7 @@ function renderTasks(){
   ];
   const activeCol = state.activeTaskColumn || 'todo';
   const activeColumn = columns.find(c => c.key === activeCol) || columns[0];
-  const activeItems = state.data.tasks.filter(activeColumn.matcher);
+  const activeItems = filteredTasks.filter(activeColumn.matcher);
 
   els.panels.tasks.innerHTML = `
     <div class="card">
@@ -1901,13 +1905,17 @@ function renderTasks(){
         <div>
           <h3>Task Board</h3>
         </div>
-        <span class="badge gold">${state.data.tasks.length} tasks</span>
+        <span class="badge gold">${filteredTasks.length} tasks</span>
       </div>
       <div class="card-body">
+        <div class="filter-pills" style="margin-bottom:14px">
+          <button class="pill ${!af ? 'active' : ''}" type="button" data-assignee-filter="">Everyone</button>
+          ${assignees.map(a => `<button class="pill ${af === a ? 'active' : ''}" type="button" data-assignee-filter="${escapeHtml(a)}">${escapeHtml(a)}</button>`).join('')}
+        </div>
         <!-- Mobile: Trello-style tabs -->
         <div class="kanban-tabs">
           ${columns.map(column => {
-            const count = state.data.tasks.filter(column.matcher).length;
+            const count = filteredTasks.filter(column.matcher).length;
             return `<button class="kanban-tab ${column.key === activeCol ? 'active' : ''}" data-task-tab="${column.key}" type="button">${column.title}<span class="tab-count">${count}</span></button>`;
           }).join('')}
         </div>
@@ -1921,7 +1929,7 @@ function renderTasks(){
         <!-- Desktop: 3-column kanban -->
         <div class="kanban">
           ${columns.map(column => {
-            const items = state.data.tasks.filter(column.matcher);
+            const items = filteredTasks.filter(column.matcher);
             return `
               <div class="kanban-col" data-column="${column.key}" data-collapsed="${state.taskSections[column.key] ? 'false' : 'true'}">
                 <button class="kanban-toggle" type="button" data-toggle-column="${column.key}" aria-expanded="${state.taskSections[column.key] ? 'true' : 'false'}">
@@ -1940,6 +1948,11 @@ function renderTasks(){
       </div>
     </div>
   `;
+  // Assignee filter
+  els.panels.tasks.querySelectorAll('[data-assignee-filter]').forEach(button => button.addEventListener('click', () => {
+    state.taskAssigneeFilter = button.dataset.assigneeFilter;
+    renderTasks();
+  }));
   // Desktop: column toggle
   els.panels.tasks.querySelectorAll('[data-toggle-column]').forEach(button => button.addEventListener('click', () => {
     const key = button.dataset.toggleColumn;
