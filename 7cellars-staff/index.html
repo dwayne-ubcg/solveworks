@@ -326,6 +326,9 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .form-field label{font-size:12px;font-weight:600;color:var(--text-soft)}
 .form-field input,.form-field textarea{min-height:var(--touch);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text);border-radius:12px;padding:10px 14px;outline:none;font:inherit;font-size:14px}
 .form-field input:focus,.form-field textarea:focus{border-color:rgba(201,169,110,.3)}
+.send-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn-send-wa{background:rgba(37,211,102,.15);border-color:rgba(37,211,102,.3);color:#25d366}
+.btn-send-email{background:rgba(66,133,244,.12);border-color:rgba(66,133,244,.25);color:#4285f4}
 .wine-price{font-size:26px;font-weight:800;color:var(--gold);line-height:1}
 .wine-card .btn-sm{white-space:nowrap}
 .stock-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
@@ -647,7 +650,9 @@ const state = {
   },
   activeTaskColumn: 'todo',
   showNewCustomerForm: false,
-  showCustomerRequestForm: false
+  showCustomerRequestForm: false,
+  lastCustomerRequest: null,
+  lastCustTabRequest: null
 };
 
 const els = {
@@ -1190,6 +1195,20 @@ function renderNewSale(){
   els.panels['new-sale'].innerHTML = `
     <div class="sale-layout">
       <div class="sale-flow">
+        ${state.lastCustomerRequest ? `
+        <div class="card" style="border-color:rgba(47,143,97,.3);background:rgba(47,143,97,.06)">
+          <div class="card-body" style="text-align:center">
+            <div style="font-size:40px;margin-bottom:8px">✅</div>
+            <h3 style="margin:0 0 4px">Account request saved</h3>
+            <p class="muted" style="margin:0 0 14px">${escapeHtml(state.lastCustomerRequest.businessName)} — send to Tallyn for Cin7 entry:</p>
+            <div class="send-buttons">
+              <button class="btn btn-send-wa" type="button" data-send-custreq-wa>💬 WhatsApp</button>
+              <button class="btn btn-send-email" type="button" data-send-custreq-email>📧 Email</button>
+            </div>
+            <button class="btn btn-ghost" type="button" id="dismissReqConfirm" style="margin-top:10px">Dismiss</button>
+          </div>
+        </div>
+        ` : ''}
         <article class="card step-card">
           <div class="step-head">
             <div class="step-title-wrap"><span class="step-no">1</span><div><h3>Pick Customer</h3><div class="small muted">Search accounts or add a new one on the fly.</div></div></div>
@@ -1369,6 +1388,22 @@ function renderNewSale(){
   if(clearButton) clearButton.addEventListener('click', clearDraftSale);
   root.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
   root.querySelectorAll('[data-go-orders]').forEach(button => button.addEventListener('click', () => setActiveTab('orders')));
+  root.querySelectorAll('[data-send-order-wa]').forEach(button => button.addEventListener('click', () => {
+    const order = state.pendingOrders.find(o => o.id === button.dataset.sendOrderWa) || state.draftSale.confirmation;
+    if(order) sendToTallyn('whatsapp', formatOrderText(order));
+  }));
+  root.querySelectorAll('[data-send-order-email]').forEach(button => button.addEventListener('click', () => {
+    const order = state.pendingOrders.find(o => o.id === button.dataset.sendOrderEmail) || state.draftSale.confirmation;
+    if(order) sendToTallyn('email', formatOrderText(order));
+  }));
+  root.querySelectorAll('[data-send-custreq-wa]').forEach(button => button.addEventListener('click', () => {
+    if(state.lastCustomerRequest) sendToTallyn('whatsapp', formatCustomerRequestText(state.lastCustomerRequest));
+  }));
+  root.querySelectorAll('[data-send-custreq-email]').forEach(button => button.addEventListener('click', () => {
+    if(state.lastCustomerRequest) sendToTallyn('email', formatCustomerRequestText(state.lastCustomerRequest));
+  }));
+  const dismissReqConfirm = root.querySelector('#dismissReqConfirm');
+  if(dismissReqConfirm) dismissReqConfirm.addEventListener('click', () => { state.lastCustomerRequest = null; renderNewSale(); });
 }
 
 function selectCustomer(name){
@@ -1384,6 +1419,31 @@ function selectCustomer(name){
 function requestNewCustomer(){
   state.showNewCustomerForm = true;
   renderNewSale();
+}
+
+function formatCustomerRequestText(data){
+  let msg = `🆕 New Wholesale Account Request\n\n`;
+  msg += `Business: ${data.businessName}\n`;
+  if(data.contactName) msg += `Contact: ${data.contactName}\n`;
+  if(data.phone) msg += `Phone: ${data.phone}\n`;
+  if(data.email) msg += `Email: ${data.email}\n`;
+  if(data.address) msg += `Address: ${data.address}\n`;
+  if(data.licenseNumber) msg += `License #: ${data.licenseNumber}\n`;
+  if(data.paymentTerms) msg += `Terms: ${data.paymentTerms}\n`;
+  if(data.notes) msg += `Notes: ${data.notes}\n`;
+  msg += `\nRequested: ${new Date().toLocaleDateString()}`;
+  return msg;
+}
+
+function sendToTallyn(type, text){
+  const TALLYN_PHONE = '13453232610';
+  const TALLYN_EMAIL = 'tallyn@7cellars.ky';
+  if(type === 'whatsapp'){
+    window.open(`https://wa.me/${TALLYN_PHONE}?text=${encodeURIComponent(text)}`, '_blank');
+  } else {
+    const subject = text.includes('Order') ? '7 Cellars — New Wholesale Order' : '7 Cellars — New Account Request';
+    window.open(`mailto:${TALLYN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_blank');
+  }
 }
 
 function submitCustomerRequest(){
@@ -1402,12 +1462,11 @@ function submitCustomerRequest(){
     requestedAt: new Date().toISOString()
   };
   if(!data.businessName){ alert('Business name is required'); return; }
-  // Save to localStorage pending requests
   const requests = JSON.parse(localStorage.getItem('7c_customer_requests') || '[]');
   requests.unshift(data);
   localStorage.setItem('7c_customer_requests', JSON.stringify(requests));
   state.showNewCustomerForm = false;
-  alert('Request sent to Tallyn. The account will appear here once added to Cin7.');
+  state.lastCustomerRequest = data;
   renderNewSale();
 }
 
@@ -1510,20 +1569,35 @@ function submitDraftOrder(){
   renderAll();
 }
 
+function formatOrderText(order){
+  let msg = `📋 New Wholesale Order\n\n`;
+  msg += `Customer: ${order.customer}\n`;
+  msg += `Date: ${new Date(order.createdAt).toLocaleDateString()}\n\n`;
+  msg += `Items:\n`;
+  order.lines.forEach(line => { msg += `  ${line.quantity} × ${line.title} — $${line.subtotal.toFixed(2)}\n`; });
+  msg += `\nTotal: $${order.total.toFixed(2)}\n`;
+  msg += `\nOrder ID: ${order.id}`;
+  return msg;
+}
+
 function confirmationView(order){
   return `
     <div class="confirm-card">
       <div class="confirm-icon">✅</div>
       <div>
-        <h3 style="margin:0 0 8px;">Pending order saved</h3>
+        <h3 style="margin:0 0 8px;">Order saved</h3>
         <p class="muted" style="margin:0;">${escapeHtml(order.customer)} · ${currency(order.total)} · ${shortDateTime(order.createdAt)}</p>
-        <p class="muted small" style="margin:8px 0 0;">Saved locally — sync to Cin7 coming soon.</p>
       </div>
       <div class="list-item" style="text-align:left;">
         <div class="stack">
           ${order.lines.map(line => `<div class="total-row"><span>${line.quantity} × ${escapeHtml(line.title)}</span><strong>${currency(line.subtotal)}</strong></div>`).join('')}
           <div class="total-row grand"><span>Total</span><strong>${currency(order.total)}</strong></div>
         </div>
+      </div>
+      <p class="muted small" style="margin:8px 0 0;text-align:center;">Send this order to Tallyn for processing:</p>
+      <div class="send-buttons">
+        <button class="btn btn-send-wa" type="button" data-send-order-wa="${escapeHtml(order.id)}">💬 WhatsApp</button>
+        <button class="btn btn-send-email" type="button" data-send-order-email="${escapeHtml(order.id)}">📧 Email</button>
       </div>
       <div class="summary-actions">
         <button class="btn btn-gold" type="button" data-open-sale>New Order</button>
@@ -1639,6 +1713,18 @@ function renderCustomers(){
         </div>
       </div>
       <div class="card-body">
+        ${state.lastCustTabRequest ? `
+          <div class="card" style="border-color:rgba(47,143,97,.3);background:rgba(47,143,97,.06);margin-bottom:18px;padding:18px;border-radius:22px;text-align:center">
+            <div style="font-size:36px;margin-bottom:6px">✅</div>
+            <h4 style="margin:0 0 4px">Account request saved</h4>
+            <p class="muted small" style="margin:0 0 12px">${escapeHtml(state.lastCustTabRequest.businessName)} — send to Tallyn:</p>
+            <div class="send-buttons">
+              <button class="btn btn-send-wa" type="button" data-send-custtab-wa>💬 WhatsApp</button>
+              <button class="btn btn-send-email" type="button" data-send-custtab-email>📧 Email</button>
+            </div>
+            <button class="btn btn-ghost" type="button" id="dismissCustTabReq" style="margin-top:8px">Dismiss</button>
+          </div>
+        ` : ''}
         ${state.showCustomerRequestForm ? `
           <form id="custNewForm" class="new-customer-form" onsubmit="return false" style="margin-bottom:18px">
             <h4 style="margin:0 0 4px">Request New Wholesale Account</h4>
@@ -1715,11 +1801,19 @@ function renderCustomers(){
     requests.unshift(data);
     localStorage.setItem('7c_customer_requests', JSON.stringify(requests));
     state.showCustomerRequestForm = false;
-    alert('Request sent to Tallyn. The account will appear here once added to Cin7.');
+    state.lastCustTabRequest = data;
     renderCustomers();
   });
   const ccBtn = els.panels.customers.querySelector('#custCancelRequest');
   if(ccBtn) ccBtn.addEventListener('click', () => { state.showCustomerRequestForm = false; renderCustomers(); });
+  els.panels.customers.querySelectorAll('[data-send-custtab-wa]').forEach(button => button.addEventListener('click', () => {
+    if(state.lastCustTabRequest) sendToTallyn('whatsapp', formatCustomerRequestText(state.lastCustTabRequest));
+  }));
+  els.panels.customers.querySelectorAll('[data-send-custtab-email]').forEach(button => button.addEventListener('click', () => {
+    if(state.lastCustTabRequest) sendToTallyn('email', formatCustomerRequestText(state.lastCustTabRequest));
+  }));
+  const dismissCustTab = els.panels.customers.querySelector('#dismissCustTabReq');
+  if(dismissCustTab) dismissCustTab.addEventListener('click', () => { state.lastCustTabRequest = null; renderCustomers(); });
 }
 
 function renderTaskCards(items, columnKey){
