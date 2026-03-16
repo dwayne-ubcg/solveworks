@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to SolveWorks — Apollo Originals</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { overflow-x: hidden; scroll-behavior: smooth; }
+        body { background-color: #0A1628 !important; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.15), transparent); }
+        .grid-bg { background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        .progress-fill { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .section-card { transition: all 0.3s ease; }
+        .section-header { cursor: pointer; user-select: none; }
+        .section-header:hover { background: rgba(255, 255, 255, 0.02); }
+        .section-chevron { transition: transform 0.3s ease; }
+        .section-chevron.rotated { transform: rotate(180deg); }
+        .section-body { overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
+        .section-body.collapsed { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+        .section-body.expanded { max-height: 3000px; opacity: 1; }
+        input[type="text"], input[type="email"], input[type="url"], input[type="password"], textarea {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 12px 16px; color: white; font-size: 14px; width: 100%; transition: all 0.2s;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.15); }
+        input::placeholder, textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
+        .field-label { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block; }
+        .field-hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .field-group { margin-bottom: 20px; }
+        .callout-info { background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 12px; padding: 16px; }
+        .callout-warn { background: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.15); border-radius: 12px; padding: 16px; }
+        .callout-success { background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.15); border-radius: 12px; padding: 16px; }
+        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0369a1); color: white; font-weight: 700; padding: 14px 32px; border-radius: 12px; border: none; cursor: pointer; font-size: 15px; transition: all 0.2s; width: 100%; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(14,165,233,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .optional-badge { display: inline-block; font-size: 10px; font-weight: 600; color: #64748b; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 10px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .required-dot { color: #f43f5e; margin-left: 2px; }
+        .step-number { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+        .step-pending { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.25); color: #38bdf8; }
+        .step-done { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
+        .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 24px 0; }
+        code { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 6px; font-size: 13px; color: #38bdf8; font-family: 'SF Mono', monospace; }
+        .celebration { animation: celebrate 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes celebrate { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-dark-950 text-white font-sans antialiased grid-bg">
+
+    <!-- Progress Bar -->
+    <div id="progressBar" class="fixed top-0 left-0 right-0 z-50 bg-dark-950/90 backdrop-blur-lg border-b border-white/5">
+        <div class="max-w-3xl mx-auto px-6 py-3 flex items-center gap-4">
+            <span class="text-sm text-slate-400 whitespace-nowrap"><span id="progressCount">0</span> of <span id="progressTotal">0</span></span>
+            <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                <div id="progressFill" class="progress-fill h-full bg-gradient-to-r from-accent-500 to-accent-400 rounded-full" style="width: 0%"></div>
+            </div>
+            <span id="progressPercent" class="text-sm font-medium text-accent-400 whitespace-nowrap">0%</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed w-full top-[44px] z-40 border-b border-white/5" style="background: rgba(10, 22, 40, 0.85); backdrop-filter: blur(20px);">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <a href="https://solveworks.io" class="text-2xl font-bold tracking-tight">
+                <span class="text-white">Solve</span><span class="text-gradient">Works</span>
+            </a>
+            <span class="text-sm text-slate-500">Client Onboarding</span>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero-gradient pt-32 pb-12 px-6">
+        <div class="max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-8">
+                <span class="w-2 h-2 rounded-full bg-success pulse-dot"></span>
+                <span class="text-sm text-green-300 font-medium">Welcome aboard, Brad & Ben 👊</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Apollo Originals<br><span class="text-gradient">Onboarding</span>
+            </h1>
+            <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-4">
+                Let's get your AI agent set up. Complete the sections below — most people finish in about 20 minutes. We'll handle everything else.
+            </p>
+            <p class="text-sm text-slate-500 max-w-xl mx-auto mb-8">
+                Fill in what you can now. Anything marked <span class="text-slate-400 font-medium">optional</span> can wait — we'll help you with those after your agent is live.
+            </p>
+            <div class="flex items-center justify-center gap-4 flex-wrap">
+                <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-lg">⏱️</span>
+                    <span class="text-sm text-slate-300 font-medium">~20 minutes</span>
+                </div>
+                <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-lg">💾</span>
+                    <span class="text-sm text-slate-300 font-medium">Auto-saves as you type</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sections -->
+    <section class="py-8 px-6">
+        <div class="max-w-3xl mx-auto space-y-4" id="formSections">
+
+            <!-- SECTION 1: Mac Mini Setup -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="1">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(1)">
+                    <div id="sectionNum1" class="step-number step-pending">1</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">Mac Mini Setup</h3>
+                        <p class="text-sm text-slate-500 mt-1">Unbox, power on, and configure a few settings</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body1">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-info">
+                            <p class="text-sm text-accent-300/90">📦 <strong>Plug in your Mac Mini</strong> (power + ethernet if you have it, WiFi works too). Go through the macOS setup wizard — Apple ID, language, etc. Then come back here.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Mac Username <span class="required-dot">*</span></label>
+                            <input type="text" id="mac_username" placeholder="e.g. brad" data-required="true">
+                            <p class="field-hint">The username you created during macOS setup</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Mac Password <span class="required-dot">*</span></label>
+                            <input type="password" id="mac_password" placeholder="Your Mac login password" data-required="true">
+                            <p class="field-hint">We need this to configure the machine remotely. Stored securely, never shared.</p>
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-white">Settings to change:</h4>
+
+                        <div class="callout-info">
+                            <div class="space-y-3 text-sm text-slate-300">
+                                <p>✅ <strong class="text-white">System Settings → General → Sharing → Remote Login</strong> — turn ON</p>
+                                <p>✅ <strong class="text-white">System Settings → Energy → Turn display off</strong> — set to Never</p>
+                                <p>✅ <strong class="text-white">System Settings → Lock Screen</strong> — set require password to Never</p>
+                                <p>✅ <strong class="text-white">System Settings → Users & Groups → Auto-Login</strong> — select your user</p>
+                                <p>✅ <strong class="text-white">System Settings → General → Software Update → Auto Updates</strong> — turn OFF</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Tailscale -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="2">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(2)">
+                    <div id="sectionNum2" class="step-number step-pending">2</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">Install Tailscale</h3>
+                        <p class="text-sm text-slate-500 mt-1">Secure connection so we can reach your machine</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body2">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-info">
+                            <div class="space-y-2 text-sm text-accent-300/90">
+                                <p>1. Open the <strong>App Store</strong> on your Mac Mini</p>
+                                <p>2. Search for <strong>Tailscale</strong> → Install it</p>
+                                <p>3. Open Tailscale from your menu bar (top-right)</p>
+                                <p>4. We'll send you a sign-in link — click it to join our secure network</p>
+                                <p>5. When macOS asks to <strong>Allow VPN Configuration</strong> → tap Allow</p>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Tailscale IP Address <span class="required-dot">*</span></label>
+                            <input type="text" id="tailscale_ip" placeholder="e.g. 100.x.x.x" data-required="true">
+                            <p class="field-hint">Shown in the Tailscale menu bar icon after connecting. Starts with 100.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: Telegram Bot -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="3">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(3)">
+                    <div id="sectionNum3" class="step-number step-pending">3</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">Create Your Telegram Bot</h3>
+                        <p class="text-sm text-slate-500 mt-1">This is how you'll talk to your AI agent every day</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body3">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-info">
+                            <div class="space-y-2 text-sm text-accent-300/90">
+                                <p>1. On your <strong>phone</strong>, open Telegram (download it if you don't have it)</p>
+                                <p>2. Search for <strong>@BotFather</strong> and start a chat</p>
+                                <p>3. Send: <code>/newbot</code></p>
+                                <p>4. Pick a name (e.g. "Apollo AI")</p>
+                                <p>5. Pick a username ending in <code>bot</code> (e.g. <code>apollo_ai_bot</code>)</p>
+                                <p>6. BotFather gives you a <strong>token</strong> — paste it below</p>
+                                <p>7. Then <strong>send any message to your new bot</strong> (just say "hi") — this activates it</p>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Bot Token <span class="required-dot">*</span></label>
+                            <input type="text" id="bot_token" placeholder="e.g. 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" data-required="true">
+                            <p class="field-hint">Copy-paste from BotFather. Looks like numbers:letters</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Brad's Telegram Username <span class="required-dot">*</span></label>
+                            <input type="text" id="telegram_brad" placeholder="e.g. @bradsmith" data-required="true">
+                            <p class="field-hint">So we can set your agent to only respond to you</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Ben's Telegram Username <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="telegram_ben" placeholder="e.g. @bensmith">
+                            <p class="field-hint">If Ben wants access to the agent too</p>
+                        </div>
+
+                        <div class="callout-warn">
+                            <p class="text-sm text-yellow-200/80">⚠️ <strong class="text-yellow-300">Important:</strong> After creating the bot, open a chat with it and send any message (even just "hi"). This activates the connection.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: AI Subscription -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="4">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(4)">
+                    <div id="sectionNum4" class="step-number step-pending">4</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">AI Subscription</h3>
+                        <p class="text-sm text-slate-500 mt-1">The brain that powers your agent — ~$100 USD/mo</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body4">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-info">
+                            <div class="space-y-2 text-sm text-accent-300/90">
+                                <p>1. Go to <a href="https://console.anthropic.com" target="_blank" class="text-accent-400 underline hover:text-accent-300">console.anthropic.com</a></p>
+                                <p>2. Create an account (or sign in)</p>
+                                <p>3. Subscribe to the <strong>Max</strong> plan (~$100 USD/month)</p>
+                                <p>4. That's it for now — we'll connect it to your agent during install</p>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Anthropic Account Email <span class="required-dot">*</span></label>
+                            <input type="email" id="anthropic_email" placeholder="e.g. brad@apollooriginals.com" data-required="true">
+                            <p class="field-hint">The email you signed up with at Anthropic</p>
+                        </div>
+
+                        <div class="callout-success">
+                            <p class="text-sm text-green-300/90">💡 <strong>Why your own account?</strong> Full transparency — you see exactly what you're paying for the AI. No middleman markup. You can check usage anytime.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: Business Integrations -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="5">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(5)">
+                    <div id="sectionNum5" class="step-number step-pending">5</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">Business Integrations</h3>
+                        <p class="text-sm text-slate-500 mt-1">Connect your tools so your agent can work with them</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body5">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <p class="text-sm text-slate-400">Fill in what you have now. We'll help with the rest after your agent is live — no rush on optional ones.</p>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Klaviyo (Email Marketing)</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Klaviyo API Key <span class="optional-badge">Optional — can do later</span></label>
+                            <input type="text" id="klaviyo_key" placeholder="Found in Klaviyo → Settings → API Keys">
+                            <p class="field-hint">If you have a Klaviyo account. If not, we'll help you set one up.</p>
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Meta / Facebook Ads</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Meta Business Manager URL <span class="optional-badge">Optional — can do later</span></label>
+                            <input type="url" id="meta_url" placeholder="e.g. https://business.facebook.com/...">
+                            <p class="field-hint">If you run Facebook/Instagram ads. We'll help connect the API.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Ad Account ID(s) <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="meta_ad_accounts" placeholder="e.g. act_123456789">
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Social Media</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Instagram Handle</label>
+                            <input type="text" id="instagram" placeholder="e.g. @apollooriginals">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">TikTok Handle <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="tiktok" placeholder="e.g. @apollooriginals">
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Shopify (if applicable)</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Shopify Store URL <span class="optional-badge">Optional</span></label>
+                            <input type="url" id="shopify_url" placeholder="e.g. apollooriginals.myshopify.com">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Website URL</label>
+                            <input type="url" id="website" placeholder="e.g. https://apollooriginals.com">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 6: Brand & Business Context -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="6">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(6)">
+                    <div id="sectionNum6" class="step-number step-pending">6</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">Brand & Business Context</h3>
+                        <p class="text-sm text-slate-500 mt-1">Help your agent understand Apollo Originals & the welding business</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body6">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <p class="text-sm text-slate-400">The more your agent knows, the better it works from day one. Answer what you can — even rough notes are valuable.</p>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Apollo Originals</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Describe Apollo's brand in your own words</label>
+                            <textarea id="brand_voice" rows="3" placeholder="What's the vibe? Streetwear, premium, athletic, edgy? How would you describe it to someone who's never seen it?"></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Who's your ideal customer?</label>
+                            <textarea id="ideal_customer" rows="3" placeholder="Teams, universities, brands looking for collabs, individual buyers, corporate merch? Who do you want more of?"></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Current collabs / notable clients</label>
+                            <textarea id="notable_clients" rows="3" placeholder="We know about Gretzky, Mooseheads, Wildcats, St. FX, McDavid — any others?"></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Brand assets link <span class="optional-badge">Optional</span></label>
+                            <input type="url" id="brand_assets" placeholder="Google Drive, Dropbox, or any link to logos, brand colors, fonts">
+                            <p class="field-hint">Logos, color codes, brand guide — anything you have</p>
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Welding Supply Business</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Business name</label>
+                            <input type="text" id="welding_name" placeholder="e.g. Schofield Welding Supply">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Roughly how many regular customers?</label>
+                            <input type="text" id="welding_customers" placeholder="e.g. 25 shops on a biweekly route">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Top products you sell</label>
+                            <textarea id="welding_products" rows="3" placeholder="MIG wire, gloves, rods, helmets — whatever moves the most"></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Customer/order data <span class="optional-badge">Optional</span></label>
+                            <input type="url" id="welding_data" placeholder="Link to a spreadsheet, CSV, or anything with order history">
+                            <p class="field-hint">Even a rough list of customers + what they usually buy helps us build smart reorder suggestions</p>
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Product Costing (for Margin Calculator)</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Product cost data <span class="optional-badge">Optional — can do later</span></label>
+                            <input type="url" id="cost_data" placeholder="Link to spreadsheet with blank costs, decoration costs, shipping, etc.">
+                            <p class="field-hint">We'll use this to build your margin calculator so you can quote instantly</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 7: Agent Preferences -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="7">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(7)">
+                    <div id="sectionNum7" class="step-number step-pending">7</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">Your Agent</h3>
+                        <p class="text-sm text-slate-500 mt-1">Give your AI a personality</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body7">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="field-group">
+                            <label class="field-label">What do you want to name your agent?</label>
+                            <input type="text" id="agent_name" placeholder="e.g. Ace, Apollo AI, Forge — whatever feels right">
+                            <p class="field-hint">This is who you'll be texting every day. Pick something that fits.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">How should your agent talk?</label>
+                            <textarea id="agent_tone" rows="2" placeholder="e.g. Casual and direct, like texting a smart friend. No corporate BS."></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">What's the #1 thing you want your agent doing on day one?</label>
+                            <textarea id="day_one_priority" rows="2" placeholder="e.g. Social media content, finding tenders, tracking welding orders..."></textarea>
+                            <p class="field-hint">We'll make sure this works perfectly before anything else</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Anything else we should know?</label>
+                            <textarea id="notes" rows="3" placeholder="Any other tools you use, things you've tried, ideas, concerns — anything"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Submit Section -->
+    <section class="py-8 px-6">
+        <div class="max-w-3xl mx-auto">
+            <div id="submitSection" class="glass rounded-2xl p-6 md:p-8">
+                <h3 class="text-xl font-bold mb-2">Ready to submit?</h3>
+                <p class="text-sm text-slate-400 mb-6">We'll receive everything securely and start building your agent. Required fields are marked with <span class="text-rose-400">*</span></p>
+                <button id="submitBtn" class="btn-primary" onclick="submitForm()">
+                    🚀 Send to SolveWorks
+                </button>
+                <p id="submitError" class="text-sm text-rose-400 mt-3 hidden"></p>
+            </div>
+
+            <!-- Success state -->
+            <div id="successSection" class="hidden">
+                <div class="celebration glass rounded-2xl p-8 text-center border-success/20" style="border: 1px solid rgba(34, 197, 94, 0.2);">
+                    <div class="text-5xl mb-4">🎉</div>
+                    <h2 class="text-2xl font-bold mb-2 text-white">You're all set!</h2>
+                    <p class="text-slate-400 mb-4">We've received everything. We'll start building your agent and reach out when it's ready to go live.</p>
+                    <div class="callout-success mt-6">
+                        <p class="text-sm text-green-300/90"><strong>What happens next:</strong> We configure your Mac Mini remotely, train your agent on Apollo Originals and the welding business, build your dashboard, and set up all your automations. You'll get a message from your new AI agent when it's ready. 🤝</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-white/5">
+        <div class="max-w-3xl mx-auto text-center">
+            <p class="text-sm text-slate-500">Questions? Text Dwayne directly or email <a href="mailto:dwayne@solveworks.io" class="text-accent-400 hover:text-accent-300">dwayne@solveworks.io</a></p>
+            <p class="text-xs text-slate-600 mt-2">© 2026 SolveWorks. Your data stays on your machine.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ── State ──
+        const TOTAL_SECTIONS = 7;
+        const STORAGE_KEY = 'sw-onboarding-apollo';
+        const TELEGRAM_BOT_TOKEN = '7832387018:AAFQfqLHV4A7iYdPFCBhKXXvPTqO-OW5bbg';
+        const OPS_CHAT_ID = '-5116168213';
+
+        // ── Auto-save ──
+        function saveState() {
+            const data = {};
+            document.querySelectorAll('input, textarea').forEach(el => {
+                if (el.id) data[el.id] = el.value;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            updateProgress();
+        }
+
+        function loadState() {
+            try {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                Object.entries(data).forEach(([id, val]) => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = val;
+                });
+            } catch(e) {}
+            updateProgress();
+        }
+
+        // Auto-save on input
+        document.addEventListener('input', () => { clearTimeout(window._saveTimer); window._saveTimer = setTimeout(saveState, 500); });
+
+        // ── Progress ──
+        function updateProgress() {
+            const required = document.querySelectorAll('[data-required="true"]');
+            const filled = [...required].filter(el => el.value.trim().length > 0).length;
+            const total = required.length;
+            const pct = total ? Math.round((filled / total) * 100) : 0;
+
+            document.getElementById('progressCount').textContent = filled;
+            document.getElementById('progressTotal').textContent = total;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressPercent').textContent = pct + '%';
+
+            // Update section badges
+            for (let s = 1; s <= TOTAL_SECTIONS; s++) {
+                const sectionFields = document.querySelectorAll(`[data-section="${s}"] [data-required="true"]`);
+                const allFilled = sectionFields.length > 0 && [...sectionFields].every(el => el.value.trim().length > 0);
+                const numEl = document.getElementById('sectionNum' + s);
+                if (allFilled && sectionFields.length > 0) {
+                    numEl.classList.remove('step-pending');
+                    numEl.classList.add('step-done');
+                    numEl.textContent = '✓';
+                } else {
+                    numEl.classList.remove('step-done');
+                    numEl.classList.add('step-pending');
+                    numEl.textContent = s;
+                }
+            }
+        }
+
+        // ── Section Toggle ──
+        function toggleSection(n) {
+            const body = document.getElementById('body' + n);
+            const chevron = document.getElementById('chevron' + n);
+            if (body.classList.contains('expanded')) {
+                body.classList.remove('expanded');
+                body.classList.add('collapsed');
+                chevron.classList.remove('rotated');
+            } else {
+                body.classList.remove('collapsed');
+                body.classList.add('expanded');
+                chevron.classList.add('rotated');
+            }
+        }
+
+        // ── Submit ──
+        async function submitForm() {
+            const btn = document.getElementById('submitBtn');
+            const errEl = document.getElementById('submitError');
+            errEl.classList.add('hidden');
+
+            // Validate required
+            const required = document.querySelectorAll('[data-required="true"]');
+            const missing = [...required].filter(el => !el.value.trim());
+            if (missing.length > 0) {
+                missing[0].focus();
+                missing[0].style.borderColor = '#f43f5e';
+                setTimeout(() => missing[0].style.borderColor = '', 3000);
+                errEl.textContent = `Please fill in all required fields (${missing.length} remaining)`;
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            // Collect all data
+            const data = {};
+            document.querySelectorAll('input, textarea').forEach(el => {
+                if (el.id && el.value.trim()) data[el.id] = el.value.trim();
+            });
+
+            // Build message
+            let msg = `🚀 NEW ONBOARDING: Apollo Originals (Brad & Ben)\n\n`;
+            msg += `── Mac Mini ──\nUsername: ${data.mac_username || '—'}\nPassword: ${data.mac_password || '—'}\n\n`;
+            msg += `── Tailscale ──\nIP: ${data.tailscale_ip || '—'}\n\n`;
+            msg += `── Telegram ──\nBot Token: ${data.bot_token || '—'}\nBrad: ${data.telegram_brad || '—'}\nBen: ${data.telegram_ben || '—'}\n\n`;
+            msg += `── Anthropic ──\nEmail: ${data.anthropic_email || '—'}\n\n`;
+            msg += `── Integrations ──\n`;
+            if (data.klaviyo_key) msg += `Klaviyo: ${data.klaviyo_key}\n`;
+            if (data.meta_url) msg += `Meta: ${data.meta_url}\n`;
+            if (data.meta_ad_accounts) msg += `Ad Accounts: ${data.meta_ad_accounts}\n`;
+            if (data.instagram) msg += `Instagram: ${data.instagram}\n`;
+            if (data.tiktok) msg += `TikTok: ${data.tiktok}\n`;
+            if (data.shopify_url) msg += `Shopify: ${data.shopify_url}\n`;
+            if (data.website) msg += `Website: ${data.website}\n`;
+            msg += `\n── Brand & Business ──\n`;
+            if (data.brand_voice) msg += `Brand voice: ${data.brand_voice}\n`;
+            if (data.ideal_customer) msg += `Ideal customer: ${data.ideal_customer}\n`;
+            if (data.notable_clients) msg += `Notable clients: ${data.notable_clients}\n`;
+            if (data.brand_assets) msg += `Brand assets: ${data.brand_assets}\n`;
+            if (data.welding_name) msg += `Welding biz: ${data.welding_name}\n`;
+            if (data.welding_customers) msg += `Welding customers: ${data.welding_customers}\n`;
+            if (data.welding_products) msg += `Welding products: ${data.welding_products}\n`;
+            if (data.welding_data) msg += `Welding data: ${data.welding_data}\n`;
+            if (data.cost_data) msg += `Cost data: ${data.cost_data}\n`;
+            msg += `\n── Agent ──\n`;
+            if (data.agent_name) msg += `Name: ${data.agent_name}\n`;
+            if (data.agent_tone) msg += `Tone: ${data.agent_tone}\n`;
+            if (data.day_one_priority) msg += `Day 1 priority: ${data.day_one_priority}\n`;
+            if (data.notes) msg += `Notes: ${data.notes}\n`;
+
+            try {
+                const resp = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: OPS_CHAT_ID, text: msg, parse_mode: 'HTML' })
+                });
+                const result = await resp.json();
+
+                if (result.ok) {
+                    document.getElementById('submitSection').classList.add('hidden');
+                    document.getElementById('successSection').classList.remove('hidden');
+                    document.getElementById('successSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    localStorage.removeItem(STORAGE_KEY);
+                } else {
+                    throw new Error(result.description || 'Send failed');
+                }
+            } catch(e) {
+                errEl.textContent = 'Something went wrong — please text Dwayne directly with your info. Error: ' + e.message;
+                errEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = '🚀 Send to SolveWorks';
+            }
+        }
+
+        // ── Init ──
+        loadState();
+    </script>
+</body>
+</html>
