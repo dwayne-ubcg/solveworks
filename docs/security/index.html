@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security & Architecture — SolveWorks</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="description" content="How SolveWorks connects, stores data, and keeps your business secure. Technical documentation for IT teams.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                        warn: '#eab308',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { overflow-x: hidden; scroll-behavior: smooth; }
+        body { background-color: #0A1628 !important; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.15), transparent); }
+        .grid-bg { background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        .toc-link { transition: all 0.2s; }
+        .toc-link:hover { color: #38bdf8; padding-left: 4px; }
+
+        .arch-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; text-align: center; }
+        .arch-box-client { border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.05); }
+        .arch-box-sw { border-color: rgba(14,165,233,0.3); background: rgba(14,165,233,0.05); }
+        .arch-box-ext { border-color: rgba(148,163,184,0.2); background: rgba(148,163,184,0.03); }
+        .arch-arrow { color: #64748b; font-size: 24px; line-height: 1; }
+
+        .conn-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .conn-row:last-child { border-bottom: none; }
+
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-green { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.2); }
+        .badge-blue { background: rgba(14,165,233,0.15); color: #7dd3fc; border: 1px solid rgba(14,165,233,0.2); }
+        .badge-yellow { background: rgba(234,179,8,0.15); color: #fde047; border: 1px solid rgba(234,179,8,0.2); }
+        .badge-gray { background: rgba(148,163,184,0.1); color: #94a3b8; border: 1px solid rgba(148,163,184,0.15); }
+
+        .faq-item { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .faq-q { cursor: pointer; user-select: none; }
+        .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; }
+        .faq-a.open { max-height: 500px; }
+
+        .section-anchor { scroll-margin-top: 100px; }
+
+        .callout { border-radius: 12px; padding: 16px 20px; }
+        .callout-green { background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15); }
+        .callout-blue { background: rgba(14,165,233,0.05); border: 1px solid rgba(14,165,233,0.15); }
+        .callout-yellow { background: rgba(234,179,8,0.05); border: 1px solid rgba(234,179,8,0.15); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px 16px; font-size: 13px; font-weight: 600; color: #94a3b8; border-bottom: 1px solid rgba(255,255,255,0.1); text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #e2e8f0; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        code { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 6px; font-size: 13px; color: #38bdf8; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+        @media (max-width: 768px) {
+            .conn-row { grid-template-columns: 1fr; gap: 8px; text-align: center; }
+            .arch-arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body class="bg-dark-950 text-white font-sans antialiased grid-bg">
+
+    <!-- Header -->
+    <header class="fixed w-full top-0 z-50 border-b border-white/5" style="background: rgba(10, 22, 40, 0.85); backdrop-filter: blur(20px);">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <a href="https://solveworks.io" class="text-2xl font-bold tracking-tight">
+                <span class="text-white">Solve</span><span class="text-gradient">Works</span>
+            </a>
+            <span class="text-sm text-slate-500">Security & Architecture</span>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero-gradient pt-28 pb-12 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-8">
+                <span class="w-2 h-2 rounded-full bg-success"></span>
+                <span class="text-sm text-green-300 font-medium">Technical Documentation for IT Teams</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Security &<br><span class="text-gradient">Architecture</span>
+            </h1>
+            <p class="text-lg text-slate-400 max-w-2xl mb-6">
+                How SolveWorks connects to your systems, where data lives, and what we can and can't access. Built for the IT person who needs to approve this.
+            </p>
+            <div class="callout-green callout inline-block">
+                <p class="text-sm text-green-300/90">🔑 <strong>The short version:</strong> Your data stays on your hardware. API keys never leave your machine. We don't operate a central server that stores client data. Period.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Table of Contents -->
+    <section class="px-6 pb-12">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass rounded-2xl p-6 md:p-8">
+                <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Contents</h2>
+                <div class="grid md:grid-cols-2 gap-2">
+                    <a href="#architecture" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">1. Architecture Overview</a>
+                    <a href="#data-residency" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">2. Data Residency</a>
+                    <a href="#connections" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">3. API Connections & Authentication</a>
+                    <a href="#network" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">4. Network & Remote Access</a>
+                    <a href="#access-model" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">5. Access Model — What We See</a>
+                    <a href="#messaging" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">6. Messaging & Communication</a>
+                    <a href="#ai-provider" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">7. AI Provider (Anthropic)</a>
+                    <a href="#offboarding" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">8. Offboarding & Data Removal</a>
+                    <a href="#faq" class="toc-link text-sm text-slate-300 hover:text-accent-400 py-1">9. FAQ</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 1: Architecture Overview -->
+    <section id="architecture" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">1. Architecture Overview</h2>
+            <p class="text-slate-400 mb-8">Every SolveWorks deployment runs locally on a dedicated Mac Mini at your location.</p>
+
+            <!-- Architecture Diagram -->
+            <div class="glass rounded-2xl p-6 md:p-8 mb-8">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 text-center">System Architecture</h3>
+
+                <!-- Row 1: Your Premises -->
+                <div class="mb-2">
+                    <div class="text-xs font-bold text-green-400 uppercase tracking-widest mb-3 text-center">Your Premises / Network</div>
+                    <div class="grid md:grid-cols-3 gap-4 mb-4">
+                        <div class="arch-box arch-box-client">
+                            <div class="text-2xl mb-2">🖥️</div>
+                            <div class="font-semibold text-sm text-green-300">Mac Mini</div>
+                            <div class="text-xs text-slate-500 mt-1">AI Agent + All Data</div>
+                            <div class="text-xs text-slate-600 mt-1">macOS • On your network</div>
+                        </div>
+                        <div class="arch-box arch-box-client">
+                            <div class="text-2xl mb-2">🔐</div>
+                            <div class="font-semibold text-sm text-green-300">Local Storage</div>
+                            <div class="text-xs text-slate-500 mt-1">API Keys • Config • Logs</div>
+                            <div class="text-xs text-slate-600 mt-1">Encrypted at rest (FileVault)</div>
+                        </div>
+                        <div class="arch-box arch-box-client">
+                            <div class="text-2xl mb-2">📱</div>
+                            <div class="font-semibold text-sm text-green-300">Your Phone</div>
+                            <div class="text-xs text-slate-500 mt-1">Telegram App</div>
+                            <div class="text-xs text-slate-600 mt-1">How you talk to the agent</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrows -->
+                <div class="text-center my-4">
+                    <div class="text-slate-600 text-sm mb-1">Encrypted connections only ↕</div>
+                </div>
+
+                <!-- Row 2: Tunnels & APIs -->
+                <div class="mb-2">
+                    <div class="text-xs font-bold text-accent-400 uppercase tracking-widest mb-3 text-center">Encrypted Tunnels</div>
+                    <div class="grid md:grid-cols-2 gap-4 mb-4">
+                        <div class="arch-box arch-box-sw">
+                            <div class="text-2xl mb-2">🔒</div>
+                            <div class="font-semibold text-sm text-accent-300">Tailscale VPN</div>
+                            <div class="text-xs text-slate-500 mt-1">WireGuard® encrypted tunnel</div>
+                            <div class="text-xs text-slate-600 mt-1">SolveWorks management access</div>
+                        </div>
+                        <div class="arch-box arch-box-sw">
+                            <div class="text-2xl mb-2">💬</div>
+                            <div class="font-semibold text-sm text-accent-300">Telegram Bot API</div>
+                            <div class="text-xs text-slate-500 mt-1">TLS 1.2+ encrypted</div>
+                            <div class="text-xs text-slate-600 mt-1">Agent ↔ User messaging</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrows -->
+                <div class="text-center my-4">
+                    <div class="text-slate-600 text-sm mb-1">Outbound HTTPS only ↕</div>
+                </div>
+
+                <!-- Row 3: External APIs -->
+                <div>
+                    <div class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">Third-Party APIs (Client's Own Accounts)</div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="arch-box arch-box-ext">
+                            <div class="text-lg mb-1">🧠</div>
+                            <div class="font-medium text-xs text-slate-400">Anthropic (AI)</div>
+                        </div>
+                        <div class="arch-box arch-box-ext">
+                            <div class="text-lg mb-1">📧</div>
+                            <div class="font-medium text-xs text-slate-400">Klaviyo</div>
+                        </div>
+                        <div class="arch-box arch-box-ext">
+                            <div class="text-lg mb-1">🛍️</div>
+                            <div class="font-medium text-xs text-slate-400">Shopify</div>
+                        </div>
+                        <div class="arch-box arch-box-ext">
+                            <div class="text-lg mb-1">📊</div>
+                            <div class="font-medium text-xs text-slate-400">Meta / Google</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout callout-blue">
+                <p class="text-sm text-accent-300/90"><strong>Key point:</strong> There is no SolveWorks "cloud" or central server. Every client gets a standalone machine. Your Mac Mini connects directly to third-party APIs using your own credentials. We facilitate setup and maintenance — we don't proxy your data.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: Data Residency -->
+    <section id="data-residency" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">2. Data Residency</h2>
+            <p class="text-slate-400 mb-8">Where your data lives — and where it doesn't.</p>
+
+            <div class="glass rounded-2xl overflow-hidden mb-8">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Stored Where</th>
+                            <th>Encrypted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>API keys & credentials</td>
+                            <td><span class="badge badge-green">Your Mac Mini</span></td>
+                            <td>FileVault (AES-256)</td>
+                        </tr>
+                        <tr>
+                            <td>Business data (orders, customers, inventory)</td>
+                            <td><span class="badge badge-green">Your Mac Mini</span></td>
+                            <td>FileVault (AES-256)</td>
+                        </tr>
+                        <tr>
+                            <td>Agent configuration & memory</td>
+                            <td><span class="badge badge-green">Your Mac Mini</span></td>
+                            <td>FileVault (AES-256)</td>
+                        </tr>
+                        <tr>
+                            <td>Conversation history</td>
+                            <td><span class="badge badge-green">Your Mac Mini</span></td>
+                            <td>FileVault (AES-256)</td>
+                        </tr>
+                        <tr>
+                            <td>Dashboard (read-only view)</td>
+                            <td><span class="badge badge-blue">GitHub Pages</span></td>
+                            <td>TLS (HTTPS). Password protected. No raw data — aggregated metrics only.</td>
+                        </tr>
+                        <tr>
+                            <td>AI model processing</td>
+                            <td><span class="badge badge-gray">Anthropic API</span></td>
+                            <td>Anthropic does not train on API inputs. <a href="https://www.anthropic.com/policies/privacy" target="_blank" class="text-accent-400 hover:underline">Privacy policy →</a></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="callout callout-green">
+                <p class="text-sm text-green-300/90">🏠 <strong>Nothing is stored on SolveWorks servers.</strong> We don't operate a database, data warehouse, or cloud service that holds client data. If you unplug your Mac Mini, your data goes with it — because that's where it lives.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: API Connections -->
+    <section id="connections" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">3. API Connections & Authentication</h2>
+            <p class="text-slate-400 mb-8">How your agent connects to third-party services. Every connection uses your own account.</p>
+
+            <div class="glass rounded-2xl overflow-hidden mb-8">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Auth Method</th>
+                            <th>Scope / Permissions</th>
+                            <th>Key Storage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Anthropic (AI)</strong></td>
+                            <td><span class="badge badge-blue">OAuth Token</span></td>
+                            <td>Chat completions only. No training. No data retention by Anthropic.</td>
+                            <td>Local file on Mac Mini</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Shopify</strong></td>
+                            <td><span class="badge badge-yellow">API Token</span></td>
+                            <td>Custom app with scoped permissions — typically read-only for products, orders, inventory. Write access only where needed (e.g. updating product descriptions).</td>
+                            <td>Local <code>.env</code> file</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Klaviyo</strong></td>
+                            <td><span class="badge badge-yellow">Private API Key</span></td>
+                            <td>Scoped to email campaigns, list management, analytics. Created in your Klaviyo dashboard.</td>
+                            <td>Local <code>.env</code> file</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Meta (Facebook/Instagram)</strong></td>
+                            <td><span class="badge badge-blue">OAuth Token</span></td>
+                            <td>Marketing API — ad performance data, campaign management. Scoped per-account.</td>
+                            <td>Local <code>.env</code> file</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Google (Analytics, Search Console)</strong></td>
+                            <td><span class="badge badge-blue">OAuth / Service Account</span></td>
+                            <td>Read-only analytics and search data. Service account credentialed per-property.</td>
+                            <td>Local <code>.env</code> + credential file</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Telegram</strong></td>
+                            <td><span class="badge badge-yellow">Bot Token</span></td>
+                            <td>Your own bot (created via @BotFather). Only responds to whitelisted user IDs — no one else can interact with it.</td>
+                            <td>Local config file</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lightspeed POS</strong></td>
+                            <td><span class="badge badge-yellow">API Token</span></td>
+                            <td>Sales data, inventory, product catalog. Read-only unless write access specifically requested.</td>
+                            <td>Local <code>.env</code> file</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="callout callout-blue">
+                    <h4 class="text-sm font-bold text-accent-300 mb-2">API Tokens (Most Services)</h4>
+                    <p class="text-sm text-slate-400">You create the API key in your own account dashboard. You control the permissions. You can revoke it at any time. The key is stored in a local <code>.env</code> file on your Mac Mini — it never leaves your machine.</p>
+                </div>
+                <div class="callout callout-blue">
+                    <h4 class="text-sm font-bold text-accent-300 mb-2">OAuth (Anthropic, Meta, Google)</h4>
+                    <p class="text-sm text-slate-400">You sign in directly on the provider's website. The authentication token is stored locally. We never see your password — the OAuth flow happens entirely between your Mac Mini and the provider.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 4: Network & Remote Access -->
+    <section id="network" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">4. Network & Remote Access</h2>
+            <p class="text-slate-400 mb-8">How we reach your machine for setup and maintenance.</p>
+
+            <div class="glass rounded-2xl p-6 md:p-8 mb-8 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold mb-3 flex items-center gap-2">
+                        <span class="text-accent-400">🔒</span> Tailscale (WireGuard® VPN)
+                    </h3>
+                    <div class="space-y-3 text-sm text-slate-300">
+                        <p><strong class="text-white">What it is:</strong> Tailscale creates a private, encrypted network between your Mac Mini and our management machines. It uses <a href="https://www.wireguard.com" target="_blank" class="text-accent-400 hover:underline">WireGuard®</a> — the same protocol trusted by enterprises and governments worldwide.</p>
+                        <p><strong class="text-white">What it isn't:</strong> Not a traditional VPN that routes all traffic. Only direct machine-to-machine connections are possible, and only between explicitly authorized devices on the network.</p>
+                    </div>
+                </div>
+
+                <div class="h-px bg-white/5"></div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-3">Technical Details</h3>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Protocol</div>
+                            <p class="text-sm text-slate-300">WireGuard® (UDP, Curve25519, ChaCha20-Poly1305)</p>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Open Ports Required</div>
+                            <p class="text-sm text-slate-300">None. All connections are outbound. No firewall changes needed.</p>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Access Method</div>
+                            <p class="text-sm text-slate-300">SSH over Tailscale (port 22, key-based auth preferred)</p>
+                        </div>
+                        <div>
+                            <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Network Impact</div>
+                            <p class="text-sm text-slate-300">Minimal. Only management traffic traverses the tunnel. Your regular network traffic is unaffected.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-px bg-white/5"></div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-white mb-3">What This Means for Your Network</h3>
+                    <ul class="space-y-2 text-sm text-slate-300">
+                        <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> No open inbound ports on your firewall</li>
+                        <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> No VPN appliance or gateway hardware needed</li>
+                        <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Mac Mini only needs outbound internet access (HTTPS + UDP)</li>
+                        <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Doesn't route any of your other devices' traffic</li>
+                        <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">✓</span> Can be removed instantly by uninstalling Tailscale</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 5: Access Model -->
+    <section id="access-model" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">5. Access Model — What We Can See</h2>
+            <p class="text-slate-400 mb-8">Full transparency on what SolveWorks can and cannot access.</p>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-base font-bold text-green-400 mb-4 flex items-center gap-2">
+                        <span>✅</span> What We Can Access
+                    </h3>
+                    <ul class="space-y-3 text-sm text-slate-300">
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">SSH to the Mac Mini</strong> — for setup, updates, troubleshooting, and maintenance</div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Agent logs</strong> — to debug issues and monitor health</div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Agent config files</strong> — the settings that control how the agent behaves</div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Dashboard data files</strong> — the aggregated metrics your dashboard displays</div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="glass rounded-2xl p-6">
+                    <h3 class="text-base font-bold text-rose-400 mb-4 flex items-center gap-2">
+                        <span>🚫</span> What We Cannot Access
+                    </h3>
+                    <ul class="space-y-3 text-sm text-slate-300">
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Your other devices</strong> — Tailscale only connects to the Mac Mini, not your network</div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Your third-party accounts directly</strong> — we don't have login credentials to Shopify, Klaviyo, etc.</div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Other machines on your network</strong> — the Tailscale tunnel is point-to-point only</div>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-slate-600 mt-0.5">→</span>
+                            <div><strong class="text-white">Your network traffic</strong> — we can't see, log, or monitor anything else on your network</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="callout callout-yellow">
+                <p class="text-sm text-yellow-200/80">⚡ <strong class="text-yellow-300">Regarding API keys on the Mac Mini:</strong> While we have SSH access to the machine (and could theoretically read the local <code>.env</code> file), API keys are stored there for the agent to use — not for us. You can rotate or revoke any API key at any time through your own service dashboards. We encourage regular key rotation as a best practice.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 6: Messaging -->
+    <section id="messaging" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">6. Messaging & Communication</h2>
+            <p class="text-slate-400 mb-8">How you interact with your agent daily.</p>
+
+            <div class="glass rounded-2xl p-6 md:p-8 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold mb-3">Telegram Bot</h3>
+                    <div class="space-y-3 text-sm text-slate-300">
+                        <p>Your AI agent communicates through a <strong class="text-white">Telegram bot that you own</strong>. You create it, you control it, and it only responds to whitelisted Telegram user IDs.</p>
+                        <p>The agent does <strong class="text-white">not</strong> respond to anyone who isn't on the allowlist — even if someone finds the bot username. Unauthorized messages are silently ignored.</p>
+                    </div>
+                </div>
+
+                <div class="h-px bg-white/5"></div>
+
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Transport</div>
+                        <p class="text-sm text-slate-300">HTTPS (TLS 1.2+) to Telegram API servers</p>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Authentication</div>
+                        <p class="text-sm text-slate-300">User ID allowlist — only approved users can interact</p>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-500 uppercase mb-2">Message Storage</div>
+                        <p class="text-sm text-slate-300">Conversation history stored locally on Mac Mini only</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 7: AI Provider -->
+    <section id="ai-provider" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">7. AI Provider (Anthropic)</h2>
+            <p class="text-slate-400 mb-8">How the AI model processes your data.</p>
+
+            <div class="glass rounded-2xl p-6 md:p-8 space-y-6">
+                <div class="space-y-3 text-sm text-slate-300">
+                    <p>SolveWorks agents use <strong class="text-white">Anthropic's Claude</strong> as the AI model. Your agent sends prompts to Anthropic's API and receives responses — similar to how any app uses an API.</p>
+                </div>
+
+                <div class="h-px bg-white/5"></div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-sm font-bold text-white mb-3">What Anthropic receives</h4>
+                        <ul class="space-y-2 text-sm text-slate-300">
+                            <li class="flex items-start gap-2"><span class="text-slate-600">→</span> The current conversation context (your message + relevant agent memory)</li>
+                            <li class="flex items-start gap-2"><span class="text-slate-600">→</span> Tool calls (e.g. "search the web for X" or "read this file")</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white mb-3">What Anthropic does NOT do</h4>
+                        <ul class="space-y-2 text-sm text-slate-300">
+                            <li class="flex items-start gap-2"><span class="text-green-400">✓</span> Does not train models on API inputs</li>
+                            <li class="flex items-start gap-2"><span class="text-green-400">✓</span> Does not store conversations beyond 30 days (for abuse monitoring)</li>
+                            <li class="flex items-start gap-2"><span class="text-green-400">✓</span> Does not share data with third parties</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="callout callout-blue">
+                    <p class="text-sm text-accent-300/90">📄 <strong>Anthropic's full privacy policy:</strong> <a href="https://www.anthropic.com/policies/privacy" target="_blank" class="text-accent-400 hover:underline">anthropic.com/policies/privacy</a><br>
+                    <strong>Commercial terms (API):</strong> <a href="https://www.anthropic.com/policies/terms" target="_blank" class="text-accent-400 hover:underline">anthropic.com/policies/terms</a></p>
+                </div>
+
+                <div class="space-y-3 text-sm text-slate-300">
+                    <p><strong class="text-white">Your own Anthropic account:</strong> You subscribe directly to Anthropic's Max plan (~$100 USD/mo). You have full visibility into usage and billing through your Anthropic dashboard. SolveWorks does not mark up or resell AI access.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 8: Offboarding -->
+    <section id="offboarding" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-2">8. Offboarding & Data Removal</h2>
+            <p class="text-slate-400 mb-8">What happens if you stop using SolveWorks.</p>
+
+            <div class="glass rounded-2xl p-6 md:p-8 space-y-4">
+                <div class="text-sm text-slate-300 space-y-3">
+                    <p>Because everything runs on <strong class="text-white">your hardware</strong>:</p>
+                </div>
+                <ul class="space-y-3 text-sm text-slate-300">
+                    <li class="flex items-start gap-2"><span class="text-green-400 font-bold">1.</span> <strong class="text-white">Uninstall Tailscale</strong> — instantly revokes our remote access. One click.</li>
+                    <li class="flex items-start gap-2"><span class="text-green-400 font-bold">2.</span> <strong class="text-white">Revoke API keys</strong> — rotate or delete keys in each service dashboard (Shopify, Klaviyo, etc.)</li>
+                    <li class="flex items-start gap-2"><span class="text-green-400 font-bold">3.</span> <strong class="text-white">Cancel Anthropic subscription</strong> — through your own account at console.anthropic.com</li>
+                    <li class="flex items-start gap-2"><span class="text-green-400 font-bold">4.</span> <strong class="text-white">Keep or wipe the Mac Mini</strong> — your data is on it. Keep it as a computer, or factory reset it. Your choice.</li>
+                </ul>
+                <div class="h-px bg-white/5 my-2"></div>
+                <p class="text-sm text-slate-400"><strong class="text-slate-300">There is nothing to "request deletion" from SolveWorks</strong> — we don't hold your data. The hosted dashboard (GitHub Pages) can be removed on request or you can delete the repository yourself.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 9: FAQ -->
+    <section id="faq" class="section-anchor px-6 pb-16">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl md:text-3xl font-bold mb-8">9. Frequently Asked Questions</h2>
+
+            <div class="glass rounded-2xl overflow-hidden">
+                <div class="faq-item">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">Does SolveWorks store any of my data on your servers?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">No. We do not operate servers that store client data. All data — API keys, business data, conversation history, agent memory — lives on your Mac Mini. The only externally hosted component is the dashboard, which displays aggregated metrics (not raw data) on a password-protected GitHub Pages site.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">Can you see my Shopify orders / Klaviyo emails / customer data?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">We have SSH access to the Mac Mini for maintenance, which means we technically could view files on the machine. However, we do not routinely access client business data. API keys on the machine are there for your agent to use. You can revoke any API key at any time through your own service dashboard, and we encourage regular rotation.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">What ports need to be open on our firewall?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">None. The Mac Mini only makes outbound connections. Tailscale uses outbound UDP (port 41641 by default, falls back to HTTPS/443 if UDP is blocked). All API connections are outbound HTTPS (443). No inbound firewall rules are required.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">Can the AI agent access other machines on our network?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">No. The Tailscale connection is point-to-point — it only connects the Mac Mini to the SolveWorks management network. It does not bridge your local network. The Mac Mini operates as a standalone device. If you want to further isolate it, you can place it on a separate VLAN — though this isn't required.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">How do I revoke SolveWorks' access?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">Uninstall Tailscale from the Mac Mini. This immediately and permanently revokes our remote access. There is no "deactivation request" needed — it's a local uninstall that takes effect instantly. You can also change the Mac's login password as an additional measure.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">Is the AI trained on my data?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">No. Anthropic's commercial API terms explicitly state that API inputs are not used to train their models. Your conversations and business data are processed to generate responses and then retained for up to 30 days solely for abuse monitoring, per Anthropic's standard policy.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" style="border-bottom: none;">
+                    <div class="faq-q p-6 flex items-center justify-between" onclick="toggleFaq(this)">
+                        <span class="text-sm font-semibold text-white">Can we place the Mac Mini on a separate VLAN?</span>
+                        <span class="text-slate-500 text-lg">+</span>
+                    </div>
+                    <div class="faq-a px-6">
+                        <p class="text-sm text-slate-400 pb-6">Absolutely. The Mac Mini only needs outbound internet access (HTTPS and UDP). It doesn't need to communicate with any other device on your local network. A dedicated VLAN or guest network works perfectly.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="px-6 pb-16">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="glass rounded-2xl p-8 md:p-12">
+                <h2 class="text-2xl font-bold mb-4">Questions?</h2>
+                <p class="text-slate-400 mb-6">We're happy to walk through any of this with your IT team on a call, or answer specific questions about how the system would fit into your environment.</p>
+                <p class="text-slate-500 text-sm">Email: <a href="mailto:dwayne@solveworks.io" class="text-accent-400 hover:underline">dwayne@solveworks.io</a></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 px-6 border-t border-white/5">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <span class="text-sm text-slate-600">© 2026 SolveWorks</span>
+            <span class="text-xs text-slate-700">Last updated: March 2026</span>
+        </div>
+    </footer>
+
+    <script>
+        function toggleFaq(el) {
+            const answer = el.nextElementSibling;
+            const icon = el.querySelector('span:last-child');
+            const isOpen = answer.classList.contains('open');
+
+            // Close all
+            document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+            document.querySelectorAll('.faq-q span:last-child').forEach(s => s.textContent = '+');
+
+            if (!isOpen) {
+                answer.classList.add('open');
+                icon.textContent = '−';
+            }
+        }
+    </script>
+</body>
+</html>
