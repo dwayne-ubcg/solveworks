@@ -1113,11 +1113,14 @@ async function init(){
   if(tasks)allTasks=tasks.tasks||tasks||[];
   renderTasks();
 
+  // ── Load all sections in parallel (no sequential blocking on slow connections) ──
+  const parallel=[];
+
   // Meetings
-  try { await renderMeetings('darryl'); } catch(e){console.error('Meetings error:',e)}
+  parallel.push((async()=>{try { await renderMeetings('darryl'); } catch(e){console.error('Meetings error:',e)}})());
 
   // Activity
-  const mem=await loadJSON('data/memory-recent.json');
+  parallel.push((async()=>{const mem=await loadJSON('data/memory-recent.json');
   if(mem){
     const entries=mem.entries||mem;
     let html='';
@@ -1134,9 +1137,10 @@ async function init(){
       'Run a sync to populate the activity feed with recent updates'
     );
   }
+  })());
 
   // Documents
-  try {
+  parallel.push((async()=>{try {
   const docs=await loadJSON('data/documents.json');
   if(docs){docsData=docs.folders||(docs.documents?[{name:'Documents',files:docs.documents.map(d=>({name:(d.title||d.name||'Untitled')+(d.type?'.'+d.type:''),path:d.path||''}))}]:Array.isArray(docs)?docs:[]);renderDocs()}
   else{document.getElementById('docs-list').innerHTML=emptyStateHTML(
@@ -1146,9 +1150,10 @@ async function init(){
   )}
 
   } catch(e){console.error('Documents error:',e)}
+  })());
 
   // Agents
-  try {
+  parallel.push((async()=>{try {
   const agents=await loadJSON('data/agents.json');
   if(agents){
     let html='';
@@ -1171,9 +1176,10 @@ async function init(){
   }
 
   } catch(e){console.error('Agents error:',e)}
+  })());
 
   // Opportunity Intel + Call Recordings
-  try {
+  parallel.push((async()=>{try {
   const calls=await loadJSON('data/call-analyses.json');
   if(calls){
     const analyses=calls.analyses||calls||[];
@@ -1218,9 +1224,10 @@ async function init(){
   }
 
   } catch(e){console.error('Intel/Calls error:',e)}
+  })());
 
   // Security + Auto-CRM Updates
-  try {
+  parallel.push((async()=>{try {
   const crm=await loadJSON('data/crm-updates.json');
   if(crm&&Array.isArray(crm)&&crm.length){
     let html='';
@@ -1249,9 +1256,10 @@ async function init(){
   }
 
   } catch(e){console.error('Security/CRM error:',e)}
+  })());
 
   // Email Triage
-  try {
+  parallel.push((async()=>{try {
   const emailTriage=await loadJSON('data/email-triage.json');
   if(emailTriage&&Array.isArray(emailTriage)&&emailTriage.length){
     const priorities={'urgent':'🔴','important':'🟡','fyi':'🟢','noise':'⚪'};
@@ -1281,9 +1289,10 @@ async function init(){
   }
 
   } catch(e){console.error('Email/Outreach error:',e)}
+  })());
 
   // Health Dashboard
-  try {
+  parallel.push((async()=>{try {
   const health=await loadJSON('data/health.json');
   if(health&&Object.keys(health).length>0){
     document.getElementById('health-stats').style.display='';
@@ -1308,9 +1317,10 @@ async function init(){
   }
 
   } catch(e){console.error('Health error:',e)}
+  })());
 
   // Travel
-  try {
+  parallel.push((async()=>{try {
   const travel=await loadJSON('data/travel.json');
   // Normalize travel data: handle both old (depart/arrive/date) and new (departure/arrival ISO) formats
   if(travel&&travel.trips){
@@ -1619,11 +1629,12 @@ async function init(){
     );
   }
   } catch(e){console.error('Travel/Security error:',e)}
+  })());
 
   // --- NEW PANELS ---
 
   // Panel 1: One Thing Today
-  try {
+  parallel.push((async()=>{try {
     const ot=await loadJSON('data/one-thing.json');
     const c=document.getElementById('one-thing-container');
     if(ot&&ot.insight){
@@ -1639,9 +1650,10 @@ async function init(){
       c.innerHTML='';
     }
   } catch(e){console.error('One Thing error:',e);document.getElementById('one-thing-container').innerHTML='';}
+  })());
 
   // Panel 2: Anomaly Alerts
-  try {
+  parallel.push((async()=>{try {
     const an=await loadJSON('data/anomalies.json');
     const dismissed=JSON.parse(localStorage.getItem('mc_dismissed_anomalies')||'[]');
     const c=document.getElementById('anomaly-container');
@@ -1666,9 +1678,10 @@ async function init(){
       c.innerHTML='';
     }
   } catch(e){console.error('Anomalies error:',e);document.getElementById('anomaly-container').innerHTML='';}
+  })());
 
   // Panel 3: Competitor Intel Feed
-  try {
+  parallel.push((async()=>{try {
     const ci=await loadJSON('data/competitor-intel.json');
     const cFeed=document.getElementById('competitor-feed');
     if(ci&&ci.items&&ci.items.length){
@@ -1690,9 +1703,10 @@ async function init(){
       cFeed.innerHTML=`<div class="anomaly-empty">No competitor intel data yet — Brit will populate this automatically.</div>`;
     }
   } catch(e){console.error('Competitor Intel error:',e);const el=document.getElementById('competitor-feed');if(el)el.innerHTML='';}
+  })());
 
   // Panel 4: Goals
-  try {
+  parallel.push((async()=>{try {
     const gd=await loadJSON('data/goals.json');
     const gc=document.getElementById('goals-content');
     if(gd){
@@ -1730,9 +1744,10 @@ async function init(){
       gc.innerHTML=`<div class="goals-pending">🎯 No goals data available yet.</div>`;
     }
   } catch(e){console.error('Goals error:',e);const el=document.getElementById('goals-content');if(el)el.innerHTML=`<div class="goals-pending">Unable to load goals.</div>`;}
+  })());
 
   // Panel 5: Momentum Score
-  try {
+  parallel.push((async()=>{try {
     const mo=await loadJSON('data/momentum.json');
     const mc=document.getElementById('momentum-container');
     if(mo){
@@ -1765,6 +1780,10 @@ async function init(){
       mc.innerHTML='';
     }
   } catch(e){console.error('Momentum error:',e);const el=document.getElementById('momentum-container');if(el)el.innerHTML='';}
+  })());
+
+  // Wait for all sections to finish (no section blocks another)
+  await Promise.allSettled(parallel);
 }
 
 // ── TripIt helpers ────────────────────────────────────────────────
