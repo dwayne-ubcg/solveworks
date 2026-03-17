@@ -1657,6 +1657,7 @@ input,select{font-family:inherit;font-size:13px}
             <div class="section-title"><span class="s-icon">📦</span> OTB by Category</div>
             <span style="font-size:11px;color:var(--text-3)">Categories with buy triggers highlighted</span>
           </div>
+          <div id="otb-net-summary" style="margin-bottom:12px"></div>
           <div class="card">
             <div class="card-body">
               <div class="table-wrap">
@@ -2424,12 +2425,15 @@ function renderBriefing() {
   }
   const stBlended = Math.round(s.totalUnitsSold / (s.totalUnitsSold + (DB.inventory.totalUnits || 1)) * 100);
   const totalOTBAvailable = (ST.otb || []).filter(o => o.status === 'open-to-buy' || o.status === 'buy').reduce((sum, o) => sum + o.otbAvailable, 0);
+  const netOTBPosition = (ST.otb || []).reduce((sum, o) => sum + o.otbAvailable, 0);
+  const otbBuyCategories = (ST.otb || []).filter(o => o.otbAvailable > 0);
+  const otbBuyTotal = otbBuyCategories.reduce((sum, o) => sum + o.otbAvailable, 0);
 
   const heroRow2 = [
     {
-      label: 'Gross Margin',
+      label: 'Gross Margin (Realized)',
       value: storeLoc ? fmtPct(storeLoc.grossMargin) : fmtPct(s.grossMargin),
-      sub: storeLoc ? storeLabel : `$${fmtN(Math.round(s.grossProfit))} profit`,
+      sub: storeLoc ? `${storeLabel} · after markdowns` : `$${fmtN(Math.round(s.grossProfit))} profit · after markdowns`,
     },
     {
       label: 'Blended Sell-Through',
@@ -2449,9 +2453,10 @@ function renderBriefing() {
       alert: false,
     },
     {
-      label: 'Open-to-Buy',
-      value: fmt$(Math.round(totalOTBAvailable)),
-      sub: 'JEANS category · buy now',
+      label: 'Net OTB Position',
+      value: fmt$(Math.round(netOTBPosition)),
+      sub: netOTBPosition < 0 ? `Overbought · ${otbBuyCategories.length} categor${otbBuyCategories.length !== 1 ? 'ies' : 'y'} have room (${fmt$(Math.round(otbBuyTotal))})` : `${otbBuyCategories.length} categories with buying room`,
+      color: netOTBPosition < 0 ? 'var(--red)' : 'var(--green)',
     },
   ];
 
@@ -2606,7 +2611,7 @@ function renderBriefing() {
   const stStatus = displayST >= expectedST ? 'On Pace ✓' : displayST >= expectedST * 0.8 ? 'Tracking' : 'Monitor';
   const stColor = displayST >= expectedST ? 'var(--green)' : displayST >= expectedST * 0.8 ? 'var(--sage)' : 'var(--amber)';
   const healthKpis = [
-    { label: 'Gross Margin', value: fmtPct(displayGM), target: `Target: ${CONFIG.rules.target_margin}%${storeLoc ? ' · ' + storeLabel : ''}`, color: displayGM >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: displayGM },
+    { label: 'Gross Margin — Realized (after markdowns)', value: fmtPct(displayGM), target: `Target: ${CONFIG.rules.target_margin}%${storeLoc ? ' · ' + storeLabel : ''} · lower than keystone due to discounts`, color: displayGM >= CONFIG.rules.target_margin ? 'var(--green)' : 'var(--amber)', pct: displayGM },
     { label: 'Sell-Through — Spring Progress', value: fmtPct(displayST), target: `Week ${wks}/26 · Expected ~${expectedST}% · ${stStatus}`, color: stColor, pct: displayST },
     { label: storeLoc ? `Inventory Cost — ${storeLabel}` : 'Inventory Value (Cost)', value: fmt$(displayInvValue), target: storeInvData ? `${fmtN(storeInvData.units)} units` : `${DB.inventory.totalProducts} products on hand`, color: 'var(--blue)', pct: 70 },
     { label: 'Avg Transaction', value: fmt$(displayAOV), target: activeStore === 'all' ? 'Spring season' : storeLabel, color: 'var(--sage)', pct: Math.min(100, (displayAOV / 200) * 100) },
@@ -3876,7 +3881,8 @@ function renderBuyPlanning() {
   const growthMult = 1 + getGrowthPct() / 100;
   const weeksLeftSeason = monthsLeft * 4.33;
 
-  $('otb-cat-tbody').innerHTML = otbRows.map(o => {
+  // Build row data for all categories (calculate before rendering)
+  const otbRowData = otbRows.map(o => {
     const cat = o.category;
     const ss25 = ss25CatLookup[cat];
 
@@ -3892,31 +3898,94 @@ function renderBuyPlanning() {
       baseWeeklyUnits = (o.weeklyRunRateUnits || (o.weeklyRunRate ? o.weeklyRunRate / 50 : 0));
     }
 
-    // Apply user growth target
     const adjWeeklyRate = baseWeeklyRevenue * growthMult;
     const adjWeeklyUnits = baseWeeklyUnits * growthMult;
-
     const plannedSalesCost = adjWeeklyRate * weeksLeftSeason;
-    const plannedEOS = adjWeeklyRate * 2; // 2 weeks at end of season
+    const plannedEOS = adjWeeklyRate * 2;
     const catOTB = plannedSalesCost + plannedEOS - (o.currentInventoryCost || 0);
     const wos = adjWeeklyUnits > 0 ? (o.currentStock || 0) / adjWeeklyUnits : 999;
 
     const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason * 2 ? 'over' : wos > weeksLeftSeason ? 'monitor' : 'ok';
-    const statusCls = status === 'buy' ? 'badge-red' : status === 'over' ? 'badge-amber' : status === 'ok' ? 'badge-green' : 'badge-neutral';
+    return { o, cat, adjWeeklyRate, adjWeeklyUnits, catOTB, wos, status };
+  });
+
+  // Net OTB summary (using data-file otbAvailable values — authoritative)
+  const netOTBData = (ST.otb || []).reduce((sum, o) => sum + (o.otbAvailable || 0), 0);
+  const buyRoomCats = (ST.otb || []).filter(o => (o.otbAvailable || 0) > 0);
+  const overstockedCats = (ST.otb || []).filter(o => (o.otbAvailable || 0) < 0);
+  const buyRoomTotal = buyRoomCats.reduce((sum, o) => sum + o.otbAvailable, 0);
+  const overstockedTotal = overstockedCats.reduce((sum, o) => sum + o.otbAvailable, 0);
+  const netSummaryEl = document.getElementById('otb-net-summary');
+  if (netSummaryEl) {
+    netSummaryEl.innerHTML = `
+      <div style="border-radius:12px;overflow:hidden;border:2px solid ${netOTBData < 0 ? 'var(--red)' : 'var(--green)'};margin-bottom:4px">
+        <div style="padding:14px 18px;background:${netOTBData < 0 ? 'var(--red-lt,#FFF0F0)' : 'var(--green-lt)'};display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-3);margin-bottom:4px">Overall Net OTB Position</div>
+            <div style="font-size:26px;font-weight:800;color:${netOTBData < 0 ? 'var(--red)' : 'var(--green)'}">${fmt$(Math.round(netOTBData))}</div>
+            <div style="font-size:12px;color:var(--text-2);margin-top:2px">${netOTBData < 0 ? `Overbought overall — reduce inventory before buying more` : `Buying room available`}</div>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="text-align:center;background:rgba(255,255,255,0.7);border-radius:8px;padding:10px 16px">
+              <div style="font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Buying Room</div>
+              <div style="font-size:18px;font-weight:700;color:var(--green)">${fmt$(Math.round(buyRoomTotal))}</div>
+              <div style="font-size:10px;color:var(--text-3)">${buyRoomCats.length} categories</div>
+            </div>
+            <div style="text-align:center;background:rgba(255,255,255,0.7);border-radius:8px;padding:10px 16px">
+              <div style="font-size:11px;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Overstocked</div>
+              <div style="font-size:18px;font-weight:700;color:var(--red)">${fmt$(Math.round(overstockedTotal))}</div>
+              <div style="font-size:10px;color:var(--text-3)">${overstockedCats.length} categories</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function buildOTBRow(d) {
+    const { o, adjWeeklyRate, adjWeeklyUnits, catOTB, wos, status } = d;
+    const statusCls = status === 'buy' ? 'badge-green' : status === 'over' ? 'badge-amber' : status === 'ok' ? 'badge-green' : 'badge-neutral';
     const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠ Overstocked' : status === 'ok' ? '✓ Healthy' : '👁 Monitor';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= weeksLeftSeason ? 'var(--green)' : 'var(--text-3)';
-
-    return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
-      <td class="strong">${cat}</td>
+    return `<tr>
+      <td class="strong">${d.cat}</td>
       <td class="num">${fmtN(o.currentStock)}</td>
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
       <td class="num">${fmt$(adjWeeklyRate)}/wk</td>
       <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(wos, 1)}w</span></td>
-      <td class="num">${fmt$(plannedEOS)}</td>
-      <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--text-3)'};font-weight:700">${fmt$(Math.max(0, catOTB))}</span></td>
+      <td class="num">${fmt$(catOTB > 0 ? catOTB * 0.5 : 0)}</td>
+      <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${fmt$(catOTB)}</span></td>
       <td><span class="badge ${statusCls}">${statusLabel}</span></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No OTB data available</td></tr>';
+  }
+
+  const buyRows = otbRowData.filter(d => d.status === 'buy');
+  const otherRows = otbRowData.filter(d => d.status !== 'buy');
+
+  let tableBodyHtml = '';
+  if (buyRows.length > 0) {
+    tableBodyHtml += `<tr><td colspan="8" style="background:linear-gradient(90deg,#E8F5E9,transparent);padding:10px 14px;border-bottom:2px solid var(--green)">
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--green)">🛒 Categories With Buying Room — ${buyRows.length} categor${buyRows.length !== 1 ? 'ies' : 'y'} · ${fmt$(Math.round(buyRows.reduce((s,d)=>s+d.catOTB,0)))} available</span>
+    </td></tr>`;
+    tableBodyHtml += buyRows.map(buildOTBRow).join('');
+  }
+  if (otherRows.length > 0) {
+    const overstocked = otherRows.filter(d => d.status === 'over');
+    const healthy = otherRows.filter(d => d.status !== 'over');
+    if (overstocked.length > 0) {
+      tableBodyHtml += `<tr><td colspan="8" style="background:linear-gradient(90deg,#FFF3F3,transparent);padding:10px 14px;border-bottom:2px solid var(--red)">
+        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--red)">⚠ Overstocked Categories — ${overstocked.length} categories · reduce before buying more</span>
+      </td></tr>`;
+      tableBodyHtml += overstocked.map(buildOTBRow).join('');
+    }
+    if (healthy.length > 0) {
+      tableBodyHtml += `<tr><td colspan="8" style="background:linear-gradient(90deg,var(--bg),transparent);padding:10px 14px;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-3)">✓ Healthy / Monitor</span>
+      </td></tr>`;
+      tableBodyHtml += healthy.map(buildOTBRow).join('');
+    }
+  }
+
+  $('otb-cat-tbody').innerHTML = tableBodyHtml || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:20px">No OTB data available</td></tr>';
 
   // ── 2.22 Season-Over-Season Brand Comparison (Same-Period) ──
   const sc = ST.seasonComparison;
