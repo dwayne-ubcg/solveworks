@@ -418,11 +418,14 @@ async function main() {
         soldSP26:  sk.soldSP26,
         remaining: sk.remaining,
         revenue:   parseFloat(sk.revenue.toFixed(2)),
+        cost:      parseFloat(sk.cost.toFixed(2)),
       }));
 
       const totalSold      = skuList.reduce((s, sk) => s + sk.sold,      0);
       const totalRemaining = skuList.reduce((s, sk) => s + sk.remaining, 0);
       const totalRevenue   = skuList.reduce((s, sk) => s + sk.revenue,   0);
+      const totalCost      = skuList.reduce((s, sk) => s + sk.cost,      0);
+      const avgCostPerUnit = totalSold > 0 ? totalCost / totalSold : 0;
       const totalReceived  = totalSold + totalRemaining;
       const sellThrough    = totalReceived > 0
         ? Math.round((totalSold / totalReceived) * 100)
@@ -453,6 +456,7 @@ async function main() {
         sold:        totalSold,
         remaining:   totalRemaining,
         revenue:     parseFloat(totalRevenue.toFixed(2)),
+        costOnHand:  parseFloat((avgCostPerUnit * totalRemaining).toFixed(2)),
         sellThrough: sellThrough,
         vel:         parseFloat(vel.toFixed(2)),
         wos:         wos,
