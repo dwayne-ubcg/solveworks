@@ -230,17 +230,7 @@ select.form-input{cursor:pointer;appearance:none}
 .margin-bar{height:6px;background:var(--surface3);border-radius:3px;margin-top:14px;overflow:hidden}
 .margin-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,var(--red),var(--yellow),var(--green))}
 
-/* ─── REORDERS PANEL ─── */
-.reorder-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;transition:all .2s}
-.reorder-card:hover{border-color:#353854}
-.reorder-urgency{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.reorder-urgency.high{background:var(--red)}
-.reorder-urgency.medium{background:var(--yellow)}
-.reorder-urgency.low{background:var(--green)}
-.reorder-info{flex:1}
-.reorder-customer{font-size:14px;font-weight:600;margin-bottom:2px}
-.reorder-detail{font-size:12px;color:var(--text2)}
-.setup-needed{background:rgba(74,140,247,.06);border:1px dashed rgba(74,140,247,.2);border-radius:10px;padding:20px;text-align:center;color:var(--text2);font-size:13px;line-height:1.6}
+
 
 /* ─── MODAL ─── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -357,10 +347,7 @@ select.form-input{cursor:pointer;appearance:none}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
       Margin Calculator
     </div>
-    <div class="nav-item" data-section="reorders" onclick="showSection('reorders')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-      Welding Reorders
-    </div>
+
   </div>
   <div class="sidebar-footer">
     <button class="btn-logout" onclick="logout()">← Logout</button>
@@ -607,16 +594,7 @@ select.form-input{cursor:pointer;appearance:none}
     </div>
   </div>
 
-  <!-- ── REORDERS ── -->
-  <div class="section" id="sec-reorders">
-    <h1 class="page-title">Welding Supply Reorders</h1>
-    <p class="page-sub">Proactive order suggestions for Brad's welding supply route</p>
-    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-      <button class="btn primary" onclick="msgAce('Check welding supply reorder status')">📲 Ask Ace</button>
-      <button class="btn" onclick="loadReorders()">🔄 Refresh</button>
-    </div>
-    <div id="reorders-container"></div>
-  </div>
+
 
 </div><!-- /main -->
 
@@ -691,7 +669,7 @@ function showSection(id){
   if(id==='social')loadSocial();
   if(id==='email')loadEmail();
   if(id==='tenders')loadTenders();
-  if(id==='reorders')loadReorders();
+
 }
 
 // ─── Clock ───
@@ -1214,52 +1192,7 @@ function renderSavedQuotes(){
   </div>`).join('');
 }
 
-// ─── Reorders ───
-async function loadReorders(){
-  try{
-    const data=await loadJSON('data/reorders.json');
-    const container=document.getElementById('reorders-container');
-    if(!data||!data.customers||data.customers.length===0||data.status==='pending_data'){
-      container.innerHTML=`<div class="panel"><div class="panel-header"><div class="panel-title"><div class="icon" style="background:rgba(48,184,192,.1)">🔄</div>Reorder Suggestions</div><div class="panel-actions"><button class="btn primary" onclick="msgAce('Help me set up welding supply customer tracking for reorder alerts')">📲 Set Up with Ace</button></div></div><div class="panel-body">
-        <div class="setup-needed">
-          <div style="font-size:28px;margin-bottom:12px">🔧</div>
-          <div style="font-weight:600;color:var(--text);margin-bottom:8px">Customer data needed to activate reorder alerts</div>
-          <p style="margin-bottom:12px">Once Brad shares the welding supply customer list — names, typical products, order frequency — Ace will automatically flag who's due for a reorder before each route.</p>
-          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-            <button class="btn primary" onclick="msgAce('I want to set up welding supply reorder tracking. Here are my customers: [list them]')">📤 Share Customer List with Ace</button>
-            <button class="btn blue" onclick="msgAce('What information do you need to set up welding supply reorder alerts?')">❓ What Do You Need?</button>
-          </div>
-        </div>
-        <div style="margin-top:20px;padding:16px;background:rgba(232,160,69,.05);border:1px solid rgba(232,160,69,.15);border-radius:10px">
-          <div style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">How it works</div>
-          <ul style="font-size:13px;color:var(--text2);padding-left:18px;line-height:1.8">
-            <li>Brad shares customer list (name, products, usual order frequency)</li>
-            <li>Ace builds order pattern profiles for each customer</li>
-            <li>Before each route, Ace surfaces who's due for a restock</li>
-            <li>Ace drafts personalized reorder messages Brad can send in one tap</li>
-          </ul>
-        </div>
-      </div></div>`;
-      return;
-    }
-    // Render reorder suggestions if data exists
-    let html=`<div class="panel"><div class="panel-body">`;
-    data.suggestions.forEach(s=>{
-      html+=`<div class="reorder-card">
-        <div class="reorder-urgency ${s.urgency}"></div>
-        <div class="reorder-info">
-          <div class="reorder-customer">${esc(s.customer)}</div>
-          <div class="reorder-detail">${esc(s.detail)}</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn primary" onclick="msgAce('Draft a reorder message for ${esc(s.customer).replace(/'/g,"\\'")}')">Draft Message</button>
-        </div>
-      </div>`;
-    });
-    html+=`</div></div>`;
-    container.innerHTML=html;
-  } catch(e){console.error('Reorders error:',e)}
-}
+
 
 // ─── Init ───
 async function init(){
