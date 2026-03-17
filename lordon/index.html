@@ -1583,7 +1583,7 @@ input,select{font-family:inherit;font-size:13px}
                       <th class="num">Cost on Hand</th>
                       <th class="num">Weekly Run Rate</th>
                       <th class="num">WOS</th>
-                      <th class="num">EOS Target</th>
+                      <th class="num">Sell-Through</th>
                       <th class="num">OTB Available</th>
                       <th>Action</th>
                     </tr>
@@ -1669,7 +1669,7 @@ input,select{font-family:inherit;font-size:13px}
                       <th onclick="sortTable('otb-cat-table',2)" class="num">Cost on Hand <span class="sort-icon">⇅</span></th>
                       <th onclick="sortTable('otb-cat-table',3)" class="num">Weekly Run Rate <span class="sort-icon">⇅</span></th>
                       <th onclick="sortTable('otb-cat-table',4)" class="num">WOS <span class="sort-icon">⇅</span></th>
-                      <th onclick="sortTable('otb-cat-table',5)" class="num">EOS Target <span class="sort-icon">⇅</span></th>
+                      <th onclick="sortTable('otb-cat-table',5)" class="num">Sell-Through <span class="sort-icon">⇅</span></th>
                       <th onclick="sortTable('otb-cat-table',6)" class="num">OTB Available <span class="sort-icon">⇅</span></th>
                       <th>Status</th>
                     </tr>
@@ -3460,21 +3460,20 @@ function renderInventory() {
       wklyRev = (o.weeklyRunRateCost || o.weeklyRunRate || 0) * ihGrowthMult;
       wklyUnits = (o.weeklyRunRateUnits || o.weeklyRunRate / 50 || 0) * ihGrowthMult;
     }
-    const plannedEOS = wklyRev * 2;
-    const catOTB = (wklyRev * ihWeeksLeft) + plannedEOS - (o.currentInventoryCost || 0);
+    const catOTB = o.otbAvailable || 0; // USE DATA FILE VALUES — authoritative
     const wos = wklyUnits > 0 ? (o.currentStock || 0) / wklyUnits : 999;
-    const status = catOTB > 500 ? 'buy' : wos > ihWeeksLeft * 2 ? 'over' : wos > ihWeeksLeft ? 'monitor' : 'ok';
-    const statusCls = status === 'buy' ? 'badge-red' : status === 'over' ? 'badge-amber' : status === 'ok' ? 'badge-green' : 'badge-neutral';
-    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠ Overstocked' : status === 'ok' ? '✓ Healthy' : '👁 Monitor';
+    const status = catOTB > 500 ? 'buy' : catOTB >= -500 ? 'ok' : 'over';
+    const statusCls = status === 'buy' ? 'badge-green' : status === 'over' ? 'badge-red' : 'badge-neutral';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠️ Overstocked' : '✓ Healthy';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= ihWeeksLeft ? 'var(--green)' : 'var(--text-2)';
-    return `<tr style="${status === 'buy' ? 'background:var(--red-lt)' : ''}">
+    return `<tr style="${status === 'over' ? 'background:var(--red-lt)' : ''}">
       <td class="strong">${o.category}</td>
       <td class="num">${fmtN(o.currentStock)}</td>
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
       <td class="num">${fmt$(wklyRev)}/wk</td>
       <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(wos, 1)}w</span></td>
-      <td class="num">${fmt$(plannedEOS)}</td>
-      <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--text-3)'};font-weight:700">${fmt$(Math.max(0, catOTB))}</span></td>
+      <td class="num">${fmtPct(o.sellThrough || 0)}</td>
+      <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${fmt$(catOTB)}</span></td>
       <td><span class="badge ${statusCls}">${statusLabel}</span></td>
     </tr>`;
   }).join('');
@@ -3902,10 +3901,10 @@ function renderBuyPlanning() {
     const adjWeeklyUnits = baseWeeklyUnits * growthMult;
     const plannedSalesCost = adjWeeklyRate * weeksLeftSeason;
     const plannedEOS = adjWeeklyRate * 2;
-    const catOTB = plannedSalesCost + plannedEOS - (o.currentInventoryCost || 0);
+    const catOTB = o.otbAvailable || 0; // USE DATA FILE VALUES — authoritative
     const wos = adjWeeklyUnits > 0 ? (o.currentStock || 0) / adjWeeklyUnits : 999;
 
-    const status = catOTB > 500 ? 'buy' : wos > weeksLeftSeason * 2 ? 'over' : wos > weeksLeftSeason ? 'monitor' : 'ok';
+    const status = catOTB > 500 ? 'buy' : catOTB >= -500 ? 'ok' : 'over';
     return { o, cat, adjWeeklyRate, adjWeeklyUnits, catOTB, wos, status };
   });
 
@@ -3943,8 +3942,8 @@ function renderBuyPlanning() {
 
   function buildOTBRow(d) {
     const { o, adjWeeklyRate, adjWeeklyUnits, catOTB, wos, status } = d;
-    const statusCls = status === 'buy' ? 'badge-green' : status === 'over' ? 'badge-amber' : status === 'ok' ? 'badge-green' : 'badge-neutral';
-    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠ Overstocked' : status === 'ok' ? '✓ Healthy' : '👁 Monitor';
+    const statusCls = status === 'buy' ? 'badge-green' : status === 'over' ? 'badge-red' : status === 'ok' ? 'badge-neutral' : 'badge-neutral';
+    const statusLabel = status === 'buy' ? '🛒 Buy Now' : status === 'over' ? '⚠️ Overstocked' : status === 'ok' ? '✓ Healthy' : '👁 Monitor';
     const wosColor = wos < 4 ? 'var(--red)' : wos < 8 ? 'var(--amber)' : wos <= weeksLeftSeason ? 'var(--green)' : 'var(--text-3)';
     return `<tr>
       <td class="strong">${d.cat}</td>
@@ -3952,7 +3951,7 @@ function renderBuyPlanning() {
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
       <td class="num">${fmt$(adjWeeklyRate)}/wk</td>
       <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(wos, 1)}w</span></td>
-      <td class="num">${fmt$(catOTB > 0 ? catOTB * 0.5 : 0)}</td>
+      <td class="num">${fmtPct(o.sellThrough || 0)}</td>
       <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${fmt$(catOTB)}</span></td>
       <td><span class="badge ${statusCls}">${statusLabel}</span></td>
     </tr>`;
