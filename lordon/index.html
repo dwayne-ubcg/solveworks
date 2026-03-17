@@ -3207,7 +3207,9 @@ function renderSellThrough() {
           if (!canon) { for (const [c, vs] of Object.entries(SM)) { if (vs.includes(sz) || c === sz) { canon = c; break; } } }
           if (canon) {
             stockBySize[canon] = (stockBySize[canon] || 0) + (sku.remaining || 0);
-            soldBySize[canon] = (soldBySize[canon] || 0) + (sku.sold || 0);
+            // Use SP26 (this season) sold if available, fall back to style-level proportion
+            const sp26Sold = sku.soldSP26 != null ? sku.soldSP26 : sku.sold || 0;
+            soldBySize[canon] = (soldBySize[canon] || 0) + sp26Sold;
           }
         }
       }

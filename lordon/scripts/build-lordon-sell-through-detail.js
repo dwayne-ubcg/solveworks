@@ -385,9 +385,10 @@ async function main() {
     // If multiple products share the same size label (e.g. duplicate entries),
     // accumulate — never lose data
     if (!styleData.skus[size]) {
-      styleData.skus[size] = { sold: 0, remaining: 0, revenue: 0, cost: 0 };
+      styleData.skus[size] = { sold: 0, soldSP26: 0, remaining: 0, revenue: 0, cost: 0 };
     }
     styleData.skus[size].sold      += soldData.qty;
+    styleData.skus[size].soldSP26  += (soldBySeason[p.id] || {}).sp26 || 0;
     styleData.skus[size].remaining += Math.max(stockQty, 0);
     styleData.skus[size].revenue   += soldData.revenue;
     // COGS: supply_price × units_sold (per spec — not cost_total from sale line)
@@ -414,6 +415,7 @@ async function main() {
       const skuList = Object.entries(styleData.skus).map(([label, sk]) => ({
         label,
         sold:      sk.sold,
+        soldSP26:  sk.soldSP26,
         remaining: sk.remaining,
         revenue:   parseFloat(sk.revenue.toFixed(2)),
       }));
