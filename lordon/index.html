@@ -3024,6 +3024,10 @@ function renderSellThrough() {
   const carryoverStyles = allStylesFlat.filter(s => s.carryover && s.remaining > 0);
   const carryoverCount = carryoverStyles.length;
   const carryoverUnits = carryoverStyles.reduce((s, x) => s + (x.remaining || 0), 0);
+  const carryoverValue = carryoverStyles.reduce((s, x) => {
+    const avgPrice = x.sold > 0 ? x.revenue / x.sold : 0;
+    return s + avgPrice * (x.remaining || 0);
+  }, 0);
   const productsOnFloor = seasonStyles.length;
 
   const seasonLabel = stSeason === 'spring' ? "Spring '26" : stSeason === 'fall' ? "Fall '25" : 'All Current Floor';
@@ -3045,7 +3049,7 @@ function renderSellThrough() {
     { label: '🟢 Repeat Worthy', value: repeatWorthyCount, sub: '≥60% in ≤4w or ≥40% in ≤3w', color: 'var(--green)' },
     { label: '🟡 Watch', value: watchCount, sub: '≥25% sell-through', color: 'var(--amber)' },
     { label: '🔵 New (No Sales Yet)', value: newCount, sub: 'Too early to judge', color: 'var(--blue)' },
-    { label: '🟣 Carryover', value: fmtN(carryoverCount), sub: `${fmtN(carryoverUnits)} units · pre-season`, color: '#7c3aed' },
+    { label: '🟣 Carryover', value: `${fmtN(carryoverUnits)} units`, sub: `${fmt$(Math.round(carryoverValue))} · ${fmtN(carryoverCount)} styles`, color: '#7c3aed' },
   ].map(k => `
     <div class="kpi-tile">
       <div class="kt-label">${k.label}</div>
