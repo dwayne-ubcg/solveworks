@@ -3215,8 +3215,27 @@ function renderSellThrough() {
     // Only override if STD has data (prefer STD over empty sa data)
     if (Object.keys(stockBySize).length > 0) {
       sa.currentStock = stockBySize;
-      if (Object.keys(sa.unitsSold || {}).length === 0) sa.unitsSold = soldBySize;
+      sa.unitsSold = soldBySize;
       console.log('Size curves rebuilt from STD detail:', stockBySize);
+
+      // Recalculate sizeInsights gap using real stock data
+      const coreApp = ['XS', 'S', 'S/M', 'M', 'M/L', 'L', 'XL', 'XXL'];
+      const numSz = ['24','25','26','27','28','29','30','31','32','33','36','37','38','39','40','41'];
+      const appSold = coreApp.reduce((s, z) => s + (soldBySize[z] || 0), 0);
+      const appStock = coreApp.reduce((s, z) => s + (stockBySize[z] || 0), 0);
+      const numSold = numSz.reduce((s, z) => s + (soldBySize[z] || 0), 0);
+      const numStock = numSz.reduce((s, z) => s + (stockBySize[z] || 0), 0);
+      sa.sizeInsights = [...coreApp, ...numSz].map(sz => {
+        const sold = soldBySize[sz] || 0;
+        const stock = stockBySize[sz] || 0;
+        const isNum = numSz.includes(sz);
+        const poolSold = isNum ? numSold : appSold;
+        const poolStock = isNum ? numStock : appStock;
+        const demandPct = poolSold > 0 ? Math.round((sold / poolSold) * 100) : 0;
+        const buyPct = poolStock > 0 ? Math.round((stock / poolStock) * 100) : 0;
+        return { size: sz, sold, stock, demandPct, buyPct, gap: demandPct - buyPct };
+      });
+      console.log('Size insights recalculated with real stock data');
     }
   }
 
