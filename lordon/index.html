@@ -2402,9 +2402,9 @@ function renderBriefing() {
     },
     {
       label: 'Unfulfilled Orders',
-      value: (b.unfulfilledOrders || []).length,
-      sub: 'Need fulfillment',
-      alert: (b.unfulfilledOrders || []).length > 0,
+      value: (() => { const cutoff = new Date(Date.now() - 7*86400000).toISOString(); return (b.unfulfilledOrders || []).filter(o => o.date >= cutoff).length; })(),
+      sub: 'Last 7 days',
+      alert: (() => { const cutoff = new Date(Date.now() - 7*86400000).toISOString(); return (b.unfulfilledOrders || []).filter(o => o.date >= cutoff).length > 0; })(),
     },
   ];
 
@@ -2579,10 +2579,15 @@ function renderBriefing() {
   $('yesterday-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
     <div class="ai-text">${briefingHealthText}</div>`;
 
-  // Unfulfilled orders
-  const orders = b.unfulfilledOrders || [];
+  // Unfulfilled orders — only show last 7 days (older ones are likely fulfilled but unmarked in Shopify)
+  const allUnfulfilled = b.unfulfilledOrders || [];
+  const unfulfilledCutoff = new Date(Date.now() - 7*86400000).toISOString();
+  const orders = allUnfulfilled.filter(o => o.date >= unfulfilledCutoff);
+  const staleCount = allUnfulfilled.length - orders.length;
   $('unfulfilled-badge').textContent = orders.length;
-  $('unfulfilled-count-label').textContent = `${orders.length} orders need fulfillment`;
+  $('unfulfilled-count-label').textContent = orders.length > 0 
+    ? `${orders.length} orders need fulfillment` + (staleCount > 0 ? ` (${staleCount} older hidden)` : '')
+    : staleCount > 0 ? `${staleCount} older orders hidden (likely fulfilled)` : 'All orders fulfilled';
   $('unfulfilled-list').innerHTML = orders.slice(0, 20).map(o => {
     const status = o.fulfillmentStatus === 'partial' ? 'Partial' : 'Unfulfilled';
     const badge = status === 'Partial' ? 'badge-amber' : 'badge-red';
@@ -3014,7 +3019,11 @@ function renderSellThrough() {
   const repeatWorthyCount = seasonStyles.filter(s => s.alert === 'REPEAT_WORTHY').length;
   const watchCount = seasonStyles.filter(s => s.alert === 'WATCH').length;
   const newCount = seasonStyles.filter(s => s.alert === 'NEW').length;
-  const carryoverCount = seasonStyles.filter(s => s.alert === 'CARRYOVER').length;
+  // Carryover count from ALL styles (not seasonStyles which excludes carryover)
+  const allStylesFlat = STD ? STD.brands.flatMap(b => b.styles) : [];
+  const carryoverStyles = allStylesFlat.filter(s => s.carryover && s.remaining > 0);
+  const carryoverCount = carryoverStyles.length;
+  const carryoverUnits = carryoverStyles.reduce((s, x) => s + (x.remaining || 0), 0);
   const productsOnFloor = seasonStyles.length;
 
   const seasonLabel = stSeason === 'spring' ? "Spring '26" : stSeason === 'fall' ? "Fall '25" : 'All Current Floor';
@@ -3036,7 +3045,7 @@ function renderSellThrough() {
     { label: '🟢 Repeat Worthy', value: repeatWorthyCount, sub: '≥60% in ≤4w or ≥40% in ≤3w', color: 'var(--green)' },
     { label: '🟡 Watch', value: watchCount, sub: '≥25% sell-through', color: 'var(--amber)' },
     { label: '🔵 New (No Sales Yet)', value: newCount, sub: 'Too early to judge', color: 'var(--blue)' },
-    { label: '🟣 Carryover', value: carryoverCount, sub: 'Pre-season inventory', color: '#7c3aed' },
+    { label: '🟣 Carryover', value: fmtN(carryoverCount), sub: `${fmtN(carryoverUnits)} units · pre-season`, color: '#7c3aed' },
   ].map(k => `
     <div class="kpi-tile">
       <div class="kt-label">${k.label}</div>
