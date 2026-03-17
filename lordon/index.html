@@ -3437,6 +3437,9 @@ function renderInventory() {
   `).join('');
 
   // OTB Table
+  // Sell-through lookup for inventory health table
+  const ihCatSTLookup = {};
+  (ST.byCategory || []).forEach(c => { ihCatSTLookup[c.category] = c.sellThrough || 0; });
   // Same SS25 full-season logic as Buy Planning tab — 2→3 store scaling + growth
   const ihSS25CatLookup = {};
   const ihSC = ST.seasonComparison;
@@ -3472,7 +3475,7 @@ function renderInventory() {
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
       <td class="num">${fmt$(wklyRev)}/wk</td>
       <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(wos, 1)}w</span></td>
-      <td class="num">${fmtPct(o.sellThrough || 0)}</td>
+      <td class="num">${fmtPct(ihCatSTLookup[o.category] || 0)}</td>
       <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${fmt$(catOTB)}</span></td>
       <td><span class="badge ${statusCls}">${statusLabel}</span></td>
     </tr>`;
@@ -3877,6 +3880,9 @@ function renderBuyPlanning() {
   const storeScale = CURRENT_STORES / SS25_STORES;
 
   const otbRows = (ST.otb || []).filter(o => o.category !== 'UNKNOWN');
+  // Build sell-through lookup from byCategory data
+  const catSTLookup = {};
+  (ST.byCategory || []).forEach(c => { catSTLookup[c.category] = c.sellThrough || 0; });
   const growthMult = 1 + getGrowthPct() / 100;
   const weeksLeftSeason = monthsLeft * 4.33;
 
@@ -3951,7 +3957,7 @@ function renderBuyPlanning() {
       <td class="num">${fmt$(o.currentInventoryCost)}</td>
       <td class="num">${fmt$(adjWeeklyRate)}/wk</td>
       <td class="num"><span style="color:${wosColor};font-weight:700">${fmtDec(wos, 1)}w</span></td>
-      <td class="num">${fmtPct(o.sellThrough || 0)}</td>
+      <td class="num">${fmtPct(catSTLookup[d.cat] || 0)}</td>
       <td class="num"><span style="color:${catOTB > 0 ? 'var(--green)' : 'var(--red)'};font-weight:700">${fmt$(catOTB)}</span></td>
       <td><span class="badge ${statusCls}">${statusLabel}</span></td>
     </tr>`;
