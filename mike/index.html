@@ -402,6 +402,21 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
       Pipeline
       <span class="nav-badge" id="pipeline-count">10</span>
     </div>
+    <div class="nav-item" data-section="clients" onclick="showSection('clients',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Client List
+      <span class="nav-badge" id="clients-count">0</span>
+    </div>
+    <div class="nav-item" data-section="dormant" onclick="showSection('dormant',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Dormant
+      <span class="nav-badge" id="dormant-count">0</span>
+    </div>
+    <div class="nav-item" data-section="prospecting" onclick="showSection('prospecting',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Prospecting
+      <span class="nav-badge" id="prospecting-count">0</span>
+    </div>
     <div class="nav-item" data-section="revenue" onclick="showSection('revenue',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       Revenue
@@ -535,6 +550,65 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
       <button class="kc-btn action" onclick="addNewLead()" style="padding:6px 14px;font-size:12px">+ New Lead</button>
     </div>
     <div class="kanban-columns" id="kanban-board"></div>
+  </div>
+
+  <!-- CLIENT LIST -->
+  <div class="section" id="sec-clients">
+    <h1 class="page-title">Client List</h1>
+    <p class="page-sub">All active clients with revenue and risk status</p>
+    <div class="stats-grid" id="clients-stats"></div>
+    <div class="card">
+      <div class="card-title">Active Clients <span class="tag" id="clients-total-tag">0 clients</span></div>
+      <div style="overflow-x:auto">
+        <table class="recruiter-table" id="clients-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>BDM</th>
+              <th>Type</th>
+              <th>Stage</th>
+              <th>Contractors</th>
+              <th>Monthly Rev</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody id="clients-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DORMANT ACCOUNTS -->
+  <div class="section" id="sec-dormant">
+    <h1 class="page-title">Dormant Accounts</h1>
+    <p class="page-sub">Inactive accounts with reactivation potential</p>
+    <div class="stats-grid" id="dormant-stats"></div>
+    <div id="dormant-list"></div>
+  </div>
+
+  <!-- PROSPECTING -->
+  <div class="section" id="sec-prospecting">
+    <h1 class="page-title">Prospecting Pipeline</h1>
+    <p class="page-sub">Target companies and outreach status</p>
+    <div class="stats-grid" id="prospecting-stats"></div>
+    <div class="card">
+      <div class="card-title">Prospecting Targets <span class="tag" id="prospecting-total-tag">0 targets</span></div>
+      <div style="overflow-x:auto">
+        <table class="recruiter-table" id="prospecting-table">
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>BDM</th>
+              <th>Contacts</th>
+              <th>Last Outreach</th>
+              <th>Verticals</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody id="prospecting-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- REVENUE -->
@@ -822,6 +896,10 @@ async function init(){
   try{DATA.memory=await loadJSON('memory-recent')||{entries:[]}}catch(e){DATA.memory={entries:[]}}
   try{DATA.security=await loadJSON('security')||{}}catch(e){DATA.security={}}
   try{DATA.tasks=await loadJSON('tasks')||{tasks:[]}}catch(e){DATA.tasks={tasks:[]}}
+  try{DATA.clients=await loadJSON('clients')||{clients:[]}}catch(e){DATA.clients={clients:[]}}
+  try{DATA.dormant=await loadJSON('dormant')||{dormantAccounts:[]}}catch(e){DATA.dormant={dormantAccounts:[]}}
+  try{DATA.prospecting=await loadJSON('prospecting')||{prospecting:[]}}catch(e){DATA.prospecting={prospecting:[]}}
+  try{DATA.pipelineStatus=await loadJSON('pipeline-status')||{}}catch(e){DATA.pipelineStatus={}}
   try{DATA.financials=await loadJSON('financials')||{}}catch(e){DATA.financials={}}
   try{DATA.recruiters=await loadJSON('recruiters')||{}}catch(e){DATA.recruiters={}}
   try{DATA.jobs=await loadJSON('jobs')||{}}catch(e){DATA.jobs={}}
@@ -851,6 +929,10 @@ function renderAll(){
   try{renderActivity()}catch(e){console.error('Activity error',e)}
   try{renderCalls()}catch(e){console.error('Calls error',e)}
   try{renderSecurity()}catch(e){console.error('Security error',e)}
+  try{renderClients()}catch(e){console.error('Clients error',e)}
+  try{renderDormant()}catch(e){console.error('Dormant error',e)}
+  try{renderProspecting()}catch(e){console.error('Prospecting error',e)}
+  try{renderPipelineStatus()}catch(e){console.error('PipelineStatus error',e)}
   try{updateCounts()}catch(e){}
 }
 
@@ -942,13 +1024,14 @@ function renderOverviewActivity(){
   }
   document.getElementById('overview-activity').innerHTML=entries.slice(0,5).map(e=>{
     const ts=e.timestamp||e.time||'';
-    const txt=e.text||e.note||'';
+    const txt=e.text||e.note||e.activity||'';
     const timeStr=ts?(ts.includes('T')?new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}):ts):'';
+    const statusIcon=e.status==='completed'?'✅':e.status==='active'||e.status==='in-progress'?'⚡':e.status==='scheduled'?'📅':e.status==='live'?'🟢':'🤖';
     return `
     <div class="feed-item" style="opacity:1;animation:none">
-      <div class="feed-icon sourcing">🤖</div>
+      <div class="feed-icon sourcing">${statusIcon}</div>
       <div class="feed-body">
-        <div class="feed-time">${timeStr}</div>
+        <div class="feed-time">${timeStr}${e.status?' · <span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:'+(e.status==='completed'?'var(--green)':e.status==='active'||e.status==='in-progress'?'var(--yellow)':'var(--text2)')+'">'+e.status+'</span>':''}</div>
         <div class="feed-text">${txt}</div>
       </div>
     </div>
@@ -1364,9 +1447,11 @@ function renderActivity(){
   }
   document.getElementById('activity-feed').innerHTML=entries.map(e=>{
     const ts=e.timestamp||e.time||'';
-    const txt=e.text||e.note||'';
+    const txt=e.text||e.note||e.activity||'';
     const timeStr=ts?(ts.includes('T')?new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}):ts):'';
-    return '<div class="feed-item"><div class="feed-icon sourcing">🤖</div><div class="feed-body"><div class="feed-time">'+timeStr+'</div><div class="feed-text">'+txt+'</div></div></div>';
+    const statusIcon=e.status==='completed'?'✅':e.status==='active'||e.status==='in-progress'?'⚡':e.status==='scheduled'?'📅':e.status==='live'?'🟢':'🤖';
+    const statusBadge=e.status?' · <span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:'+(e.status==='completed'?'var(--green)':e.status==='active'||e.status==='in-progress'?'var(--yellow)':'var(--text2)')+'">'+e.status+'</span>':'';
+    return '<div class="feed-item"><div class="feed-icon sourcing">'+statusIcon+'</div><div class="feed-body"><div class="feed-time">'+timeStr+statusBadge+'</div><div class="feed-text">'+txt+'</div></div></div>';
   }).join('');
 }
 
@@ -1653,6 +1738,127 @@ async function toggleResearchDoc(headerEl,file){
     const text=await r.text();
     contentEl.innerHTML=mdToHtml(text);
   }catch(e){contentEl.innerHTML='<p style="color:var(--red);padding:16px 0">Failed to load document: '+e.message+'</p>';}
+}
+
+// ═══════════════════════════════════════════════════════
+// PIPELINE STATUS (from pipeline-status.json)
+// ═══════════════════════════════════════════════════════
+function renderPipelineStatus(){
+  const ps=DATA.pipelineStatus||{};
+  const salespeople=ps.salespeople||{};
+  // Merge all accounts from all salespeople into the existing pipeline kanban
+  // Build a richer view: inject pipeline-status accounts as leads if not already present
+  const allAccounts=[];
+  Object.values(salespeople).forEach(sp=>{
+    const ar=sp.activeRevenue||{};
+    (ar.accounts||[]).forEach(a=>{
+      allAccounts.push({...a,bdm:sp.name});
+    });
+  });
+  // Update pipeline badge count with total accounts
+  if(allAccounts.length){
+    document.getElementById('pipeline-count').textContent=allAccounts.length;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CLIENT LIST
+// ═══════════════════════════════════════════════════════
+function renderClients(){
+  const cd=DATA.clients||{};
+  const clients=cd.clients||[];
+  if(!clients.length){
+    document.getElementById('clients-body').innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text2)"><div style="font-size:32px;margin-bottom:12px">👥</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">No Client Data Yet</div></td></tr>';
+    return;
+  }
+  const fmt=n=>'$'+Number(n||0).toLocaleString();
+  const totalRev=clients.reduce((s,c)=>s+(c.monthlyRevenue||0),0);
+  const totalCtrs=clients.reduce((s,c)=>s+(c.contractors||0),0);
+  const highRisk=clients.filter(c=>c.risk==='high').length;
+  document.getElementById('clients-count').textContent=clients.length;
+  document.getElementById('clients-total-tag').textContent=clients.length+' clients';
+  document.getElementById('clients-stats').innerHTML=
+    '<div class="stat-card"><div class="label">Active Clients</div><div class="value green">'+clients.length+'</div></div>'
+    +'<div class="stat-card"><div class="label">Monthly Revenue</div><div class="value blue">'+fmt(totalRev)+'</div></div>'
+    +'<div class="stat-card"><div class="label">Contractors</div><div class="value yellow">'+totalCtrs+'</div></div>'
+    +'<div class="stat-card"><div class="label">High Risk</div><div class="value" style="color:var(--red)">'+highRisk+'</div></div>';
+  const riskColors={high:'var(--red)',medium:'var(--yellow)',low:'var(--green)'};
+  const stageColors={'Expanding':'var(--green)','Active':'var(--blue)','At Risk':'var(--red)','Cooling':'var(--yellow)','Hold':'var(--text2)','Underperforming':'var(--red)'};
+  document.getElementById('clients-body').innerHTML=clients.sort((a,b)=>(b.monthlyRevenue||0)-(a.monthlyRevenue||0)).map(c=>
+    '<tr><td><strong>'+c.company+'</strong></td>'
+    +'<td>'+( c.bdm||'—')+'</td>'
+    +'<td><span class="kc-badge" style="background:'+(c.type==='VMS'?'rgba(64,128,240,.2);color:var(--blue)':'rgba(64,192,128,.2);color:var(--green)')+'">'+( c.type||'—')+'</span></td>'
+    +'<td><span style="color:'+(stageColors[c.stage]||'var(--text2)')+';font-weight:600">'+( c.stage||'—')+'</span></td>'
+    +'<td style="text-align:center">'+(c.contractors||0)+'</td>'
+    +'<td style="font-weight:600;color:var(--green)">'+fmt(c.monthlyRevenue)+'</td>'
+    +'<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+(riskColors[c.risk]||'var(--text2)')+';margin-right:6px"></span>'+(c.risk||'—')+'</td></tr>'
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// DORMANT ACCOUNTS
+// ═══════════════════════════════════════════════════════
+function renderDormant(){
+  const dd=DATA.dormant||{};
+  const accounts=dd.dormantAccounts||[];
+  if(!accounts.length){
+    document.getElementById('dormant-list').innerHTML='<div style="text-align:center;padding:40px;color:var(--text2)"><div style="font-size:32px;margin-bottom:12px">💤</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">No Dormant Accounts</div></div>';
+    return;
+  }
+  document.getElementById('dormant-count').textContent=accounts.length;
+  const totalContacts=accounts.reduce((s,a)=>s+(a.contacts||0),0);
+  document.getElementById('dormant-stats').innerHTML=
+    '<div class="stat-card"><div class="label">Dormant Accounts</div><div class="value yellow">'+accounts.length+'</div></div>'
+    +'<div class="stat-card"><div class="label">Total Contacts</div><div class="value blue">'+totalContacts+'</div></div>'
+    +'<div class="stat-card"><div class="label">With History</div><div class="value green">'+accounts.filter(a=>a.history).length+'</div><div class="stat-sub">Prior placements</div></div>';
+  document.getElementById('dormant-list').innerHTML=accounts.map(a=>{
+    const daysSince=a.lastMeeting&&a.lastMeeting!=='Never'?Math.floor((Date.now()-new Date(a.lastMeeting).getTime())/(1000*60*60*24)):null;
+    const urgency=daysSince===null?'var(--text2)':daysSince>365?'var(--red)':daysSince>180?'var(--yellow)':'var(--green)';
+    return '<div class="card" style="border-left:3px solid '+urgency+'">'
+      +'<div class="card-title">'+a.company+' <span class="tag">'+(a.bdm||'Unassigned')+'</span></div>'
+      +'<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;margin-bottom:8px">'
+      +(a.history?'<span style="color:var(--green);font-weight:600">📊 '+a.history+'</span>':'')
+      +(a.contacts?'<span>👥 '+a.contacts+' contacts</span>':'')
+      +'<span style="color:'+urgency+'">📅 Last: '+(a.lastMeeting||'Never')+(daysSince!==null?' ('+daysSince+'d ago)':'')+'</span>'
+      +'</div>'
+      +(a.verticals&&a.verticals.length?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">'+a.verticals.map(v=>'<span class="kc-tag">'+v+'</span>').join('')+'</div>':'')
+      +(a.reactivationNote?'<div style="font-size:12px;color:var(--text2);line-height:1.5;padding:8px 12px;background:var(--surface2);border-radius:6px">💡 '+a.reactivationNote+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// PROSPECTING
+// ═══════════════════════════════════════════════════════
+function renderProspecting(){
+  const pd=DATA.prospecting||{};
+  const prospects=pd.prospecting||[];
+  if(!prospects.length){
+    document.getElementById('prospecting-body').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text2)"><div style="font-size:32px;margin-bottom:12px">🔍</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:8px">No Prospecting Data Yet</div></td></tr>';
+    return;
+  }
+  document.getElementById('prospecting-count').textContent=prospects.length;
+  document.getElementById('prospecting-total-tag').textContent=prospects.length+' targets';
+  const totalContacts=prospects.reduce((s,p)=>s+(p.contacts||0),0);
+  const recentOutreach=prospects.filter(p=>{
+    if(!p.lastOutreach)return false;
+    const d=new Date(p.lastOutreach);
+    return(Date.now()-d.getTime())<7*24*60*60*1000;
+  }).length;
+  document.getElementById('prospecting-stats').innerHTML=
+    '<div class="stat-card"><div class="label">Target Companies</div><div class="value blue">'+prospects.length+'</div></div>'
+    +'<div class="stat-card"><div class="label">Total Contacts</div><div class="value green">'+totalContacts+'</div></div>'
+    +'<div class="stat-card"><div class="label">Outreach (7d)</div><div class="value cyan">'+recentOutreach+'</div></div>';
+  document.getElementById('prospecting-body').innerHTML=prospects.sort((a,b)=>(b.contacts||0)-(a.contacts||0)).map(p=>{
+    const daysSince=p.lastOutreach?Math.floor((Date.now()-new Date(p.lastOutreach).getTime())/(1000*60*60*24)):null;
+    const freshness=daysSince===null?'var(--text2)':daysSince<=7?'var(--green)':daysSince<=30?'var(--yellow)':'var(--red)';
+    return '<tr><td><strong>'+p.company+'</strong>'+(p.notes?'<div style="font-size:11px;color:var(--text2)">'+p.notes+'</div>':'')+'</td>'
+      +'<td>'+(p.bdm||'—')+'</td>'
+      +'<td style="font-weight:600">'+(p.contacts||0)+'</td>'
+      +'<td><span style="color:'+freshness+'">'+(p.lastOutreach||'Never')+(daysSince!==null?' <span style="font-size:10px;color:var(--text2)">('+daysSince+'d)</span>':'')+'</span></td>'
+      +'<td>'+(p.verticals||[]).map(v=>'<span class="kc-tag" style="margin-right:4px">'+v+'</span>').join('')+'</td>'
+      +'<td style="font-size:12px;color:var(--text2)">'+(p.source||'—')+'</td></tr>';
+  }).join('');
 }
 
 // ═══════════════════════════════════════════════════════
