@@ -1050,21 +1050,21 @@ function refreshBriefing(){toast('Requesting fresh briefing from agent...');rend
 // OVERVIEW ACTIVITY
 // ═══════════════════════════════════════════════════════
 function renderOverviewActivity(){
-  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.entries||[]);
+  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.recentActivity||DATA.memory?.entries||[]);
   if(!entries.length){
     document.getElementById('overview-activity').innerHTML='<p style="color:var(--text2);padding:20px;text-align:center">Your AI agent is online and ready. Activity will appear here as it works on tasks for you.</p>';
     return;
   }
   document.getElementById('overview-activity').innerHTML=entries.slice(0,5).map(e=>{
     const ts=e.timestamp||e.time||'';
-    const txt=e.text||e.note||e.activity||'';
+    const txt=e.event||e.text||e.note||e.activity||'';
     const timeStr=ts?(ts.includes('T')?new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}):ts):'';
-    const statusIcon=e.status==='completed'?'✅':e.status==='active'||e.status==='in-progress'?'⚡':e.status==='scheduled'?'📅':e.status==='live'?'🟢':'🤖';
+    const statusIcon=(e.status==='completed'||e.status==='complete')?'✅':e.status==='active'||e.status==='in-progress'?'⚡':e.status==='scheduled'?'📅':e.status==='live'?'🟢':'🤖';
     return `
     <div class="feed-item" style="opacity:1;animation:none">
       <div class="feed-icon sourcing">${statusIcon}</div>
       <div class="feed-body">
-        <div class="feed-time">${timeStr}${e.status?' · <span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:'+(e.status==='completed'?'var(--green)':e.status==='active'||e.status==='in-progress'?'var(--yellow)':'var(--text2)')+'">'+e.status+'</span>':''}</div>
+        <div class="feed-time">${timeStr}${e.status?' · <span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:'+((e.status==='completed'||e.status==='complete')?'var(--green)':e.status==='active'||e.status==='in-progress'?'var(--yellow)':'var(--text2)')+'">'+e.status+'</span>':''}</div>
         <div class="feed-text">${txt}</div>
       </div>
     </div>
@@ -1487,17 +1487,17 @@ function renderReqs(){
 // ACTIVITY FEED
 // ═══════════════════════════════════════════════════════
 function renderActivity(){
-  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.entries||[]);
+  const entries=Array.isArray(DATA.memory)?DATA.memory:(DATA.memory?.recentActivity||DATA.memory?.entries||[]);
   if(!entries.length){
     document.getElementById('activity-feed').innerHTML='<p style="color:var(--text2);text-align:center;padding:40px">Your AI agent is online and ready. Activity will appear here as it completes tasks.</p>';
     return;
   }
   document.getElementById('activity-feed').innerHTML=entries.map(e=>{
     const ts=e.timestamp||e.time||'';
-    const txt=e.text||e.note||e.activity||'';
+    const txt=e.event||e.text||e.note||e.activity||'';
     const timeStr=ts?(ts.includes('T')?new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZoneName:'short'}):ts):'';
-    const statusIcon=e.status==='completed'?'✅':e.status==='active'||e.status==='in-progress'?'⚡':e.status==='scheduled'?'📅':e.status==='live'?'🟢':'🤖';
-    const statusBadge=e.status?' · <span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:'+(e.status==='completed'?'var(--green)':e.status==='active'||e.status==='in-progress'?'var(--yellow)':'var(--text2)')+'">'+e.status+'</span>':'';
+    const statusIcon=(e.status==='completed'||e.status==='complete')?'✅':e.status==='active'||e.status==='in-progress'?'⚡':e.status==='scheduled'?'📅':e.status==='live'?'🟢':'🤖';
+    const statusBadge=e.status?' · <span style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:'+((e.status==='completed'||e.status==='complete')?'var(--green)':e.status==='active'||e.status==='in-progress'?'var(--yellow)':'var(--text2)')+'">'+e.status+'</span>':'';
     return '<div class="feed-item"><div class="feed-icon sourcing">'+statusIcon+'</div><div class="feed-body"><div class="feed-time">'+timeStr+statusBadge+'</div><div class="feed-text">'+txt+'</div></div></div>';
   }).join('');
 }
