@@ -2138,43 +2138,72 @@ function filterPipelineByBdm(bdm,el){
   document.querySelectorAll('#pipeline-bdm-filters .bdm-filter').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   
-  // Get accounts from pipeline-status keyed by salesperson
   const ps=DATA.pipelineStatus||{};
   const salespeople=ps.salespeople||{};
   
-  // Get all account names for selected BDM
-  let bdmAccounts=new Set();
   if(bdm==='all'){
-    // Show all cards
     document.querySelectorAll('.kanban-card').forEach(c=>c.style.display='');
   } else {
+    // Build a set of all company names belonging to this BDM
     const sp=salespeople[bdm]||{};
-    const ar=sp.activeRevenue||{};
-    Object.keys(ar).forEach(k=>bdmAccounts.add(k.toLowerCase()));
-    const pipe=sp.pipeline||{};
-    Object.keys(pipe).forEach(k=>bdmAccounts.add(k.toLowerCase()));
-    const pros=sp.prospecting||[];
-    pros.forEach(p=>bdmAccounts.add((p.company||p).toString().toLowerCase()));
+    let bdmCompanies=new Set();
+    
+    // Active revenue accounts
+    const accounts=(sp.activeRevenue||{}).accounts||[];
+    accounts.forEach(a=>{
+      const name=(typeof a==='string'?a:a.company||'').toLowerCase().trim();
+      if(name)bdmCompanies.add(name);
+    });
+    
+    // Prospecting targets
+    const targets=(sp.prospecting||{}).topTargets||[];
+    targets.forEach(t=>{
+      const name=(typeof t==='string'?t:t.company||'').toLowerCase().trim();
+      if(name)bdmCompanies.add(name);
+    });
+    
+    // Dormant accounts
+    const dormant=(sp.dormant||{}).accounts||[];
+    dormant.forEach(d=>{
+      const name=(typeof d==='string'?d:d.company||'').toLowerCase().trim();
+      if(name)bdmCompanies.add(name);
+    });
     
     document.querySelectorAll('.kanban-card').forEach(c=>{
-      const company=c.querySelector('.kc-company');
-      if(!company){c.style.display='';return}
-      const name=company.textContent.trim().toLowerCase();
-      // Check if any bdm account name is contained in the card company or vice versa
+      const companyEl=c.querySelector('.kc-company');
+      if(!companyEl){c.style.display='';return}
+      const cardName=companyEl.textContent.trim().toLowerCase();
+      
+      // Fuzzy match: check if card name contains any BDM company or vice versa
       let match=false;
-      bdmAccounts.forEach(a=>{
-        if(name.includes(a)||a.includes(name))match=true;
+      bdmCompanies.forEach(bc=>{
+        if(cardName.includes(bc)||bc.includes(cardName))match=true;
+        // Also match first word (e.g. "Microsoft" matches "Microsoft VMS")
+        const firstWord=bc.split(' ')[0];
+        if(firstWord.length>3 && cardName.includes(firstWord))match=true;
+        const cardFirst=cardName.split(' ')[0].split('(')[0].trim();
+        if(cardFirst.length>3 && bc.includes(cardFirst))match=true;
       });
       c.style.display=match?'':'none';
     });
   }
   
-  // Update column counts
+  // Update column counts and total value
+  let totalVal=0;
   document.querySelectorAll('.kanban-col').forEach(col=>{
-    const visible=col.querySelectorAll('.kanban-card:not([style*="display: none"])').length;
+    const visible=col.querySelectorAll('.kanban-card:not([style*="display: none"])');
     const countEl=col.querySelector('.kc-count');
-    if(countEl)countEl.textContent=visible;
+    if(countEl)countEl.textContent=visible.length;
+    visible.forEach(c=>{
+      const valEl=c.querySelector('.kc-value');
+      if(valEl){
+        const v=parseInt((valEl.textContent||'').replace(/[^0-9]/g,''))||0;
+        totalVal+=v;
+      }
+    });
   });
+  const pv=document.getElementById('pipeline-value');
+  if(pv)pv.textContent='$'+totalVal.toLocaleString();
 }
 
 function filterClientsByBdm(bdm,el){
