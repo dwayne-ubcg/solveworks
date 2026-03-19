@@ -482,33 +482,78 @@ fi
 echo "👥 Building customers CRM data..."
 if [ -n "$CIN7_ACCOUNT_ID" ] && [ -n "$CIN7_API_KEY" ]; then
 python3 << 'CUSTEOF'
-import json, os, time
+import json, os, time, urllib.request
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-# Load cached sale details from financials step (saved to temp file)
+account_id = os.environ['CIN7_ACCOUNT_ID']
+api_key = os.environ['CIN7_API_KEY']
+
+# Step 1: Fetch ALL customers from Cin7 Customer API
+print("  Fetching customer list from Cin7 API...")
+all_cin7_customers = []
+page = 1
+while True:
+    url = f"https://inventory.dearsystems.com/ExternalApi/v2/customer?Page={page}&Limit=100"
+    req = urllib.request.Request(url, headers={
+        'api-auth-accountid': account_id,
+        'api-auth-applicationkey': api_key
+    })
+    with urllib.request.urlopen(req) as resp:
+        data = json.loads(resp.read())
+    all_cin7_customers.extend(data.get('CustomerList', []))
+    if len(all_cin7_customers) >= data.get('Total', 0):
+        break
+    page += 1
+    time.sleep(0.3)
+
+print(f"  {len(all_cin7_customers)} customers from Cin7 API")
+
+# Step 2: Build customer map from API data (keyed by ID)
+customers = {}
+for cc in all_cin7_customers:
+    cid = cc['ID']
+    customers[cid] = {
+        'name': cc['Name'].strip(),
+        'id': cid,
+        'totalRevenue': 0,
+        'orderCount': 0,
+        'lastOrderDate': '',
+        'orders': [],
+        'priceTier': cc.get('PriceTier', ''),
+        'paymentTerm': cc.get('PaymentTerm', ''),
+        'cin7Status': cc.get('Status', 'Active'),
+        'status': 'new'  # default, will be recalculated below
+    }
+
+# Step 3: Enrich with sales history
 with open('/tmp/7cellars-sale-details.json', 'r') as f:
     cache = json.load(f)
 all_sales = cache['all_sales']
 sale_details = cache['sale_details']
 
-print(f"  {len(all_sales)} sales loaded from cache, building CRM...")
+print(f"  Enriching with {len(all_sales)} sales...")
 
-# Group by customer
-customers = defaultdict(lambda: {
-    'name': '', 'id': '', 'totalRevenue': 0, 'orderCount': 0,
-    'lastOrderDate': '', 'orders': []
-})
-
-for i, sale in enumerate(all_sales):
-    cname = sale.get('Customer', 'Unknown')
+for sale in all_sales:
     cid = sale.get('CustomerID', '')
-    order_date = sale.get('OrderDate', '')[:10]
-    order_num = sale.get('OrderNumber', '')
+    if cid not in customers:
+        # Customer from sales not in API (shouldn't happen, but handle it)
+        customers[cid] = {
+            'name': sale.get('Customer', 'Unknown'),
+            'id': cid,
+            'totalRevenue': 0,
+            'orderCount': 0,
+            'lastOrderDate': '',
+            'orders': [],
+            'priceTier': '',
+            'paymentTerm': '',
+            'cin7Status': 'Active',
+            'status': 'new'
+        }
 
     c = customers[cid]
-    c['name'] = cname
-    c['id'] = cid
+    order_date = sale.get('OrderDate', '')[:10]
+    order_num = sale.get('OrderNumber', '')
     c['orderCount'] += 1
     if order_date > c['lastOrderDate']:
         c['lastOrderDate'] = order_date
@@ -533,7 +578,7 @@ for i, sale in enumerate(all_sales):
         'items': items
     })
 
-# Calculate status and avg order value
+# Step 4: Calculate status and finalize
 now = datetime.now()
 result = []
 for cid, c in customers.items():
@@ -541,8 +586,10 @@ for cid, c in customers.items():
     c['totalRevenue'] = round(c['totalRevenue'], 2)
     c['orders'].sort(key=lambda o: o['date'], reverse=True)
 
-    # Status
-    if c['orderCount'] == 1:
+    # Status based on order history
+    if c['orderCount'] == 0:
+        c['status'] = 'new'
+    elif c['orderCount'] == 1:
         c['status'] = 'new'
     elif c['lastOrderDate']:
         last = datetime.strptime(c['lastOrderDate'], '%Y-%m-%d')
@@ -563,7 +610,7 @@ result.sort(key=lambda x: x['totalRevenue'], reverse=True)
 with open('data/customers.json', 'w') as f:
     json.dump(result, f, indent=2)
 
-print(f"  ✅ customers.json: {len(result)} customers")
+print(f"  ✅ customers.json: {len(result)} customers (from API + sales enrichment)")
 CUSTEOF
 else
   echo "  ⚠️  No CIN7 credentials, skipping customers"
