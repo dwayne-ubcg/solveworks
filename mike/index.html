@@ -557,9 +557,10 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
     </div>
     <div class="bdm-filters" id="pipeline-bdm-filters">
       <button class="bdm-filter active" onclick="filterPipelineByBdm('all',this)">All</button>
-      <button class="bdm-filter" onclick="filterPipelineByBdm('julia',this)">Julia</button>
-      <button class="bdm-filter" onclick="filterPipelineByBdm('april',this)">April</button>
-      <button class="bdm-filter" onclick="filterPipelineByBdm('mike',this)">Mike</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('Mike',this)">Mike</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('Julia',this)">Julia</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('April',this)">April</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('Unassigned',this)">Unassigned</button>
     </div>
     <div class="kanban-columns" id="kanban-board"></div>
   </div>
@@ -2138,69 +2139,27 @@ function filterPipelineByBdm(bdm,el){
   document.querySelectorAll('#pipeline-bdm-filters .bdm-filter').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
   
-  const ps=DATA.pipelineStatus||{};
-  const salespeople=ps.salespeople||{};
-  
-  if(bdm==='all'){
-    document.querySelectorAll('.kanban-card').forEach(c=>c.style.display='');
-  } else {
-    // Build a set of all company names belonging to this BDM
-    const sp=salespeople[bdm]||{};
-    let bdmCompanies=new Set();
-    
-    // Active revenue accounts
-    const accounts=(sp.activeRevenue||{}).accounts||[];
-    accounts.forEach(a=>{
-      const name=(typeof a==='string'?a:a.company||'').toLowerCase().trim();
-      if(name)bdmCompanies.add(name);
-    });
-    
-    // Prospecting targets
-    const targets=(sp.prospecting||{}).topTargets||[];
-    targets.forEach(t=>{
-      const name=(typeof t==='string'?t:t.company||'').toLowerCase().trim();
-      if(name)bdmCompanies.add(name);
-    });
-    
-    // Dormant accounts
-    const dormant=(sp.dormant||{}).accounts||[];
-    dormant.forEach(d=>{
-      const name=(typeof d==='string'?d:d.company||'').toLowerCase().trim();
-      if(name)bdmCompanies.add(name);
-    });
-    
-    document.querySelectorAll('.kanban-card').forEach(c=>{
-      const companyEl=c.querySelector('.kc-company');
-      if(!companyEl){c.style.display='';return}
-      const cardName=companyEl.textContent.trim().toLowerCase();
-      
-      // Fuzzy match: check if card name contains any BDM company or vice versa
-      let match=false;
-      bdmCompanies.forEach(bc=>{
-        if(cardName.includes(bc)||bc.includes(cardName))match=true;
-        // Also match first word (e.g. "Microsoft" matches "Microsoft VMS")
-        const firstWord=bc.split(' ')[0];
-        if(firstWord.length>3 && cardName.includes(firstWord))match=true;
-        const cardFirst=cardName.split(' ')[0].split('(')[0].trim();
-        if(cardFirst.length>3 && bc.includes(cardFirst))match=true;
-      });
-      c.style.display=match?'':'none';
-    });
-  }
-  
-  // Update column counts and total value
+  // Use the bdm field on each card in pipelineCards
   let totalVal=0;
+  document.querySelectorAll('.kanban-card').forEach(c=>{
+    const cardId=c.getAttribute('data-id');
+    const cardData=pipelineCards.find(x=>x.id===cardId);
+    const cardBdm=(cardData&&cardData.bdm)||'Unassigned';
+    
+    if(bdm==='all'||cardBdm===bdm){
+      c.style.display='';
+      const valEl=c.querySelector('.kc-value');
+      if(valEl){totalVal+=parseInt((valEl.textContent||'').replace(/[^0-9]/g,''))||0}
+    } else {
+      c.style.display='none';
+    }
+  });
+  
+  // Update column counts
   document.querySelectorAll('.kanban-col').forEach(col=>{
     const visible=col.querySelectorAll('.kanban-card:not([style*="display: none"])');
     const countEl=col.querySelector('.kc-count');
     if(countEl)countEl.textContent=visible.length;
-    visible.forEach(c=>{
-      const valEl=c.querySelector('.kc-value');
-      if(valEl){
-        const v=parseInt((valEl.textContent||'').replace(/[^0-9]/g,''))||0;
-        totalVal+=v;
-      }
-    });
   });
   const pv=document.getElementById('pipeline-value');
   if(pv)pv.textContent='$'+totalVal.toLocaleString();
