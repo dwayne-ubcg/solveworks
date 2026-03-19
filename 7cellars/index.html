@@ -736,6 +736,16 @@ a{color:var(--blue);text-decoration:none}
         <div id="fin-bottom-margin" style="margin-top:12px"></div>
       </div>
     </div>
+
+    <!-- Samples Tracker -->
+    <div class="dash-grid" style="margin-top:0">
+      <div class="dash-card" style="grid-column:1/-1">
+        <h3>🍷 Promotional Samples Tracker</h3>
+        <p style="font-size:13px;color:var(--text2);margin:4px 0 16px">Wine samples taken out for tastings — excluded from revenue & margin calculations</p>
+        <div id="fin-samples-stats" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px"></div>
+        <div id="fin-samples-orders"></div>
+      </div>
+    </div>
   </div>
 
   <!-- Inventory -->
@@ -1659,7 +1669,7 @@ function renderTeam(){
 }
 
 /* ===== SALES & INVENTORY ===== */
-let shopifyOrders=null, shopifyInventory=null, cin7Orders=null;
+let shopifyOrders=null, shopifyInventory=null, cin7Orders=null, samplesData=null;
 let invFilter='all';
 let salesFilter='all';
 
@@ -1692,8 +1702,8 @@ function renderSales(){
     source:'Retail'
   }));
 
-  // Normalize wholesale orders from Cin7
-  const cin7Sales=(cin7Orders?.SaleList||[]);
+  // Normalize wholesale orders from Cin7 — exclude promotional sample orders
+  const cin7Sales=(cin7Orders?.SaleList||[]).filter(s=>!(s.Customer||'').toLowerCase().includes('sample'));
   const wholesaleOrders=cin7Sales.filter(s=>(s.Total||0)>0||(s.Lines&&s.Lines.length>0)).map(s=>({
     name:s.OrderNumber||s.SaleOrderNumber||'WH-'+s.SaleID,
     date:s.OrderDate||s.SaleOrderDate||s.CreatedDate||'',
@@ -1968,6 +1978,51 @@ function renderFinancials(){
     if(document.getElementById('fin-top-margin'))document.getElementById('fin-top-margin').innerHTML=awaitMsg;
     if(document.getElementById('fin-bottom-margin'))document.getElementById('fin-bottom-margin').innerHTML=awaitMsg;
   }
+  // Always render samples tracker regardless of cost data availability
+  renderSamples();
+}
+
+/* ===== SAMPLES TRACKER ===== */
+function renderSamples(){
+  const statsEl=document.getElementById('fin-samples-stats');
+  const ordersEl=document.getElementById('fin-samples-orders');
+  if(!statsEl||!ordersEl)return;
+
+  if(!samplesData){
+    statsEl.innerHTML='';
+    ordersEl.innerHTML='<div class="empty-state" style="padding:30px"><p style="font-size:13px;color:var(--text2)">No sample data yet — run sync to populate.</p></div>';
+    return;
+  }
+
+  const sd=samplesData;
+  statsEl.innerHTML=`
+    <div class="stat-card" style="flex:1;min-width:140px"><div class="label">Sample Orders</div><div class="value">${sd.totalOrders||0}</div></div>
+    <div class="stat-card" style="flex:1;min-width:140px"><div class="label">Bottles Given Out</div><div class="value blue">${sd.totalBottles||0}</div></div>
+    <div class="stat-card" style="flex:1;min-width:140px"><div class="label">COGS Burned</div><div class="value red">${sd.totalCOGS>0?'$'+sd.totalCOGS.toLocaleString('en',{minimumFractionDigits:2}):'$0.00'}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">At landed cost</div></div>
+  `;
+
+  if(!sd.orders||!sd.orders.length){
+    ordersEl.innerHTML='<div class="empty-state" style="padding:20px"><p style="font-size:13px;color:var(--text2)">No sample orders recorded yet.</p></div>';
+    return;
+  }
+
+  const rows=sd.orders.map(o=>{
+    const itemsHtml=(o.items||[]).map(it=>`<span style="font-size:11px;color:var(--text2)">${esc(it.name)} ×${it.quantity}${it.costPerBottle>0?' @ $'+it.costPerBottle+'/btl':''}</span>`).join('<br>');
+    const cogsTxt=o.totalCOGS>0?'$'+o.totalCOGS.toLocaleString('en',{minimumFractionDigits:2}):'—';
+    return`<tr>
+      <td style="white-space:nowrap">${o.date||'—'}</td>
+      <td><strong>${esc(o.orderNumber)}</strong></td>
+      <td>${esc(o.recipient||'Not specified')}</td>
+      <td>${itemsHtml||'—'}</td>
+      <td style="text-align:center">${o.totalBottles||0}</td>
+      <td style="color:var(--red);font-weight:600">${cogsTxt}</td>
+    </tr>`;
+  }).join('');
+
+  ordersEl.innerHTML=`<div style="overflow-x:auto"><table class="fin-product-table"><thead><tr>
+    <th>Date</th><th>Order #</th><th>Recipient</th><th>Items</th><th style="text-align:center">Bottles</th><th>COGS</th>
+  </tr></thead><tbody>${rows}</tbody></table></div>
+  <div style="font-size:11px;color:var(--text2);margin-top:8px">Last updated: ${sd.lastUpdated?new Date(sd.lastUpdated).toLocaleString():'—'}</div>`;
 }
 
 /* ===== INIT ===== */
@@ -2009,6 +2064,7 @@ async function init(){
   shopifyOrders=await loadJSON('data/shopify-orders.json');
   shopifyInventory=await loadJSON('data/shopify-inventory.json');
   cin7Orders=await loadJSON('data/cin7-orders.json');
+  samplesData=await loadJSON('data/samples.json');
   renderSales();
   renderInventory();
 

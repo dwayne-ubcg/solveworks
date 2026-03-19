@@ -247,9 +247,15 @@ while True:
 
 print(f"  {len(all_sales)} sales found, fetching details...")
 
+# Separate sample orders from real sales BEFORE any financials processing
+# Sample orders: customer contains "promotional samples" or "sample" (case-insensitive)
+sample_orders_raw = [s for s in all_sales if 'sample' in (s.get('Customer') or '').lower()]
+all_sales = [s for s in all_sales if 'sample' not in (s.get('Customer') or '').lower()]
+print(f"  {len(sample_orders_raw)} sample orders identified, {len(all_sales)} real sales remaining")
+
 # Fetch ALL sale details once and cache them
 sale_details = {}
-for i, sale in enumerate(all_sales):
+for i, sale in enumerate(all_sales + sample_orders_raw):
     sid = sale['SaleID']
     try:
         sale_details[sid] = cin7_get(f'Sale?ID={sid}')
@@ -257,7 +263,7 @@ for i, sale in enumerate(all_sales):
         print(f"  ⚠️  Failed to fetch {sale['OrderNumber']}: {e}")
     time.sleep(0.5)  # rate limit — Cin7 API throttles aggressively
 
-print(f"  Fetched {len(sale_details)}/{len(all_sales)} sale details")
+print(f"  Fetched {len(sale_details)}/{len(all_sales)+len(sample_orders_raw)} sale details")
 
 # Load REAL landed costs (Attr5 = total landed cost per bottle — NEVER use AverageCost)
 landed_costs = {}  # SKU -> landed cost per bottle
@@ -439,6 +445,73 @@ with open('data/financials.json', 'w') as f:
     json.dump(financials, f, indent=2)
 
 print(f"  ✅ financials.json: ${total_revenue:,.2f} revenue across {len(all_sales)} orders")
+
+# Build samples.json — track COGS burned on promotional sample orders
+print("  Building samples.json...")
+samples_orders = []
+total_sample_bottles = 0
+total_sample_cogs = 0.0
+
+for sale in sample_orders_raw:
+    sid = sale['SaleID']
+    detail = sale_details.get(sid, {})
+    order = detail.get('Order', {})
+    if not order.get('Lines'):
+        order = detail.get('Quote', {})
+    lines = order.get('Lines', [])
+
+    # Parse recipient from Notes/Comments on the sale detail
+    recipient = 'Not specified'
+    for note_field in ['Notes', 'Note', 'Comments', 'Comment', 'CustomerNotes', 'InternalNote']:
+        val = (detail.get(note_field) or order.get(note_field) or sale.get(note_field) or '').strip()
+        if val:
+            recipient = val
+            break
+
+    order_date = sale.get('OrderDate', '')[:10]
+    order_items = []
+    order_bottles = 0
+    order_cogs = 0.0
+
+    for line in lines:
+        qty = line.get('Quantity', 0) or 0
+        pid = line.get('ProductID', '')
+        line_sku = line.get('SKU', '') or pid_to_sku.get(pid, '')
+        cost_per_bottle = landed_costs.get(line_sku, 0) or 0
+        line_cost = cost_per_bottle * qty
+
+        order_items.append({
+            'name': line.get('Name', line.get('ProductName', 'Unknown')),
+            'quantity': int(qty),
+            'costPerBottle': round(cost_per_bottle, 2),
+            'totalCost': round(line_cost, 2)
+        })
+        order_bottles += qty
+        order_cogs += line_cost
+
+    samples_orders.append({
+        'orderNumber': sale.get('OrderNumber', str(sid)),
+        'date': order_date,
+        'recipient': recipient,
+        'items': order_items,
+        'totalBottles': int(order_bottles),
+        'totalCOGS': round(order_cogs, 2)
+    })
+    total_sample_bottles += order_bottles
+    total_sample_cogs += order_cogs
+
+samples_data = {
+    'totalOrders': len(samples_orders),
+    'totalBottles': int(total_sample_bottles),
+    'totalCOGS': round(total_sample_cogs, 2),
+    'orders': sorted(samples_orders, key=lambda x: x['date'], reverse=True),
+    'lastUpdated': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+}
+
+with open('data/samples.json', 'w') as f:
+    json.dump(samples_data, f, indent=2)
+
+print(f"  ✅ samples.json: {len(samples_orders)} sample orders, {int(total_sample_bottles)} bottles, ${total_sample_cogs:,.2f} COGS")
 
 # Enrich cin7-orders.json from cached sale details (no extra API calls)
 enriched = {'Total': len(all_sales), 'Page': 1, 'SaleList': []}
