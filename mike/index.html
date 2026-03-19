@@ -377,6 +377,14 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
 .bdm-filter{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
 .bdm-filter:hover{border-color:var(--blue);color:var(--text)}
 .bdm-filter.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* BDM Assignment Dropdown */
+.bdm-assign{padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;padding-right:20px}
+.bdm-assign:hover{border-color:var(--blue)}
+.bdm-assign.bdm-mike{border-color:var(--blue);color:var(--blue);background-color:rgba(64,128,240,.1)}
+.bdm-assign.bdm-julia{border-color:var(--green);color:var(--green);background-color:rgba(64,192,128,.1)}
+.bdm-assign.bdm-april{border-color:var(--purple);color:var(--purple);background-color:rgba(160,96,240,.1)}
+.bdm-assign.bdm-unassigned{border-color:var(--border);color:var(--text2)}
 </style>
 </head>
 <body>
@@ -1102,6 +1110,8 @@ function buildKanban(){
 
 function renderKanbanCard(c){
   const srcCls='src-'+(c.source||'').replace(/\s/g,'-');
+  const bdm=c.bdm||'Unassigned';
+  const bdmClass=bdm==='Unassigned'?'bdm-unassigned':bdm==='Mike'?'bdm-mike':bdm==='Julia'?'bdm-julia':bdm==='April'?'bdm-april':'';
   return `
   <div class="kanban-card" draggable="true" data-id="${c.id}" onclick="openEditModal(pipelineCards.find(x=>x.id==='${c.id}'))"
     ondragstart="event.dataTransfer.setData('text/plain','${c.id}');this.classList.add('dragging')"
@@ -1115,7 +1125,13 @@ function renderKanbanCard(c){
       ${(c.tags||[]).map(t=>'<span class="kc-tag">'+t+'</span>').join('')}
       <span class="kc-date">${c.date||''}</span>
     </div>
-    <div class="kc-actions">
+    <div class="kc-actions" style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+      <select class="bdm-assign ${bdmClass}" data-card-id="${c.id}" onclick="event.stopPropagation()" onchange="event.stopPropagation();assignBdm('${c.id}',this.value,this)">
+        <option value="Unassigned"${bdm==='Unassigned'?' selected':''}>Assign BDM</option>
+        <option value="Mike"${bdm==='Mike'?' selected':''}>Mike</option>
+        <option value="Julia"${bdm==='Julia'?' selected':''}>Julia</option>
+        <option value="April"${bdm==='April'?' selected':''}>April</option>
+      </select>
       <button class="kc-btn" onclick="event.stopPropagation();toast('Sending follow-up draft for ${c.company}...')">Follow Up</button>
     </div>
   </div>`;
@@ -2209,6 +2225,21 @@ function filterClientsByBdm(bdm,el){
   
   const tagEl=document.getElementById('clients-total-tag');
   if(tagEl)tagEl.textContent=visibleCount+' clients';
+}
+
+function assignBdm(cardId,bdm,selectEl){
+  const card=pipelineCards.find(c=>c.id===cardId);
+  if(card){
+    card.bdm=bdm;
+    localStorage.setItem('mc_pipeline',JSON.stringify(pipelineCards));
+    // Update select styling
+    selectEl.className='bdm-assign '+(bdm==='Mike'?'bdm-mike':bdm==='Julia'?'bdm-julia':bdm==='April'?'bdm-april':'bdm-unassigned');
+    toast(card.company+' assigned to '+bdm);
+    // Re-apply current filter if active
+    if(currentPipelineBdm!=='all'){
+      filterPipelineByBdm(currentPipelineBdm,document.querySelector('#pipeline-bdm-filters .bdm-filter.active'));
+    }
+  }
 }
 </script>
 </body>
