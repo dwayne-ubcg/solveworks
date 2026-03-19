@@ -126,7 +126,11 @@ scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/leads.json" "$DATA_DIR/leads.json" 
 # 9. Stock research — Freedom's daily dividend picks
 scp -q "$REMOTE:$REMOTE_CLAWD/dashboard/data/stocks.json" "$DATA_DIR/stocks.json" 2>/dev/null || echo '{"lastUpdated":"","stocks":[]}' > "$DATA_DIR/stocks.json"
 
-# 9. Git push
+
+# 10. Sync ALL remaining JSON files from Drew's machine (catch anything custom transforms miss)
+rsync -az --include="*.json" --exclude="*" -e "ssh -o ConnectTimeout=10" $REMOTE:$REMOTE_CLAWD/dashboard/data/ "$DATA_DIR/" 2>/dev/null
+
+# 11. Git push
 cd "$SCRIPT_DIR/.."
 git add drew/
 if git diff --cached --quiet; then

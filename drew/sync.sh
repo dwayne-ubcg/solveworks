@@ -137,6 +137,7 @@ if git diff --cached --quiet; then
   echo "[$(date)] No changes to push"
 else
   git commit -m "Sync Freedom Mission Control data $(date +%Y-%m-%d_%H:%M)"
+  git pull --rebase origin main 2>&1 || true
   git push
   echo "[$(date)] Pushed updates"
 fi
