@@ -371,6 +371,12 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
   .recruiter-table{font-size:12px}
   .recruiter-table th,.recruiter-table td{padding:8px 10px}
 }
+
+/* BDM Filter Buttons */
+.bdm-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.bdm-filter{padding:6px 16px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.bdm-filter:hover{border-color:var(--blue);color:var(--text)}
+.bdm-filter.active{background:var(--blue);border-color:var(--blue);color:#fff}
 </style>
 </head>
 <body>
@@ -549,6 +555,12 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
       <div style="font-size:13px;color:var(--text2)">Total pipeline value: <strong style="color:var(--green);font-size:16px" id="pipeline-value">$0</strong></div>
       <button class="kc-btn action" onclick="addNewLead()" style="padding:6px 14px;font-size:12px">+ New Lead</button>
     </div>
+    <div class="bdm-filters" id="pipeline-bdm-filters">
+      <button class="bdm-filter active" onclick="filterPipelineByBdm('all',this)">All</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('julia',this)">Julia</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('april',this)">April</button>
+      <button class="bdm-filter" onclick="filterPipelineByBdm('mike',this)">Mike</button>
+    </div>
     <div class="kanban-columns" id="kanban-board"></div>
   </div>
 
@@ -556,6 +568,12 @@ select.proj-filter{padding-right:28px;background-image:url("data:image/svg+xml,%
   <div class="section" id="sec-clients">
     <h1 class="page-title">Client List</h1>
     <p class="page-sub">All active clients with revenue and risk status</p>
+    <div class="bdm-filters" id="clients-bdm-filters">
+      <button class="bdm-filter active" onclick="filterClientsByBdm('all',this)">All</button>
+      <button class="bdm-filter" onclick="filterClientsByBdm('Julia',this)">Julia</button>
+      <button class="bdm-filter" onclick="filterClientsByBdm('April',this)">April</button>
+      <button class="bdm-filter" onclick="filterClientsByBdm('Mike',this)">Mike</button>
+    </div>
     <div class="stats-grid" id="clients-stats"></div>
     <div class="card">
       <div class="card-title">Active Clients <span class="tag" id="clients-total-tag">0 clients</span></div>
@@ -2107,6 +2125,96 @@ function team_answerQuestion(q){
   if(ql.includes('placement')||ql.includes('start'))return'YTD placements: <strong>'+p.ytdTotal.total+'</strong> (VMS '+p.ytdTotal.vms+', Non-VMS '+p.ytdTotal.nonVms+', GDM '+p.ytdTotal.gdm+').';
   if(ql.includes('formula'))return'Margin formula: <strong>'+TEAM_DATA.marginFormula+'</strong>';
   return'I can answer questions about revenue, contractors, margins, and placements. Try asking about "VMS revenue", "active contractors", "gross margin", or "placements YTD".';
+}
+
+// ═══════════════════════════════════════════════════════
+// BDM FILTERS
+// ═══════════════════════════════════════════════════════
+let currentPipelineBdm='all';
+let currentClientsBdm='all';
+
+function filterPipelineByBdm(bdm,el){
+  currentPipelineBdm=bdm;
+  document.querySelectorAll('#pipeline-bdm-filters .bdm-filter').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  
+  // Get accounts from pipeline-status keyed by salesperson
+  const ps=DATA.pipelineStatus||{};
+  const salespeople=ps.salespeople||{};
+  
+  // Get all account names for selected BDM
+  let bdmAccounts=new Set();
+  if(bdm==='all'){
+    // Show all cards
+    document.querySelectorAll('.kanban-card').forEach(c=>c.style.display='');
+  } else {
+    const sp=salespeople[bdm]||{};
+    const ar=sp.activeRevenue||{};
+    Object.keys(ar).forEach(k=>bdmAccounts.add(k.toLowerCase()));
+    const pipe=sp.pipeline||{};
+    Object.keys(pipe).forEach(k=>bdmAccounts.add(k.toLowerCase()));
+    const pros=sp.prospecting||[];
+    pros.forEach(p=>bdmAccounts.add((p.company||p).toString().toLowerCase()));
+    
+    document.querySelectorAll('.kanban-card').forEach(c=>{
+      const company=c.querySelector('.kc-company');
+      if(!company){c.style.display='';return}
+      const name=company.textContent.trim().toLowerCase();
+      // Check if any bdm account name is contained in the card company or vice versa
+      let match=false;
+      bdmAccounts.forEach(a=>{
+        if(name.includes(a)||a.includes(name))match=true;
+      });
+      c.style.display=match?'':'none';
+    });
+  }
+  
+  // Update column counts
+  document.querySelectorAll('.kanban-col').forEach(col=>{
+    const visible=col.querySelectorAll('.kanban-card:not([style*="display: none"])').length;
+    const countEl=col.querySelector('.kc-count');
+    if(countEl)countEl.textContent=visible;
+  });
+}
+
+function filterClientsByBdm(bdm,el){
+  currentClientsBdm=bdm;
+  document.querySelectorAll('#clients-bdm-filters .bdm-filter').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  
+  const rows=document.querySelectorAll('#clients-body tr');
+  let visibleCount=0;
+  let totalRev=0;
+  let totalCtrs=0;
+  
+  rows.forEach(row=>{
+    const cells=row.querySelectorAll('td');
+    if(cells.length<7)return;
+    const rowBdm=cells[1].textContent.trim();
+    
+    if(bdm==='all'||rowBdm.toLowerCase().includes(bdm.toLowerCase())){
+      row.style.display='';
+      visibleCount++;
+      const rev=parseInt((cells[5].textContent||'').replace(/[^0-9]/g,''))||0;
+      totalRev+=rev;
+      const ctrs=parseInt(cells[4].textContent)||0;
+      totalCtrs+=ctrs;
+    } else {
+      row.style.display='none';
+    }
+  });
+  
+  // Update stats
+  const statsEl=document.getElementById('clients-stats');
+  if(statsEl){
+    const statCards=statsEl.querySelectorAll('.stat-card');
+    if(statCards[0]){const v=statCards[0].querySelector('.value');if(v)v.textContent=visibleCount}
+    if(statCards[1]){const v=statCards[1].querySelector('.value');if(v)v.textContent='$'+totalRev.toLocaleString()}
+    if(statCards[2]){const v=statCards[2].querySelector('.value');if(v)v.textContent=totalCtrs}
+  }
+  
+  const tagEl=document.getElementById('clients-total-tag');
+  if(tagEl)tagEl.textContent=visibleCount+' clients';
 }
 </script>
 </body>
