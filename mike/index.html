@@ -1028,8 +1028,16 @@ function renderStats(){
 // BRIEFING
 // ═══════════════════════════════════════════════════════
 function renderBriefing(){
-  const entries=DATA.memory.entries||[];
+  const briefText=DATA.dashboard.briefing||DATA.dashboard.morningBriefing||"";
+  const entries=(DATA.memory.recentActivity||DATA.memory.entries||[]);
   const today=entries[0];
+  if(briefText){
+    const lines=briefText.split(". ").filter(s=>s.trim());
+    document.getElementById("briefing-content").innerHTML=lines.map(s=>"<div style="padding:3px 0 3px 16px;position:relative"><span style="position:absolute;left:0;color:var(--text2)">→</span>"+s.trim()+(s.trim().endsWith(".")?"":" .")+"</div>").join("");
+    return;
+  }
+  const entries2=DATA.memory.entries||[];
+  const today2=entries2[0];
   document.getElementById('briefing-content').innerHTML=today?
     today.content.split('\n').map(l=>{
       if(l.startsWith('##'))return '<h3 style="font-size:14px;font-weight:700;margin:12px 0 6px;color:var(--blue)">'+l.replace(/^#+\s*/,'')+'</h3>';
