@@ -1069,7 +1069,13 @@ function renderPipeline(){
   const freshCards=[...board.cards||[]];
   pipelineCards=freshCards;
   const saved=localStorage.getItem('mc_pipeline');
-  if(saved){try{const savedCards=JSON.parse(saved);if(savedCards.length>=freshCards.length){pipelineCards=savedCards}}catch(e){}}
+  if(saved){try{const savedCards=JSON.parse(saved);if(savedCards.length>=freshCards.length){
+    // Merge bdm field from fresh data into saved cards
+    const bdmMap={};
+    freshCards.forEach(c=>{if(c.bdm)bdmMap[c.id]=c.bdm});
+    savedCards.forEach(c=>{if(!c.bdm&&bdmMap[c.id])c.bdm=bdmMap[c.id]});
+    pipelineCards=savedCards;
+  }}catch(e){}}
   buildKanban();
   updatePipelineValue();
 }
