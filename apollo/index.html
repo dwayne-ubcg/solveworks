@@ -254,6 +254,45 @@ select.form-input{cursor:pointer;appearance:none}
 .design-status-badge.Production{background:rgba(232,160,69,.12);color:var(--orange)}
 .design-card-notes{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
+/* ─── DESIGN KANBAN ─── */
+.ds-col{border-right:1px solid var(--border);min-height:250px;display:flex;flex-direction:column}
+.ds-col:last-child{border-right:none}
+.ds-col-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.ds-count{background:var(--surface3);border-radius:10px;padding:1px 8px;font-size:11px}
+.ds-col-body{flex:1;padding:8px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.ds-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:all .15s}
+.ds-card:hover{border-color:#353854;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.ds-card-name{font-size:12px;font-weight:700;margin-bottom:3px}
+.ds-card-client{font-size:11px;color:var(--text2);margin-bottom:6px}
+.ds-card-footer{display:flex;justify-content:space-between;align-items:center}
+.ds-card-type{font-size:10px;color:var(--text2);background:var(--surface3);padding:1px 6px;border-radius:4px}
+.ds-card-deadline{font-size:10px;color:var(--text2)}
+.ds-card-deadline.overdue{color:var(--red)}
+.ds-card-actions{display:flex;gap:4px;margin-top:6px}
+.ds-card-actions button{padding:3px 8px;font-size:10px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);border-radius:4px;cursor:pointer;font-family:inherit;transition:all .15s}
+.ds-card-actions button:hover{background:var(--surface);color:var(--text)}
+@media(max-width:768px){#design-board{grid-template-columns:1fr !important}.ds-col{border-right:none;border-bottom:1px solid var(--border);min-height:auto}.ds-col:last-child{border-bottom:none}}
+
+/* ─── EXPENSE BARS ─── */
+.exp-cat-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(37,40,64,.3)}
+.exp-cat-row:last-child{border-bottom:none}
+.exp-cat-name{font-size:12px;font-weight:600;width:110px;flex-shrink:0}
+.exp-cat-bar-wrap{flex:1;height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.exp-cat-bar{height:100%;border-radius:4px;transition:width .6s ease}
+.exp-cat-values{font-size:11px;color:var(--text2);width:130px;text-align:right;flex-shrink:0}
+.exp-row{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(37,40,64,.3);transition:background .15s}
+.exp-row:hover{background:var(--surface3)}
+.exp-row:last-child{border-bottom:none}
+.exp-row-date{font-size:11px;color:var(--text2);width:80px;flex-shrink:0}
+.exp-row-cat{width:90px;flex-shrink:0}
+.exp-row-vendor{font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-row-desc{font-size:11px;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-row-amount{font-size:13px;font-weight:700;width:80px;text-align:right;flex-shrink:0}
+.exp-row-actions{width:60px;text-align:right;flex-shrink:0}
+.exp-row-actions button{padding:3px 6px;font-size:10px;border:1px solid var(--border);background:var(--surface3);color:var(--text2);border-radius:4px;cursor:pointer;font-family:inherit;margin-left:4px}
+.exp-row-actions button:hover{color:var(--red);border-color:rgba(240,80,104,.3)}
+@media(max-width:640px){.exp-row{flex-wrap:wrap;gap:4px}.exp-row-date,.exp-row-cat,.exp-row-vendor,.exp-row-desc{width:auto;flex:none}.exp-cat-row{flex-wrap:wrap}.exp-cat-values{width:auto;text-align:left}}
+
 /* ─── EXPENSE TRACKER ─── */
 .upload-zone{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:20px;background:var(--surface2)}
 .upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:var(--accent-glow)}
@@ -662,6 +701,217 @@ select.form-input{cursor:pointer;appearance:none}
 
 
 
+  <!-- ── DESIGN STUDIO ── -->
+  <div class="section" id="sec-designs">
+    <h1 class="page-title">Design Studio</h1>
+    <p class="page-sub">Track creative projects from concept to production</p>
+
+    <!-- Add Project -->
+    <div class="panel" style="animation-delay:.05s">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="icon" style="background:rgba(168,85,247,.1)">🎨</div>
+          New Project
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="calc-form">
+          <div class="form-group">
+            <label class="form-label">Project Name</label>
+            <input type="text" class="form-input" id="ds-name" placeholder="e.g. Mooseheads Away Jersey">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Client</label>
+            <input type="text" class="form-input" id="ds-client" placeholder="e.g. Halifax Mooseheads">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Product Type</label>
+            <select class="form-input" id="ds-type">
+              <option value="hoodie">Pullover Hoodie</option>
+              <option value="zip-hoodie">Zip Hoodie</option>
+              <option value="tee">T-Shirt</option>
+              <option value="crewneck">Crewneck Sweatshirt</option>
+              <option value="jacket">Jacket / Bomber</option>
+              <option value="toque">Toque / Beanie</option>
+              <option value="cap">Cap / Hat</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input type="date" class="form-input" id="ds-deadline">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Notes</label>
+            <input type="text" class="form-input" id="ds-notes" placeholder="Colors, specs, references...">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn blue" onclick="msgAce('Help me brainstorm design ideas')">💡 Ask Ace for Inspiration</button>
+          <button class="btn primary" onclick="addDesignProject()">+ Add Project</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="panel" style="animation-delay:.1s">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="icon" style="background:rgba(74,140,247,.1)">📋</div>
+          Project Board
+        </div>
+        <div class="panel-actions">
+          <button class="btn" onclick="loadDesigns()">↻ Refresh</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div id="design-board" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;min-height:300px">
+          <div class="ds-col" data-status="concept">
+            <div class="ds-col-header" style="border-bottom:2px solid var(--orange)">
+              <span>💭 Concept</span><span class="ds-count" id="ds-count-concept">0</span>
+            </div>
+            <div class="ds-col-body" id="ds-col-concept"></div>
+          </div>
+          <div class="ds-col" data-status="mockup">
+            <div class="ds-col-header" style="border-bottom:2px solid var(--blue)">
+              <span>🖌️ Mockup</span><span class="ds-count" id="ds-count-mockup">0</span>
+            </div>
+            <div class="ds-col-body" id="ds-col-mockup"></div>
+          </div>
+          <div class="ds-col" data-status="approved">
+            <div class="ds-col-header" style="border-bottom:2px solid var(--green)">
+              <span>✅ Approved</span><span class="ds-count" id="ds-count-approved">0</span>
+            </div>
+            <div class="ds-col-body" id="ds-col-approved"></div>
+          </div>
+          <div class="ds-col" data-status="production">
+            <div class="ds-col-header" style="border-bottom:2px solid var(--accent)">
+              <span>🏭 Production</span><span class="ds-count" id="ds-count-production">0</span>
+            </div>
+            <div class="ds-col-body" id="ds-col-production"></div>
+          </div>
+        </div>
+        <div class="empty-panel" id="ds-empty" style="display:none">
+          <div class="empty-icon">🎨</div>
+          <div class="empty-title">No projects yet</div>
+          <p>Add your first design project above to start tracking it through the pipeline.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPENSES ── -->
+  <div class="section" id="sec-expenses">
+    <h1 class="page-title">Expenses</h1>
+    <p class="page-sub">Monthly expense tracking and budget management</p>
+
+    <!-- Monthly Overview -->
+    <div class="panel" style="animation-delay:.05s">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="icon" style="background:rgba(239,68,68,.1)">💰</div>
+          Monthly Overview
+        </div>
+        <div class="panel-actions">
+          <select class="form-input" id="exp-month-select" onchange="renderExpenses()" style="width:auto;padding:6px 10px;font-size:12px"></select>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="calc-result-grid" style="margin-bottom:20px">
+          <div class="calc-metric"><div class="cm-label">Total Spent</div><div class="cm-value" id="exp-total" style="color:var(--red)">$0</div></div>
+          <div class="calc-metric"><div class="cm-label">Budget</div><div class="cm-value" id="exp-budget" style="color:var(--blue)">$0</div></div>
+          <div class="calc-metric"><div class="cm-label">Remaining</div><div class="cm-value" id="exp-remaining" style="color:var(--green)">$0</div></div>
+          <div class="calc-metric"><div class="cm-label">Categories</div><div class="cm-value" id="exp-cat-count" style="color:var(--orange)">0</div></div>
+        </div>
+        <!-- 6-month bar chart -->
+        <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:0 4px" id="exp-chart"></div>
+        <div style="display:flex;gap:8px;padding:4px 4px 0;justify-content:space-between" id="exp-chart-labels"></div>
+      </div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="panel" style="animation-delay:.1s">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="icon" style="background:rgba(62,207,130,.1)">📊</div>
+          Budget vs Actual
+        </div>
+        <div class="panel-actions">
+          <button class="btn" onclick="editBudgets()">⚙️ Set Budgets</button>
+        </div>
+      </div>
+      <div class="panel-body" id="exp-categories"></div>
+    </div>
+
+    <!-- Add Expense -->
+    <div class="panel" style="animation-delay:.15s">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="icon" style="background:rgba(168,85,247,.1)">➕</div>
+          Add Expense
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="calc-form">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-input" id="exp-date">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Amount ($)</label>
+            <input type="number" class="form-input" id="exp-amount" placeholder="0.00" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select class="form-input" id="exp-category">
+              <option value="Materials">Materials</option>
+              <option value="Printing">Printing / Decoration</option>
+              <option value="Shipping">Shipping</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Rent">Rent</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Software">Software</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Vendor</label>
+            <input type="text" class="form-input" id="exp-vendor" placeholder="e.g. S&S Activewear">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-input" id="exp-desc" placeholder="What was this for?">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+          <button class="btn primary" onclick="addExpense()">+ Add Expense</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expense List -->
+    <div class="panel" style="animation-delay:.2s">
+      <div class="panel-header">
+        <div class="panel-title">
+          <div class="icon" style="background:rgba(74,140,247,.1)">📋</div>
+          Recent Expenses
+        </div>
+        <div class="panel-actions">
+          <button class="btn" onclick="exportExpenses()">📥 Export CSV</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div id="exp-list" style="max-height:400px;overflow-y:auto"></div>
+        <div class="empty-panel" id="exp-empty">
+          <div class="empty-icon">💰</div>
+          <div class="empty-title">No expenses recorded</div>
+          <p>Add your first expense above to start tracking spending.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 </div><!-- /main -->
 
 <!-- ──────────────── MOBILE TABS ──────────────── -->
@@ -735,6 +985,8 @@ function showSection(id){
   if(id==='social')loadSocial();
   if(id==='email')loadEmail();
   if(id==='tenders')loadTenders();
+  if(id==='designs')loadDesigns();
+  if(id==='expenses')loadExpenses();
 
 }
 
@@ -1322,7 +1574,276 @@ async function init(){
   }catch(e){}
   // Render saved quotes
   renderSavedQuotes();
+  // Update design + expense badges on dashboard
+  updateDesignBadge();
+  updateExpenseBadge();
 }
+
+// ─── DESIGN STUDIO ───
+const DS_KEY='apollo_designs';
+function getDesigns(){try{return JSON.parse(localStorage.getItem(DS_KEY))||[]}catch(e){return[]}}
+function saveDesigns(d){localStorage.setItem(DS_KEY,JSON.stringify(d))}
+
+function addDesignProject(){
+  const name=document.getElementById('ds-name').value.trim();
+  const client=document.getElementById('ds-client').value.trim();
+  if(!name){toast('Enter a project name');return}
+  const designs=getDesigns();
+  designs.push({
+    id:Date.now().toString(36),
+    name,
+    client:client||'—',
+    type:document.getElementById('ds-type').value,
+    deadline:document.getElementById('ds-deadline').value||null,
+    notes:document.getElementById('ds-notes').value.trim(),
+    status:'concept',
+    created:new Date().toISOString()
+  });
+  saveDesigns(designs);
+  document.getElementById('ds-name').value='';
+  document.getElementById('ds-client').value='';
+  document.getElementById('ds-notes').value='';
+  document.getElementById('ds-deadline').value='';
+  toast('Project added ✓');
+  loadDesigns();
+  updateDesignBadge();
+}
+
+function loadDesigns(){
+  const designs=getDesigns();
+  const statuses=['concept','mockup','approved','production'];
+  statuses.forEach(s=>{
+    const col=document.getElementById('ds-col-'+s);
+    const items=designs.filter(d=>d.status===s);
+    document.getElementById('ds-count-'+s).textContent=items.length;
+    if(!items.length){col.innerHTML='<div style="padding:16px;text-align:center;font-size:11px;color:var(--text2);opacity:.5">No projects</div>';return}
+    col.innerHTML=items.map(d=>{
+      const typeLabels={hoodie:'Hoodie','zip-hoodie':'Zip Hoodie',tee:'T-Shirt',crewneck:'Crewneck',jacket:'Jacket',toque:'Toque',cap:'Cap',custom:'Custom'};
+      const deadlineClass=d.deadline&&new Date(d.deadline)<new Date()?'overdue':'';
+      const deadlineStr=d.deadline?new Date(d.deadline+'T00:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric'}):'';
+      const nextStatus={concept:'mockup',mockup:'approved',approved:'production',production:null};
+      const prevStatus={concept:null,mockup:'concept',approved:'mockup',production:'approved'};
+      let actions='';
+      if(nextStatus[d.status])actions+=`<button onclick="event.stopPropagation();moveDesign('${d.id}','${nextStatus[d.status]}')">→ Next</button>`;
+      if(prevStatus[d.status])actions+=`<button onclick="event.stopPropagation();moveDesign('${d.id}','${prevStatus[d.status]}')">← Back</button>`;
+      actions+=`<button onclick="event.stopPropagation();deleteDesign('${d.id}')" style="color:var(--red)">✕</button>`;
+      return `<div class="ds-card" title="${esc(d.notes||'')}">
+        <div class="ds-card-name">${esc(d.name)}</div>
+        <div class="ds-card-client">${esc(d.client)}</div>
+        <div class="ds-card-footer">
+          <span class="ds-card-type">${typeLabels[d.type]||d.type}</span>
+          ${deadlineStr?`<span class="ds-card-deadline ${deadlineClass}">${deadlineStr}</span>`:''}
+        </div>
+        <div class="ds-card-actions">${actions}</div>
+      </div>`;
+    }).join('');
+  });
+  const empty=document.getElementById('ds-empty');
+  if(empty)empty.style.display=designs.length?'none':'block';
+}
+
+function moveDesign(id,newStatus){
+  const designs=getDesigns();
+  const d=designs.find(x=>x.id===id);
+  if(d){d.status=newStatus;saveDesigns(designs);loadDesigns();updateDesignBadge();toast('Moved to '+newStatus)}
+}
+function deleteDesign(id){
+  let designs=getDesigns();
+  designs=designs.filter(x=>x.id!==id);
+  saveDesigns(designs);loadDesigns();updateDesignBadge();toast('Project removed');
+}
+function updateDesignBadge(){
+  const designs=getDesigns();
+  const active=designs.filter(d=>d.status!=='production').length;
+  const b=document.getElementById('designs-badge');
+  if(b)b.textContent=active;
+  const dc=document.getElementById('dash-designs');
+  if(dc)dc.textContent=active;
+}
+
+// ─── EXPENSES ───
+const EXP_KEY='apollo_expenses';
+const EXP_BUDGET_KEY='apollo_budgets';
+const DEFAULT_BUDGETS={Materials:5000,Printing:3000,Shipping:2000,Marketing:1500,Rent:2500,Utilities:500,Software:300,Other:500};
+
+function getExpenses(){try{return JSON.parse(localStorage.getItem(EXP_KEY))||[]}catch(e){return[]}}
+function saveExpenses(e){localStorage.setItem(EXP_KEY,JSON.stringify(e))}
+function getBudgets(){try{return JSON.parse(localStorage.getItem(EXP_BUDGET_KEY))||DEFAULT_BUDGETS}catch(e){return DEFAULT_BUDGETS}}
+function saveBudgets(b){localStorage.setItem(EXP_BUDGET_KEY,JSON.stringify(b))}
+
+function initExpenseMonthSelect(){
+  const sel=document.getElementById('exp-month-select');
+  if(!sel||sel.options.length>1)return;
+  const now=new Date();
+  sel.innerHTML='';
+  for(let i=0;i<6;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const val=d.toISOString().slice(0,7);
+    const label=d.toLocaleDateString('en-CA',{month:'long',year:'numeric'});
+    sel.innerHTML+=`<option value="${val}">${label}</option>`;
+  }
+}
+
+function loadExpenses(){
+  initExpenseMonthSelect();
+  renderExpenses();
+}
+
+function addExpense(){
+  const date=document.getElementById('exp-date').value;
+  const amount=parseFloat(document.getElementById('exp-amount').value);
+  if(!date||isNaN(amount)||amount<=0){toast('Enter date and amount');return}
+  const expenses=getExpenses();
+  expenses.push({
+    id:Date.now().toString(36),
+    date,
+    amount,
+    category:document.getElementById('exp-category').value,
+    vendor:document.getElementById('exp-vendor').value.trim()||'—',
+    desc:document.getElementById('exp-desc').value.trim(),
+    created:new Date().toISOString()
+  });
+  saveExpenses(expenses);
+  document.getElementById('exp-amount').value='';
+  document.getElementById('exp-vendor').value='';
+  document.getElementById('exp-desc').value='';
+  toast('Expense added ✓');
+  renderExpenses();
+  updateExpenseBadge();
+}
+
+function renderExpenses(){
+  const expenses=getExpenses();
+  const budgets=getBudgets();
+  const selMonth=document.getElementById('exp-month-select')?.value||new Date().toISOString().slice(0,7);
+  const monthExpenses=expenses.filter(e=>e.date&&e.date.startsWith(selMonth));
+  
+  // Totals
+  const total=monthExpenses.reduce((s,e)=>s+e.amount,0);
+  const totalBudget=Object.values(budgets).reduce((s,v)=>s+v,0);
+  const remaining=totalBudget-total;
+  document.getElementById('exp-total').textContent='$'+total.toLocaleString('en-CA',{minimumFractionDigits:0,maximumFractionDigits:0});
+  document.getElementById('exp-budget').textContent='$'+totalBudget.toLocaleString('en-CA');
+  document.getElementById('exp-remaining').textContent=(remaining>=0?'$':'-$')+Math.abs(remaining).toLocaleString('en-CA');
+  document.getElementById('exp-remaining').style.color=remaining>=0?'var(--green)':'var(--red)';
+  const cats=[...new Set(monthExpenses.map(e=>e.category))];
+  document.getElementById('exp-cat-count').textContent=cats.length;
+
+  // 6-month chart
+  const chart=document.getElementById('exp-chart');
+  const labels=document.getElementById('exp-chart-labels');
+  const months=[];
+  const now=new Date();
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({key:d.toISOString().slice(0,7),label:d.toLocaleDateString('en-CA',{month:'short'})});
+  }
+  const monthTotals=months.map(m=>expenses.filter(e=>e.date&&e.date.startsWith(m.key)).reduce((s,e)=>s+e.amount,0));
+  const maxVal=Math.max(...monthTotals,1);
+  chart.innerHTML=monthTotals.map((v,i)=>{
+    const h=Math.max(4,(v/maxVal)*100);
+    const active=months[i].key===selMonth?'var(--accent)':'var(--surface3)';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:10px;color:var(--text2)">$${v>=1000?(v/1000).toFixed(1)+'K':v}</div><div style="width:100%;height:${h}%;background:${active};border-radius:4px;min-height:4px;transition:height .4s"></div></div>`;
+  }).join('');
+  labels.innerHTML=months.map(m=>`<div style="flex:1;text-align:center;font-size:10px;color:var(--text2)">${m.label}</div>`).join('');
+
+  // Category breakdown
+  const catContainer=document.getElementById('exp-categories');
+  const allCats=Object.keys(budgets);
+  catContainer.innerHTML=allCats.map(cat=>{
+    const spent=monthExpenses.filter(e=>e.category===cat).reduce((s,e)=>s+e.amount,0);
+    const budget=budgets[cat]||0;
+    const pctVal=budget>0?Math.min((spent/budget)*100,100):0;
+    const color=pctVal>90?'var(--red)':pctVal>70?'var(--orange)':'var(--green)';
+    return `<div class="exp-cat-row">
+      <div class="exp-cat-name">${cat}</div>
+      <div class="exp-cat-bar-wrap"><div class="exp-cat-bar" style="width:${pctVal}%;background:${color}"></div></div>
+      <div class="exp-cat-values">$${spent.toLocaleString()} / $${budget.toLocaleString()}</div>
+    </div>`;
+  }).join('');
+
+  // Expense list
+  const listContainer=document.getElementById('exp-list');
+  const empty=document.getElementById('exp-empty');
+  const sorted=[...monthExpenses].sort((a,b)=>b.date.localeCompare(a.date));
+  if(!sorted.length){
+    listContainer.innerHTML='';
+    if(empty)empty.style.display='block';
+    return;
+  }
+  if(empty)empty.style.display='none';
+  listContainer.innerHTML=sorted.map(e=>`<div class="exp-row">
+    <div class="exp-row-date">${new Date(e.date+'T00:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric'})}</div>
+    <div class="exp-row-cat"><span class="expense-category-badge">${esc(e.category)}</span></div>
+    <div class="exp-row-vendor">${esc(e.vendor)}</div>
+    <div class="exp-row-desc">${esc(e.desc)}</div>
+    <div class="exp-row-amount" style="color:var(--red)">-$${e.amount.toFixed(2)}</div>
+    <div class="exp-row-actions"><button onclick="deleteExpense('${e.id}')">✕</button></div>
+  </div>`).join('');
+}
+
+function deleteExpense(id){
+  let expenses=getExpenses();
+  expenses=expenses.filter(x=>x.id!==id);
+  saveExpenses(expenses);renderExpenses();updateExpenseBadge();toast('Expense removed');
+}
+
+function updateExpenseBadge(){
+  const expenses=getExpenses();
+  const now=new Date().toISOString().slice(0,7);
+  const total=expenses.filter(e=>e.date&&e.date.startsWith(now)).reduce((s,e)=>s+e.amount,0);
+  const b=document.getElementById('expenses-badge');
+  if(b)b.textContent=total>=1000?'$'+(total/1000).toFixed(1)+'K':'$'+total.toFixed(0);
+  const de=document.getElementById('dash-expenses');
+  if(de)de.textContent=total>=1000?'$'+(total/1000).toFixed(1)+'K':'$'+total.toFixed(0);
+}
+
+function editBudgets(){
+  const budgets=getBudgets();
+  const cats=Object.keys(budgets);
+  const html=cats.map(c=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+    <span style="width:100px;font-size:12px;font-weight:600">${c}</span>
+    <input type="number" class="form-input" id="budget-${c}" value="${budgets[c]}" style="padding:6px 10px;font-size:13px" step="100">
+  </div>`).join('');
+  
+  // Create modal
+  let overlay=document.getElementById('budget-modal');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='budget-modal';
+    overlay.className='modal-overlay';
+    overlay.innerHTML=`<div class="modal"><h2>Monthly Budgets</h2><div id="budget-fields"></div><div class="modal-actions"><button class="btn" onclick="closeBudgetModal()">Cancel</button><button class="btn primary" onclick="saveBudgetModal()">Save</button></div></div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)closeBudgetModal()});
+  }
+  document.getElementById('budget-fields').innerHTML=html;
+  overlay.classList.add('open');
+}
+function closeBudgetModal(){document.getElementById('budget-modal')?.classList.remove('open')}
+function saveBudgetModal(){
+  const budgets=getBudgets();
+  Object.keys(budgets).forEach(c=>{
+    const v=parseFloat(document.getElementById('budget-'+c)?.value);
+    if(!isNaN(v))budgets[c]=v;
+  });
+  saveBudgets(budgets);closeBudgetModal();renderExpenses();toast('Budgets updated ✓');
+}
+
+function exportExpenses(){
+  const expenses=getExpenses();
+  if(!expenses.length){toast('No expenses to export');return}
+  const header='Date,Category,Vendor,Description,Amount\n';
+  const rows=expenses.map(e=>`${e.date},${e.category},"${(e.vendor||'').replace(/"/g,'""')}","${(e.desc||'').replace(/"/g,'""')}",${e.amount.toFixed(2)}`).join('\n');
+  const blob=new Blob([header+rows],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='apollo-expenses.csv';
+  a.click();
+  toast('CSV exported ✓');
+}
+
+// Set default date for expense form
+document.getElementById('exp-date').value=new Date().toISOString().slice(0,10);
 
 if(localStorage.getItem('mc_auth_apollo')==='1'){
   document.getElementById('login').classList.add('hidden');
