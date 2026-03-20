@@ -2345,6 +2345,12 @@ function renderBriefing() {
   const a = DB.analytics;
   const s = ST.summary;
 
+  // Extract SS 2026 season data (Jan 2026+) — use this instead of all-time summary
+  const ss26 = (ST.bySeason || []).find(sz => /2026/.test(sz.season)) || {};
+  const ss26Rev = ss26.revenue || 0;
+  const ss26Profit = ss26.grossProfit || 0;
+  const ss26Margin = ss26.margin || (ss26Rev > 0 ? Math.round(ss26Profit / ss26Rev * 100) : 0);
+
   // Store filter: compute revenue share for selected store
   const storeRevShare = getStoreRevShare();
   const storeLoc = getStoreLocData(); // null = all stores
@@ -2402,9 +2408,9 @@ function renderBriefing() {
     },
     {
       label: 'Unfulfilled Orders',
-      value: (() => { const cutoff = new Date(Date.now() - 3*86400000).toISOString(); return (b.unfulfilledOrders || []).filter(o => o.date >= cutoff).length; })(),
-      sub: 'Last 3 days',
-      alert: (() => { const cutoff = new Date(Date.now() - 3*86400000).toISOString(); return (b.unfulfilledOrders || []).filter(o => o.date >= cutoff).length > 0; })(),
+      value: (b.unfulfilledOrders || []).length,
+      sub: 'Pending fulfillment',
+      alert: (b.unfulfilledOrders || []).length > 0,
     },
   ];
 
@@ -2432,8 +2438,8 @@ function renderBriefing() {
   const heroRow2 = [
     {
       label: 'Gross Margin (Realized)',
-      value: storeLoc ? fmtPct(storeLoc.grossMargin) : fmtPct(s.grossMargin),
-      sub: storeLoc ? `${storeLabel} · after markdowns` : `$${fmtN(Math.round(s.grossProfit))} profit · after markdowns`,
+      value: storeLoc ? fmtPct(storeLoc.grossMargin) : fmtPct(ss26Margin),
+      sub: storeLoc ? `${storeLabel} · after markdowns` : `$${fmtN(Math.round(ss26Profit))} profit · Spring 2026`,
     },
     {
       label: 'Blended Sell-Through',
@@ -2441,9 +2447,9 @@ function renderBriefing() {
       sub: storeLoc ? `${fmtN(storeLoc.unitsSold)} units sold` : `${fmtN(s.totalUnitsSold)} units sold`,
     },
     {
-      label: storeLoc ? `Revenue — ${storeLabel}` : 'Total Revenue (This Season)',
-      value: storeLoc ? fmt$(storeLoc.revenue) : '$' + (s.totalRevenue / 1000000).toFixed(2) + 'M',
-      sub: storeLoc ? `${fmtN(storeLoc.transactions)} transactions` : `${fmtN(s.totalSales)} transactions`,
+      label: storeLoc ? `Revenue — ${storeLabel}` : 'Season Revenue (Spring 2026)',
+      value: storeLoc ? fmt$(storeLoc.revenue) : fmt$(ss26Rev),
+      sub: storeLoc ? `${fmtN(storeLoc.transactions)} transactions` : 'Jan 2026 to date',
     },
     {
       label: '⚡ Restock Opportunities',
@@ -2579,15 +2585,12 @@ function renderBriefing() {
   $('yesterday-ai').innerHTML = `<div class="ai-icon-wrap">💡</div>
     <div class="ai-text">${briefingHealthText}</div>`;
 
-  // Unfulfilled orders — only show last 7 days (older ones are likely fulfilled but unmarked in Shopify)
-  const allUnfulfilled = b.unfulfilledOrders || [];
-  const unfulfilledCutoff = new Date(Date.now() - 3*86400000).toISOString();
-  const orders = allUnfulfilled.filter(o => o.date >= unfulfilledCutoff);
-  const staleCount = allUnfulfilled.length - orders.length;
+  // Unfulfilled orders — show all
+  const orders = b.unfulfilledOrders || [];
   $('unfulfilled-badge').textContent = orders.length;
   $('unfulfilled-count-label').textContent = orders.length > 0 
-    ? `${orders.length} orders need fulfillment` + (staleCount > 0 ? ` (${staleCount} older hidden)` : '')
-    : staleCount > 0 ? `${staleCount} older orders hidden (likely fulfilled)` : 'All orders fulfilled';
+    ? `${orders.length} orders pending fulfillment`
+    : 'All orders fulfilled';
   $('unfulfilled-list').innerHTML = orders.slice(0, 20).map(o => {
     const status = o.fulfillmentStatus === 'partial' ? 'Partial' : 'Unfulfilled';
     const badge = status === 'Partial' ? 'badge-amber' : 'badge-red';
@@ -2796,8 +2799,10 @@ function renderSales() {
     </div>
   `).join('');
 
-  // Category horizontal bars
-  const cats = ST.byCategory
+  // Category horizontal bars — use SS26 seasonal data if available, else fall back to all-time
+  const ss26Cats = ST.seasonal && ST.seasonal.ss26 && ST.seasonal.ss26.byCategory;
+  const catSource = ss26Cats || ST.byCategory;
+  const cats = catSource
     .filter(c => c.category !== 'EXCLUDE FOR REPORTS' && c.revenue > 0)
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 12);
