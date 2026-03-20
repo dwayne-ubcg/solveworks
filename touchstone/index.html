@@ -626,6 +626,21 @@
       return null;
     }
   }
+  // ── Shared helpers (available to ALL panels) ──
+  const escapeHtml = (value = '') => String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+  const formatCompactMoney = (value) => {
+    const num = Number(value) || 0;
+    return num >= 1000 ? `$${Math.round(num / 1000)}K` : `$${num.toLocaleString('en-US')}`;
+  };
+
+  const formatCurrency = (value) => `$${(Number(value) || 0).toLocaleString('en-US')}`;
+
   // ── OVERVIEW PANEL ──
   async function loadOverview() {
     const panel = document.getElementById('p-overview');
@@ -642,20 +657,6 @@
       loadJSON('livingstone-crm'),
       loadJSON('transcripts'),
     ]);
-
-    const escapeHtml = (value = '') => String(value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-
-    const formatCompactMoney = (value) => {
-      const num = Number(value) || 0;
-      return num >= 1000 ? `$${Math.round(num / 1000)}K` : `$${num.toLocaleString('en-US')}`;
-    };
-
-    const formatCurrency = (value) => `$${(Number(value) || 0).toLocaleString('en-US')}`;
 
     const dateSource = dashboard?.date || schedule?.date;
     const dateObj = dateSource ? new Date(`${dateSource}T12:00:00`) : new Date();
