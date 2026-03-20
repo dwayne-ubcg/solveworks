@@ -1078,31 +1078,37 @@ async function loadTenders(){
       container.innerHTML=`<div class="panel"><div class="panel-body"><div class="empty-panel"><div class="empty-icon">🔍</div><div class="empty-title">Scanning for opportunities...</div><p>Ace monitors Nova Scotia procurement, MERX, university purchasing portals, and Hockey Canada for apparel-related tenders.</p><div class="empty-hint">Tender alerts will appear here automatically when matches are found.</div></div></div></div>`;
       return;
     }
-    document.getElementById('tenders-badge').textContent=data.alerts.length;
+    document.getElementById('tenders-badge').textContent=tenderList.length;
     let html=`<div class="panel"><div class="panel-body">`;
-    data.alerts.forEach(t=>{
-      html+=`<div class="tender-card ${t.relevance.toLowerCase()}">
+    tenderList.forEach(t=>{
+      const rel=t.relevance||t.fit||'medium';
+      const val=t.value||t.estimatedValue||'TBD';
+      const dl=t.deadline||t.deadlineNote||'TBD';
+      const posted=t.postedAt||t.addedDate||'';
+      const src=t.source||'';
+      const notes=t.notes||t.description||'';
+      html+=`<div class="tender-card ${rel.toLowerCase()}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px">
           <div class="tc-title">${esc(t.title)}</div>
-          <span class="tender-relevance ${t.relevance}">${esc(t.relevance)}</span>
+          <span class="tender-relevance ${rel}">${esc(rel)}</span>
         </div>
         <div class="tc-meta">
-          <span>📍 ${esc(t.region)}</span>
-          <span>🏷 ${esc(t.category)}</span>
-          <span>📅 Posted: ${esc(t.postedAt)}</span>
-          <span>🔗 ${esc(t.source)}</span>
+          <span>📍 ${esc(t.region||'')}</span>
+          <span>🏷 ${esc(t.category||'')}</span>
+          <span>📅 ${esc(posted)}</span>
+          <span>🔗 ${esc(src)}</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:8px">
           <div>
-            <div class="tc-value">${esc(t.value)}</div>
-            <div class="tc-deadline">⏰ Deadline: ${esc(t.deadline)}</div>
+            <div class="tc-value">${esc(val)}</div>
+            <div class="tc-deadline">⏰ ${esc(dl)}</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn primary" onclick="msgAce('Help me prepare a bid for: ${esc(t.title).replace(/'/g,"\\'")}')">📋 Prepare Bid</button>
             <button class="btn blue" onclick="msgAce('Research ${esc(t.title).replace(/'/g,"\\'")} tender requirements')">🔍 Research</button>
           </div>
         </div>
-        ${t.notes?`<div style="margin-top:10px;font-size:12px;color:var(--text2);padding:8px 12px;background:var(--surface3);border-radius:7px">${esc(t.notes)}</div>`:''}
+        ${notes?`<div style="margin-top:10px;font-size:12px;color:var(--text2);padding:8px 12px;background:var(--surface3);border-radius:7px">${esc(notes)}</div>`:''}
       </div>`;
     });
     html+=`</div></div>`;
@@ -1233,9 +1239,10 @@ async function init(){
   // Load tender stats
   try{
     const td=await loadJSON('data/tenders.json');
-    if(td&&td.alerts){
-      document.getElementById('dash-tenders').textContent=td.alerts.length;
-      document.getElementById('tenders-badge').textContent=td.alerts.length;
+    const tl=td&&(td.alerts||td.tenders)||[];
+    if(tl.length){
+      document.getElementById('dash-tenders').textContent=tl.length;
+      document.getElementById('tenders-badge').textContent=tl.length;
     }
   }catch(e){}
   // Load social stats
