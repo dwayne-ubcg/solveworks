@@ -764,60 +764,64 @@
 
     const staleHtml = stale.length
       ? `
-        <div class="section-label">Stale</div>
-        ${stale.map(item => {
-          const staleClass = Number(item.staleDays) >= 5 ? 'badge-red' : 'badge-orange';
+        <div class="section-label">Stale Follow-ups (${stale.length})</div>
+        ${stale.slice(0, 10).map(item => {
+          const staleClass = Number(item.staleDays) >= 30 ? 'badge-red' : 'badge-orange';
           return `
             <div class="list-item">
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.person || 'Follow-up')}</div>
+                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.customer || 'Unknown')}</div>
                   <span class="badge ${staleClass}">${escapeHtml(item.staleDays || 0)}d stale</span>
                 </div>
-                <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.action || '')}</div>
-                <div style="font-size:12px; color:var(--text3); margin-top:4px;">Owner: ${escapeHtml(item.owner || 'Unassigned')}</div>
+                <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.project || '')}</div>
+                <div style="font-size:12px; color:var(--text3); margin-top:4px;">Rep: ${escapeHtml(item.rep || 'Unassigned')} · ${item.pricing ? formatCurrency(item.pricing) : 'No quote'} · ${escapeHtml(item.stage || '—')}</div>
               </div>
             </div>
           `;
         }).join('')}
+        ${stale.length > 10 ? `<div style="font-size:12px;color:var(--text3);padding:8px 16px;">+ ${stale.length - 10} more stale follow-ups</div>` : ''}
       `
       : '';
 
     const pendingHtml = pending.length
       ? `
-        <div class="section-label">Pending</div>
-        ${pending.map(item => `
+        <div class="section-label">Pending Actions (${pending.length})</div>
+        ${pending.slice(0, 10).map(item => `
           <div class="list-item">
             <div style="flex:1; min-width:0;">
               <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                <div style="font-weight:600; color:var(--text);">${escapeHtml(item.person || 'Pending item')}</div>
-                <span class="badge badge-blue">Due ${escapeHtml(item.dueDate || 'TBD')}</span>
+                <div style="font-weight:600; color:var(--text);">${escapeHtml(item.customer || 'Unknown')}</div>
+                <span class="badge badge-blue">${escapeHtml(item.stage || 'Pending')}</span>
               </div>
-              <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.action || '')}</div>
-              <div style="font-size:12px; color:var(--text3); margin-top:4px;">Owner: ${escapeHtml(item.owner || 'Unassigned')}</div>
+              <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.action || item.project || '')}</div>
+              <div style="font-size:12px; color:var(--text3); margin-top:4px;">Rep: ${escapeHtml(item.rep || 'Unassigned')} · ${item.pricing ? formatCurrency(item.pricing) : 'No quote'}</div>
             </div>
           </div>
         `).join('')}
+        ${pending.length > 10 ? `<div style="font-size:12px;color:var(--text3);padding:8px 16px;">+ ${pending.length - 10} more pending</div>` : ''}
       `
       : '';
 
     const expiringHtml = expiringQuotes.length
       ? `
-        <div class="section-label">Expiring Quotes</div>
-        ${expiringQuotes.map(item => {
-          const expiresClass = Number(item.expiresIn) <= 3 ? 'badge-red' : 'badge-orange';
+        <div class="section-label">Expiring Quotes (${expiringQuotes.length})</div>
+        ${expiringQuotes.slice(0, 10).map(item => {
+          const expiresClass = Number(item.expiresIn) <= 3 ? 'badge-red' : Number(item.expiresIn) <= 14 ? 'badge-orange' : 'badge-blue';
           return `
             <div class="list-item">
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.client || 'Quote')}</div>
-                  <span class="badge ${expiresClass}">${escapeHtml(item.expiresIn || 0)}d left</span>
+                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.customer || 'Quote')}</div>
+                  <span class="badge ${expiresClass}">${Number(item.expiresIn) <= 0 ? 'Expired' : item.expiresIn + 'd left'}</span>
                 </div>
-                <div style="font-size:13px; color:var(--text2);">${formatCurrency(item.value)} · Owner: ${escapeHtml(item.owner || 'Unassigned')}</div>
+                <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.project || '')} · ${formatCurrency(item.pricing || 0)}</div>
+                <div style="font-size:12px; color:var(--text3); margin-top:4px;">Rep: ${escapeHtml(item.rep || 'Unassigned')} · ${item.daysOld || 0}d old</div>
               </div>
             </div>
           `;
         }).join('')}
+        ${expiringQuotes.length > 10 ? `<div style="font-size:12px;color:var(--text3);padding:8px 16px;">+ ${expiringQuotes.length - 10} more expiring</div>` : ''}
       `
       : '';
 
