@@ -633,13 +633,14 @@
 
     panel.innerHTML = '<div class="panel-placeholder">Loading overview…</div>';
 
-    const [dashboard, schedule, followups, tasksData, compassData, lsData] = await Promise.all([
+    const [dashboard, schedule, followups, tasksData, compassData, lsData, transcriptsData] = await Promise.all([
       loadJSON('dashboard'),
       loadJSON('schedule'),
       loadJSON('followups'),
       loadJSON('tasks'),
       loadJSON('compass-crm'),
-      loadJSON('livingstone-crm')
+      loadJSON('livingstone-crm'),
+      loadJSON('transcripts'),
     ]);
 
     const escapeHtml = (value = '') => String(value)
@@ -1268,6 +1269,61 @@
         <div class="card-title">Urgent Tasks</div>
         ${urgentTasksHtml}
       </div>
+
+      ${(() => {
+        // ── Needs Attention: stale + pending from followups ──
+        const staleItems = Array.isArray(followups?.stale) ? followups.stale.slice(0,5) : [];
+        const pendingItems = Array.isArray(followups?.pending) ? followups.pending.slice(0,5) : [];
+        const expiringItems = Array.isArray(followups?.expiringQuotes) ? followups.expiringQuotes.slice(0,5) : [];
+        const total = staleItems.length + pendingItems.length + expiringItems.length;
+        if (!total) return '';
+        return `<div class="card" style="margin-top:16px;border-left:4px solid var(--orange)">
+          <div class="card-title">⚠️ Needs Attention — ${total} items</div>
+          ${staleItems.length ? `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Stale Leads (&gt;14 days stuck)</div>
+          ${staleItems.map(item => `<div class="list-item" style="padding:8px 0">
+            <div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+              <strong style="font-size:13px">${escapeHtml(item.customer||'?')}</strong>
+              <span class="badge badge-orange">${item.staleDays}d stale</span>
+            </div>
+            <div style="font-size:12px;color:var(--text2)">${escapeHtml(item.stage||'')} · ${escapeHtml(item.rep||'—')}</div>
+            ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" style="font-size:11px;color:var(--accent);text-decoration:none;margin-top:4px;display:inline-block">📞 ${escapeHtml(item.phone)}</a>` : ''}
+            </div></div>`).join('')}` : ''}
+          ${expiringItems.length ? `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px">Expiring Quotes</div>
+          ${expiringItems.map(item => `<div class="list-item" style="padding:8px 0">
+            <div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+              <strong style="font-size:13px">${escapeHtml(item.customer||'?')}</strong>
+              <span class="badge ${item.expiresIn <= 3 ? 'badge-red' : 'badge-orange'}">${item.expiresIn}d left</span>
+            </div>
+            <div style="font-size:12px;color:var(--text2)">${item.pricing > 0 ? '$'+item.pricing.toLocaleString() : '$0'} · ${escapeHtml(item.rep||'—')}</div>
+            ${item.phone ? `<a href="tel:${escapeHtml(item.phone)}" style="font-size:11px;color:var(--accent);text-decoration:none;margin-top:4px;display:inline-block">📞 ${escapeHtml(item.phone)}</a>` : ''}
+            </div></div>`).join('')}` : ''}
+        </div>`;
+      })()}
+
+      ${(() => {
+        // ── Recent Calls (transcripts) ──
+        const txs = (transcriptsData?.transcripts || []).slice(-3).reverse();
+        if (!txs.length) return '';
+        return `<div class="card" style="margin-top:16px">
+          <div class="card-title">📞 Recent Calls</div>
+          ${txs.map(t => {
+            const ex = t.extracted || {};
+            const commitments = (ex.commitments || []).slice(0,2);
+            const actions = (ex.action_items || []).slice(0,2);
+            const decisions = (ex.key_decisions || []).slice(0,2);
+            return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <div style="font-weight:600">${escapeHtml(t.title||'Untitled')}</div>
+                <span style="font-size:11px;color:var(--text3)">${escapeHtml(t.date||'')}${t.duration?' · '+escapeHtml(t.duration):''}</span>
+              </div>
+              ${commitments.length ? `<div style="margin-bottom:4px">${commitments.map(c => `<div style="font-size:12px;color:var(--cyan);padding:2px 0">💬 ${escapeHtml(c)}</div>`).join('')}</div>` : ''}
+              ${actions.length ? `<div style="margin-bottom:4px">${actions.map(a => `<div style="font-size:12px;color:var(--orange);padding:2px 0">📌 ${escapeHtml(a)}</div>`).join('')}</div>` : ''}
+              ${decisions.length ? `<div>${decisions.map(d => `<div style="font-size:12px;color:var(--green);padding:2px 0">✅ ${escapeHtml(d)}</div>`).join('')}</div>` : ''}
+            </div>`;
+          }).join('')}
+          <div style="padding-top:8px"><button class="btn btn-sm" style="background:var(--surface2)" onclick="showPanel('p-transcripts')">View All Transcripts →</button></div>
+        </div>`;
+      })()}
     `;
   }
   loadOverview();
@@ -1371,6 +1427,13 @@
           html += `<span style="font-size:11px;color:var(--text2);padding:2px 0">→ ${m.autoTask}</span>`;
           html += `</div>`;
         }
+        if (m.linkedLead) {
+          const ll = m.linkedLead;
+          const llPrice = ll.pricing > 0 ? ` — $${(ll.pricing||0).toLocaleString()}` : '';
+          html += `<div style="margin-top:6px;${isMe?'text-align:right':''}">`;
+          html += `<span class="badge badge-accent" style="cursor:pointer;font-size:10px" onclick="showPanel('p-pipeline')">📎 ${ll.customer||'Lead'}${ll.project?' — '+ll.project:''}${llPrice} <span style="opacity:0.7">${ll.stage||''}</span></span>`;
+          html += `</div>`;
+        }
         html += `</div></div>`;
       });
     } else {
@@ -1381,20 +1444,225 @@
   loadMessages();
 
   // ── TRANSCRIPTS PANEL ──
+  let txFilter = {search:'', speaker:''};
+  let txExpanded = {};
+
+  function toggleTxCard(id) {
+    txExpanded[id] = !txExpanded[id];
+    loadTranscripts();
+  }
+
+  function addTaskFromTranscript(text, source) {
+    const tasks = JSON.parse(localStorage.getItem('tc_manual_tasks') || '[]');
+    tasks.push({
+      id: 'tx-task-' + Date.now(),
+      text: text,
+      source: 'Transcript: ' + source,
+      status: 'new',
+      time: new Date().toISOString(),
+    });
+    localStorage.setItem('tc_manual_tasks', JSON.stringify(tasks));
+    alert('Task created: ' + text.slice(0,60));
+  }
+
+  function saveTranscriptFromPaste(title, text, speakers) {
+    const data = JSON.parse(localStorage.getItem('tc_transcripts_local') || '{"transcripts":[]}');
+    const newTx = {
+      id: 'local-' + Date.now(),
+      title: title || 'Pasted Transcript',
+      date: new Date().toISOString().slice(0,10),
+      duration: '',
+      speakers: speakers || ['Craig'],
+      text: text,
+      source: 'manual',
+    };
+    // Basic extraction
+    const commitments = [];
+    const actions = [];
+    const decisions = [];
+    const lines = text.split(/\n/);
+    lines.forEach(line => {
+      const ll = line.toLowerCase();
+      if (/i['']ll|we['']ll|i will|gonna|going to/.test(ll) && line.length > 20) commitments.push(line.trim().slice(0,150));
+      else if (/need[s]? to|have to|should|make sure|check/.test(ll) && line.length > 20) actions.push(line.trim().slice(0,150));
+      else if (/approved|decided|agreed|going with|let's go/.test(ll) && line.length > 15) decisions.push(line.trim().slice(0,150));
+    });
+    newTx.extracted = {
+      commitments: commitments.slice(0,8),
+      action_items: actions.slice(0,8),
+      key_decisions: decisions.slice(0,5),
+      mentioned_projects: [],
+      follow_up_dates: [],
+    };
+    data.transcripts.push(newTx);
+    localStorage.setItem('tc_transcripts_local', JSON.stringify(data));
+    return newTx;
+  }
+
   async function loadTranscripts() {
     const data = await loadJSON('transcripts');
-    const txs = data?.transcripts || [];
-    let html = `<div class="panel-title">🎙️ Transcripts</div><div class="panel-sub">Call recordings with AI-extracted commitments</div>`;
-    if (txs.length) {
-      txs.forEach(t => {
-        html += `<div class="card" style="margin-bottom:12px"><div class="card-title">${t.title||'Untitled'}</div><div style="color:var(--text2);font-size:12px;margin-bottom:8px">${t.date||''} · ${t.duration||''} · ${(t.participants||[]).join(', ')}</div>`;
-        if (t.commitments?.length) { html += `<div class="section-label">Commitments</div>`; t.commitments.forEach(c => { html += `<div class="list-item"><strong>${c.who||'--'}:</strong> ${c.action||''}</div>`; }); }
-        if (t.keyDecisions?.length) { html += `<div class="section-label">Key Decisions</div>`; t.keyDecisions.forEach(d => { html += `<div class="list-item">${d}</div>`; }); }
+    const serverTxs = data?.transcripts || [];
+    // Merge with locally-stored transcripts
+    const localData = JSON.parse(localStorage.getItem('tc_transcripts_local') || '{"transcripts":[]}');
+    const allTxs = [...serverTxs, ...(localData.transcripts || [])];
+    const escT = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
+    // Gather speakers
+    const allSpeakers = [...new Set(allTxs.flatMap(t => t.speakers || []).filter(Boolean))];
+
+    // Apply filters
+    let filtered = allTxs;
+    if (txFilter.search) {
+      const s = txFilter.search.toLowerCase();
+      filtered = filtered.filter(t => (t.title||'').toLowerCase().includes(s) || (t.text||'').toLowerCase().includes(s));
+    }
+    if (txFilter.speaker) {
+      filtered = filtered.filter(t => (t.speakers||[]).includes(txFilter.speaker));
+    }
+
+    let html = `<div class="panel-title">🎙️ Transcripts</div><div class="panel-sub">Plaud call transcripts — extracted commitments, actions, decisions</div>`;
+
+    // Upload / paste zone
+    html += `<div class="card" style="margin-bottom:16px;border:1px solid var(--border2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-weight:600">📋 Add Transcript</div>
+        <span style="font-size:11px;color:var(--text3)">Paste Plaud output — auto-extracts commitments & actions</span>
+      </div>
+      <input id="tx-title-input" type="text" placeholder="Title (e.g. Call with Robbie Roberts)" style="width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:inherit;font-size:13px;margin-bottom:8px">
+      <textarea id="tx-paste-area" style="width:100%;min-height:100px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:inherit;font-size:13px;padding:10px;resize:vertical;margin-bottom:8px" placeholder="Paste transcript text here...
+Example:
+Craig: We need to follow up with the Morrison kitchen.
+Tyler: I'll send the quote by Wednesday.
+Craig: Make sure we confirm the sink model first."></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-sm" style="background:var(--surface2)" onclick="document.getElementById('tx-title-input').value='';document.getElementById('tx-paste-area').value=''">Clear</button>
+        <button class="btn btn-primary btn-sm" onclick="(function(){const title=document.getElementById('tx-title-input').value;const text=document.getElementById('tx-paste-area').value.trim();if(!text){alert('Paste transcript text first');return;}saveTranscriptFromPaste(title,text,['Craig']);document.getElementById('tx-title-input').value='';document.getElementById('tx-paste-area').value='';loadTranscripts();})()">Process Transcript →</button>
+      </div>
+    </div>`;
+
+    // Stats
+    if (allTxs.length) {
+      html += `<div class="grid3" style="margin-bottom:16px">`;
+      const totalCommitments = allTxs.reduce((s,t)=>s+((t.extracted?.commitments||[]).length),0);
+      const totalActions = allTxs.reduce((s,t)=>s+((t.extracted?.action_items||[]).length),0);
+      const totalDecisions = allTxs.reduce((s,t)=>s+((t.extracted?.key_decisions||[]).length),0);
+      html += `<div class="stat-card"><div style="font-size:22px;font-weight:700">${allTxs.length}</div><div style="color:var(--text2);font-size:12px">Transcripts</div></div>`;
+      html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--cyan)">${totalCommitments}</div><div style="color:var(--text2);font-size:12px">Commitments</div></div>`;
+      html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--orange)">${totalActions}</div><div style="color:var(--text2);font-size:12px">Action Items</div></div>`;
+      html += `</div>`;
+    }
+
+    // Search & filter
+    html += `<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
+    html += `<input class="search-input" placeholder="🔍 Search transcripts…" value="${txFilter.search}" oninput="txFilter.search=this.value;loadTranscripts()" style="flex:1">`;
+    html += `<button class="filter-btn ${!txFilter.speaker?'active':''}" onclick="txFilter.speaker='';loadTranscripts()">All</button>`;
+    allSpeakers.forEach(sp => html += `<button class="filter-btn ${txFilter.speaker===sp?'active':''}" onclick="txFilter.speaker='${sp}';loadTranscripts()">${sp}</button>`);
+    if (txFilter.search || txFilter.speaker) html += `<button class="btn btn-sm" onclick="txFilter={search:'',speaker:''};loadTranscripts()" style="background:var(--red-bg);color:var(--red)">✕ Clear</button>`;
+    html += `</div>`;
+
+    if (filtered.length) {
+      [...filtered].reverse().forEach(t => {
+        const isExpanded = txExpanded[t.id];
+        const ex = t.extracted || {};
+        const commitments = ex.commitments || [];
+        const actions = ex.action_items || [];
+        const decisions = ex.key_decisions || [];
+        const dates = ex.follow_up_dates || [];
+        const mentioned = ex.mentioned_projects || [];
+        const totalItems = commitments.length + actions.length + decisions.length;
+
+        html += `<div class="card" style="margin-bottom:10px;cursor:pointer" onclick="toggleTxCard('${escT(t.id||'')}')">`;
+        // Card header
+        html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">`;
+        html += `<div style="flex:1">`;
+        html += `<div style="font-weight:600;font-size:14px">${escT(t.title||'Untitled')}</div>`;
+        html += `<div style="font-size:12px;color:var(--text2);margin-top:2px">${escT(t.date||'')}${t.duration?' · '+escT(t.duration):''}${(t.speakers||[]).length?' · '+t.speakers.map(escT).join(', '):''}</div>`;
+        html += `</div>`;
+        html += `<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">`;
+        if (totalItems > 0) html += `<span class="badge badge-accent" style="font-size:10px">${totalItems} items</span>`;
+        html += `<span style="color:var(--text3);font-size:12px">${isExpanded?'▲':'▼'}</span>`;
+        html += `</div></div>`;
+
+        // Collapsed: show quick preview of first commitment/action
+        if (!isExpanded) {
+          const preview = commitments[0] || actions[0] || decisions[0];
+          if (preview) html += `<div style="margin-top:8px;font-size:12px;color:var(--text3);font-style:italic">${escT(preview.slice(0,100))}${preview.length>100?'…':''}</div>`;
+        }
+
+        // Expanded: full detail
+        if (isExpanded) {
+          html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">`;
+
+          // Commitments
+          if (commitments.length) {
+            html += `<div class="section-label" style="color:var(--cyan)">💬 Commitments (${commitments.length})</div>`;
+            commitments.forEach(c => {
+              html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(6,182,212,0.07);border-radius:6px;margin-bottom:4px;gap:8px">`;
+              html += `<div style="font-size:12px;color:var(--text);flex:1">${escT(c)}</div>`;
+              html += `<button class="btn btn-sm" style="background:var(--surface2);font-size:10px;padding:3px 8px;flex-shrink:0" onclick="event.stopPropagation();addTaskFromTranscript('${escT(c)}','${escT(t.title||'Transcript')}')">+ Task</button>`;
+              html += `</div>`;
+            });
+          }
+
+          // Action items
+          if (actions.length) {
+            html += `<div class="section-label" style="color:var(--orange);margin-top:10px">📌 Action Items (${actions.length})</div>`;
+            actions.forEach(a => {
+              html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(245,158,11,0.07);border-radius:6px;margin-bottom:4px;gap:8px">`;
+              html += `<div style="font-size:12px;color:var(--text);flex:1">${escT(a)}</div>`;
+              html += `<button class="btn btn-sm" style="background:var(--surface2);font-size:10px;padding:3px 8px;flex-shrink:0" onclick="event.stopPropagation();addTaskFromTranscript('${escT(a)}','${escT(t.title||'Transcript')}')">+ Task</button>`;
+              html += `</div>`;
+            });
+          }
+
+          // Decisions
+          if (decisions.length) {
+            html += `<div class="section-label" style="color:var(--green);margin-top:10px">✅ Key Decisions (${decisions.length})</div>`;
+            decisions.forEach(d => {
+              html += `<div style="padding:6px 8px;background:rgba(16,185,129,0.07);border-radius:6px;margin-bottom:4px;font-size:12px;color:var(--text)">${escT(d)}</div>`;
+            });
+          }
+
+          // Follow-up dates
+          if (dates.length) {
+            html += `<div class="section-label" style="margin-top:10px">📅 Dates Mentioned</div>`;
+            html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
+            dates.forEach(d => html += `<span class="badge badge-purple">${escT(d)}</span>`);
+            html += `</div>`;
+          }
+
+          // Mentioned projects
+          if (mentioned.length) {
+            html += `<div class="section-label" style="margin-top:8px">🏗️ CRM Matches</div>`;
+            mentioned.forEach(m => {
+              html += `<div style="padding:4px 8px;border-radius:6px;background:var(--surface2);margin-bottom:4px;font-size:12px">`;
+              html += `<span style="color:var(--accent)">${escT(m.customer||'')}</span> <span style="color:var(--text3)">· ${escT(m.stage||'')} · ${m.pricing>0?'$'+m.pricing.toLocaleString():'$0'}</span>`;
+              html += `</div>`;
+            });
+          }
+
+          // Full text
+          if (t.text) {
+            html += `<div style="margin-top:12px">`;
+            html += `<button class="btn btn-sm" style="background:var(--surface2);margin-bottom:8px;font-size:11px" onclick="event.stopPropagation();const el=document.getElementById('tx-full-${escT(t.id||'')}');el.style.display=el.style.display==='none'?'block':'none'">📄 View Full Transcript</button>`;
+            html += `<div id="tx-full-${escT(t.id||'')}" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:11px;color:var(--text2);white-space:pre-wrap;max-height:300px;overflow-y:auto">${escT(t.text)}</div>`;
+            html += `</div>`;
+          }
+
+          html += `</div>`;
+        }
         html += `</div>`;
       });
     } else {
-      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🎙️</div><div style="color:var(--text2)">No transcripts yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Upload call recordings to get AI-extracted commitments and action items</div></div>`;
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🎙️</div>`;
+      if (allTxs.length) {
+        html += `<div style="color:var(--text2)">No transcripts match filter</div>`;
+      } else {
+        html += `<div style="color:var(--text2)">No transcripts yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Craig can drop Plaud transcripts above. Once pasted, commitments & action items are automatically extracted.</div>`;
+      }
+      html += `</div>`;
     }
+
     document.getElementById('p-transcripts').innerHTML = html;
   }
   loadTranscripts();
@@ -1446,22 +1714,102 @@
   loadRecordings();
 
   // ── TASKS PANEL ──
+  let tasksFilter = {search:'', account:'', status:''};
+
+  function markTaskDone(taskId) {
+    const done = JSON.parse(localStorage.getItem('touchstone_tasks_done') || '[]');
+    if (!done.includes(taskId)) done.push(taskId);
+    localStorage.setItem('touchstone_tasks_done', JSON.stringify(done));
+    loadTasks();
+  }
+
   async function loadTasks() {
     const data = await loadJSON('tasks');
-    const tasks = data?.tasks || [];
-    let html = `<div class="panel-title">📋 Tasks</div><div class="panel-sub">Auto-generated from messages, transcripts & audits</div>`;
-    html += `<div class="filter-row"><button class="filter-btn active" data-filter="all">All</button><button class="filter-btn" data-filter="critical">🔴 Critical</button><button class="filter-btn" data-filter="high">🟠 High</button><button class="filter-btn" data-filter="normal">🔵 Normal</button></div>`;
-    if (tasks.length) {
-      tasks.forEach(tk => {
-        const pBadge = {critical:'badge-red',high:'badge-orange',normal:'badge-blue',low:'badge-accent'}[tk.priority] || 'badge-accent';
-        const sBadge = {open:'badge-blue','in-progress':'badge-accent',done:'badge-green'}[tk.status] || 'badge-accent';
-        html += `<div class="list-item"><div style="display:flex;align-items:center;gap:8px"><span class="badge ${pBadge}">${tk.priority||'normal'}</span><strong>${tk.title||tk.description||''}</strong><span class="badge ${sBadge}">${tk.status||'open'}</span></div><div style="color:var(--text2);font-size:12px;margin-top:4px">Source: ${tk.source||'manual'} · Assigned: ${tk.assignee||'unassigned'} · Due: ${tk.dueDate||'--'}</div></div>`;
+    const allTasks = data?.tasks || [];
+    const doneTasks = JSON.parse(localStorage.getItem('touchstone_tasks_done') || '[]');
+
+    const accounts = [...new Set(allTasks.map(t => t.account).filter(Boolean))];
+    const repColors = {Craig:'var(--accent)',Tyler:'var(--green)',Shelley:'var(--purple)',Jason:'var(--orange)',Lenore:'var(--cyan)'};
+
+    let filtered = allTasks.map(t => ({
+      ...t,
+      status: doneTasks.includes(t.id) ? 'done' : (t.status || 'new')
+    }));
+    if (tasksFilter.search) {
+      const s = tasksFilter.search.toLowerCase();
+      filtered = filtered.filter(t => (t.text||'').toLowerCase().includes(s) || (t.source||'').toLowerCase().includes(s));
+    }
+    if (tasksFilter.account) filtered = filtered.filter(t => t.account === tasksFilter.account);
+    if (tasksFilter.status) {
+      if (tasksFilter.status === 'open') filtered = filtered.filter(t => t.status !== 'done');
+      else if (tasksFilter.status === 'done') filtered = filtered.filter(t => t.status === 'done');
+    }
+
+    const openCount = allTasks.filter(t => !doneTasks.includes(t.id)).length;
+    const doneCount = doneTasks.length;
+
+    let html = `<div class="panel-title">📋 Tasks</div><div class="panel-sub">Auto-extracted from iMessages — ${openCount} open · ${doneCount} done</div>`;
+
+    // Stats
+    html += `<div class="grid3" style="margin-bottom:16px">`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700">${allTasks.length}</div><div style="color:var(--text2);font-size:12px">Total Tasks</div></div>`;
+    html += `<div class="stat-card" style="${openCount>0?'background:var(--orange-bg);border-color:var(--orange)':''}"><div style="font-size:22px;font-weight:700;color:var(--orange)">${openCount}</div><div style="color:var(--text2);font-size:12px">Open</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--green)">${doneCount}</div><div style="color:var(--text2);font-size:12px">Done</div></div>`;
+    html += `</div>`;
+
+    // Filters
+    html += `<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
+    html += `<input class="search-input" placeholder="Search tasks…" value="${tasksFilter.search}" oninput="tasksFilter.search=this.value;loadTasks()">`;
+    html += `<button class="filter-btn ${!tasksFilter.status?'active':''}" onclick="tasksFilter.status='';loadTasks()">All</button>`;
+    html += `<button class="filter-btn ${tasksFilter.status==='open'?'active':''}" onclick="tasksFilter.status='open';loadTasks()">Open</button>`;
+    html += `<button class="filter-btn ${tasksFilter.status==='done'?'active':''}" onclick="tasksFilter.status='done';loadTasks()">Done</button>`;
+    accounts.forEach(a => html += `<button class="filter-btn ${tasksFilter.account===a?'active':''}" onclick="tasksFilter.account=tasksFilter.account==='${a}'?'':'${a}';loadTasks()">${a}</button>`);
+    if (tasksFilter.search || tasksFilter.account || tasksFilter.status) {
+      html += `<button class="btn btn-sm" onclick="tasksFilter={search:'',account:'',status:''};loadTasks()" style="background:var(--red-bg);color:var(--red)">✕ Clear</button>`;
+    }
+    html += `</div>`;
+
+    if (filtered.length) {
+      filtered.forEach(tk => {
+        const isDone = tk.status === 'done';
+        const rc = repColors[tk.account] || 'var(--text3)';
+        const timeStr = tk.time ? new Date(tk.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
+        const dateStr = tk.time ? new Date(tk.time).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+        html += `<div class="card" style="margin-bottom:8px;padding:12px;opacity:${isDone?'0.6':'1'};${isDone?'border-color:var(--green)':''}">`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">`;
+        html += `<div style="flex:1">`;
+        html += `<div style="font-weight:600;font-size:13px;margin-bottom:4px;${isDone?'text-decoration:line-through;color:var(--text3)':''}">${escHtml(tk.text||'Task')}</div>`;
+        if (tk.source) html += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-style:italic">"${escHtml(tk.source.slice(0,100))}"</div>`;
+        html += `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">`;
+        if (tk.account) html += `<span style="background:${rc}22;color:${rc};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${tk.account}</span>`;
+        html += `<span style="font-size:11px;color:var(--text3)">${dateStr}${timeStr?' · '+timeStr:''}</span>`;
+        if (tk.phone) html += `<a href="tel:${tk.phone}" style="font-size:11px;color:var(--accent);text-decoration:none">📞 ${tk.phone}</a>`;
+        if (tk.linkedLead) {
+          const ll = tk.linkedLead;
+          html += `<span class="badge badge-accent" style="font-size:10px;cursor:pointer" onclick="showPanel('p-pipeline')">📎 ${escHtml(ll.customer||'')}</span>`;
+        }
+        html += `</div>`;
+        html += `</div>`;
+        html += `<div style="flex-shrink:0">`;
+        if (!isDone) {
+          html += `<button class="btn btn-sm" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green)" onclick="markTaskDone('${tk.id}')">✓ Done</button>`;
+        } else {
+          html += `<span class="badge badge-green">Done</span>`;
+        }
+        html += `</div>`;
+        html += `</div></div>`;
       });
     } else {
-      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="color:var(--text2)">No tasks yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Tasks auto-generate from messages, transcripts, and audit findings</div></div>`;
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="color:var(--text2)">${allTasks.length ? 'No tasks match filter' : 'No tasks yet'}</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Tasks auto-generate from iMessages with extractable action items</div></div>`;
     }
     document.getElementById('p-tasks').innerHTML = html;
   }
+
+  // Scoped escapeHtml for tasks (avoids conflict with overview scope)
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   loadTasks();
 
   // ── PROJECTS PANEL ──
@@ -1481,9 +1829,12 @@
   }
 
   async function loadProjects() {
-    const [compass, ls] = await Promise.all([
-      loadJSON('compass-crm'), loadJSON('livingstone-crm')
+    const [compass, ls, projectsEnriched] = await Promise.all([
+      loadJSON('compass-crm'), loadJSON('livingstone-crm'), loadJSON('projects')
     ]);
+    // Build checklist lookup by id
+    const checklistById = {};
+    (projectsEnriched?.projects || []).forEach(p => { if (p.id) checklistById[p.id] = p.checklist; });
 
     const compassLeads = (compass?.leads || []).map(l => ({...l, _entity:'Compass', _entityClass:'badge-cyan'}));
     const lsLeads = (ls?.leads || []).map(l => ({...l, _entity:'Livingstone', _entityClass:'badge-purple'}));
@@ -1607,6 +1958,31 @@
           html += `</div>`;
         });
         html += `</div></div>`;
+        // Checklist
+        const cl = checklistById[lead.id];
+        if (cl) {
+          const checkItems = [
+            {key:'drawings_received', label:'Drawings Received'},
+            {key:'material_ordered', label:'Material Ordered'},
+            {key:'sink_confirmed', label:'Sink Confirmed'},
+            {key:'templated', label:'Templated'},
+            {key:'fabricated', label:'Fabricated'},
+            {key:'installed', label:'Installed'},
+            {key:'invoiced', label:'Invoiced'},
+            {key:'paid', label:'Paid'},
+          ];
+          const done = checkItems.filter(c => cl[c.key]).length;
+          html += `<div style="margin-top:12px">`;
+          html += `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Job Checklist — ${done}/${checkItems.length} complete</div>`;
+          html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+          checkItems.forEach(c => {
+            const complete = !!cl[c.key];
+            html += `<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;font-size:11px;background:${complete?'var(--green-bg)':'var(--surface2)'};border:1px solid ${complete?'var(--green)':'var(--border)'}">`;
+            html += `<span>${complete?'✅':'⬜'}</span><span style="color:${complete?'var(--green)':'var(--text3)'}">${c.label}</span>`;
+            html += `</div>`;
+          });
+          html += `</div></div>`;
+        }
         // Comments
         if (lead.comments) html += `<div style="margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--text2)">💬 ${lead.comments}</div>`;
         if (isLS) html += `<div style="margin-top:8px;padding:6px 10px;background:rgba(139,92,246,0.12);border-radius:6px;font-size:11px;color:var(--purple)">⚖️ LIVINGSTONE / ECC — Separate company</div>`;
@@ -2104,7 +2480,7 @@
   let fabFilter = {search:'', facility:'', rep:''};
 
   async function loadFabrication() {
-    const [compass, inv] = await Promise.all([loadJSON('compass-crm'), loadJSON('inventory')]);
+    const [compass, inv, fabData] = await Promise.all([loadJSON('compass-crm'), loadJSON('inventory'), loadJSON('fabrication')]);
     const allLeads = compass?.leads || [];
     const rems = inv?.remnants?.items || [];
     const slabItems = inv?.slabs?.items || [];
@@ -2242,8 +2618,35 @@
     });
     if (readyForFab.length > 10) html += `<div style="font-size:12px;color:var(--text3);padding:8px">...and ${readyForFab.length-10} more</div>`;
 
-    // Remnant inventory (from inv data)
-    if (rems.length) {
+    // Remnant inventory — enriched from fabrication.json
+    const enrichedRemnants = fabData?.remnants || [];
+    const enrichedSummary = fabData?.summary || {};
+    if (enrichedRemnants.length) {
+      html += `<div class="section-label" style="margin-top:16px">♻️ Remnant Inventory — Estimated from Active Jobs (${enrichedRemnants.length} pieces)</div>`;
+      // Group by width category
+      const remByWidth = {};
+      enrichedRemnants.forEach(r => {
+        const cat = r.width_category || 'other';
+        if (!remByWidth[cat]) remByWidth[cat] = {count:0, sqft:0, value:0};
+        remByWidth[cat].count++;
+        remByWidth[cat].sqft += r.remnant_sqft || 0;
+        remByWidth[cat].value += r.estimated_value || 0;
+      });
+      const widthOrder = ['≥36in','≥26in','≥22in'];
+      html += `<div class="grid3" style="margin-bottom:12px">`;
+      widthOrder.forEach(cat => {
+        const d = remByWidth[cat];
+        if (!d) return;
+        html += `<div class="stat-card"><div style="font-size:20px;font-weight:700;color:var(--green)">${d.count}</div><div style="color:var(--text2);font-size:12px">${cat} wide</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${Math.round(d.sqft)} sqft · $${Math.round(d.value/1000)}K est.</div></div>`;
+      });
+      html += `</div>`;
+      // Top 10 pieces
+      const topRems = [...enrichedRemnants].sort((a,b)=>(b.remnant_sqft||0)-(a.remnant_sqft||0)).slice(0,10);
+      topRems.forEach(r => {
+        html += `<div class="list-item"><div style="display:flex;justify-content:space-between;width:100%;align-items:center"><div><strong>${r.customer||r.product||'--'}</strong> <span style="color:var(--text2);font-size:12px">${r.product||'—'} · ${Math.round(r.remnant_sqft||0)} sqft remnant</span><span class="badge badge-green" style="margin-left:8px;font-size:10px">${r.width_category}</span></div><span style="color:var(--green);font-weight:600">~$${Math.round(r.estimated_value||0).toLocaleString()}</span></div></div>`;
+      });
+      if (enrichedRemnants.length > 10) html += `<div style="font-size:12px;color:var(--text3);padding:8px">...and ${enrichedRemnants.length-10} more pieces · Total est. value: ~$${Math.round(enrichedSummary.remnantValue||0).toLocaleString()}</div>`;
+    } else if (rems.length) {
       html += `<div class="section-label" style="margin-top:16px">♻️ Remnant Inventory (≥22" usable)</div>`;
       rems.forEach(r => {
         html += `<div class="list-item"><div style="display:flex;justify-content:space-between;width:100%"><div><strong>${r.product||'--'}</strong> <span style="color:var(--text2);font-size:12px">${r.width||'?'}" × ${r.length||'?'}" · ${r.location||''}</span></div><span style="color:var(--green);font-weight:600">$${(r.value||0).toLocaleString()}</span></div></div>`;
@@ -3493,6 +3896,44 @@
 </div>`;
       });
       html += `</div>`;
+    }
+
+    // ── Sink Dispute Tracker ──
+    const allAuditLeads = [...compassLeads, ...livingstoneLeads];
+    const sinkDisputes = allAuditLeads.filter(l => {
+      const sinkDetail = (l.sink_detail || '').trim();
+      const sink = (l.sink || '').trim();
+      return sinkDetail.toUpperCase().includes('TBD') || sink.toUpperCase() === 'TBD' || (sink === '' && ['fabrication','complete','installation'].includes(l.stage));
+    });
+    const lateStages = new Set(['fabrication','installation','complete']);
+    html += `<div class="section-label" style="margin-top:8px">🚰 Sink Disputes
+  <span style="float:right;font-size:11px;font-weight:400;color:var(--text3)">${sinkDisputes.length} flagged</span>
+</div>`;
+    if (sinkDisputes.length === 0) {
+      html += `<div style="background:var(--green-bg);border:1px solid var(--green);border-radius:var(--radius);padding:16px;margin-bottom:24px;color:var(--green)">✓ No sink disputes — all active jobs have confirmed sink details.</div>`;
+    } else {
+      html += `<div style="overflow-x:auto;margin-bottom:24px"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+<thead><tr style="border-bottom:2px solid var(--border2)">
+  <th style="padding:8px;text-align:left;color:var(--text2)">Customer</th>
+  <th style="padding:8px;text-align:left;color:var(--text2)">Project</th>
+  <th style="padding:8px;text-align:left;color:var(--text2)">Sink</th>
+  <th style="padding:8px;text-align:left;color:var(--text2)">Sink Detail</th>
+  <th style="padding:8px;text-align:left;color:var(--text2)">Stage</th>
+  <th style="padding:8px;text-align:left;color:var(--text2)">Rep</th>
+</tr></thead><tbody>`;
+      sinkDisputes.forEach(l => {
+        const isLate = lateStages.has(l.stage);
+        const rowStyle = isLate ? 'background:rgba(239,68,68,0.06)' : '';
+        html += `<tr style="border-bottom:1px solid var(--border);${rowStyle}">
+  <td style="padding:8px;color:var(--text);font-weight:${isLate?'600':'400'}">${escapeHtml(l.customer||'—')}${isLate?' <span style="color:var(--red);font-size:10px">⚠</span>':''}</td>
+  <td style="padding:8px;color:var(--text2);font-size:11px">${escapeHtml(l.project||'—')}</td>
+  <td style="padding:8px;color:${(l.sink||'').toUpperCase()==='TBD'||!l.sink?'var(--orange)':'var(--text)'}">${escapeHtml(l.sink||'—')}</td>
+  <td style="padding:8px;font-size:11px;color:${(l.sink_detail||'').toUpperCase().includes('TBD')?'var(--orange)':'var(--text2)'}">${escapeHtml(l.sink_detail||'—')}</td>
+  <td style="padding:8px"><span style="color:${stageColor(l.stage)};font-size:11px">${escapeHtml(l.stage||'—')}</span></td>
+  <td style="padding:8px;color:var(--text2);font-size:11px">${escapeHtml(l.rep||'—')}</td>
+</tr>`;
+      });
+      html += `</tbody></table></div>`;
     }
 
     // Footer note

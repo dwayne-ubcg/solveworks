@@ -69,7 +69,16 @@ for f in dashboard.json schedule.json tasks.json followups.json invoices.json; d
     scp -q "$CRAIG_SSH:$CRAIG_DATA_DIR/$f" "$LOCAL_DATA_DIR/" 2>/dev/null && echo "   ✅ $f" || true
 done
 
-# ── 6. Git commit and push ──
+# ── 6. Run enrichment pipeline ──
+echo ""
+echo "🧠 Running data enrichment pipeline..."
+if python3 "$(dirname "$0")/enrich_data.py"; then
+    echo "   ✅ Enrichment complete"
+else
+    echo "   ⚠️  Enrichment failed — check enrich_data.py"
+fi
+
+# ── 7. Git commit and push ──
 echo ""
 echo "🚀 Committing and pushing to GitHub Pages..."
 cd "$SITE_DIR"
