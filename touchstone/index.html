@@ -631,11 +631,13 @@
 
     panel.innerHTML = '<div class="panel-placeholder">Loading overview…</div>';
 
-    const [dashboard, schedule, followups, tasksData] = await Promise.all([
+    const [dashboard, schedule, followups, tasksData, compassData, lsData] = await Promise.all([
       loadJSON('dashboard'),
       loadJSON('schedule'),
       loadJSON('followups'),
-      loadJSON('tasks')
+      loadJSON('tasks'),
+      loadJSON('compass-crm'),
+      loadJSON('livingstone-crm')
     ]);
 
     const escapeHtml = (value = '') => String(value)
@@ -663,7 +665,48 @@
     const greeting = (dashboard?.greeting || '').trim() || 'Good Morning, Craig 📊';
     const weather = dashboard?.weather || {};
     const stats = dashboard?.stats || {};
-    const leakageAlerts = Array.isArray(dashboard?.leakageAlerts) ? dashboard.leakageAlerts : [];
+    // ── CRM leakage detection for overview ──
+    const allLeads = [
+      ...(compassData?.leads || []).map(l => ({...l, _src: 'Touchstone'})),
+      ...(lsData?.leads || []).map(l => ({...l, _src: 'ECC'}))
+    ];
+    const atRiskStages = ['fabrication', 'installation', 'complete'];
+    const billedByStage = {};
+    allLeads.forEach(l => {
+      if (l.pricing > 0 && atRiskStages.includes(l.stage)) {
+        if (!billedByStage[l.stage]) billedByStage[l.stage] = [];
+        billedByStage[l.stage].push(l.pricing);
+      }
+    });
+    const avgByStage = {};
+    Object.keys(billedByStage).forEach(s => {
+      const arr = billedByStage[s];
+      avgByStage[s] = arr.reduce((a,b)=>a+b,0) / arr.length;
+    });
+    const crmLeakageAlerts = [];
+    allLeads.forEach(l => {
+      const commentsLower = (l.comments||'').toLowerCase();
+      const hasInvoiceComment = /invoice|bill|payment/.test(commentsLower);
+      if (atRiskStages.includes(l.stage) && (!l.pricing || l.pricing === 0)) {
+        const est = Math.round(avgByStage[l.stage] || 0);
+        crmLeakageAlerts.push({
+          severity: 'high',
+          title: `⚠️ ${l.customer} — ${l.project}`,
+          detail: `[${l._src}] Stage: ${l.stage} — $0 pricing${hasInvoiceComment?' (invoice mentioned in comments)':''}`,
+          amount: est
+        });
+      } else if (l.stage === 'complete' && !l.date_install) {
+        crmLeakageAlerts.push({
+          severity: 'medium',
+          title: `⚠️ ${l.customer} — ${l.project}`,
+          detail: `[${l._src}] Complete but no install date recorded`,
+          amount: 0
+        });
+      }
+    });
+    const leakageJobCount = crmLeakageAlerts.filter(a=>a.severity==='high').length;
+    const leakageEstimate = crmLeakageAlerts.filter(a=>a.severity==='high').reduce((s,a)=>s+(a.amount||0),0);
+    const leakageAlerts = crmLeakageAlerts.length > 0 ? crmLeakageAlerts : (Array.isArray(dashboard?.leakageAlerts) ? dashboard.leakageAlerts : []);
     const installs = Array.isArray(schedule?.installs) ? schedule.installs : [];
     const stale = Array.isArray(followups?.stale) ? followups.stale : [];
     const pending = Array.isArray(followups?.pending) ? followups.pending : [];
@@ -813,20 +856,21 @@
 
       <div class="grid4" style="margin-bottom:20px;">
         <div class="stat-card">
-          <div class="stat-val">${escapeHtml(stats.activeJobs ?? 0)}</div>
+          <div class="stat-val">${allLeads.filter(l=>!['complete','on_hold'].includes(l.stage)).length || escapeHtml(stats.activeJobs ?? 0)}</div>
           <div class="stat-label">Active Jobs</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val">${escapeHtml(formatCompactMoney(stats.pipeline))}</div>
+          <div class="stat-val">${formatCompactMoney(allLeads.filter(l=>l.pricing>0).reduce((s,l)=>s+l.pricing,0) || stats.pipeline)}</div>
           <div class="stat-label">Pipeline</div>
         </div>
         <div class="stat-card">
           <div class="stat-val">${escapeHtml(stats.slabs ?? 0)}</div>
           <div class="stat-label">Slabs</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-val">${escapeHtml(stats.remnants ?? 0)}</div>
-          <div class="stat-label">Remnants</div>
+        <div class="stat-card" style="${leakageJobCount > 0 ? 'background:var(--red-bg);border-color:var(--red)' : ''}">
+          <div class="stat-val" style="${leakageJobCount > 0 ? 'color:var(--red)' : ''}">${leakageJobCount > 0 ? leakageJobCount+' jobs' : (escapeHtml(stats.remnants ?? 0))}</div>
+          <div class="stat-label">${leakageJobCount > 0 ? '⚠️ Leakage Risk' : 'Remnants'}</div>
+          ${leakageJobCount > 0 ? `<div style="font-size:11px;color:var(--red);margin-top:2px">~${formatCompactMoney(leakageEstimate)} at risk</div>` : ''}
         </div>
       </div>
 
@@ -964,101 +1008,312 @@
     const projects = proj?.projects || [];
     const audits = audit?.comparisons || [];
     const alerts = audit?.alerts || [];
-    let html = `<div class="panel-title">🏗️ Projects</div><div class="panel-sub">Active jobs and Livingstone integration audit</div>`;
 
-    // Audit summary
-    const sum = audit?.summary || {};
-    html += `<div class="grid3" style="margin-bottom:20px">`;
-    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalJobs||0}</div><div style="color:var(--text2);font-size:12px">Audited Jobs</div></div>`;
-    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--green)">${sum.matched||0}</div><div style="color:var(--text2);font-size:12px">Matched</div></div>`;
-    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--red)">${sum.discrepancies||0}</div><div style="color:var(--text2);font-size:12px">Discrepancies</div></div>`;
+    // Build combined leads list from CRM data
+    const compassLeads = (compass?.leads || []).map(l => ({...l, _entity:'Touchstone/Compass'}));
+    const lsLeads = (ls?.leads || []).map(l => ({...l, _entity:'ECC/Livingstone'}));
+    const allCrmLeads = [...compassLeads, ...lsLeads].sort((a,b) => {
+      const da = a.date_added || '';
+      const db = b.date_added || '';
+      return da > db ? -1 : da < db ? 1 : 0;
+    });
+
+    const stageColors = {
+      new: 'var(--blue)', approved: 'var(--accent)', templating: 'var(--purple)',
+      fabrication: 'var(--orange)', installation: 'var(--cyan)', complete: 'var(--green)', on_hold: 'var(--text3)'
+    };
+    const stageBadges = {
+      new: 'badge-blue', approved: 'badge-accent', templating: 'badge-purple',
+      fabrication: 'badge-orange', installation: 'badge-accent', complete: 'badge-green', on_hold: ''
+    };
+
+    let html = `<div class="panel-title">🏗️ Projects</div><div class="panel-sub">All jobs from Touchstone/Compass & ECC/Livingstone CRM — sorted newest first</div>`;
+
+    // Stats row
+    const totalJobs = allCrmLeads.length;
+    const totalValue = allCrmLeads.reduce((s,l)=>s+(l.pricing||0),0);
+    const zeroPrice = allCrmLeads.filter(l=>!l.pricing || l.pricing===0).length;
+    html += `<div class="grid3" style="margin-bottom:16px">`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700">${totalJobs}</div><div style="color:var(--text2);font-size:12px">Total Jobs</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--green)">$${Math.round(totalValue/1000)}K</div><div style="color:var(--text2);font-size:12px">Total Value</div></div>`;
+    html += `<div class="stat-card" style="${zeroPrice>0?'background:var(--red-bg)':''}"><div style="font-size:24px;font-weight:700;color:${zeroPrice>0?'var(--red)':'var(--text)'}">${zeroPrice}</div><div style="color:var(--text2);font-size:12px">⚠️ $0 Pricing</div></div>`;
     html += `</div>`;
 
-    // Discrepancy alerts
+    // Audit alerts (if any)
     if (alerts.length) {
       html += `<div class="section-label">⚠️ Audit Alerts — Compass vs Livingstone</div>`;
       alerts.forEach(a => {
         const cls = a.severity === 'critical' ? 'alert-red' : 'alert-orange';
-        html += `<div class="alert-row ${cls}"><div><strong>${a.client||''}</strong> — ${a.message||''}</div><div style="font-size:12px;margin-top:4px;display:flex;gap:16px"><span>Compass: ${a.compassValue||'--'}</span><span>Livingstone: ${a.livingstoneValue||'--'}</span></div></div>`;
+        html += `<div class="alert-row ${cls}"><div><strong>${a.client||''}</strong> — ${a.message||''}</div></div>`;
       });
     }
 
-    // Projects list
-    html += `<div class="section-label" style="margin-top:24px">Active Projects</div>`;
+    // CRM jobs table
+    if (allCrmLeads.length > 0) {
+      html += `<div class="section-label" style="margin-top:16px">All CRM Jobs (${allCrmLeads.length})</div>`;
+      html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">`;
+      html += `<thead><tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">`;
+      ['Date','Customer','Project','Partner','Rep','Stage','Value'].forEach(h2 => {
+        html += `<th style="padding:6px 8px;font-weight:600;white-space:nowrap">${h2}</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+
+      allCrmLeads.forEach(lead => {
+        const stageBadge = stageBadges[lead.stage] || '';
+        const stageColor = stageColors[lead.stage] || 'var(--text3)';
+        const isZero = !lead.pricing || lead.pricing === 0;
+        const dateShort = (lead.date_added||'').slice(0,10);
+        const entityBadge = lead._entity.includes('ECC') ? 'badge-purple' : 'badge-cyan';
+        const rowStyle = isZero ? 'background:rgba(239,68,68,0.06)' : '';
+        html += `<tr style="border-bottom:1px solid var(--border);${rowStyle}">`;
+        html += `<td style="padding:6px 8px;color:var(--text2);white-space:nowrap">${dateShort}</td>`;
+        html += `<td style="padding:6px 8px;font-weight:500">${lead.customer||'--'}</td>`;
+        html += `<td style="padding:6px 8px;color:var(--text2)">${lead.project||'--'}</td>`;
+        html += `<td style="padding:6px 8px"><span class="badge ${entityBadge}" style="font-size:10px">${lead._entity}</span></td>`;
+        html += `<td style="padding:6px 8px;color:var(--text2)">${lead.rep||'--'}</td>`;
+        html += `<td style="padding:6px 8px"><span class="badge ${stageBadge}" style="font-size:10px;border-left:2px solid ${stageColor}">${lead.stage||'--'}</span></td>`;
+        html += `<td style="padding:6px 8px;font-weight:600;${isZero?'color:var(--red)':'color:var(--green)'}">${isZero ? '⚠️ $0' : '$'+lead.pricing.toLocaleString()}</td>`;
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🏗️</div><div style="color:var(--text2)">No CRM jobs loaded</div></div>`;
+    }
+
+    // Legacy projects list (if any from projects.json)
     if (projects.length) {
+      html += `<div class="section-label" style="margin-top:24px">Legacy Projects</div>`;
       projects.forEach(p => {
         const sBadge = {early:'badge-blue','in-progress':'badge-accent',completed:'badge-green','on-hold':'badge-orange'}[p.status] || 'badge-accent';
         const entBadge = p.entity === 'Livingstone' ? 'badge-purple' : 'badge-cyan';
-        html += `<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><strong>${p.client||'TBD'}</strong><div><span class="badge ${entBadge}">${p.entity||'--'}</span> <span class="badge ${sBadge}">${p.status||'--'}</span></div></div><div style="color:var(--text2);font-size:12px;margin-top:6px">${p.type||''} · ${p.location||''}</div>`;
-        // Checklist
-        const checks = [
-          {label:'Drawings sent', ok: p.drawingsSent},
-          {label:'Material ordered', ok: p.materialOrdered},
-          {label:'Sink needed', ok: p.sinkOrdered !== undefined ? p.sinkOrdered : null},
-          {label:'Invoiced', ok: p.invoiced},
-          {label:'Paid', ok: p.paid}
-        ];
-        html += `<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">`;
-        checks.forEach(c => {
-          if (c.ok === null) return;
-          const icon = c.ok ? '✅' : '⬜';
-          html += `<span class="${c.ok?'check-ok':'check-warn'}" style="font-size:12px">${icon} ${c.label}</span>`;
-        });
-        html += `</div></div>`;
+        html += `<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><strong>${p.client||'TBD'}</strong><div><span class="badge ${entBadge}">${p.entity||'--'}</span> <span class="badge ${sBadge}">${p.status||'--'}</span></div></div><div style="color:var(--text2);font-size:12px;margin-top:6px">${p.type||''} · ${p.location||''}</div></div>`;
       });
-    } else {
-      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🏗️</div><div style="color:var(--text2)">No projects yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Projects populate from Compass and Livingstone CRM databases</div></div>`;
     }
+
     document.getElementById('p-projects').innerHTML = html;
   }
   loadProjects();
 
   // ── PIPELINE PANEL ──
+  let pipelineFilter = {search:'', rep:'', partner:''};
+
+  function renderPipelineBoard(leads, title, entityBadgeClass) {
+    const stages = [
+      {id:'new', label:'New', color:'var(--blue)'},
+      {id:'approved', label:'Approved', color:'var(--accent)'},
+      {id:'templating', label:'Templating', color:'var(--purple)'},
+      {id:'fabrication', label:'Fabrication', color:'var(--orange)'},
+      {id:'installation', label:'Installation', color:'var(--cyan)'},
+      {id:'complete', label:'Complete', color:'var(--green)'},
+      {id:'on_hold', label:'On Hold', color:'var(--text3)'}
+    ];
+
+    // Filter leads
+    let filtered = leads;
+    const srch = pipelineFilter.search.toLowerCase();
+    if (srch) {
+      filtered = filtered.filter(l =>
+        (l.customer||'').toLowerCase().includes(srch) ||
+        (l.project||'').toLowerCase().includes(srch) ||
+        (l.rep||'').toLowerCase().includes(srch) ||
+        (l.partner||'').toLowerCase().includes(srch)
+      );
+    }
+    if (pipelineFilter.rep) filtered = filtered.filter(l => l.rep === pipelineFilter.rep);
+    if (pipelineFilter.partner) filtered = filtered.filter(l => l.partner === pipelineFilter.partner);
+
+    const totalLeads = filtered.length;
+    const totalValue = filtered.reduce((s,l)=>s+(l.pricing||0),0);
+    const stageCount = {};
+    stages.forEach(s => { stageCount[s.id] = filtered.filter(l=>l.stage===s.id).length; });
+
+    let h = `<div style="margin-bottom:20px">`;
+    h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="badge ${entityBadgeClass}" style="font-size:13px">${title}</span><span style="color:var(--text2);font-size:13px">${totalLeads} leads · <span style="color:var(--green);font-weight:600">$${Math.round(totalValue/1000)}K</span></span></div>`;
+
+    // Stage count pills
+    h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
+    stages.forEach(s => {
+      const cnt = stageCount[s.id];
+      if (cnt > 0) h += `<span style="background:var(--surface2);border-left:3px solid ${s.color};padding:3px 8px;border-radius:4px;font-size:11px;color:var(--text2)">${s.label}: <strong style="color:var(--text)">${cnt}</strong></span>`;
+    });
+    h += `</div>`;
+
+    // Kanban columns
+    h += `<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">`;
+    stages.forEach(s => {
+      const cards = filtered.filter(l=>l.stage===s.id);
+      h += `<div style="min-width:185px;max-width:220px;flex-shrink:0;background:var(--bg2);border-radius:var(--radius);padding:10px">`;
+      h += `<div style="font-weight:600;font-size:12px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid ${s.color};display:flex;justify-content:space-between;align-items:center">`;
+      h += `<span>${s.label}</span><span class="badge" style="background:var(--surface2);font-size:10px">${cards.length}</span></div>`;
+      if (cards.length) {
+        cards.forEach((c, idx) => {
+          const cardId = `pc-${title.replace(/\W/g,'')}-${c.id||idx}`;
+          const dateShort = (c.date_added||'').slice(0,10);
+          h += `<div class="card" style="margin-bottom:8px;padding:10px;cursor:pointer" onclick="togglePipelineCard('${cardId}')">`;
+          h += `<div style="font-weight:600;font-size:12px;line-height:1.3">${c.customer||'TBD'}</div>`;
+          h += `<div style="color:var(--text2);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.project||'--'}</div>`;
+          h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">`;
+          h += `<span style="font-size:11px;color:var(--text3)">${c.rep||'--'}</span>`;
+          h += `<span style="font-weight:600;font-size:12px;color:${c.pricing>0?'var(--green)':'var(--red)'}">${c.pricing>0?'$'+c.pricing.toLocaleString():'⚠️$0'}</span>`;
+          h += `</div>`;
+          h += `<div style="font-size:10px;color:var(--text3);margin-top:3px">${dateShort}</div>`;
+          // Expandable detail section
+          h += `<div id="${cardId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text2)">`;
+          if (c.address) h += `<div>📍 ${c.address}</div>`;
+          if (c.phone) h += `<div>📞 ${c.phone}</div>`;
+          if (c.product) h += `<div>🪨 ${c.product}${c.product_detail?' — '+c.product_detail.replace(/[\r\n]+/g,' '):''}</div>`;
+          if (c.sink && c.sink !== 'None') h += `<div>🚰 ${c.sink}${c.sink_detail?' — '+c.sink_detail:''}</div>`;
+          if (c.sqft) h += `<div>📐 ${c.sqft} sq ft</div>`;
+          if (c.partner) h += `<div>🤝 ${c.partner}</div>`;
+          if (c.comments) h += `<div style="margin-top:4px;color:var(--text3)">💬 ${c.comments.slice(0,120)}${c.comments.length>120?'…':''}</div>`;
+          h += `</div>`;
+          h += `</div>`;
+        });
+      } else {
+        h += `<div style="color:var(--text3);font-size:11px;text-align:center;padding:16px">Empty</div>`;
+      }
+      h += `</div>`;
+    });
+    h += `</div></div>`;
+    return h;
+  }
+
+  function togglePipelineCard(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
   async function loadPipeline() {
-    const data = await loadJSON('pipeline');
-    const cols = data?.columns || [];
-    const stats = data?.stats || {};
-    let html = `<div class="panel-title">📈 Pipeline</div><div class="panel-sub">Tyler's Sales Command Center</div>`;
-    html += `<div class="grid3" style="margin-bottom:20px"><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.totalLeads||0}</div><div style="color:var(--text2);font-size:12px">Total Leads</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.totalValue ? '$'+(stats.totalValue/1000).toFixed(0)+'K' : '$0'}</div><div style="color:var(--text2);font-size:12px">Total Value</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${stats.conversionRate||0}%</div><div style="color:var(--text2);font-size:12px">Win Rate</div></div></div>`;
-    html += `<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:12px">`;
-    const colColors = {new:'var(--blue)',contacted:'var(--accent)',quoted:'var(--orange)',won:'var(--green)',lost:'var(--red)'};
-    if (cols.length) {
-      cols.forEach(col => {
-        html += `<div style="min-width:200px;flex:1;background:var(--bg2);border-radius:var(--radius);padding:12px"><div style="font-weight:600;margin-bottom:8px;padding-bottom:8px;border-bottom:2px solid ${colColors[col.id]||'var(--border)'}">${col.title} <span class="badge" style="background:var(--surface2)">${(col.cards||[]).length}</span></div>`;
-        if (col.cards?.length) {
-          col.cards.forEach(c => {
-            html += `<div class="card" style="margin-bottom:8px;padding:10px"><div style="font-weight:600;font-size:13px">${c.name||c.client||'TBD'}</div><div style="color:var(--text2);font-size:12px">${c.description||c.type||''}</div>${c.value ? `<div style="color:var(--green);font-size:13px;font-weight:600;margin-top:4px">$${(c.value||0).toLocaleString()}</div>` : ''}</div>`;
-          });
-        } else {
-          html += `<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Empty</div>`;
-        }
-        html += `</div>`;
-      });
-    } else {
-      html += `<div class="card" style="text-align:center;padding:40px;width:100%"><div style="font-size:32px;margin-bottom:12px">📈</div><div style="color:var(--text2)">Pipeline not connected</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Sales leads will populate from CRM data</div></div>`;
+    const [compass, ls] = await Promise.all([
+      loadJSON('compass-crm'), loadJSON('livingstone-crm')
+    ]);
+    const compassLeads = compass?.leads || [];
+    const lsLeads = ls?.leads || [];
+
+    // Build rep and partner filter options from combined data
+    const allReps = [...new Set([...compassLeads,...lsLeads].map(l=>l.rep).filter(Boolean))].sort();
+    const allPartners = [...new Set([...compassLeads,...lsLeads].map(l=>l.partner).filter(Boolean))].sort();
+
+    let html = `<div class="panel-title">📈 Pipeline</div><div class="panel-sub">Live CRM — Touchstone/Compass & ECC/Livingstone</div>`;
+
+    // Filter row
+    html += `<div class="filter-row" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">`;
+    html += `<input class="search-input" id="pl-search" placeholder="Search customer, project, rep…" value="${pipelineFilter.search}" oninput="pipelineFilter.search=this.value;loadPipeline()" style="flex:1;min-width:160px">`;
+    html += `<select onchange="pipelineFilter.rep=this.value;loadPipeline()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px">`;
+    html += `<option value="">All Reps</option>`;
+    allReps.forEach(r => html += `<option value="${r}" ${pipelineFilter.rep===r?'selected':''}>${r}</option>`);
+    html += `</select>`;
+    html += `<select onchange="pipelineFilter.partner=this.value;loadPipeline()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px">`;
+    html += `<option value="">All Partners</option>`;
+    allPartners.forEach(p => html += `<option value="${p}" ${pipelineFilter.partner===p?'selected':''}>${p}</option>`);
+    html += `</select>`;
+    if (pipelineFilter.search || pipelineFilter.rep || pipelineFilter.partner) {
+      html += `<button class="filter-btn" onclick="pipelineFilter={search:'',rep:'',partner:''};loadPipeline()">✕ Clear</button>`;
     }
     html += `</div>`;
+
+    // Touchstone / Compass pipeline
+    html += renderPipelineBoard(compassLeads, 'Touchstone / Compass', 'badge-cyan');
+
+    // ECC / Livingstone pipeline
+    html += renderPipelineBoard(lsLeads, 'East Coast Countertops / Livingstone', 'badge-purple');
+
     document.getElementById('p-pipeline').innerHTML = html;
   }
   loadPipeline();
 
   // ── INVOICES PANEL ──
   async function loadInvoices() {
-    const data = await loadJSON('invoices');
+    const [data, compassCrm, lsCrm] = await Promise.all([
+      loadJSON('invoices'), loadJSON('compass-crm'), loadJSON('livingstone-crm')
+    ]);
     const invs = data?.invoices || [];
-    const leaks = data?.leakageAlerts || [];
+    const staticLeaks = data?.leakageAlerts || [];
     const sum = data?.summary || {};
-    let html = `<div class="panel-title">💰 Invoices</div><div class="panel-sub">Receivables, leakage detection & cash flow</div>`;
+
+    // ── CRM Leakage Detection ──
+    const atRiskStages = ['fabrication', 'installation', 'complete'];
+    const allLeadsForLeakage = [
+      ...(compassCrm?.leads || []).map(l => ({...l, _src:'Touchstone/Compass'})),
+      ...(lsCrm?.leads || []).map(l => ({...l, _src:'ECC/Livingstone'}))
+    ];
+
+    // Calculate average pricing per stage for billed jobs
+    const billedByStage = {};
+    allLeadsForLeakage.forEach(l => {
+      if (l.pricing > 0 && atRiskStages.includes(l.stage)) {
+        if (!billedByStage[l.stage]) billedByStage[l.stage] = [];
+        billedByStage[l.stage].push(l.pricing);
+      }
+    });
+    const avgByStage = {};
+    Object.keys(billedByStage).forEach(s => {
+      const arr = billedByStage[s];
+      avgByStage[s] = Math.round(arr.reduce((a,b)=>a+b,0) / arr.length);
+    });
+
+    const highRisk = [];
+    const medRisk = [];
+    allLeadsForLeakage.forEach(l => {
+      const commentsLower = (l.comments||'').toLowerCase();
+      const hasInvoiceComment = /invoice|bill|payment/.test(commentsLower);
+      const isZeroPricing = !l.pricing || l.pricing === 0;
+      if (atRiskStages.includes(l.stage) && isZeroPricing) {
+        const est = avgByStage[l.stage] || 0;
+        highRisk.push({lead: l, est, reason: hasInvoiceComment ? 'invoice/payment mentioned in comments' : '$0 pricing in billable stage'});
+      } else if (l.stage === 'complete' && !l.date_install) {
+        medRisk.push({lead: l, est: 0, reason: 'Complete stage but no install date'});
+      }
+    });
+
+    const leakageEstimate = highRisk.reduce((s,r)=>s+r.est,0);
+
+    let html = `<div class="panel-title">💰 Invoices & Leakage</div><div class="panel-sub">Receivables, leakage detection & cash flow</div>`;
+
+    // Stats row — show leakage numbers if we have them
     html += `<div class="grid4" style="margin-bottom:20px">`;
     html += `<div class="stat-card"><div style="font-size:22px;font-weight:700">$${(sum.outstanding||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Outstanding</div></div>`;
     html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--red)">$${(sum.overdue||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Overdue</div></div>`;
-    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--orange)">$${(sum.leakageRisk||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Leakage Risk</div></div>`;
-    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--green)">$${(sum.collected30d||0).toLocaleString()}</div><div style="color:var(--text2);font-size:12px">Collected (30d)</div></div>`;
+    html += `<div class="stat-card" style="${highRisk.length>0?'background:var(--red-bg);border-color:var(--red)':''}"><div style="font-size:22px;font-weight:700;color:var(--red)">${highRisk.length} jobs</div><div style="color:var(--text2);font-size:12px">⚠️ High Risk Leakage</div>${leakageEstimate>0?`<div style="font-size:11px;color:var(--red);margin-top:2px">~$${leakageEstimate.toLocaleString()} est.</div>`:''}</div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--orange)">${medRisk.length} jobs</div><div style="color:var(--text2);font-size:12px">⚠️ Medium Risk</div></div>`;
     html += `</div>`;
-    if (leaks.length) {
-      html += `<div class="section-label">🚩 Leakage Alerts</div>`;
-      leaks.forEach(l => { html += `<div class="alert-row alert-red">${l.message||l}</div>`; });
+
+    // Leakage summary stat
+    if (highRisk.length > 0 || medRisk.length > 0) {
+      html += `<div class="alert-row alert-red" style="margin-bottom:16px"><div><strong>⚠️ Potential Unbilled: ${highRisk.length} jobs — estimated $${leakageEstimate.toLocaleString()} at risk</strong></div><div style="font-size:12px;margin-top:4px;color:var(--text2)">${medRisk.length} additional jobs flagged as medium risk (complete with no install date)</div></div>`;
     }
+
+    // High risk alerts
+    if (highRisk.length > 0) {
+      html += `<div class="section-label">🚨 HIGH RISK — $0 Pricing in Billable Stage</div>`;
+      highRisk.forEach(r => {
+        const l = r.lead;
+        html += `<div class="alert-row alert-red" style="margin-bottom:6px">`;
+        html += `<div><strong>⚠️ LEAKAGE ALERT: ${l.customer} — ${l.project}</strong></div>`;
+        html += `<div style="font-size:12px;margin-top:4px;color:var(--text2)">[${l._src}] Stage: ${l.stage} — $0 pricing · ${r.reason}`;
+        if (r.est > 0) html += ` · Est. value: $${r.est.toLocaleString()} (avg ${l.stage})`;
+        html += `</div></div>`;
+      });
+    }
+
+    // Medium risk
+    if (medRisk.length > 0) {
+      html += `<div class="section-label" style="margin-top:16px">⚠️ MEDIUM RISK — Complete Without Install Date</div>`;
+      medRisk.forEach(r => {
+        const l = r.lead;
+        html += `<div class="alert-row alert-orange" style="margin-bottom:6px">`;
+        html += `<div><strong>${l.customer} — ${l.project}</strong></div>`;
+        html += `<div style="font-size:12px;margin-top:4px;color:var(--text2)">[${l._src}] ${r.reason} · Rep: ${l.rep||'--'} · Value: ${l.pricing>0?'$'+l.pricing.toLocaleString():'$0'}</div>`;
+        html += `</div>`;
+      });
+    }
+
+    // Static leakage alerts from invoices.json
+    if (staticLeaks.length) {
+      html += `<div class="section-label" style="margin-top:16px">🚩 Other Leakage Flags</div>`;
+      staticLeaks.forEach(l => { html += `<div class="alert-row alert-red">${l.message||l}</div>`; });
+    }
+
     html += `<div class="section-label" style="margin-top:16px">Recent Invoices</div>`;
     if (invs.length) {
       invs.forEach(inv => {
