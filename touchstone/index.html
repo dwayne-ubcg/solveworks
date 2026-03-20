@@ -843,9 +843,162 @@
         }).join('')
       : '<div class="panel-placeholder" style="padding:0;">No high-priority tasks right now.</div>';
 
+    // ── Smart Morning Briefing ──
+    const now_mb = new Date();
+    const ACTION_KEYWORDS = ['follow up', 'follow-up', 'sample', 'call back', 'callback', 'waiting', 'check in', 'check-in', 'quote', 'call me'];
+    const repColors = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+
+    function daysAgo(dateStr) {
+      if (!dateStr) return 0;
+      try {
+        const dt = new Date(String(dateStr).replace(' ', 'T'));
+        return Math.floor((now_mb - dt) / 86400000);
+      } catch(e) { return 0; }
+    }
+
+    function matchesKeyword(str) {
+      const s = (str || '').toLowerCase();
+      return ACTION_KEYWORDS.find(kw => s.includes(kw)) || null;
+    }
+
+    const allCrmLeads = [
+      ...(compassData?.leads || []).map(l => ({...l, _src: 'Touchstone'})),
+      ...(lsData?.leads || []).map(l => ({...l, _src: 'ECC'}))
+    ];
+
+    // Build follow-up items per lead
+    const followupItems = [];
+    allCrmLeads.forEach(lead => {
+      if (!lead.rep || lead.stage === 'complete') return;
+      const days = daysAgo(lead.date_added);
+      const kwMatch = matchesKeyword(lead.comments);
+      const isStalled = days >= 7;
+      const zeroPricing = !lead.pricing || lead.pricing === 0;
+      const reasons = [];
+      if (isStalled) reasons.push(`Stalled ${days}d in ${lead.stage}`);
+      if (kwMatch) reasons.push(`Comment: "${kwMatch}"`);
+      if (zeroPricing && ['approved','templating','fabrication'].includes(lead.stage)) reasons.push('$0 pricing — needs quote');
+      if (reasons.length > 0) {
+        followupItems.push({ ...lead, _days: days, _reasons: reasons, _kwMatch: kwMatch });
+      }
+    });
+    followupItems.sort((a, b) => b._days - a._days);
+
+    // Identify unique reps with follow-ups
+    const followupReps = [...new Set(followupItems.map(i => i.rep).filter(Boolean))].sort();
+
+    // ── Morning Briefing bullets ──
+    const briefingBullets = [];
+
+    // 1. Stale $0 pricing jobs (leakage)
+    const zeroPricingActive = allCrmLeads.filter(l => (!l.pricing || l.pricing === 0) && ['approved','templating','fabrication'].includes(l.stage));
+    if (zeroPricingActive.length > 0) {
+      const highValue = zeroPricingActive.find(l => l.customer && l.customer.length > 3);
+      const detail = highValue ? ` — incl. ${highValue.customer.split(' ')[0]} ${highValue.customer.split(' ')[1]||''}` : '';
+      briefingBullets.push({ severity: 'red', icon: '⚠️', text: `${zeroPricingActive.length} active job${zeroPricingActive.length!==1?'s':''} with $0 pricing${detail.trim()} — quotes needed` });
+    }
+
+    // 2. Rep stall counts (7+ days stalled)
+    const stalledByRep = {};
+    followupItems.filter(i => i._days >= 7).forEach(i => {
+      stalledByRep[i.rep] = (stalledByRep[i.rep] || 0) + 1;
+    });
+    const topStalledRep = Object.entries(stalledByRep).sort((a,b) => b[1]-a[1])[0];
+    if (topStalledRep) {
+      briefingBullets.push({ severity: 'orange', icon: '📞', text: `${topStalledRep[0]} has ${topStalledRep[1]} follow-up${topStalledRep[1]!==1?'s':''} older than 7 days` });
+    }
+
+    // 3. Jobs waiting for templating
+    const waitingTemplate = allCrmLeads.filter(l => l.stage === 'approved' && !l.date_template);
+    if (waitingTemplate.length > 0) {
+      const templateByShelley = waitingTemplate.filter(l => l.rep === 'Shelley').length;
+      const detail = templateByShelley > 0 ? ` — ${templateByShelley} in Shelley's queue` : '';
+      briefingBullets.push({ severity: 'orange', icon: '📐', text: `${waitingTemplate.length} job${waitingTemplate.length!==1?'s':''} in "approved" waiting for templating${detail}` });
+    }
+
+    // 4. Expected to close this week (fab jobs that are old = near completion)
+    const nearClose = allCrmLeads.filter(l => l.stage === 'fabrication' && l.pricing > 0 && daysAgo(l.date_added) >= 14);
+    const nearCloseValue = nearClose.reduce((s, l) => s + (l.pricing||0), 0);
+    if (nearClose.length > 0) {
+      briefingBullets.push({ severity: 'green', icon: '💰', text: `${formatCurrency(nearCloseValue)} expected from ${nearClose.length} job${nearClose.length!==1?'s':''} in late fabrication — follow up to confirm installs` });
+    }
+
+    // 5. Keyword-flagged jobs not yet stalled (fresh action needed)
+    const freshAction = followupItems.filter(i => i._kwMatch && i._days < 7);
+    if (freshAction.length > 0) {
+      briefingBullets.push({ severity: 'orange', icon: '🔔', text: `${freshAction.length} job${freshAction.length!==1?'s':''} flagged with action keywords (sample, follow-up, callback) added in the last 7 days` });
+    }
+
+    // Cap at 5 bullets, prioritize red > orange > green
+    const sortedBullets = briefingBullets.sort((a,b) => {
+      const order = {red:0, orange:1, green:2};
+      return (order[a.severity]||9) - (order[b.severity]||9);
+    }).slice(0, 5);
+
+    const morningBriefingHtml = sortedBullets.length ? `
+      <div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent)">
+        <div class="card-title" style="margin-bottom:2px">🧠 Smart Briefing — ${escapeHtml(formattedDate)}</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Here's what needs your attention today</div>
+        ${sortedBullets.map(b => {
+          const borderColor = b.severity==='red' ? 'var(--red)' : b.severity==='green' ? 'var(--green)' : 'var(--orange)';
+          const bgColor = b.severity==='red' ? 'rgba(239,68,68,0.07)' : b.severity==='green' ? 'rgba(16,185,129,0.07)' : 'rgba(245,158,11,0.07)';
+          const textColor = b.severity==='red' ? 'var(--red)' : b.severity==='green' ? 'var(--green)' : 'var(--orange)';
+          return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:${bgColor};border-left:3px solid ${borderColor};border-radius:6px;margin-bottom:8px">
+            <span style="font-size:16px;flex-shrink:0;margin-top:1px">${b.icon}</span>
+            <span style="font-size:13px;color:var(--text);line-height:1.4">${escapeHtml(b.text)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    ` : '';
+
+    // ── Follow-up Queue (per rep) ──
+    const followupQueueHtml = (() => {
+      if (followupItems.length === 0) return '';
+      const allRepTabs = ['All', ...followupReps];
+      const tabsHtml = allRepTabs.map((rep, i) => {
+        const count = rep === 'All' ? followupItems.length : followupItems.filter(f => f.rep === rep).length;
+        const rc = repColors[rep] || 'var(--accent)';
+        const style = rep === 'All'
+          ? `background:var(--accent);color:#fff;border-color:var(--accent)`
+          : `background:${rc}22;color:${rc};border-color:${rc}44`;
+        return `<button class="fuq-tab" data-rep="${escapeHtml(rep)}" onclick="fuqFilter('${escapeHtml(rep)}')" style="padding:6px 14px;border-radius:20px;border:1px solid;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;${i===0?style:'background:var(--surface2);color:var(--text2);border-color:var(--border2)'}">${escapeHtml(rep)} <span style="font-size:11px;opacity:0.8">(${count})</span></button>`;
+      }).join('');
+
+      const itemsHtml = followupItems.map(item => {
+        const rc = repColors[item.rep] || '#64748b';
+        const pricingStyle = (!item.pricing || item.pricing === 0) ? 'color:var(--red);font-weight:700' : 'color:var(--green);font-weight:600';
+        const pricingDisplay = (!item.pricing || item.pricing === 0) ? '$0 ⚠️' : formatCurrency(item.pricing);
+        const phoneBtn = item.phone ? `<a href="tel:${escapeHtml(item.phone)}" style="display:inline-flex;align-items:center;gap:4px;background:rgba(14,165,233,0.12);color:var(--accent);border:1px solid rgba(14,165,233,0.3);border-radius:16px;padding:4px 10px;font-size:11px;font-weight:600;text-decoration:none;margin-top:6px">📞 Call</a>` : '';
+        const reasonsHtml = item._reasons.map(r => {
+          const isUrgent = r.includes('$0') || r.includes('Stalled') && item._days >= 14;
+          return `<span style="display:inline-block;background:${isUrgent?'rgba(239,68,68,0.12)':'rgba(245,158,11,0.1)'};color:${isUrgent?'var(--red)':'var(--orange)'};border-radius:10px;padding:2px 8px;font-size:11px;margin:2px 2px 0 0">${escapeHtml(r)}</span>`;
+        }).join('');
+        return `<div class="fuq-item" data-rep="${escapeHtml(item.rep || '')}" style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <div style="font-weight:600;font-size:13px;color:var(--text);flex:1;min-width:0">${escapeHtml((item.customer||'').replace(/\s+WO#\S+/,'').trim())}${item.project && item.project !== item.customer ? `<span style="color:var(--text3);font-weight:400;font-size:12px"> · ${escapeHtml(item.project)}</span>` : ''}</div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              <span style="background:${rc}22;color:${rc};border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600">${escapeHtml(item.rep||'?')}</span>
+              <span style="${pricingStyle};font-size:12px">${pricingDisplay}</span>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2)">${escapeHtml(item._src||'')} · Stage: <strong style="color:var(--text)">${escapeHtml(item.stage||'')}</strong></div>
+          <div style="display:flex;flex-wrap:wrap;gap:0">${reasonsHtml}</div>
+          ${phoneBtn}
+        </div>`;
+      }).join('');
+
+      return `<div class="card" style="margin-bottom:16px" id="fuq-card">
+        <div class="card-title">📋 Follow-up Queue <span style="font-size:12px;font-weight:400;color:var(--text3)">${followupItems.length} items need attention</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px" id="fuq-tabs">${tabsHtml}</div>
+        <div id="fuq-list" style="max-height:420px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)">${itemsHtml}</div>
+      </div>`;
+    })();
+
     panel.innerHTML = `
       <div class="panel-title">${escapeHtml(greeting)}</div>
       <div class="panel-sub">${escapeHtml(formattedDate)} — Here's what matters today</div>
+
+      ${morningBriefingHtml}
 
       <div class="weather-bar">
         <div class="temp">${escapeHtml(weather.temp || '—')}</div>
@@ -999,6 +1152,8 @@
         </div>`;
       })()}
 
+      ${followupQueueHtml}
+
       ${(() => {
         // Today's Priority: leads in templating/fabrication, oldest first
         const compassLeads = compassData?.leads || [];
@@ -1114,6 +1269,34 @@
     `;
   }
   loadOverview();
+
+  // ── Follow-up Queue tab filter (global, called from onclick) ──
+  window.fuqFilter = function(selectedRep) {
+    const tabs = document.querySelectorAll('.fuq-tab');
+    const repColors_g = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+    tabs.forEach(btn => {
+      const rep = btn.dataset.rep;
+      const rc = repColors_g[rep] || 'var(--accent)';
+      if (rep === selectedRep) {
+        if (rep === 'All') {
+          btn.style.cssText += ';background:var(--accent);color:#fff;border-color:var(--accent)';
+        } else {
+          btn.style.background = rc + '33';
+          btn.style.color = rc;
+          btn.style.borderColor = rc + '88';
+        }
+      } else {
+        btn.style.background = 'var(--surface2)';
+        btn.style.color = 'var(--text2)';
+        btn.style.borderColor = 'var(--border2)';
+      }
+    });
+    const items = document.querySelectorAll('.fuq-item');
+    items.forEach(item => {
+      const show = selectedRep === 'All' || item.dataset.rep === selectedRep;
+      item.style.display = show ? '' : 'none';
+    });
+  };
 
   // ── MESSAGES PANEL ──
   let msgFilter = {account: '', taskType: '', search: ''};
