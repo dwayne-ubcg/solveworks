@@ -501,6 +501,7 @@
       <li class="nav-item" data-panel="p-tasks"       onclick="showPanel('p-tasks')"><span class="nav-emoji">📋</span> Tasks</li>
       <li class="nav-item" data-panel="p-projects"    onclick="showPanel('p-projects')"><span class="nav-emoji">🏗️</span> Projects</li>
       <li class="nav-item" data-panel="p-pipeline"    onclick="showPanel('p-pipeline')"><span class="nav-emoji">📈</span> Pipeline</li>
+      <li class="nav-item" data-panel="p-audit"       onclick="showPanel('p-audit')"><span class="nav-emoji">⚖️</span> LS Audit</li>
       <li class="nav-item" data-panel="p-invoices"    onclick="showPanel('p-invoices')"><span class="nav-emoji">💰</span> Invoices</li>
       <li class="nav-item" data-panel="p-receipts"    onclick="showPanel('p-receipts')"><span class="nav-emoji">🧾</span> Receipts</li>
       <li class="nav-item" data-panel="p-fabrication" onclick="showPanel('p-fabrication')"><span class="nav-emoji">⚙️</span> Fabrication</li>
@@ -533,6 +534,7 @@
     <div class="panel" id="p-tasks"></div>
     <div class="panel" id="p-projects"></div>
     <div class="panel" id="p-pipeline"></div>
+    <div class="panel" id="p-audit"></div>
     <div class="panel" id="p-invoices"></div>
     <div class="panel" id="p-receipts"></div>
     <div class="panel" id="p-fabrication"></div>
@@ -2544,6 +2546,486 @@
     }
     document.getElementById('p-meetings').innerHTML = html;
   }
+  loadMeetings();
+
+  // ── LIVINGSTONE AUDIT PANEL ──────────────────────────────────────────────
+  async function loadAudit() {
+    const el = document.getElementById('p-audit');
+    if (!el) return;
+    el.innerHTML = '<div class="panel-placeholder">Loading audit data…</div>';
+
+    const [compassData, livingstoneData, inventoryData] = await Promise.all([
+      loadJSON('compass-crm'),
+      loadJSON('livingstone-crm'),
+      loadJSON('inventory'),
+    ]);
+
+    const compassLeads     = compassData?.leads || [];
+    const livingstoneLeads = livingstoneData?.leads || [];
+    const slabs            = inventoryData?.slabs || [];
+    const remnants         = inventoryData?.remnants || [];
+
+    // ── Fuzzy-match helper (normalise + score) ──────────────────────────────
+    function normName(s) {
+      return (s || '').toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function tokenOverlap(a, b) {
+      const ta = new Set(normName(a).split(' ').filter(t => t.length > 2));
+      const tb = new Set(normName(b).split(' ').filter(t => t.length > 2));
+      if (!ta.size || !tb.size) return 0;
+      let hits = 0;
+      ta.forEach(t => { if (tb.has(t)) hits++; });
+      return hits / Math.max(ta.size, tb.size);
+    }
+    function jobKey(lead) { return normName(lead.customer) + ' ' + normName(lead.project); }
+
+    // ── Build match matrix ──────────────────────────────────────────────────
+    // For each ECC (Livingstone) lead, find best Compass counterpart
+    const MATCH_THRESHOLD = 0.35;
+
+    const matched   = [];   // { compass, livingstone, score, discrepancies[] }
+    const lsOnly    = [];   // in Livingstone but no Compass match
+    const usedCompass = new Set();
+
+    livingstoneLeads.forEach(ls => {
+      let bestScore = 0, bestC = null;
+      compassLeads.forEach(c => {
+        const score = tokenOverlap(jobKey(ls), jobKey(c));
+        if (score > bestScore) { bestScore = score; bestC = c; }
+      });
+      if (bestScore >= MATCH_THRESHOLD && bestC) {
+        usedCompass.add(bestC.id);
+        // Find discrepancies
+        const disc = [];
+        const priceDiff = (Number(ls.pricing)||0) - (Number(bestC.pricing)||0);
+        const priceBase = Number(bestC.pricing)||0;
+        const pricePct  = priceBase ? (priceDiff / priceBase * 100) : (priceDiff ? 100 : 0);
+        if (Math.abs(pricePct) > 5) {
+          disc.push({ field: 'pricing', compass: bestC.pricing, ls: ls.pricing, diff: priceDiff, pct: pricePct });
+        }
+        if (normName(ls.stage) !== normName(bestC.stage)) {
+          disc.push({ field: 'stage', compass: bestC.stage, ls: ls.stage });
+        }
+        if (normName(ls.product) !== normName(bestC.product) && ls.product && bestC.product) {
+          disc.push({ field: 'product', compass: bestC.product, ls: ls.product });
+        }
+        matched.push({ compass: bestC, livingstone: ls, score: bestScore, discrepancies: disc });
+      } else {
+        lsOnly.push(ls);
+      }
+    });
+
+    const compassOnly = compassLeads.filter(c => {
+      if (usedCompass.has(c.id)) return false;
+      // Only include Compass leads that look like they could be ECC shared jobs
+      return (c.partner || '').toLowerCase().includes('east coast') ||
+             (c.partner || '').toLowerCase().includes('livingstone') ||
+             (c.partner || '').toLowerCase().includes('ecc');
+    }).slice(0, 40); // cap to avoid noise
+
+    // ── Aggregate stats ─────────────────────────────────────────────────────
+    const disputed = matched.filter(m => m.discrepancies.some(d => d.field === 'pricing'));
+    const totalDisputedValue = disputed.reduce((sum, m) => {
+      const d = m.discrepancies.find(x => x.field === 'pricing');
+      return sum + Math.abs(d ? d.diff : 0);
+    }, 0);
+    const discPcts = disputed.map(m => {
+      const d = m.discrepancies.find(x => x.field === 'pricing');
+      return d ? Math.abs(d.pct) : 0;
+    });
+    const avgDiscPct = discPcts.length ? (discPcts.reduce((a,b) => a+b, 0) / discPcts.length) : 0;
+
+    // ── Revenue split ───────────────────────────────────────────────────────
+    const compassRevenue     = compassLeads.reduce((s, l) => s + (Number(l.pricing)||0), 0);
+    const livingstoneRevenue = livingstoneLeads.reduce((s, l) => s + (Number(l.pricing)||0), 0);
+    const totalRevenue       = compassRevenue + livingstoneRevenue;
+
+    // By month (Livingstone)
+    const byMonth = {};
+    [...compassLeads, ...livingstoneLeads].forEach(l => {
+      if (!l.date_added) return;
+      const m = l.date_added.slice(0, 7);
+      if (!byMonth[m]) byMonth[m] = { compass: 0, livingstone: 0 };
+      if (l.source === 'touchstone' || l.source === 'compass') byMonth[m].compass += Number(l.pricing)||0;
+      else byMonth[m].livingstone += Number(l.pricing)||0;
+    });
+    const months = Object.keys(byMonth).sort().slice(-6);
+
+    // By rep (Livingstone only)
+    const byRepLS = {};
+    livingstoneLeads.forEach(l => {
+      const r = l.rep || 'Unknown';
+      byRepLS[r] = (byRepLS[r]||0) + (Number(l.pricing)||0);
+    });
+
+    // ── Remnant credits ─────────────────────────────────────────────────────
+    // Flag LS leads that used "Remnant" product — should have credit applied
+    const remnantJobs = livingstoneLeads.filter(l =>
+      (l.product||'').toLowerCase().includes('remnant') ||
+      (l.product_detail||'').toLowerCase().includes('remnant')
+    );
+    // Estimate: remnant jobs avg ~30% less than slab material
+    const remnantCreditEst = remnantJobs.reduce((s, l) => s + (Number(l.pricing)||0) * 0.15, 0);
+
+    // ── HTML helpers ────────────────────────────────────────────────────────
+    const fmt$ = v => '$' + Number(v||0).toLocaleString('en-CA', {minimumFractionDigits:0, maximumFractionDigits:0});
+    const fmtPct = v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%';
+    const stageColor = s => {
+      const st = (s||'').toLowerCase();
+      if (st === 'complete' || st === 'installed') return 'var(--green)';
+      if (st === 'fabrication') return 'var(--cyan)';
+      if (st === 'approved') return 'var(--accent)';
+      if (st === 'template') return 'var(--purple)';
+      return 'var(--text2)';
+    };
+
+    // ── Build HTML ──────────────────────────────────────────────────────────
+    let html = `<div class="panel-title">⚖️ Livingstone Audit</div>
+<div class="panel-sub">Compass ↔ ECC Cross-CRM comparison · Earnout tracking · Remnant credits · Dispute flags</div>`;
+
+    // ── 1. Summary Cards ────────────────────────────────────────────────────
+    html += `<div class="section-label" style="margin-top:20px">Audit Summary</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;border-top:3px solid var(--accent)">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Shared Jobs</div>
+    <div style="font-size:28px;font-weight:700;color:var(--text)">${matched.length}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">Matched across both CRMs</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;border-top:3px solid var(--red)">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Price Discrepancies</div>
+    <div style="font-size:28px;font-weight:700;color:var(--red)">${disputed.length}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">&gt;5% pricing gap</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;border-top:3px solid var(--orange)">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Disputed Value</div>
+    <div style="font-size:28px;font-weight:700;color:var(--orange)">${fmt$(totalDisputedValue)}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">Sum of price deltas</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;border-top:3px solid var(--purple)">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Avg Discrepancy</div>
+    <div style="font-size:28px;font-weight:700;color:var(--purple)">${avgDiscPct.toFixed(1)}%</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">On flagged jobs</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;border-top:3px solid var(--green)">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Remnant Jobs</div>
+    <div style="font-size:28px;font-weight:700;color:var(--green)">${remnantJobs.length}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">~${fmt$(remnantCreditEst)} est. credits</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;border-top:3px solid var(--cyan)">
+    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">ECC-Only Jobs</div>
+    <div style="font-size:28px;font-weight:700;color:var(--cyan)">${lsOnly.length}</div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">No Compass match found</div>
+  </div>
+</div>`;
+
+    // ── 2. Side-by-Side Comparison Table ────────────────────────────────────
+    html += `<div class="section-label" style="margin-top:8px">Side-by-Side Job Comparison
+  <span style="float:right;font-size:11px;font-weight:400;color:var(--text3)">${matched.length} matched jobs</span>
+</div>`;
+
+    if (matched.length === 0) {
+      html += `<div class="list-item" style="color:var(--text3)">No matching jobs found between Compass and ECC CRM. Data may not overlap yet.</div>`;
+    } else {
+      // Sort: discrepancies first
+      const sortedMatched = [...matched].sort((a,b) => b.discrepancies.length - a.discrepancies.length);
+
+      html += `<div style="overflow-x:auto;margin-bottom:24px">
+<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px">
+<thead>
+  <tr style="border-bottom:2px solid var(--border2)">
+    <th style="padding:10px 8px;text-align:left;color:var(--text2);font-weight:600;white-space:nowrap">Customer / Project</th>
+    <th style="padding:10px 8px;text-align:left;color:var(--cyan);font-weight:600">Compass</th>
+    <th style="padding:10px 8px;text-align:left;color:var(--purple);font-weight:600">ECC (Livingstone)</th>
+    <th style="padding:10px 8px;text-align:left;color:var(--text2);font-weight:600">Delta</th>
+    <th style="padding:10px 8px;text-align:left;color:var(--text2);font-weight:600">Status</th>
+  </tr>
+</thead>
+<tbody>`;
+
+      sortedMatched.forEach(m => {
+        const c = m.compass, ls = m.livingstone;
+        const pDisc = m.discrepancies.find(d => d.field === 'pricing');
+        const sDisc = m.discrepancies.find(d => d.field === 'stage');
+        const hasDisc = m.discrepancies.length > 0;
+        const rowBg = hasDisc ? 'background:rgba(239,68,68,0.04)' : '';
+        const matchPct = Math.round(m.score * 100);
+
+        html += `<tr style="border-bottom:1px solid var(--border);${rowBg}">
+  <td style="padding:10px 8px;vertical-align:top">
+    <div style="font-weight:600;color:var(--text)">${escapeHtml(c.customer)}</div>
+    <div style="font-size:11px;color:var(--text3)">${escapeHtml(c.project)}</div>
+    <div style="font-size:10px;color:var(--text3);margin-top:2px">Match: ${matchPct}%</div>
+  </td>
+  <td style="padding:10px 8px;vertical-align:top">
+    <div style="color:var(--cyan);font-weight:600">${fmt$(c.pricing)}</div>
+    <div style="font-size:11px;color:${stageColor(c.stage)}">${escapeHtml(c.stage||'—')}</div>
+    <div style="font-size:11px;color:var(--text3)">${escapeHtml(c.product||'—')} · ${c.sqft||0} sqft</div>
+    <div style="font-size:11px;color:var(--text3)">${escapeHtml(c.rep||'—')}</div>
+  </td>
+  <td style="padding:10px 8px;vertical-align:top">
+    <div style="color:var(--purple);font-weight:600">${fmt$(ls.pricing)}</div>
+    <div style="font-size:11px;color:${sDisc ? 'var(--red)' : stageColor(ls.stage)}">${escapeHtml(ls.stage||'—')}${sDisc ? ' ⚠️' : ''}</div>
+    <div style="font-size:11px;color:var(--text3)">${escapeHtml(ls.product||'—')} · ${ls.sqft||0} sqft</div>
+    <div style="font-size:11px;color:var(--text3)">${escapeHtml(ls.rep||'—')}</div>
+  </td>
+  <td style="padding:10px 8px;vertical-align:top;white-space:nowrap">
+    ${pDisc ? `<div style="color:${pDisc.diff > 0 ? 'var(--red)' : 'var(--green)'};font-weight:700">${fmt$(pDisc.diff)}</div>
+    <div style="font-size:11px;color:${pDisc.diff > 0 ? 'var(--red)' : 'var(--green)'}">${fmtPct(pDisc.pct)}</div>` :
+    `<div style="color:var(--green);font-size:11px">✓ Match</div>`}
+  </td>
+  <td style="padding:10px 8px;vertical-align:top">
+    ${hasDisc
+      ? `<span style="background:var(--red-bg);color:var(--red);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">⚠ ${m.discrepancies.length} issue${m.discrepancies.length>1?'s':''}</span>`
+      : `<span style="background:var(--green-bg);color:var(--green);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600">✓ Wash</span>`}
+  </td>
+</tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+    }
+
+    // ── 3. Dispute Tracker ───────────────────────────────────────────────────
+    html += `<div class="section-label" style="margin-top:8px">Dispute Tracker
+  <span style="float:right;font-size:11px;font-weight:400;color:var(--text3)">${disputed.length} flagged</span>
+</div>`;
+
+    // Also flag: LS has charge, Compass has $0
+    const zeroCompass = matched.filter(m => (Number(m.compass.pricing)||0) === 0 && (Number(m.livingstone.pricing)||0) > 0);
+    const zeroLS      = matched.filter(m => (Number(m.livingstone.pricing)||0) === 0 && (Number(m.compass.pricing)||0) > 0);
+    const stageMismatch = matched.filter(m => {
+      const cs = (m.compass.stage||'').toLowerCase();
+      const ls = (m.livingstone.stage||'').toLowerCase();
+      const completedC = cs === 'complete' || cs === 'installed';
+      const completedL = ls === 'complete' || ls === 'installed';
+      return completedC !== completedL;
+    });
+
+    if (disputed.length === 0 && zeroCompass.length === 0 && stageMismatch.length === 0) {
+      html += `<div style="background:var(--green-bg);border:1px solid var(--green);border-radius:var(--radius);padding:16px;margin-bottom:24px;color:var(--green)">
+  ✓ No disputes detected. All matched jobs are within 5% pricing tolerance.
+</div>`;
+    } else {
+      html += `<div style="overflow-x:auto;margin-bottom:24px">
+<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:600px">
+<thead>
+  <tr style="border-bottom:2px solid var(--border2)">
+    <th style="padding:8px;text-align:left;color:var(--text2)">Customer</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Issue Type</th>
+    <th style="padding:8px;text-align:right;color:var(--cyan)">Compass</th>
+    <th style="padding:8px;text-align:right;color:var(--purple)">ECC</th>
+    <th style="padding:8px;text-align:right;color:var(--red)">Delta</th>
+  </tr>
+</thead>
+<tbody>`;
+
+      disputed.forEach(m => {
+        const d = m.discrepancies.find(x => x.field === 'pricing');
+        html += `<tr style="border-bottom:1px solid var(--border);background:rgba(239,68,68,0.05)">
+  <td style="padding:8px;color:var(--text)">${escapeHtml(m.compass.customer)}</td>
+  <td style="padding:8px"><span style="background:var(--red-bg);color:var(--red);border-radius:4px;padding:2px 6px;font-size:11px">💰 Price Gap</span></td>
+  <td style="padding:8px;text-align:right;color:var(--cyan)">${fmt$(m.compass.pricing)}</td>
+  <td style="padding:8px;text-align:right;color:var(--purple)">${fmt$(m.livingstone.pricing)}</td>
+  <td style="padding:8px;text-align:right;color:var(--red);font-weight:700">${fmt$(d.diff)} (${fmtPct(d.pct)})</td>
+</tr>`;
+      });
+
+      zeroCompass.forEach(m => {
+        html += `<tr style="border-bottom:1px solid var(--border);background:rgba(245,158,11,0.05)">
+  <td style="padding:8px;color:var(--text)">${escapeHtml(m.livingstone.customer)}</td>
+  <td style="padding:8px"><span style="background:var(--orange-bg);color:var(--orange);border-radius:4px;padding:2px 6px;font-size:11px">⚠ Compass $0</span></td>
+  <td style="padding:8px;text-align:right;color:var(--cyan)">$0</td>
+  <td style="padding:8px;text-align:right;color:var(--purple)">${fmt$(m.livingstone.pricing)}</td>
+  <td style="padding:8px;text-align:right;color:var(--orange);font-weight:700">${fmt$(m.livingstone.pricing)}</td>
+</tr>`;
+      });
+
+      stageMismatch.forEach(m => {
+        const cs = m.compass.stage||'?', ls = m.livingstone.stage||'?';
+        html += `<tr style="border-bottom:1px solid var(--border);background:rgba(139,92,246,0.05)">
+  <td style="padding:8px;color:var(--text)">${escapeHtml(m.compass.customer)}</td>
+  <td style="padding:8px"><span style="background:var(--purple-bg);color:var(--purple);border-radius:4px;padding:2px 6px;font-size:11px">🔄 Stage Mismatch</span></td>
+  <td style="padding:8px;text-align:right;color:${stageColor(cs)}">${escapeHtml(cs)}</td>
+  <td style="padding:8px;text-align:right;color:${stageColor(ls)}">${escapeHtml(ls)}</td>
+  <td style="padding:8px;text-align:right;color:var(--text3)">—</td>
+</tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+    }
+
+    // ── ECC-Only jobs ────────────────────────────────────────────────────────
+    if (lsOnly.length > 0) {
+      html += `<div class="section-label" style="margin-top:8px">ECC Jobs — No Compass Match
+  <span style="float:right;font-size:11px;font-weight:400;color:var(--text3)">${lsOnly.length} jobs</span>
+</div>
+<div style="overflow-x:auto;margin-bottom:24px">
+<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">
+<thead>
+  <tr style="border-bottom:2px solid var(--border2)">
+    <th style="padding:8px;text-align:left;color:var(--text2)">Customer</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Project</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Stage</th>
+    <th style="padding:8px;text-align:right;color:var(--purple)">Pricing</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Rep</th>
+  </tr>
+</thead>
+<tbody>`;
+      lsOnly.forEach(ls => {
+        html += `<tr style="border-bottom:1px solid var(--border)">
+  <td style="padding:8px;color:var(--text)">${escapeHtml(ls.customer)}</td>
+  <td style="padding:8px;color:var(--text2);font-size:11px">${escapeHtml(ls.project)}</td>
+  <td style="padding:8px"><span style="color:${stageColor(ls.stage)};font-size:11px">${escapeHtml(ls.stage||'—')}</span></td>
+  <td style="padding:8px;text-align:right;color:var(--purple);font-weight:600">${fmt$(ls.pricing)}</td>
+  <td style="padding:8px;color:var(--text2);font-size:11px">${escapeHtml(ls.rep||'—')}</td>
+</tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    // ── 4. Remnant Credit Tracker ────────────────────────────────────────────
+    html += `<div class="section-label" style="margin-top:8px">Remnant Credit Tracker
+  <span style="float:right;font-size:11px;font-weight:400;color:var(--text3)">${remnantJobs.length} remnant jobs</span>
+</div>`;
+
+    if (remnantJobs.length === 0) {
+      html += `<div class="list-item" style="color:var(--text3)">No remnant jobs found in ECC CRM.</div>`;
+    } else {
+      html += `<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:12px">
+  <div style="display:flex;gap:24px;flex-wrap:wrap;margin-bottom:12px">
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Remnant Jobs</div>
+      <div style="font-size:22px;font-weight:700;color:var(--green)">${remnantJobs.length}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Total Value</div>
+      <div style="font-size:22px;font-weight:700;color:var(--text)">${fmt$(remnantJobs.reduce((s,l)=>s+(Number(l.pricing)||0),0))}</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:2px">Est. Credits (~15%)</div>
+      <div style="font-size:22px;font-weight:700;color:var(--green)">${fmt$(remnantCreditEst)}</div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:10px">
+    ℹ Remnant credit rule: usable remnant (≥22", ≥26", or ≥36" wide) gets credited back. Craig pays only for material used, not the full slab.
+    Inventory remnants tracked: <strong style="color:var(--text)">${remnants.length}</strong> slabs on file.
+  </div>
+</div>
+<div style="overflow-x:auto;margin-bottom:24px">
+<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:500px">
+<thead>
+  <tr style="border-bottom:2px solid var(--border2)">
+    <th style="padding:8px;text-align:left;color:var(--text2)">Customer</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Product</th>
+    <th style="padding:8px;text-align:right;color:var(--text2)">Sqft</th>
+    <th style="padding:8px;text-align:right;color:var(--purple)">Job Value</th>
+    <th style="padding:8px;text-align:right;color:var(--green)">Est. Credit</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Stage</th>
+  </tr>
+</thead>
+<tbody>`;
+      remnantJobs.forEach(ls => {
+        const estCredit = (Number(ls.pricing)||0) * 0.15;
+        html += `<tr style="border-bottom:1px solid var(--border)">
+  <td style="padding:8px;color:var(--text)">${escapeHtml(ls.customer)}</td>
+  <td style="padding:8px;color:var(--text2);font-size:11px">${escapeHtml(ls.product_detail||ls.product||'—')}</td>
+  <td style="padding:8px;text-align:right;color:var(--text2)">${ls.sqft||'—'}</td>
+  <td style="padding:8px;text-align:right;color:var(--purple);font-weight:600">${fmt$(ls.pricing)}</td>
+  <td style="padding:8px;text-align:right;color:var(--green);font-weight:600">${fmt$(estCredit)}</td>
+  <td style="padding:8px"><span style="color:${stageColor(ls.stage)};font-size:11px">${escapeHtml(ls.stage||'—')}</span></td>
+</tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    // ── 5. Revenue Split Analysis ────────────────────────────────────────────
+    html += `<div class="section-label" style="margin-top:8px">Revenue Split — Earnout Tracking</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;border-left:4px solid var(--cyan)">
+    <div style="font-size:11px;color:var(--cyan);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Compass (Touchstone)</div>
+    <div style="font-size:32px;font-weight:700;color:var(--text)">${fmt$(compassRevenue)}</div>
+    <div style="font-size:13px;color:var(--text2);margin-top:4px">${compassLeads.length} jobs · avg ${fmt$(compassLeads.length ? compassRevenue/compassLeads.length : 0)}</div>
+    <div style="margin-top:12px;background:var(--border);border-radius:4px;height:6px">
+      <div style="background:var(--cyan);height:6px;border-radius:4px;width:${totalRevenue ? Math.min(100, compassRevenue/totalRevenue*100) : 0}%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">${totalRevenue ? (compassRevenue/totalRevenue*100).toFixed(1) : 0}% of combined</div>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;border-left:4px solid var(--purple)">
+    <div style="font-size:11px;color:var(--purple);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">ECC (Livingstone)</div>
+    <div style="font-size:32px;font-weight:700;color:var(--text)">${fmt$(livingstoneRevenue)}</div>
+    <div style="font-size:13px;color:var(--text2);margin-top:4px">${livingstoneLeads.length} jobs · avg ${fmt$(livingstoneLeads.length ? livingstoneRevenue/livingstoneLeads.length : 0)}</div>
+    <div style="margin-top:12px;background:var(--border);border-radius:4px;height:6px">
+      <div style="background:var(--purple);height:6px;border-radius:4px;width:${totalRevenue ? Math.min(100, livingstoneRevenue/totalRevenue*100) : 0}%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-top:4px">${totalRevenue ? (livingstoneRevenue/totalRevenue*100).toFixed(1) : 0}% of combined</div>
+  </div>
+</div>`;
+
+    // By month chart
+    if (months.length > 0) {
+      html += `<div class="section-label" style="font-size:11px;margin-bottom:8px">Monthly Split (Last 6 Months)</div>
+<div style="overflow-x:auto;margin-bottom:20px">
+<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:400px">
+<thead>
+  <tr style="border-bottom:2px solid var(--border2)">
+    <th style="padding:8px;text-align:left;color:var(--text2)">Month</th>
+    <th style="padding:8px;text-align:right;color:var(--cyan)">Compass</th>
+    <th style="padding:8px;text-align:right;color:var(--purple)">ECC</th>
+    <th style="padding:8px;text-align:right;color:var(--text2)">Combined</th>
+    <th style="padding:8px;text-align:left;color:var(--text2)">Split</th>
+  </tr>
+</thead>
+<tbody>`;
+      months.forEach(m => {
+        const row = byMonth[m];
+        const total = row.compass + row.livingstone;
+        const compPct = total ? row.compass/total*100 : 50;
+        html += `<tr style="border-bottom:1px solid var(--border)">
+  <td style="padding:8px;color:var(--text)">${m}</td>
+  <td style="padding:8px;text-align:right;color:var(--cyan);font-weight:600">${fmt$(row.compass)}</td>
+  <td style="padding:8px;text-align:right;color:var(--purple);font-weight:600">${fmt$(row.livingstone)}</td>
+  <td style="padding:8px;text-align:right;color:var(--text2)">${fmt$(total)}</td>
+  <td style="padding:8px">
+    <div style="background:var(--border);border-radius:4px;height:12px;width:120px;display:inline-block;vertical-align:middle;position:relative">
+      <div style="background:var(--cyan);height:12px;border-radius:4px 0 0 4px;width:${compPct.toFixed(0)}%;position:absolute;left:0"></div>
+    </div>
+    <span style="font-size:10px;color:var(--text3);margin-left:6px">${compPct.toFixed(0)}% C</span>
+  </td>
+</tr>`;
+      });
+      html += `</tbody></table></div>`;
+    }
+
+    // By rep (ECC)
+    const repEntries = Object.entries(byRepLS).sort((a,b) => b[1]-a[1]);
+    if (repEntries.length > 0) {
+      html += `<div class="section-label" style="font-size:11px;margin-bottom:8px">ECC Revenue by Rep</div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px">`;
+      repEntries.forEach(([rep, amt]) => {
+        html += `<div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:12px 16px;min-width:140px">
+  <div style="font-size:11px;color:var(--text3)">${escapeHtml(rep)}</div>
+  <div style="font-size:20px;font-weight:700;color:var(--purple);margin-top:2px">${fmt$(amt)}</div>
+</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Footer note
+    html += `<div style="border-top:1px solid var(--border);padding-top:16px;font-size:11px;color:var(--text3);line-height:1.6">
+  <strong style="color:var(--text2)">Audit Notes:</strong>
+  Jobs are matched by fuzzy customer+project name overlap (≥35% token match). 
+  Pricing discrepancies &gt;5% are auto-flagged as potential disputes. 
+  Sink disputes (customer-supplied vs ECC-provided) must be resolved manually. 
+  ⚠ Flag any job where ECC added charges to an already-paid invoice — create a NEW invoice instead.
+  Remnant credit thresholds: ≥22", ≥26", or ≥36" wide.
+</div>`;
+
+    document.getElementById('p-audit').innerHTML = html;
+  }
+  loadAudit();
+
   loadMeetings();
 </script>
 </body>
