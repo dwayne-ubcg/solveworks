@@ -1959,6 +1959,102 @@
     } else {
       html += `<div class="list-item" style="color:var(--text3)">No invoices — QuickBooks not connected yet. Leakage detection above is powered directly from CRM data.</div>`;
     }
+    // ── PARTNER PROFITABILITY ──
+    html += `<div class="section-label" style="margin-top:20px">🤝 Partner Profitability</div>`;
+
+    // Compute partner stats from compass leads
+    const partnerMap = {};
+    const compassLeadsAll = compassCrm?.leads || [];
+    compassLeadsAll.forEach(l => {
+      const p = (l.partner || 'Unknown').trim() || 'Unknown';
+      if (!partnerMap[p]) partnerMap[p] = { total: 0, completed: 0, count: 0, reps: new Set() };
+      const pr = partnerMap[p];
+      const pricing = l.pricing || 0;
+      pr.total += pricing;
+      pr.count++;
+      if (l.stage === 'complete') pr.completed += pricing;
+      if (l.rep) pr.reps.add(l.rep);
+    });
+    const partnerRows = Object.entries(partnerMap)
+      .sort((a, b) => b[1].total - a[1].total)
+      .filter(([, d]) => d.count > 0);
+    const maxPartnerTotal = partnerRows[0]?.[1].total || 1;
+
+    html += `<div class="card" style="margin-bottom:16px">`;
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div class="card-title" style="margin:0">Revenue by Partner</div><div style="font-size:11px;color:var(--text3)">${partnerRows.length} partners</div></div>`;
+    partnerRows.forEach(([partner, d]) => {
+      const avg = d.count ? d.total / d.count : 0;
+      const barPct = Math.round(d.total / maxPartnerTotal * 100);
+      const repsArr = [...d.reps].sort();
+      const repColors2b = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+      html += `<div style="margin-bottom:14px">`;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:4px">`;
+      html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">`;
+      html += `<span style="font-weight:600;font-size:13px">${partner}</span>`;
+      repsArr.forEach(r => {
+        const rc = repColors2b[r] || '#64748b';
+        html += `<span style="background:${rc}22;color:${rc};padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600">${r}</span>`;
+      });
+      html += `</div>`;
+      html += `<div style="text-align:right;font-size:12px;flex-shrink:0">`;
+      html += `<span style="font-weight:700;color:var(--accent)">$${Math.round(d.total / 1000)}K</span>`;
+      html += `<span style="color:var(--text3);margin-left:8px">${d.count} jobs</span>`;
+      html += `<span style="color:var(--text3);margin-left:8px">avg $${Math.round(avg).toLocaleString()}</span>`;
+      if (d.completed > 0) html += `<span style="color:var(--green);margin-left:8px">✓ $${Math.round(d.completed / 1000)}K done</span>`;
+      html += `</div></div>`;
+      html += `<div class="progress-bar"><div class="progress-fill" style="width:${barPct}%;background:var(--accent)"></div></div>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+
+    // ── CUSTOMER PROFITABILITY (80/20) ──
+    html += `<div class="section-label" style="margin-top:4px">💎 Customer Profitability — 80/20 Rule</div>`;
+
+    const custMap = {};
+    compassLeadsAll.forEach(l => {
+      const c = (l.customer || 'Unknown').trim();
+      if (!custMap[c]) custMap[c] = { total: 0, count: 0 };
+      custMap[c].total += l.pricing || 0;
+      custMap[c].count++;
+    });
+    const custRows = Object.entries(custMap).sort((a, b) => b[1].total - a[1].total);
+    const totalCustRev = custRows.reduce((s, [, d]) => s + d.total, 0);
+    const top20Idx = Math.max(1, Math.floor(custRows.length * 0.2));
+    const top20Rev = custRows.slice(0, top20Idx).reduce((s, [, d]) => s + d.total, 0);
+    const top20Pct = totalCustRev ? (top20Rev / totalCustRev * 100).toFixed(1) : 0;
+    const vipCusts = custRows.filter(([, d]) => d.total >= 10000);
+    const repeatCusts = custRows.filter(([, d]) => d.count >= 2);
+
+    html += `<div class="grid4" style="margin-bottom:16px">`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--accent)">${top20Idx}</div><div style="color:var(--text2);font-size:12px">Top 20% Customers</div><div style="font-size:11px;color:var(--text3);margin-top:2px">of ${custRows.length} total</div></div>`;
+    html += `<div class="stat-card" style="background:var(--accent-glow);border-color:var(--accent)"><div style="font-size:22px;font-weight:700;color:var(--accent)">${top20Pct}%</div><div style="color:var(--text2);font-size:12px">Revenue from Top 20%</div><div style="font-size:11px;color:var(--text3);margin-top:2px">$${Math.round(top20Rev/1000)}K of $${Math.round(totalCustRev/1000)}K</div></div>`;
+    html += `<div class="stat-card" style="background:var(--orange-bg);border-color:var(--orange)"><div style="font-size:22px;font-weight:700;color:var(--orange)">👑 ${vipCusts.length}</div><div style="color:var(--text2);font-size:12px">VIP Customers</div><div style="font-size:11px;color:var(--text3);margin-top:2px">&gt;$10K total</div></div>`;
+    html += `<div class="stat-card" style="background:var(--green-bg);border-color:var(--green)"><div style="font-size:22px;font-weight:700;color:var(--green)">🔄 ${repeatCusts.length}</div><div style="color:var(--text2);font-size:12px">Repeat Customers</div><div style="font-size:11px;color:var(--text3);margin-top:2px">2+ projects</div></div>`;
+    html += `</div>`;
+
+    html += `<div class="card" style="margin-bottom:16px">`;
+    html += `<div class="card-title">Top Customers by Revenue</div>`;
+    custRows.slice(0, 15).forEach(([cust, d], i) => {
+      const isVip = d.total >= 10000;
+      const isRepeat = d.count >= 2;
+      const isTop20 = i < top20Idx;
+      const barPct2 = Math.round(d.total / (custRows[0]?.[1].total || 1) * 100);
+      const cleanName = cust.replace(/\s*WO#\d+\s*/g, '').trim();
+      html += `<div style="margin-bottom:12px">`;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;flex-wrap:wrap;gap:4px">`;
+      html += `<div style="display:flex;align-items:center;gap:6px">`;
+      html += `<span style="font-size:12px;font-weight:${isTop20?600:400}">${cleanName}</span>`;
+      if (isVip) html += `<span style="background:var(--orange-bg);color:var(--orange);padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600">👑 VIP</span>`;
+      if (isRepeat) html += `<span style="background:var(--green-bg);color:var(--green);padding:1px 6px;border-radius:8px;font-size:10px">🔄 Repeat</span>`;
+      html += `</div>`;
+      html += `<span style="font-weight:700;color:${isVip?'var(--orange)':isTop20?'var(--accent)':'var(--text2)'};font-size:12px">$${d.total.toLocaleString()}</span>`;
+      html += `</div>`;
+      html += `<div class="progress-bar"><div class="progress-fill" style="width:${barPct2}%;background:${isVip?'var(--orange)':isTop20?'var(--accent)':'var(--text3)'}"></div></div>`;
+      html += `</div>`;
+    });
+    if (custRows.length > 15) html += `<div style="font-size:11px;color:var(--text3);padding-top:4px">...and ${custRows.length - 15} more customers</div>`;
+    html += `</div>`;
+
     document.getElementById('p-invoices').innerHTML = html;
   }
   loadInvoices();
@@ -2154,9 +2250,396 @@
       });
     }
 
+    // ── SLAB CALCULATOR ──
+    html += `<div class="section-label" style="margin-top:24px">🪨 Slab Calculator — Shelley's Estimator</div>`;
+    html += `<div class="card" id="slab-calc-card">` + renderSlabCalculator() + `</div>`;
+
     document.getElementById('p-fabrication').innerHTML = html;
+    // Re-attach slab calc events after DOM update
+    initSlabCalc();
   }
   loadFabrication();
+
+  // ── SLAB CALCULATOR STATE ──
+  let slabPieces = JSON.parse(localStorage.getItem('slabCalcPieces') || '[]');
+  let slabMarkup = parseFloat(localStorage.getItem('slabCalcMarkup') || '35');
+  const SLAB_PRODUCTS = [
+    { id: 'luna-quartz', name: 'Luna Quartz', type: 'Quartz', pricePerSlab: 1250 },
+    { id: 'caesarstone-quartz', name: 'Caesarstone Quartz', type: 'Quartz', pricePerSlab: 1100 },
+    { id: 'silestone', name: 'Silestone', type: 'Quartz', pricePerSlab: 980 },
+    { id: 'lg-viaterra', name: 'LG Viaterra', type: 'Quartz', pricePerSlab: 890 },
+    { id: 'quorastone', name: 'Quorastone', type: 'Quartz', pricePerSlab: 1050 },
+    { id: 'granite-std', name: 'Granite Standard', type: 'Granite', pricePerSlab: 850 },
+    { id: 'granite-prem', name: 'Granite Premium', type: 'Granite', pricePerSlab: 1150 },
+    { id: 'marble-carrara', name: 'Marble Carrara', type: 'Marble', pricePerSlab: 1400 },
+    { id: 'dekton', name: 'Dekton', type: 'Dekton', pricePerSlab: 1600 },
+    { id: 'porcelain', name: 'Porcelain', type: 'Porcelain', pricePerSlab: 750 },
+    { id: 'msi', name: 'MSI', type: 'Quartz', pricePerSlab: 920 },
+    { id: 'custom', name: 'Custom / Other', type: 'Custom', pricePerSlab: 0 },
+  ];
+
+  function getSlabProduct() {
+    const sel = document.getElementById('sc-product');
+    const id = sel ? sel.value : 'luna-quartz';
+    return SLAB_PRODUCTS.find(p => p.id === id) || SLAB_PRODUCTS[0];
+  }
+
+  function getSlabDims() {
+    const w = parseFloat(document.getElementById('sc-slab-w')?.value) || 55;
+    const l = parseFloat(document.getElementById('sc-slab-l')?.value) || 120;
+    return { w, l };
+  }
+
+  function getSlabPrice() {
+    const prod = getSlabProduct();
+    if (prod.id === 'custom') {
+      return parseFloat(document.getElementById('sc-custom-price')?.value) || 0;
+    }
+    const override = parseFloat(document.getElementById('sc-price-override')?.value);
+    return !isNaN(override) && override > 0 ? override : prod.pricePerSlab;
+  }
+
+  function slabCalcResults() {
+    const { w: slabW, l: slabL } = getSlabDims();
+    const slabSqIn = slabW * slabL;
+    const slabSqFt = slabSqIn / 144;
+    const pricePerSlab = getSlabPrice();
+    const markup = parseFloat(document.getElementById('sc-markup')?.value) || slabMarkup;
+
+    // Total piece area in sq inches
+    let totalPieceSqIn = 0;
+    slabPieces.forEach(p => {
+      totalPieceSqIn += (parseFloat(p.length) || 0) * (parseFloat(p.depth) || 0);
+    });
+    const totalPieceSqFt = totalPieceSqIn / 144;
+
+    // How many slabs — simple bin approach: fit pieces across slab width
+    // Pieces are laid lengthwise on the slab (width of piece ≤ slab width)
+    // We track remaining length on current slab
+    let slabsNeeded = 0;
+    let remainingLengthIn = 0;
+    let seams = 0;
+    const sorted = [...slabPieces].sort((a, b) => (parseFloat(b.depth) || 0) - (parseFloat(a.depth) || 0));
+    sorted.forEach(piece => {
+      const pLen = parseFloat(piece.length) || 0;
+      const pDep = parseFloat(piece.depth) || 0;
+      if (pLen <= 0 || pDep <= 0) return;
+      // If piece depth > slab width → must seam this piece
+      const pieceSeams = pDep > slabW ? Math.ceil(pDep / slabW) - 1 : 0;
+      seams += pieceSeams;
+      // How many inches of slab length this piece needs
+      const pLenNeeded = pLen; // piece runs along slab length
+      if (remainingLengthIn >= pLenNeeded) {
+        remainingLengthIn -= pLenNeeded;
+      } else {
+        // Need a new slab
+        slabsNeeded++;
+        remainingLengthIn = slabL - pLenNeeded;
+        if (remainingLengthIn < 0) {
+          // piece longer than slab — must join slabs (add slab + seam)
+          const extraSlabs = Math.floor(-remainingLengthIn / slabL) + 1;
+          slabsNeeded += extraSlabs;
+          seams += extraSlabs; // length seams
+          remainingLengthIn = slabL - (pLenNeeded % slabL || pLenNeeded);
+        }
+      }
+    });
+
+    // Remnant = leftover usable portion of last slab
+    const usedLengthOnLastSlab = slabsNeeded > 0 ? (slabL - remainingLengthIn) : 0;
+    const remnantLengthIn = remainingLengthIn;
+    const remnantSqIn = remnantLengthIn * slabW;
+    const remnantSqFt = remnantSqIn / 144;
+
+    // Utilization
+    const totalSlabSqIn = slabsNeeded * slabSqIn;
+    const utilizationPct = totalSlabSqIn > 0 ? Math.min(100, totalPieceSqIn / totalSlabSqIn * 100) : 0;
+
+    // Remnant categories (based on width = shorter dimension of leftover piece)
+    // The remnant width is effectively how wide a piece could be cut from the remnant
+    // We use remnantLengthIn as the remnant "width" (since we're looking at strip left over)
+    const remnantWidthIn = remnantLengthIn; // conservative — width of usable strip
+    let remnantCategory = 'waste';
+    let remnantCreditPct = 0;
+    let remnantCreditLabel = '';
+    if (remnantWidthIn >= 36) {
+      remnantCategory = 'high';
+      remnantCreditPct = 0.60;
+      remnantCreditLabel = '≥36" — HIGH VALUE';
+    } else if (remnantWidthIn >= 26) {
+      remnantCategory = 'medium';
+      remnantCreditPct = 0.40;
+      remnantCreditLabel = '≥26" — MEDIUM';
+    } else if (remnantWidthIn >= 22) {
+      remnantCategory = 'low';
+      remnantCreditPct = 0.20;
+      remnantCreditLabel = '≥22" — LOW VALUE';
+    } else {
+      remnantCategory = 'waste';
+      remnantCreditPct = 0;
+      remnantCreditLabel = '<22" — WASTE';
+    }
+
+    const totalSlabCost = slabsNeeded * pricePerSlab;
+    const remnantCredit = remnantWidthIn >= 22 ? (remnantSqFt / slabSqFt) * pricePerSlab * remnantCreditPct : 0;
+    const netMaterialCost = Math.max(0, totalSlabCost - remnantCredit);
+    const quotePrice = netMaterialCost * (1 + markup / 100);
+    const profitMargin = quotePrice > 0 ? ((quotePrice - netMaterialCost) / quotePrice * 100) : 0;
+
+    return {
+      slabsNeeded, seams, slabSqFt, totalPieceSqFt, utilizationPct,
+      remnantSqFt, remnantWidthIn, remnantCategory, remnantCreditLabel,
+      remnantCredit, totalSlabCost, netMaterialCost, quotePrice, profitMargin, markup,
+      pricePerSlab, slabW, slabL
+    };
+  }
+
+  function renderSlabCalculator() {
+    const prod = SLAB_PRODUCTS[0]; // default for initial render
+    let h = '';
+
+    // Header
+    h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">`;
+    h += `<div><div class="card-title" style="margin:0">Slab Calculator</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Real-time material cost & remnant analysis</div></div>`;
+    h += `</div>`;
+
+    // Customer name
+    const savedCustomer = localStorage.getItem('slabCalcCustomer') || '';
+    h += `<div style="margin-bottom:14px"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Customer Name</label>`;
+    h += `<input type="text" id="sc-customer" value="${savedCustomer}" placeholder="e.g. Smith Kitchen Renovation" oninput="localStorage.setItem('slabCalcCustomer',this.value)" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px"></div>`;
+
+    // Slab product
+    h += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">`;
+    h += `<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Slab Product</label>`;
+    h += `<select id="sc-product" onchange="scProductChange()" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px">`;
+    SLAB_PRODUCTS.forEach(p => {
+      h += `<option value="${p.id}">${p.name}${p.pricePerSlab > 0 ? ' — $' + p.pricePerSlab + '/slab' : ''}</option>`;
+    });
+    h += `</select></div>`;
+    h += `<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Price / Slab ($)</label>`;
+    h += `<input type="number" id="sc-price-override" placeholder="${prod.pricePerSlab}" oninput="scRecalc()" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px"></div>`;
+    h += `</div>`;
+
+    // Custom price row
+    h += `<div id="sc-custom-price-row" style="margin-bottom:14px;display:none"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Custom Price / Slab ($)</label>`;
+    h += `<input type="number" id="sc-custom-price" oninput="scRecalc()" placeholder="Enter price" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px"></div>`;
+
+    // Slab dimensions
+    h += `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">`;
+    h += `<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Slab Length (in)</label><input type="number" id="sc-slab-l" value="120" oninput="scRecalc()" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px"></div>`;
+    h += `<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Slab Width (in)</label><input type="number" id="sc-slab-w" value="55" oninput="scRecalc()" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px"></div>`;
+    h += `<div><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Markup %</label><input type="number" id="sc-markup" value="${slabMarkup}" oninput="slabMarkup=+this.value;localStorage.setItem('slabCalcMarkup',this.value);scRecalc()" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px"></div>`;
+    h += `</div>`;
+
+    // Pieces header
+    h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
+    h += `<div style="font-size:13px;font-weight:600">Countertop Pieces</div>`;
+    h += `<span style="font-size:11px;color:var(--text3)">${slabPieces.length} piece${slabPieces.length !== 1 ? 's' : ''} · ${(slabPieces.reduce((s, p) => s + (parseFloat(p.length) || 0) * (parseFloat(p.depth) || 0), 0) / 144).toFixed(1)} sqft</span>`;
+    h += `</div>`;
+
+    // Piece list
+    if (slabPieces.length > 0) {
+      h += `<div style="margin-bottom:12px">`;
+      slabPieces.forEach((p, i) => {
+        const sqft = ((parseFloat(p.length) || 0) * (parseFloat(p.depth) || 0) / 144).toFixed(1);
+        h += `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px">`;
+        h += `<div style="flex:1;font-size:13px"><strong>${p.name || ('Piece ' + (i + 1))}</strong> — ${p.length || 0}" × ${p.depth || 0}" = ${sqft} sqft</div>`;
+        h += `<button onclick="scRemovePiece(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>`;
+        h += `</div>`;
+      });
+      h += `</div>`;
+    } else {
+      h += `<div style="color:var(--text3);font-size:13px;padding:8px 0 12px">No pieces added yet. Add pieces below.</div>`;
+    }
+
+    // Add piece row
+    h += `<div style="padding:12px;background:var(--surface2);border-radius:8px;margin-bottom:14px">`;
+    h += `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">ADD PIECE</div>`;
+    h += `<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end">`;
+    h += `<div><label style="font-size:11px;color:var(--text3)">Name</label><input type="text" id="sc-piece-name" placeholder="Kitchen Island" style="width:100%;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px"></div>`;
+    h += `<div><label style="font-size:11px;color:var(--text3)">Length (in)</label><input type="number" id="sc-piece-l" placeholder="96" style="width:100%;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px"></div>`;
+    h += `<div><label style="font-size:11px;color:var(--text3)">Depth (in)</label><input type="number" id="sc-piece-d" placeholder="25" style="width:100%;padding:6px 10px;border:1px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);font-size:13px"></div>`;
+    h += `<button class="btn btn-sm btn-primary" onclick="scAddPiece()" style="white-space:nowrap;height:34px">+ Add</button>`;
+    h += `</div></div>`;
+
+    // Results section
+    h += `<div id="sc-results">`;
+    if (slabPieces.length > 0) {
+      h += renderSlabResults();
+    } else {
+      h += `<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Add pieces above to see slab calculation</div>`;
+    }
+    h += `</div>`;
+
+    // Save/load buttons
+    h += `<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">`;
+    h += `<button class="btn btn-primary btn-sm" onclick="scSaveQuote()" style="flex:1">💾 Save Quote</button>`;
+    h += `<button class="btn btn-sm" onclick="scClearAll()" style="background:var(--red-bg);color:var(--red)">Clear</button>`;
+    h += `</div>`;
+
+    // Saved quotes
+    const savedQuotes = JSON.parse(localStorage.getItem('slabCalcQuotes') || '[]');
+    if (savedQuotes.length) {
+      h += `<div style="margin-top:16px"><div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:8px">Saved Quotes (${savedQuotes.length})</div>`;
+      savedQuotes.slice(-5).reverse().forEach((q, i) => {
+        h += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:6px;font-size:12px">`;
+        h += `<div><strong>${q.customer || 'Unnamed'}</strong> <span style="color:var(--text3);margin-left:6px">${q.product}</span></div>`;
+        h += `<div style="display:flex;gap:12px;align-items:center">`;
+        h += `<span style="color:var(--green);font-weight:600">$${(q.quotePrice || 0).toLocaleString('en',{maximumFractionDigits:0})}</span>`;
+        h += `<span style="color:var(--text3)">${q.date}</span>`;
+        h += `<button onclick="scDeleteQuote(${savedQuotes.length - 1 - i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px">×</button>`;
+        h += `</div></div>`;
+      });
+      h += `</div>`;
+    }
+
+    return h;
+  }
+
+  function renderSlabResults() {
+    const r = slabCalcResults();
+    let h = '';
+
+    // Seam & Slab summary
+    h += `<div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px">`;
+    h += `<div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Slab Planning</div>`;
+    h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">`;
+    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Slabs Needed</div><div style="font-size:28px;font-weight:700;color:var(--accent)">${r.slabsNeeded}</div></div>`;
+    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Est. Seams</div><div style="font-size:28px;font-weight:700;color:var(--orange)">${r.seams}</div></div>`;
+    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Utilization</div><div style="font-size:28px;font-weight:700;color:${r.utilizationPct >= 80 ? 'var(--green)' : r.utilizationPct >= 50 ? 'var(--orange)' : 'var(--red)'}">${r.utilizationPct.toFixed(0)}%</div></div>`;
+    h += `</div>`;
+    // Utilization bar
+    h += `<div style="margin-top:12px">`;
+    h += `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px"><span>Slab utilization</span><span>${r.totalPieceSqFt.toFixed(1)} sqft needed · ${(r.slabsNeeded * r.slabSqFt).toFixed(1)} sqft available</span></div>`;
+    h += `<div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${r.utilizationPct.toFixed(0)}%;background:${r.utilizationPct >= 80 ? 'var(--green)' : r.utilizationPct >= 50 ? 'var(--orange)' : 'var(--red)'}"></div></div>`;
+    h += `</div></div>`;
+
+    // Remnant analysis
+    const remnantColor = r.remnantCategory === 'high' ? 'var(--green)' : r.remnantCategory === 'medium' ? 'var(--accent)' : r.remnantCategory === 'low' ? 'var(--orange)' : 'var(--red)';
+    h += `<div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;border-left:3px solid ${remnantColor}">`;
+    h += `<div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Remnant Analysis</div>`;
+    h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">`;
+    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Remnant Strip</div><div style="font-size:20px;font-weight:700;color:${remnantColor}">${r.remnantWidthIn.toFixed(0)}"</div><div style="font-size:11px;color:var(--text3)">${r.remnantSqFt.toFixed(1)} sqft</div></div>`;
+    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Category</div><div style="font-size:12px;font-weight:700;color:${remnantColor};margin-top:4px">${r.remnantCreditLabel || '—'}</div></div>`;
+    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Remnant Credit</div><div style="font-size:20px;font-weight:700;color:var(--green)">$${r.remnantCredit.toFixed(0)}</div></div>`;
+    h += `</div>`;
+    h += `<div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border2);padding-top:10px">`;
+    h += `Credit categories: <span style="color:var(--green)">≥36" = 60%</span> · <span style="color:var(--accent)">≥26" = 40%</span> · <span style="color:var(--orange)">≥22" = 20%</span> · <span style="color:var(--red)">&lt;22" = waste (no credit)</span>`;
+    h += `</div></div>`;
+
+    // Cost summary
+    h += `<div style="background:var(--surface2);border-radius:10px;padding:16px">`;
+    h += `<div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Cost Summary</div>`;
+    h += `<div style="display:flex;flex-direction:column;gap:8px">`;
+    h += `<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">${r.slabsNeeded} slab${r.slabsNeeded !== 1 ? 's' : ''} × $${r.pricePerSlab.toLocaleString()}</span><span style="color:var(--red);font-weight:600">−$${r.totalSlabCost.toLocaleString('en',{maximumFractionDigits:0})}</span></div>`;
+    if (r.remnantCredit > 0) {
+      h += `<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">Remnant credit (${r.remnantCreditLabel})</span><span style="color:var(--green);font-weight:600">+$${r.remnantCredit.toFixed(0)}</span></div>`;
+    }
+    h += `<div style="border-top:1px solid var(--border2);padding-top:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:600">Net Material Cost</span><span style="color:var(--red);font-weight:700;font-size:16px">$${r.netMaterialCost.toFixed(0)}</span></div>`;
+    h += `<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">${r.markup}% markup applied</span><span style="color:var(--green);font-weight:700;font-size:20px">$${r.quotePrice.toFixed(0)}</span></div>`;
+    h += `<div style="background:var(--green-bg);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:13px;color:var(--green);font-weight:600">Profit Margin</span><span style="color:var(--green);font-weight:700;font-size:18px">${r.profitMargin.toFixed(1)}%</span></div>`;
+    h += `</div></div>`;
+
+    return h;
+  }
+
+  function scProductChange() {
+    const sel = document.getElementById('sc-product');
+    const row = document.getElementById('sc-custom-price-row');
+    const overrideInput = document.getElementById('sc-price-override');
+    const prod = SLAB_PRODUCTS.find(p => p.id === sel.value);
+    if (sel.value === 'custom') {
+      row.style.display = 'block';
+      if (overrideInput) overrideInput.placeholder = '0';
+    } else {
+      row.style.display = 'none';
+      if (overrideInput) overrideInput.placeholder = prod?.pricePerSlab || '';
+    }
+    scRecalc();
+  }
+
+  function scRecalc() {
+    const resultsDiv = document.getElementById('sc-results');
+    if (!resultsDiv) return;
+    if (slabPieces.length > 0) {
+      resultsDiv.innerHTML = renderSlabResults();
+    } else {
+      resultsDiv.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Add pieces above to see slab calculation</div>`;
+    }
+  }
+
+  function scAddPiece() {
+    const name = document.getElementById('sc-piece-name')?.value || ('Piece ' + (slabPieces.length + 1));
+    const l = parseFloat(document.getElementById('sc-piece-l')?.value);
+    const d = parseFloat(document.getElementById('sc-piece-d')?.value);
+    if (!l || !d || l <= 0 || d <= 0) return;
+    slabPieces.push({ name, length: l, depth: d });
+    localStorage.setItem('slabCalcPieces', JSON.stringify(slabPieces));
+    // Re-render just the calculator card
+    const card = document.getElementById('slab-calc-card');
+    if (card) card.innerHTML = renderSlabCalculator();
+    initSlabCalc();
+  }
+
+  function scRemovePiece(i) {
+    slabPieces.splice(i, 1);
+    localStorage.setItem('slabCalcPieces', JSON.stringify(slabPieces));
+    const card = document.getElementById('slab-calc-card');
+    if (card) card.innerHTML = renderSlabCalculator();
+    initSlabCalc();
+  }
+
+  function scClearAll() {
+    slabPieces = [];
+    localStorage.removeItem('slabCalcPieces');
+    localStorage.removeItem('slabCalcCustomer');
+    const card = document.getElementById('slab-calc-card');
+    if (card) card.innerHTML = renderSlabCalculator();
+    initSlabCalc();
+  }
+
+  function scSaveQuote() {
+    const customer = document.getElementById('sc-customer')?.value || 'Unnamed';
+    const prod = getSlabProduct();
+    const r = slabCalcResults();
+    const quotes = JSON.parse(localStorage.getItem('slabCalcQuotes') || '[]');
+    quotes.push({
+      customer,
+      product: prod.name,
+      slabsNeeded: r.slabsNeeded,
+      totalSlabCost: r.totalSlabCost,
+      remnantCredit: r.remnantCredit,
+      netMaterialCost: r.netMaterialCost,
+      quotePrice: r.quotePrice,
+      profitMargin: r.profitMargin,
+      pieces: JSON.parse(JSON.stringify(slabPieces)),
+      date: new Date().toLocaleDateString()
+    });
+    localStorage.setItem('slabCalcQuotes', JSON.stringify(quotes));
+    // Show flash
+    const btn = document.querySelector('#slab-calc-card .btn-primary');
+    if (btn) { btn.textContent = '✓ Saved!'; btn.style.background = 'var(--green)'; setTimeout(() => { btn.textContent = '💾 Save Quote'; btn.style.background = ''; }, 1500); }
+    scRecalc();
+    // Re-render to show saved quotes
+    const card = document.getElementById('slab-calc-card');
+    if (card) card.innerHTML = renderSlabCalculator();
+    initSlabCalc();
+  }
+
+  function scDeleteQuote(i) {
+    const quotes = JSON.parse(localStorage.getItem('slabCalcQuotes') || '[]');
+    quotes.splice(i, 1);
+    localStorage.setItem('slabCalcQuotes', JSON.stringify(quotes));
+    const card = document.getElementById('slab-calc-card');
+    if (card) card.innerHTML = renderSlabCalculator();
+    initSlabCalc();
+  }
+
+  function initSlabCalc() {
+    // Re-run product change to ensure custom row visibility
+    const sel = document.getElementById('sc-product');
+    if (sel) scProductChange();
+  }
 
   // ── DOCUMENTS PANEL ──
   async function loadDocuments() {
