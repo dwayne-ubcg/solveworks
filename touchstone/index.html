@@ -1248,6 +1248,20 @@
     h += `<button class="btn btn-sm btn-primary" onclick="feAddRoom()" style="white-space:nowrap">+ Add</button>`;
     h += `</div></div>`;
 
+    // Floor Plan Upload
+    h += `<div class="card" style="margin-bottom:12px;border:2px dashed var(--border2);text-align:center;padding:20px;position:relative">`;
+    h += `<div style="font-size:24px;margin-bottom:6px">\U0001f4d0</div>`;
+    h += `<div style="font-weight:600;font-size:14px">Upload Floor Plan</div>`;
+    h += `<div style="color:var(--text3);font-size:12px;margin-top:4px;margin-bottom:12px">Photo of a blueprint or drawing \u2014 AI reads the dimensions</div>`;
+    h += `<input type="file" id="fe-floorplan" accept="image/*" capture="environment" onchange="feHandleFloorPlan(this)" style="display:none">`;
+    h += `<div style="display:flex;gap:8px;justify-content:center">`;
+    h += `<button class="btn btn-sm btn-primary" onclick="document.getElementById('fe-floorplan').click()">\U0001f4f7 Take Photo</button>`;
+    h += `<button class="btn btn-sm" style="background:var(--surface2)" onclick="document.getElementById('fe-floorplan').click()">\U0001f4c1 Choose File</button>`;
+    h += `</div>`;
+    h += `<div id="fe-floorplan-status" style="margin-top:12px;font-size:13px;display:none"></div>`;
+    h += `<div id="fe-floorplan-preview" style="margin-top:12px;display:none"></div>`;
+    h += `</div>`;
+
     // Waste & Markup
     h += `<div style="display:flex;gap:12px;margin-bottom:16px">`;
     h += `<div style="flex:1"><label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">Waste Factor %</label><input type="number" id="fe-waste" value="${floorEstWaste}" min="0" max="50" onchange="floorEstWaste=+this.value;feRecalc()" style="width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text1);font-size:14px"></div>`;
@@ -1306,6 +1320,84 @@
   function feRemoveRoom(i) { floorEstRooms.splice(i, 1); loadFlooring(); }
 
   function feRecalc() { loadFlooring(); }
+
+  async function feHandleFloorPlan(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const status = document.getElementById('fe-floorplan-status');
+    const preview = document.getElementById('fe-floorplan-preview');
+    status.style.display = 'block';
+    status.innerHTML = '<div style="color:var(--accent)">\u23f3 Reading floor plan...</div>';
+    preview.style.display = 'block';
+
+    // Show thumbnail
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      preview.innerHTML = '<img src="' + e.target.result + '" style="max-width:100%;max-height:200px;border-radius:8px;margin-bottom:8px">';
+
+      // Send to agent for AI extraction
+      const base64 = e.target.result;
+      status.innerHTML = '<div style="color:var(--accent)">\U0001f916 AI analyzing dimensions...</div><div style="color:var(--text3);font-size:11px;margin-top:4px">This may take 10-30 seconds</div>';
+
+      // Save to localStorage for agent pickup
+      const floorPlanData = {
+        image: base64,
+        timestamp: new Date().toISOString(),
+        filename: file.name,
+        status: 'pending'
+      };
+      localStorage.setItem('tc_floorplan_pending', JSON.stringify(floorPlanData));
+
+      // Poll for result (agent will write to floorplan-result.json)
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const resp = await fetch('data/floorplan-result.json?t=' + Date.now());
+          if (resp.ok) {
+            const result = await resp.json();
+            if (result.timestamp && new Date(result.timestamp) > new Date(floorPlanData.timestamp) - 5000) {
+              clearInterval(poll);
+              if (result.rooms && result.rooms.length > 0) {
+                result.rooms.forEach(rm => {
+                  floorEstRooms.push({
+                    name: rm.name || 'Room',
+                    sqft: rm.sqft || Math.ceil((rm.length||0) * (rm.width||0)),
+                    method: rm.length && rm.width ? 'dims' : 'direct',
+                    length: rm.length || 0,
+                    width: rm.width || 0
+                  });
+                });
+                status.innerHTML = '<div style="color:var(--green)">\u2705 Found ' + result.rooms.length + ' room(s) \u2014 added to estimate</div>';
+                setTimeout(() => { status.style.display = 'none'; preview.style.display = 'none'; loadFlooring(); }, 2000);
+              } else {
+                status.innerHTML = '<div style="color:var(--orange)">\u26a0\ufe0f Could not read dimensions. Try a clearer photo or enter manually above.</div>';
+              }
+            }
+          }
+        } catch(e) {}
+        if (attempts > 60) {
+          clearInterval(poll);
+          status.innerHTML = '<div style="color:var(--orange)">\u26a0\ufe0f AI processing timed out. You can enter dimensions manually above, or try again with a clearer photo.</div>';
+        }
+      }, 2000);
+
+      // Also try direct extraction if we can reach the agent API
+      feExtractDirect(base64, floorPlanData.timestamp);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function feExtractDirect(base64Data, timestamp) {
+    // For now, save the image data for the agent to pick up via sync
+    // The agent monitors for pending floor plans and processes them
+    try {
+      const pending = { image: base64Data, timestamp: timestamp, status: 'awaiting_agent' };
+      localStorage.setItem('tc_floorplan_pending', JSON.stringify(pending));
+    } catch(e) {
+      console.log('Floor plan save error:', e);
+    }
+  }
 
   function feClearEstimate() { floorEstRooms = []; document.getElementById('fe-customer') && (document.getElementById('fe-customer').value = ''); loadFlooring(); }
 
