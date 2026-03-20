@@ -1543,6 +1543,7 @@ input,select{font-family:inherit;font-size:13px}
             <div class="section-title"><span class="s-icon">📦</span> Inventory Aging — Days on Floor</div>
             <div style="font-size:11px;color:var(--text-3)">Click a tile to filter the table</div>
           </div>
+          <div id="season-filter-tabs" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap"></div>
           <div class="g-4 section" id="aging-tiles" style="margin-bottom:0"></div>
           <div class="ai-box ai-box-red section" id="aging-ai" style="margin-top:12px"></div>
           <div class="card" style="margin-top:12px">
@@ -3598,11 +3599,22 @@ function buildAgingData() {
       else if (agingDays >= 30 && st < 25) rec = 'Consider 15% markdown';
       else if (agingDays >= 14 && st < 15) rec = 'Slow start — watch closely';
       else rec = 'Monitor';
-      rows.push({ name: style.name, brand: brand.brand, daysOld: agingDays, isCarryover, bucket, remaining: style.remaining, sellThrough: st, costTiedUp, rec });
+      // Season grouping based on floorDate for season tab filtering
+      const fd = style.floorDate ? new Date(style.floorDate) : effectiveDate;
+      const fdYear = fd.getFullYear();
+      const fdMonth = fd.getMonth(); // 0-based
+      let seasonGroup;
+      if (fdYear <= 2024) seasonGroup = 'Pre-2025';
+      else if (fdYear === 2025 && fdMonth <= 5) seasonGroup = 'SS25';
+      else if (fdYear === 2025 && fdMonth > 5) seasonGroup = 'FW25';
+      else seasonGroup = 'SS26';
+      rows.push({ name: style.name, brand: brand.brand, daysOld: agingDays, isCarryover, bucket, remaining: style.remaining, sellThrough: st, costTiedUp, rec, seasonGroup });
     }
   }
   return rows;
 }
+
+let agingActiveSeasonTab = null; // null = all seasons
 
 function renderAgingBuckets() {
   const tilesEl = $('aging-tiles');
@@ -3611,7 +3623,35 @@ function renderAgingBuckets() {
   if (!tilesEl || !aiEl || !tbodyEl) return;
   if (!STD || !ST) return;
 
-  const rows = buildAgingData();
+  const allRows = buildAgingData();
+
+  // Season tab filter
+  const seasonTabs = [
+    { key: null, label: 'All Seasons' },
+    { key: 'SS25', label: 'Spring 2025', sub: 'Jan–Jun 2025' },
+    { key: 'FW25', label: 'Fall 2025', sub: 'Jul–Dec 2025' },
+    { key: 'SS26', label: 'Spring 2026', sub: 'Jan 2026+' },
+    { key: 'Pre-2025', label: 'Pre-2025', sub: 'Before Jan 2025' },
+  ];
+  // Count units per season for badges
+  const seasonCounts = {};
+  for (const r of allRows) { seasonCounts[r.seasonGroup] = (seasonCounts[r.seasonGroup] || 0) + r.remaining; }
+  const tabsEl = $('season-filter-tabs');
+  if (tabsEl) {
+    tabsEl.innerHTML = seasonTabs.map(t => {
+      const isActive = agingActiveSeasonTab === t.key;
+      const count = t.key ? (seasonCounts[t.key] || 0) : allRows.reduce((s, r) => s + r.remaining, 0);
+      return `<button onclick="setAgingSeason(${t.key ? "'" + t.key + "'" : 'null'})" style="
+        padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;
+        border:1.5px solid ${isActive ? 'var(--accent)' : 'var(--border)'};
+        background:${isActive ? 'var(--accent-lt)' : 'var(--bg-card)'};
+        color:${isActive ? 'var(--accent-dk)' : 'var(--text-2)'};transition:all .2s;
+        display:flex;align-items:center;gap:6px;
+      ">${t.label}<span style="background:${isActive ? 'var(--accent)' : 'var(--bg-deep)'};color:${isActive ? '#fff' : 'var(--text-3)'};padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700">${fmtN(count)}</span></button>`;
+    }).join('');
+  }
+
+  const rows = agingActiveSeasonTab ? allRows.filter(r => r.seasonGroup === agingActiveSeasonTab) : allRows;
   const buckets = [
     { key: '0-30', label: '0–30 Days', color: 'var(--green)', bg: 'var(--green-lt,#edfaee)' },
     { key: '30-60', label: '30–60 Days', color: 'var(--amber)', bg: 'var(--amber-lt,#fff8e6)' },
@@ -3670,6 +3710,12 @@ function renderAgingBuckets() {
 
 function setAgingBucket(bucket) {
   agingActiveBucket = agingActiveBucket === bucket ? null : bucket;
+  renderAgingBuckets();
+}
+
+function setAgingSeason(season) {
+  agingActiveSeasonTab = agingActiveSeasonTab === season ? null : season;
+  agingActiveBucket = null; // reset bucket filter when switching season
   renderAgingBuckets();
 }
 
