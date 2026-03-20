@@ -4704,34 +4704,27 @@ document.addEventListener('click', (e) => {
   }
 
   async function chatPoll() {
+    // Chat responses are delivered via Telegram — the gateway handles getUpdates.
+    // Dashboard reads responses from data/chat.json (synced by Lo agent).
     const cfg = CONFIG.bot;
     if (!cfg || !cfg.token || cfg.chat_id === 0) return;
-    const offset = chatGetLastUpdateId() + 1;
     try {
-      const url = 'https://api.telegram.org/bot' + cfg.token + '/getUpdates?offset=' + offset + '&limit=50&timeout=0';
-      const res = await fetch(url);
-      if (!res.ok) { chatSetStatus('Connection error', false); return; }
+      const res = await fetch('data/chat.json?t=' + Date.now());
+      if (!res.ok) { chatSetStatus('Online · Send a message', true); return; }
       const data = await res.json();
-      if (!data.ok) { chatSetStatus('API error', false); return; }
       chatSetStatus('Online · Synced', true);
-      if (!data.result || !data.result.length) return;
-      const msgs = chatGetStoredMessages();
+      const messages = data.messages || [];
+      if (!messages.length) return;
+      const stored = chatGetStoredMessages();
       let changed = false;
-      data.result.forEach(function(upd) {
-        if (upd.update_id > chatGetLastUpdateId()) chatSetLastUpdateId(upd.update_id);
-        const msg = upd.message || upd.edited_message;
-        if (!msg || !msg.text) return;
-        // Only show messages from our target chat
-        if (String(msg.chat.id) !== String(cfg.chat_id)) return;
-        // Avoid duplicates
-        if (msgs.find(function(m) { return m.tg_id === msg.message_id; })) return;
-        const isBot = msg.from && msg.from.is_bot;
-        msgs.push({ role: isBot ? 'bot' : 'user', text: msg.text, ts: msg.date, tg_id: msg.message_id });
+      messages.forEach(function(m) {
+        if (m.tg_id && stored.find(function(s) { return s.tg_id === m.tg_id; })) return;
+        stored.push(m);
         changed = true;
       });
-      if (changed) { chatSaveMessages(msgs); chatRenderMessages(); }
+      if (changed) { chatSaveMessages(stored); chatRenderMessages(); }
     } catch(e) {
-      chatSetStatus('Offline', false);
+      chatSetStatus('Online · Send a message', true);
     }
   }
 
