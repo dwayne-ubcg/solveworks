@@ -856,25 +856,140 @@
 
       <div class="grid4" style="margin-bottom:20px;">
         <div class="stat-card">
-          <div class="stat-val">${allLeads.filter(l=>!['complete','on_hold'].includes(l.stage)).length || escapeHtml(stats.activeJobs ?? 0)}</div>
-          <div class="stat-label">Active Jobs</div>
+          ${(() => {
+            const compassLeads = compassData?.leads || [];
+            const lsLeads2 = lsData?.leads || [];
+            const compassActive = compassLeads.filter(l=>['approved','templating','fabrication'].includes(l.stage)).length;
+            const lsActive = lsLeads2.filter(l=>['approved','templating','fabrication'].includes(l.stage)).length;
+            return `<div class="stat-val">${compassActive + lsActive}</div><div class="stat-label">Active Jobs</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Compass: ${compassActive} · LS: ${lsActive}</div>`;
+          })()}
         </div>
         <div class="stat-card">
-          <div class="stat-val">${formatCompactMoney(allLeads.filter(l=>l.pricing>0).reduce((s,l)=>s+l.pricing,0) || stats.pipeline)}</div>
-          <div class="stat-label">Pipeline</div>
+          ${(() => {
+            const compassLeads = compassData?.leads || [];
+            const lsLeads2 = lsData?.leads || [];
+            const compassVal = compassLeads.filter(l=>l.stage!=='complete').reduce((s,l)=>s+(l.pricing||0),0);
+            const lsVal = lsLeads2.filter(l=>l.stage!=='complete').reduce((s,l)=>s+(l.pricing||0),0);
+            return `<div class="stat-val" style="color:var(--green)">${formatCompactMoney(compassVal+lsVal)}</div><div class="stat-label">Pipeline Value</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Compass: ${formatCompactMoney(compassVal)}</div>`;
+          })()}
         </div>
         <div class="stat-card">
-          <div class="stat-val">${escapeHtml(stats.slabs ?? 0)}</div>
-          <div class="stat-label">Slabs</div>
+          ${(() => {
+            const compassLeads = compassData?.leads || [];
+            const lsLeads2 = lsData?.leads || [];
+            const now = new Date(); const weekAgo = new Date(now - 7*24*60*60*1000);
+            const weekStr = weekAgo.toISOString().slice(0,10);
+            const newThis = [...compassLeads,...lsLeads2].filter(l=>(l.date_added||'')>=weekStr).length;
+            const monthStr = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+            const completeThis = [...compassLeads,...lsLeads2].filter(l=>l.stage==='complete'&&(l.date_added||'')>=monthStr).length;
+            return `<div class="stat-val" style="color:var(--cyan)">${newThis}</div><div class="stat-label">New This Week</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${completeThis} completed this month</div>`;
+          })()}
         </div>
         <div class="stat-card" style="${leakageJobCount > 0 ? 'background:var(--red-bg);border-color:var(--red)' : ''}">
           <div class="stat-val" style="${leakageJobCount > 0 ? 'color:var(--red)' : ''}">${leakageJobCount > 0 ? leakageJobCount+' jobs' : (escapeHtml(stats.remnants ?? 0))}</div>
-          <div class="stat-label">${leakageJobCount > 0 ? '⚠️ Leakage Risk' : 'Remnants'}</div>
+          <div class="stat-label">${leakageJobCount > 0 ? '⚠️ Leakage Risk' : 'Usable Remnants'}</div>
           ${leakageJobCount > 0 ? `<div style="font-size:11px;color:var(--red);margin-top:2px">~${formatCompactMoney(leakageEstimate)} at risk</div>` : ''}
         </div>
       </div>
 
       ${leakageHtml}
+
+      ${(() => {
+        // Today's Priority: leads in templating/fabrication, oldest first
+        const compassLeads = compassData?.leads || [];
+        const priorityLeads = compassLeads.filter(l=>['templating','fabrication'].includes(l.stage)).sort((a,b)=>(a.date_added||'')>(b.date_added||'')?1:-1).slice(0,8);
+        const repColors2 = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+        if (!priorityLeads.length) return '';
+        return `<div class="card" style="margin-bottom:16px">
+          <div class="card-title">🔥 Today's Priority — Templating & Fabrication (oldest first)</div>
+          <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Date</th><th style="padding:6px 8px">Customer</th><th style="padding:6px 8px">Stage</th><th style="padding:6px 8px">Rep</th><th style="padding:6px 8px">Product</th><th style="padding:6px 8px">sqft</th><th style="padding:6px 8px">Phone</th>
+          </tr></thead><tbody>
+          ${priorityLeads.map(l => {
+            const stageColor = l.stage==='fabrication'?'var(--orange)':'var(--purple)';
+            const rc = repColors2[l.rep] || '#64748b';
+            const phone = l.phone ? `<a href="tel:${l.phone}" style="color:var(--accent);text-decoration:none">📞 ${l.phone}</a>` : '—';
+            return `<tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:6px 8px;color:var(--text2);white-space:nowrap">${(l.date_added||'').slice(0,10)}</td>
+              <td style="padding:6px 8px;font-weight:500">${l.customer||'--'}</td>
+              <td style="padding:6px 8px"><span style="background:rgba(0,0,0,0.2);border-left:3px solid ${stageColor};padding:2px 6px;border-radius:4px;font-size:11px">${l.stage}</span></td>
+              <td style="padding:6px 8px"><span style="background:${rc}22;color:${rc};padding:2px 6px;border-radius:10px;font-size:11px;font-weight:600">${l.rep||'—'}</span></td>
+              <td style="padding:6px 8px;color:var(--text2);font-size:11px">${(l.product||'').slice(0,20)}</td>
+              <td style="padding:6px 8px;color:var(--text2)">${l.sqft||'—'}</td>
+              <td style="padding:6px 8px">${phone}</td>
+            </tr>`;
+          }).join('')}
+          </tbody></table></div>
+        </div>`;
+      })()}
+
+      ${(() => {
+        // By Rep breakdown
+        const compassLeads = compassData?.leads || [];
+        const repColors2 = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+        const repStats = {};
+        compassLeads.forEach(l => {
+          const r = l.rep || '(blank)';
+          if (!repStats[r]) repStats[r] = {count:0, value:0, fab:0};
+          if (['approved','templating','fabrication'].includes(l.stage)) {
+            repStats[r].count++;
+            repStats[r].value += l.pricing||0;
+          }
+          if (l.stage === 'fabrication') repStats[r].fab++;
+        });
+        const rows = Object.entries(repStats).filter(([,s])=>s.count>0).sort((a,b)=>b[1].value-a[1].value);
+        if (!rows.length) return '';
+        return `<div class="card" style="margin-bottom:16px">
+          <div class="card-title">👥 Compass — By Rep (Active Jobs)</div>
+          <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">
+          <th style="padding:6px 8px">Rep</th><th style="padding:6px 8px">Active Jobs</th><th style="padding:6px 8px">In Fab</th><th style="padding:6px 8px">Pipeline Value</th>
+          </tr></thead><tbody>
+          ${rows.map(([rep, s]) => {
+            const rc = repColors2[rep] || '#64748b';
+            return `<tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:8px"><span style="background:${rc}22;color:${rc};padding:3px 10px;border-radius:10px;font-weight:600;font-size:12px">${rep}</span></td>
+              <td style="padding:8px;font-weight:600">${s.count}</td>
+              <td style="padding:8px;color:var(--orange)">${s.fab}</td>
+              <td style="padding:8px;color:var(--green);font-weight:600">${formatCompactMoney(s.value)}</td>
+            </tr>`;
+          }).join('')}
+          </tbody></table></div>
+        </div>`;
+      })()}
+
+      ${lsData?.leads?.length ? (() => {
+        // Livingstone separate section
+        const lsLeads2 = lsData.leads;
+        const lsActive = lsLeads2.filter(l=>['approved','templating','fabrication'].includes(l.stage));
+        const lsVal = lsActive.reduce((s,l)=>s+(l.pricing||0),0);
+        return `<div class="card" style="margin-bottom:16px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.25)">
+          <div class="card-title" style="color:var(--purple)">🏢 LIVINGSTONE / EAST COAST COUNTERTOPS — Separate Entity</div>
+          <div style="background:rgba(139,92,246,0.1);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--purple)">
+            ⚖️ Legally separate from Compass/Touchstone. Data shown separately per legal requirement.
+          </div>
+          <div class="grid3" style="margin-bottom:12px">
+            <div style="background:var(--surface2);border-radius:8px;padding:14px">
+              <div style="font-size:20px;font-weight:700;color:var(--purple)">${lsLeads2.length}</div>
+              <div style="font-size:12px;color:var(--text2)">Total Leads</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:14px">
+              <div style="font-size:20px;font-weight:700;color:var(--purple)">${lsActive.length}</div>
+              <div style="font-size:12px;color:var(--text2)">Active Jobs</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:14px">
+              <div style="font-size:20px;font-weight:700;color:var(--purple)">${formatCompactMoney(lsVal)}</div>
+              <div style="font-size:12px;color:var(--text2)">Pipeline</div>
+            </div>
+          </div>
+          ${lsActive.slice(0,5).map(l=>`<div style="padding:8px 0;border-bottom:1px solid rgba(139,92,246,0.2);font-size:13px;display:flex;justify-content:space-between">
+            <span style="color:var(--text)">${l.customer||'--'}</span>
+            <span><span style="color:var(--text2);font-size:12px">${l.stage}</span> <span style="color:var(--purple);font-weight:600">${l.pricing>0?'$'+l.pricing.toLocaleString():'$0'}</span></span>
+          </div>`).join('')}
+          ${lsActive.length>5?`<div style="font-size:12px;color:var(--text3);padding:8px 0">...and ${lsActive.length-5} more → see Pipeline panel</div>`:''}
+        </div>`;
+      })() : ''}
 
       <div class="grid2" style="margin-top:20px;">
         <div class="card">
@@ -896,21 +1011,80 @@
   loadOverview();
 
   // ── MESSAGES PANEL ──
+  let msgFilter = {account: '', taskType: '', search: ''};
   async function loadMessages() {
     const data = await loadJSON('messages');
-    const msgs = data?.messages || [];
-    let html = `<div class="panel-title">💬 Messages</div><div class="panel-sub">iMessage Intelligence — auto-extracted tasks & context</div>`;
-    html += `<div class="filter-row"><input class="search-input" placeholder="Search messages..." id="msg-search"><button class="filter-btn active" data-filter="all">All</button><button class="filter-btn" data-filter="task">Has Task</button></div>`;
-    if (msgs.length) {
-      msgs.forEach(m => {
-        const initials = (m.from||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-        const color = {'Craig':'var(--accent)','Tyler':'var(--green)','Shelley':'var(--purple)','Jason':'var(--orange)','Lenore':'var(--cyan)'}[m.from?.split(' ')[0]] || 'var(--text3)';
-        html += `<div class="msg-bubble"><div class="msg-avatar" style="background:${color}">${initials}</div><div class="msg-body"><div class="msg-name">${m.from||'Unknown'} <span style="color:var(--text3);font-size:11px">${m.time||''}</span></div><div class="msg-text">${m.text||''}</div>`;
-        if (m.autoTask) html += `<div class="msg-tag">→ ${m.autoTask}</div>`;
+    const allMsgs = data?.messages || [];
+
+    // Gather unique accounts and task types for filters
+    const accounts = [...new Set(allMsgs.map(m => m.account || (m.isFromMe ? 'Me' : m.from)).filter(Boolean))];
+    const taskTypes = [...new Set(allMsgs.map(m => m.taskType).filter(Boolean))];
+
+    let filtered = allMsgs;
+    if (msgFilter.account) filtered = filtered.filter(m => (m.account || m.from) === msgFilter.account);
+    if (msgFilter.taskType) filtered = filtered.filter(m => m.taskType === msgFilter.taskType);
+    if (msgFilter.search) {
+      const s = msgFilter.search.toLowerCase();
+      filtered = filtered.filter(m => (m.text||'').toLowerCase().includes(s) || (m.autoTask||'').toLowerCase().includes(s));
+    }
+
+    const repColors = {Craig:'var(--accent)',Tyler:'var(--green)',Shelley:'var(--purple)',Jason:'var(--orange)',Lenore:'var(--cyan)'};
+    const taskBadgeColors = {pricing:'badge-orange',quote:'badge-accent',request:'badge-blue',date:'badge-purple',followup:'badge-red'};
+
+    let html = `<div class="panel-title">💬 Messages</div><div class="panel-sub">iMessage Intelligence — auto-extracted tasks & follow-ups</div>`;
+
+    // Summary stats
+    const withTask = allMsgs.filter(m => m.autoTask).length;
+    const incoming = allMsgs.filter(m => !m.isFromMe).length;
+    html += `<div class="grid3" style="margin-bottom:16px">`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700">${allMsgs.length}</div><div style="color:var(--text2);font-size:12px">Total Messages</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--orange)">${withTask}</div><div style="color:var(--text2);font-size:12px">Tasks Extracted</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--accent)">${incoming}</div><div style="color:var(--text2);font-size:12px">Incoming</div></div>`;
+    html += `</div>`;
+
+    // Filter bar
+    html += `<div class="filter-row" style="flex-wrap:wrap">`;
+    html += `<input class="search-input" placeholder="Search messages…" value="${msgFilter.search}" oninput="msgFilter.search=this.value;loadMessages()">`;
+    html += `<button class="filter-btn ${!msgFilter.account?'active':''}" onclick="msgFilter.account='';loadMessages()">All</button>`;
+    accounts.forEach(a => html += `<button class="filter-btn ${msgFilter.account===a?'active':''}" onclick="msgFilter.account='${a}';loadMessages()">${a}</button>`);
+    if (taskTypes.length) {
+      html += `<button class="filter-btn ${!msgFilter.taskType?'active':''}" onclick="msgFilter.taskType='';loadMessages()">All Types</button>`;
+      taskTypes.forEach(t => html += `<button class="filter-btn ${msgFilter.taskType===t?'active':''}" onclick="msgFilter.taskType='${t}';loadMessages()">${t}</button>`);
+    }
+    html += `<button class="filter-btn ${msgFilter.taskType==='__has_task'?'active':''}" onclick="msgFilter.taskType='__has_task';loadMessages()">📌 Has Task</button>`;
+    html += `</div>`;
+
+    const display = msgFilter.taskType === '__has_task' ? filtered.filter(m=>m.autoTask) : filtered;
+
+    if (display.length) {
+      display.forEach(m => {
+        const isMe = m.isFromMe;
+        const fromKey = isMe ? 'Craig' : (m.account || (m.phone ? 'Client' : m.from || 'Unknown'));
+        const initials = fromKey.slice(0,2).toUpperCase();
+        const color = repColors[fromKey] || (isMe ? 'var(--accent)' : 'var(--text3)');
+        const timeStr = m.time ? new Date(m.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
+        const taskBadge = m.taskType && taskBadgeColors[m.taskType] ? taskBadgeColors[m.taskType] : 'badge-orange';
+        html += `<div class="msg-bubble" style="${isMe?'flex-direction:row-reverse;text-align:right':''}">`;
+        html += `<div class="msg-avatar" style="background:${color};flex-shrink:0">${initials}</div>`;
+        html += `<div class="msg-body">`;
+        html += `<div class="msg-name" style="${isMe?'justify-content:flex-end':''}">`;
+        if (!isMe && m.phone) html += `<a href="tel:${m.phone}" style="color:inherit;text-decoration:none">`;
+        html += fromKey;
+        if (!isMe && m.phone) html += `</a>`;
+        html += ` <span style="color:var(--text3);font-size:11px">${timeStr}</span>`;
+        if (m.account && !isMe) html += ` <span class="badge badge-accent" style="font-size:10px">${m.account}</span>`;
+        html += `</div>`;
+        html += `<div class="msg-text">${(m.text||'').replace(/\n/g,'<br>')}</div>`;
+        if (m.autoTask) {
+          html += `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;${isMe?'justify-content:flex-end':''}">`;
+          html += `<span class="badge ${taskBadge}">📌 ${m.taskType||'task'}</span>`;
+          html += `<span style="font-size:11px;color:var(--text2);padding:2px 0">→ ${m.autoTask}</span>`;
+          html += `</div>`;
+        }
         html += `</div></div>`;
       });
     } else {
-      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">💬</div><div style="color:var(--text2)">No messages yet</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Messages will appear here when the iMessage listener is connected</div></div>`;
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">💬</div><div style="color:var(--text2)">${allMsgs.length ? 'No messages match filter' : 'No messages yet'}</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Messages sync from Craig's phone via the iMessage listener</div></div>`;
     }
     document.getElementById('p-messages').innerHTML = html;
   }
@@ -1001,93 +1175,156 @@
   loadTasks();
 
   // ── PROJECTS PANEL ──
-  async function loadProjects() {
-    const [proj, audit, compass, ls] = await Promise.all([
-      loadJSON('projects'), loadJSON('audit'), loadJSON('compass-crm'), loadJSON('livingstone-crm')
-    ]);
-    const projects = proj?.projects || [];
-    const audits = audit?.comparisons || [];
-    const alerts = audit?.alerts || [];
+  let projectsFilter = {search:'', stage:'', rep:'', partner:'', groupBy:''};
 
-    // Build combined leads list from CRM data
-    const compassLeads = (compass?.leads || []).map(l => ({...l, _entity:'Touchstone/Compass'}));
-    const lsLeads = (ls?.leads || []).map(l => ({...l, _entity:'ECC/Livingstone'}));
-    const allCrmLeads = [...compassLeads, ...lsLeads].sort((a,b) => {
-      const da = a.date_added || '';
-      const db = b.date_added || '';
-      return da > db ? -1 : da < db ? 1 : 0;
+  function toggleProjectCard(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function copyToClipboard(text, btn) {
+    navigator.clipboard?.writeText(text).then(()=>{
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      setTimeout(()=>{ btn.textContent = orig; }, 1500);
     });
+  }
 
-    const stageColors = {
-      new: 'var(--blue)', approved: 'var(--accent)', templating: 'var(--purple)',
-      fabrication: 'var(--orange)', installation: 'var(--cyan)', complete: 'var(--green)', on_hold: 'var(--text3)'
-    };
-    const stageBadges = {
-      new: 'badge-blue', approved: 'badge-accent', templating: 'badge-purple',
-      fabrication: 'badge-orange', installation: 'badge-accent', complete: 'badge-green', on_hold: ''
-    };
+  async function loadProjects() {
+    const [compass, ls] = await Promise.all([
+      loadJSON('compass-crm'), loadJSON('livingstone-crm')
+    ]);
 
-    let html = `<div class="panel-title">🏗️ Projects</div><div class="panel-sub">All jobs from Touchstone/Compass & ECC/Livingstone CRM — sorted newest first</div>`;
+    const compassLeads = (compass?.leads || []).map(l => ({...l, _entity:'Compass', _entityClass:'badge-cyan'}));
+    const lsLeads = (ls?.leads || []).map(l => ({...l, _entity:'Livingstone', _entityClass:'badge-purple'}));
+    const allCrmLeads = [...compassLeads, ...lsLeads].sort((a,b) => (b.date_added||'') > (a.date_added||'') ? 1 : -1);
 
-    // Stats row
+    const repColors2 = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+    const stageColors = {new:'var(--blue)',approved:'var(--accent)',templating:'var(--purple)',fabrication:'var(--orange)',installation:'var(--cyan)',complete:'var(--green)',on_hold:'var(--text3)'};
+    const stageBadges = {new:'badge-blue',approved:'badge-accent',templating:'badge-purple',fabrication:'badge-orange',installation:'badge-cyan',complete:'badge-green',on_hold:''};
+
+    const allReps = [...new Set(allCrmLeads.map(l=>l.rep).filter(Boolean))].sort();
+    const allPartners = [...new Set(allCrmLeads.map(l=>l.partner).filter(Boolean))].sort();
+    const allStages = ['new','approved','templating','fabrication','complete','on_hold'];
+
+    // Apply filters
+    let filtered = allCrmLeads;
+    if (projectsFilter.search) {
+      const s = projectsFilter.search.toLowerCase();
+      filtered = filtered.filter(l =>
+        (l.customer||'').toLowerCase().includes(s) ||
+        (l.project||'').toLowerCase().includes(s) ||
+        (l.rep||'').toLowerCase().includes(s) ||
+        (l.partner||'').toLowerCase().includes(s) ||
+        (l.product||'').toLowerCase().includes(s) ||
+        (l.address||'').toLowerCase().includes(s)
+      );
+    }
+    if (projectsFilter.stage) filtered = filtered.filter(l => l.stage === projectsFilter.stage);
+    if (projectsFilter.rep) filtered = filtered.filter(l => l.rep === projectsFilter.rep);
+    if (projectsFilter.partner) filtered = filtered.filter(l => l.partner === projectsFilter.partner);
+
     const totalJobs = allCrmLeads.length;
     const totalValue = allCrmLeads.reduce((s,l)=>s+(l.pricing||0),0);
-    const zeroPrice = allCrmLeads.filter(l=>!l.pricing || l.pricing===0).length;
+    const zeroPrice = allCrmLeads.filter(l=>(!l.pricing||l.pricing===0) && ['fabrication','complete'].includes(l.stage)).length;
+
+    let html = `<div class="panel-title">🏗️ Projects</div><div class="panel-sub">All jobs — searchable, expandable, tap to call or navigate</div>`;
+
+    // Stats
     html += `<div class="grid3" style="margin-bottom:16px">`;
-    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700">${totalJobs}</div><div style="color:var(--text2);font-size:12px">Total Jobs</div></div>`;
-    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--green)">$${Math.round(totalValue/1000)}K</div><div style="color:var(--text2);font-size:12px">Total Value</div></div>`;
-    html += `<div class="stat-card" style="${zeroPrice>0?'background:var(--red-bg)':''}"><div style="font-size:24px;font-weight:700;color:${zeroPrice>0?'var(--red)':'var(--text)'}">${zeroPrice}</div><div style="color:var(--text2);font-size:12px">⚠️ $0 Pricing</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700">${totalJobs}</div><div style="color:var(--text2);font-size:12px">Total Jobs</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Compass: ${compassLeads.length} · LS: ${lsLeads.length}</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:24px;font-weight:700;color:var(--green)">${totalValue>0?'$'+Math.round(totalValue/1000)+'K':'$0'}</div><div style="color:var(--text2);font-size:12px">Total Value</div></div>`;
+    html += `<div class="stat-card" style="${zeroPrice>0?'background:var(--red-bg);border-color:var(--red)':''}"><div style="font-size:24px;font-weight:700;color:${zeroPrice>0?'var(--red)':'var(--text)'}">${zeroPrice}</div><div style="color:var(--text2);font-size:12px">⚠️ Unbilled in Fab/Complete</div></div>`;
     html += `</div>`;
 
-    // Audit alerts (if any)
-    if (alerts.length) {
-      html += `<div class="section-label">⚠️ Audit Alerts — Compass vs Livingstone</div>`;
-      alerts.forEach(a => {
-        const cls = a.severity === 'critical' ? 'alert-red' : 'alert-orange';
-        html += `<div class="alert-row ${cls}"><div><strong>${a.client||''}</strong> — ${a.message||''}</div></div>`;
-      });
+    // Search & filters
+    html += `<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
+    html += `<input class="search-input" placeholder="🔍 Search customer, address, product, rep…" value="${projectsFilter.search}" oninput="projectsFilter.search=this.value;loadProjects()" style="min-width:200px;flex:1">`;
+    html += `<select onchange="projectsFilter.stage=this.value;loadProjects()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"><option value="">All Stages</option>`;
+    allStages.forEach(s => html += `<option value="${s}" ${projectsFilter.stage===s?'selected':''}>${s}</option>`);
+    html += `</select>`;
+    html += `<select onchange="projectsFilter.rep=this.value;loadProjects()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"><option value="">All Reps</option>`;
+    allReps.forEach(r => html += `<option value="${r}" ${projectsFilter.rep===r?'selected':''}>${r}</option>`);
+    html += `</select>`;
+    html += `<select onchange="projectsFilter.partner=this.value;loadProjects()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"><option value="">All Partners</option>`;
+    allPartners.forEach(p => html += `<option value="${p}" ${projectsFilter.partner===p?'selected':''}>${p}</option>`);
+    html += `</select>`;
+    if (projectsFilter.search || projectsFilter.stage || projectsFilter.rep || projectsFilter.partner) {
+      html += `<button class="btn btn-sm" onclick="projectsFilter={search:'',stage:'',rep:'',partner:''};loadProjects()" style="background:var(--red-bg);color:var(--red)">✕ Clear</button>`;
     }
+    html += `</div>`;
+    html += `<div style="font-size:12px;color:var(--text3);margin-bottom:12px">Showing ${filtered.length} of ${allCrmLeads.length} jobs — tap any card to expand details</div>`;
 
-    // CRM jobs table
-    if (allCrmLeads.length > 0) {
-      html += `<div class="section-label" style="margin-top:16px">All CRM Jobs (${allCrmLeads.length})</div>`;
-      html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">`;
-      html += `<thead><tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border)">`;
-      ['Date','Customer','Project','Partner','Rep','Stage','Value'].forEach(h2 => {
-        html += `<th style="padding:6px 8px;font-weight:600;white-space:nowrap">${h2}</th>`;
-      });
-      html += `</tr></thead><tbody>`;
-
-      allCrmLeads.forEach(lead => {
-        const stageBadge = stageBadges[lead.stage] || '';
-        const stageColor = stageColors[lead.stage] || 'var(--text3)';
+    // Cards list
+    if (filtered.length) {
+      filtered.forEach((lead, idx) => {
+        const cardId = `proj-card-${lead.id||idx}`;
         const isZero = !lead.pricing || lead.pricing === 0;
-        const dateShort = (lead.date_added||'').slice(0,10);
-        const entityBadge = lead._entity.includes('ECC') ? 'badge-purple' : 'badge-cyan';
-        const rowStyle = isZero ? 'background:rgba(239,68,68,0.06)' : '';
-        html += `<tr style="border-bottom:1px solid var(--border);${rowStyle}">`;
-        html += `<td style="padding:6px 8px;color:var(--text2);white-space:nowrap">${dateShort}</td>`;
-        html += `<td style="padding:6px 8px;font-weight:500">${lead.customer||'--'}</td>`;
-        html += `<td style="padding:6px 8px;color:var(--text2)">${lead.project||'--'}</td>`;
-        html += `<td style="padding:6px 8px"><span class="badge ${entityBadge}" style="font-size:10px">${lead._entity}</span></td>`;
-        html += `<td style="padding:6px 8px;color:var(--text2)">${lead.rep||'--'}</td>`;
-        html += `<td style="padding:6px 8px"><span class="badge ${stageBadge}" style="font-size:10px;border-left:2px solid ${stageColor}">${lead.stage||'--'}</span></td>`;
-        html += `<td style="padding:6px 8px;font-weight:600;${isZero?'color:var(--red)':'color:var(--green)'}">${isZero ? '⚠️ $0' : '$'+lead.pricing.toLocaleString()}</td>`;
-        html += `</tr>`;
-      });
-      html += `</tbody></table></div>`;
-    } else {
-      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🏗️</div><div style="color:var(--text2)">No CRM jobs loaded</div></div>`;
-    }
+        const stageColor = stageColors[lead.stage] || 'var(--text3)';
+        const stageBadge = stageBadges[lead.stage] || '';
+        const rc = repColors2[lead.rep] || '#64748b';
+        const isLS = lead._entity === 'Livingstone';
+        const mapUrl = lead.address ? `https://maps.apple.com/?q=${encodeURIComponent(lead.address)}` : null;
 
-    // Legacy projects list (if any from projects.json)
-    if (projects.length) {
-      html += `<div class="section-label" style="margin-top:24px">Legacy Projects</div>`;
-      projects.forEach(p => {
-        const sBadge = {early:'badge-blue','in-progress':'badge-accent',completed:'badge-green','on-hold':'badge-orange'}[p.status] || 'badge-accent';
-        const entBadge = p.entity === 'Livingstone' ? 'badge-purple' : 'badge-cyan';
-        html += `<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center"><strong>${p.client||'TBD'}</strong><div><span class="badge ${entBadge}">${p.entity||'--'}</span> <span class="badge ${sBadge}">${p.status||'--'}</span></div></div><div style="color:var(--text2);font-size:12px;margin-top:6px">${p.type||''} · ${p.location||''}</div></div>`;
+        html += `<div class="card" style="margin-bottom:8px;padding:12px;cursor:pointer;${isLS?'border-left:3px solid var(--purple);background:rgba(139,92,246,0.04)':''}" onclick="toggleProjectCard('${cardId}')">`;
+        // Header row
+        html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">`;
+        html += `<div style="flex:1;min-width:0">`;
+        html += `<div style="font-weight:600;font-size:14px;margin-bottom:2px">${lead.customer||'Unknown'}</div>`;
+        html += `<div style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lead.project||'--'}</div>`;
+        html += `</div>`;
+        html += `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">`;
+        html += `<span style="font-weight:700;font-size:14px;color:${isZero&&['fabrication','complete'].includes(lead.stage)?'var(--red)':lead.pricing>0?'var(--green)':'var(--text2)'}">${isZero?'⚠️ $0':('$'+lead.pricing.toLocaleString())}</span>`;
+        html += `<span class="badge ${stageBadge}" style="font-size:10px;border-left:2px solid ${stageColor}">${lead.stage}</span>`;
+        html += `</div>`;
+        html += `</div>`;
+        // Summary row
+        html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">`;
+        html += `<span style="background:${rc}22;color:${rc};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${lead.rep||'—'}</span>`;
+        if (lead.product) html += `<span style="font-size:11px;color:var(--text2)">${lead.product}</span>`;
+        if (lead.sqft) html += `<span style="font-size:11px;color:var(--text3)">${lead.sqft} sqft</span>`;
+        html += `<span style="font-size:11px;color:var(--text3);margin-left:auto">${(lead.date_added||'').slice(0,10)}</span>`;
+        html += `</div>`;
+        // Expandable details
+        html += `<div id="${cardId}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">`;
+        // Quick action buttons
+        html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
+        if (lead.phone) html += `<a href="tel:${lead.phone}" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">📞 ${lead.phone}</a>`;
+        if (lead.email) html += `<a href="mailto:${lead.email}" class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation()">✉️ Email</a>`;
+        if (mapUrl) html += `<a href="${mapUrl}" target="_blank" class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation()">🗺️ Navigate</a>`;
+        if (lead.phone) html += `<button class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation();copyToClipboard('${lead.phone}',this)">📋 Copy Phone</button>`;
+        if (lead.address) html += `<button class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation();copyToClipboard('${lead.address}',this)">📋 Copy Address</button>`;
+        html += `</div>`;
+        // Detail grid
+        html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px">`;
+        if (lead.address) html += `<div><span style="color:var(--text3)">📍 Address</span><br><span style="color:var(--text)">${lead.address}</span></div>`;
+        if (lead.partner) html += `<div><span style="color:var(--text3)">🤝 Partner</span><br><span style="color:var(--text)">${lead.partner}</span></div>`;
+        if (lead.type) html += `<div><span style="color:var(--text3)">Type</span><br><span style="color:var(--text)">${lead.type}</span></div>`;
+        if (lead.facility) html += `<div><span style="color:var(--text3)">🏭 Facility</span><br><span style="color:var(--text)">${lead.facility}</span></div>`;
+        if (lead.product) html += `<div><span style="color:var(--text3)">🪨 Product</span><br><span style="color:var(--text)">${lead.product}${lead.product_detail?'<br><span style="color:var(--text2)">'+lead.product_detail.replace(/[\r\n]+/g,' ')+'</span>':''}</span></div>`;
+        if (lead.sink && lead.sink !== 'None') html += `<div><span style="color:var(--text3)">🚰 Sink</span><br><span style="color:var(--text)">${lead.sink}${lead.sink_detail?' — '+lead.sink_detail:''}</span></div>`;
+        html += `</div>`;
+        // Timeline
+        html += `<div style="margin-top:12px">`;
+        html += `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Timeline</div>`;
+        html += `<div style="display:flex;gap:0;flex-wrap:wrap">`;
+        [['Added',lead.date_added],['Templated',lead.date_template],['Fab',lead.date_fab],['Install',lead.date_install]].forEach(([label,date]) => {
+          const done = !!date;
+          const dateStr = date ? date.slice(0,10) : 'Pending';
+          html += `<div style="flex:1;min-width:80px;text-align:center;padding:6px 4px;background:${done?'var(--green-bg)':'var(--surface2)'};border:1px solid ${done?'var(--green)':'var(--border)'};border-radius:4px;margin:2px">`;
+          html += `<div style="font-size:10px;color:${done?'var(--green)':'var(--text3)'};font-weight:600">${label}</div>`;
+          html += `<div style="font-size:10px;color:${done?'var(--green)':'var(--text3)'};margin-top:2px">${done?dateStr:'—'}</div>`;
+          html += `</div>`;
+        });
+        html += `</div></div>`;
+        // Comments
+        if (lead.comments) html += `<div style="margin-top:8px;padding:8px 10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--text2)">💬 ${lead.comments}</div>`;
+        if (isLS) html += `<div style="margin-top:8px;padding:6px 10px;background:rgba(139,92,246,0.12);border-radius:6px;font-size:11px;color:var(--purple)">⚖️ LIVINGSTONE / ECC — Separate company</div>`;
+        html += `</div>`;
+        html += `</div>`;
       });
+    } else {
+      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">🔍</div><div style="color:var(--text2)">No projects match filter</div></div>`;
     }
 
     document.getElementById('p-projects').innerHTML = html;
@@ -1095,7 +1332,9 @@
   loadProjects();
 
   // ── PIPELINE PANEL ──
-  let pipelineFilter = {search:'', rep:'', partner:''};
+  let pipelineFilter = {search:'', rep:'', partner:'', product:''};
+
+  const REP_COLORS = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
 
   function renderPipelineBoard(leads, title, entityBadgeClass) {
     const stages = [
@@ -1103,7 +1342,6 @@
       {id:'approved', label:'Approved', color:'var(--accent)'},
       {id:'templating', label:'Templating', color:'var(--purple)'},
       {id:'fabrication', label:'Fabrication', color:'var(--orange)'},
-      {id:'installation', label:'Installation', color:'var(--cyan)'},
       {id:'complete', label:'Complete', color:'var(--green)'},
       {id:'on_hold', label:'On Hold', color:'var(--text3)'}
     ];
@@ -1116,61 +1354,100 @@
         (l.customer||'').toLowerCase().includes(srch) ||
         (l.project||'').toLowerCase().includes(srch) ||
         (l.rep||'').toLowerCase().includes(srch) ||
-        (l.partner||'').toLowerCase().includes(srch)
+        (l.partner||'').toLowerCase().includes(srch) ||
+        (l.product||'').toLowerCase().includes(srch)
       );
     }
     if (pipelineFilter.rep) filtered = filtered.filter(l => l.rep === pipelineFilter.rep);
     if (pipelineFilter.partner) filtered = filtered.filter(l => l.partner === pipelineFilter.partner);
+    if (pipelineFilter.product) filtered = filtered.filter(l => (l.product||'').toLowerCase().includes(pipelineFilter.product.toLowerCase()));
 
     const totalLeads = filtered.length;
     const totalValue = filtered.reduce((s,l)=>s+(l.pricing||0),0);
     const stageCount = {};
-    stages.forEach(s => { stageCount[s.id] = filtered.filter(l=>l.stage===s.id).length; });
+    const stageValue = {};
+    stages.forEach(s => {
+      const stLeads = filtered.filter(l=>l.stage===s.id);
+      stageCount[s.id] = stLeads.length;
+      stageValue[s.id] = stLeads.reduce((sum,l)=>sum+(l.pricing||0),0);
+    });
 
-    let h = `<div style="margin-bottom:20px">`;
-    h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="badge ${entityBadgeClass}" style="font-size:13px">${title}</span><span style="color:var(--text2);font-size:13px">${totalLeads} leads · <span style="color:var(--green);font-weight:600">$${Math.round(totalValue/1000)}K</span></span></div>`;
+    const isLS = entityBadgeClass === 'badge-purple';
+    const borderStyle = isLS ? 'border:2px solid rgba(139,92,246,0.3);background:rgba(139,92,246,0.04)' : '';
 
-    // Stage count pills
-    h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">`;
+    let h = `<div style="margin-bottom:24px;padding:16px;border-radius:var(--radius);${borderStyle}">`;
+    h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">`;
+    h += `<span class="badge ${entityBadgeClass}" style="font-size:13px;padding:4px 12px">${title}</span>`;
+    h += `<span style="color:var(--text2);font-size:13px">${totalLeads} leads</span>`;
+    h += `<span style="color:var(--green);font-weight:700;font-size:14px">$${Math.round(totalValue/1000)}K</span>`;
+    if (isLS) h += `<span style="font-size:11px;color:var(--purple);margin-left:8px">⚖️ Separate entity — legally distinct</span>`;
+    h += `</div>`;
+
+    // Stage count pills with dollar amounts
+    h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">`;
     stages.forEach(s => {
       const cnt = stageCount[s.id];
-      if (cnt > 0) h += `<span style="background:var(--surface2);border-left:3px solid ${s.color};padding:3px 8px;border-radius:4px;font-size:11px;color:var(--text2)">${s.label}: <strong style="color:var(--text)">${cnt}</strong></span>`;
+      const val = stageValue[s.id];
+      if (cnt > 0) {
+        h += `<span style="background:var(--surface2);border-left:3px solid ${s.color};padding:4px 10px;border-radius:4px;font-size:11px;color:var(--text2)">`;
+        h += `${s.label}: <strong style="color:var(--text)">${cnt}</strong>`;
+        if (val > 0) h += ` <span style="color:var(--text3)">$${Math.round(val/1000)}K</span>`;
+        h += `</span>`;
+      }
     });
     h += `</div>`;
 
     // Kanban columns
     h += `<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px">`;
     stages.forEach(s => {
-      const cards = filtered.filter(l=>l.stage===s.id);
-      h += `<div style="min-width:185px;max-width:220px;flex-shrink:0;background:var(--bg2);border-radius:var(--radius);padding:10px">`;
-      h += `<div style="font-weight:600;font-size:12px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid ${s.color};display:flex;justify-content:space-between;align-items:center">`;
-      h += `<span>${s.label}</span><span class="badge" style="background:var(--surface2);font-size:10px">${cards.length}</span></div>`;
+      const cards = filtered.filter(l=>l.stage===s.id).sort((a,b)=>(a.date_added||'')>(b.date_added||'')?1:-1);
+      const colVal = cards.reduce((sum,l)=>sum+(l.pricing||0),0);
+      h += `<div style="min-width:190px;max-width:220px;flex-shrink:0;background:var(--bg2);border-radius:var(--radius);padding:10px">`;
+      h += `<div style="font-weight:600;font-size:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid ${s.color}">`;
+      h += `<div style="display:flex;justify-content:space-between;align-items:center">`;
+      h += `<span>${s.label}</span><span class="badge" style="background:var(--surface2);font-size:10px">${cards.length}</span>`;
+      h += `</div>`;
+      if (colVal > 0) h += `<div style="font-size:10px;color:var(--text3);margin-top:2px">$${Math.round(colVal/1000)}K</div>`;
+      h += `</div>`;
       if (cards.length) {
         cards.forEach((c, idx) => {
-          const cardId = `pc-${title.replace(/\W/g,'')}-${c.id||idx}`;
+          const cardId = `pc-${entityBadgeClass}-${c.id||idx}`;
           const dateShort = (c.date_added||'').slice(0,10);
-          h += `<div class="card" style="margin-bottom:8px;padding:10px;cursor:pointer" onclick="togglePipelineCard('${cardId}')">`;
-          h += `<div style="font-weight:600;font-size:12px;line-height:1.3">${c.customer||'TBD'}</div>`;
-          h += `<div style="color:var(--text2);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.project||'--'}</div>`;
-          h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">`;
-          h += `<span style="font-size:11px;color:var(--text3)">${c.rep||'--'}</span>`;
-          h += `<span style="font-weight:600;font-size:12px;color:${c.pricing>0?'var(--green)':'var(--red)'}">${c.pricing>0?'$'+c.pricing.toLocaleString():'⚠️$0'}</span>`;
+          const daysSince = c.date_added ? Math.floor((Date.now()-new Date(c.date_added))/86400000) : null;
+          const rc = REP_COLORS[c.rep] || '#64748b';
+          const isZero = !c.pricing || c.pricing === 0;
+          const ageColor = daysSince > 30 ? 'var(--red)' : daysSince > 14 ? 'var(--orange)' : 'var(--text3)';
+
+          h += `<div class="card" style="margin-bottom:8px;padding:10px;cursor:pointer;border-left:3px solid ${rc}" onclick="togglePipelineCard('${cardId}')">`;
+          // Rep badge at top
+          h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">`;
+          h += `<span style="background:${rc}22;color:${rc};padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">${c.rep||'—'}</span>`;
+          h += `<span style="font-weight:700;font-size:12px;color:${isZero?'var(--red)':'var(--green)'}">${isZero?'⚠️$0':('$'+c.pricing.toLocaleString())}</span>`;
           h += `</div>`;
-          h += `<div style="font-size:10px;color:var(--text3);margin-top:3px">${dateShort}</div>`;
-          // Expandable detail section
+          h += `<div style="font-weight:600;font-size:12px;line-height:1.3">${c.customer||'TBD'}</div>`;
+          if (c.product) h += `<div style="color:var(--text2);font-size:10px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.product}</div>`;
+          h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">`;
+          h += `<span style="font-size:10px;color:var(--text3)">${c.sqft||'?'} sqft</span>`;
+          if (daysSince !== null) h += `<span style="font-size:10px;color:${ageColor}">${daysSince}d</span>`;
+          h += `</div>`;
+          // Expandable detail
           h += `<div id="${cardId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--text2)">`;
+          h += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">`;
+          if (c.phone) h += `<a href="tel:${c.phone}" class="btn btn-primary btn-sm" onclick="event.stopPropagation()" style="font-size:10px;padding:3px 8px">📞 Call</a>`;
+          if (c.address) h += `<a href="https://maps.apple.com/?q=${encodeURIComponent(c.address)}" target="_blank" class="btn btn-sm" onclick="event.stopPropagation()" style="font-size:10px;padding:3px 8px;background:var(--surface2)">🗺️ Nav</a>`;
+          h += `</div>`;
           if (c.address) h += `<div>📍 ${c.address}</div>`;
-          if (c.phone) h += `<div>📞 ${c.phone}</div>`;
+          if (c.phone) h += `<div style="color:var(--accent)">${c.phone}</div>`;
           if (c.product) h += `<div>🪨 ${c.product}${c.product_detail?' — '+c.product_detail.replace(/[\r\n]+/g,' '):''}</div>`;
           if (c.sink && c.sink !== 'None') h += `<div>🚰 ${c.sink}${c.sink_detail?' — '+c.sink_detail:''}</div>`;
-          if (c.sqft) h += `<div>📐 ${c.sqft} sq ft</div>`;
           if (c.partner) h += `<div>🤝 ${c.partner}</div>`;
+          if (c.facility) h += `<div>🏭 ${c.facility}</div>`;
           if (c.comments) h += `<div style="margin-top:4px;color:var(--text3)">💬 ${c.comments.slice(0,120)}${c.comments.length>120?'…':''}</div>`;
           h += `</div>`;
           h += `</div>`;
         });
       } else {
-        h += `<div style="color:var(--text3);font-size:11px;text-align:center;padding:16px">Empty</div>`;
+        h += `<div style="color:var(--text3);font-size:11px;text-align:center;padding:20px 0">Empty</div>`;
       }
       h += `</div>`;
     });
@@ -1190,15 +1467,22 @@
     const compassLeads = compass?.leads || [];
     const lsLeads = ls?.leads || [];
 
-    // Build rep and partner filter options from combined data
+    // Build filter options from combined data
     const allReps = [...new Set([...compassLeads,...lsLeads].map(l=>l.rep).filter(Boolean))].sort();
     const allPartners = [...new Set([...compassLeads,...lsLeads].map(l=>l.partner).filter(Boolean))].sort();
+    const allProducts = [...new Set([...compassLeads,...lsLeads].map(l=>(l.product||'').trim()).filter(Boolean))].sort();
 
-    let html = `<div class="panel-title">📈 Pipeline</div><div class="panel-sub">Live CRM — Touchstone/Compass & ECC/Livingstone</div>`;
+    // Rep legend
+    const repLegendHtml = Object.entries(REP_COLORS).map(([rep, color]) => 
+      `<span style="background:${color}22;color:${color};padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600">${rep}</span>`
+    ).join('');
+
+    let html = `<div class="panel-title">📈 Pipeline</div><div class="panel-sub">Live CRM — Touchstone/Compass & ECC/Livingstone (always separate)</div>`;
+    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center"><span style="font-size:11px;color:var(--text3)">Rep colors:</span>${repLegendHtml}</div>`;
 
     // Filter row
     html += `<div class="filter-row" style="margin-bottom:16px;flex-wrap:wrap;gap:8px">`;
-    html += `<input class="search-input" id="pl-search" placeholder="Search customer, project, rep…" value="${pipelineFilter.search}" oninput="pipelineFilter.search=this.value;loadPipeline()" style="flex:1;min-width:160px">`;
+    html += `<input class="search-input" id="pl-search" placeholder="Search customer, project, product…" value="${pipelineFilter.search}" oninput="pipelineFilter.search=this.value;loadPipeline()" style="flex:1;min-width:160px">`;
     html += `<select onchange="pipelineFilter.rep=this.value;loadPipeline()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px">`;
     html += `<option value="">All Reps</option>`;
     allReps.forEach(r => html += `<option value="${r}" ${pipelineFilter.rep===r?'selected':''}>${r}</option>`);
@@ -1207,15 +1491,19 @@
     html += `<option value="">All Partners</option>`;
     allPartners.forEach(p => html += `<option value="${p}" ${pipelineFilter.partner===p?'selected':''}>${p}</option>`);
     html += `</select>`;
-    if (pipelineFilter.search || pipelineFilter.rep || pipelineFilter.partner) {
-      html += `<button class="filter-btn" onclick="pipelineFilter={search:'',rep:'',partner:''};loadPipeline()">✕ Clear</button>`;
+    html += `<select onchange="pipelineFilter.product=this.value;loadPipeline()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px">`;
+    html += `<option value="">All Products</option>`;
+    allProducts.forEach(p => html += `<option value="${p}" ${pipelineFilter.product===p?'selected':''}>${p}</option>`);
+    html += `</select>`;
+    if (pipelineFilter.search || pipelineFilter.rep || pipelineFilter.partner || pipelineFilter.product) {
+      html += `<button class="filter-btn" onclick="pipelineFilter={search:'',rep:'',partner:'',product:''};loadPipeline()">✕ Clear</button>`;
     }
     html += `</div>`;
 
     // Touchstone / Compass pipeline
     html += renderPipelineBoard(compassLeads, 'Touchstone / Compass', 'badge-cyan');
 
-    // ECC / Livingstone pipeline
+    // ECC / Livingstone pipeline — ALWAYS separate, visually distinct
     html += renderPipelineBoard(lsLeads, 'East Coast Countertops / Livingstone', 'badge-purple');
 
     document.getElementById('p-pipeline').innerHTML = html;
@@ -1314,14 +1602,72 @@
       staticLeaks.forEach(l => { html += `<div class="alert-row alert-red">${l.message||l}</div>`; });
     }
 
-    html += `<div class="section-label" style="margin-top:16px">Recent Invoices</div>`;
+    // Revenue by rep (from quoted compass leads)
+    const repRevenue = {};
+    const repColors2 = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+    allLeadsForLeakage.filter(l=>l._src==='Touchstone/Compass' && l.pricing>0).forEach(l => {
+      const r = l.rep||'(blank)';
+      if (!repRevenue[r]) repRevenue[r] = {total:0,count:0,complete:0,completeVal:0};
+      repRevenue[r].total += l.pricing;
+      repRevenue[r].count++;
+      if (l.stage === 'complete') { repRevenue[r].complete++; repRevenue[r].completeVal += l.pricing; }
+    });
+    const repRows = Object.entries(repRevenue).sort((a,b)=>b[1].total-a[1].total);
+
+    if (repRows.length) {
+      html += `<div class="card" style="margin-top:16px;margin-bottom:16px"><div class="card-title">💰 Compass — Revenue by Rep (Quoted Jobs)</div>`;
+      html += `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">`;
+      html += `<thead><tr style="color:var(--text3);text-align:left;border-bottom:1px solid var(--border)"><th style="padding:6px 8px">Rep</th><th style="padding:6px 8px">Jobs</th><th style="padding:6px 8px">Pipeline</th><th style="padding:6px 8px">Completed</th><th style="padding:6px 8px">Revenue</th></tr></thead><tbody>`;
+      repRows.forEach(([rep, s]) => {
+        const rc = repColors2[rep] || '#64748b';
+        html += `<tr style="border-bottom:1px solid var(--border)">`;
+        html += `<td style="padding:8px"><span style="background:${rc}22;color:${rc};padding:3px 10px;border-radius:10px;font-weight:600;font-size:12px">${rep}</span></td>`;
+        html += `<td style="padding:8px;font-weight:600">${s.count}</td>`;
+        html += `<td style="padding:8px;color:var(--accent)">$${Math.round(s.total/1000)}K</td>`;
+        html += `<td style="padding:8px;color:var(--text2)">${s.complete} jobs</td>`;
+        html += `<td style="padding:8px;color:var(--green);font-weight:600">$${Math.round(s.completeVal/1000)}K</td>`;
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div></div>`;
+    }
+
+    // Aging — leads by how long they've been in their current stage
+    const now2 = new Date();
+    const agingBuckets = {'0-7d':[], '8-14d':[], '15-30d':[], '30d+':[]};
+    allLeadsForLeakage.filter(l=>!['complete','on_hold'].includes(l.stage)).forEach(l => {
+      const days = l.date_added ? Math.floor((now2-new Date(l.date_added))/86400000) : 999;
+      if (days <= 7) agingBuckets['0-7d'].push(l);
+      else if (days <= 14) agingBuckets['8-14d'].push(l);
+      else if (days <= 30) agingBuckets['15-30d'].push(l);
+      else agingBuckets['30d+'].push(l);
+    });
+
+    html += `<div class="card" style="margin-bottom:16px"><div class="card-title">⏱️ Pipeline Aging — Active Jobs</div>`;
+    html += `<div class="grid4" style="gap:8px">`;
+    Object.entries(agingBuckets).forEach(([bucket, leads]) => {
+      const val = leads.reduce((s,l)=>s+(l.pricing||0),0);
+      const color = bucket==='30d+'?'var(--red)':bucket==='15-30d'?'var(--orange)':'var(--green)';
+      html += `<div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">`;
+      html += `<div style="font-size:20px;font-weight:700;color:${color}">${leads.length}</div>`;
+      html += `<div style="font-size:11px;color:var(--text2);margin-top:2px">${bucket}</div>`;
+      html += `<div style="font-size:11px;color:var(--text3);margin-top:2px">$${Math.round(val/1000)}K</div>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+    const flagged = agingBuckets['30d+'].filter(l=>['approved','templating'].includes(l.stage));
+    if (flagged.length) {
+      html += `<div style="margin-top:12px;font-size:12px;color:var(--text3)">⚠️ ${flagged.length} jobs in approved/templating stage for 30+ days — may be stalled</div>`;
+    }
+    html += `</div>`;
+
+    html += `<div class="section-label" style="margin-top:8px">Recent Invoices</div>`;
     if (invs.length) {
       invs.forEach(inv => {
         const sBadge = {paid:'badge-green',sent:'badge-blue',overdue:'badge-red','not-invoiced':'badge-orange'}[inv.status] || 'badge-accent';
         html += `<div class="list-item"><div style="display:flex;justify-content:space-between"><strong>${inv.client||'--'} — ${inv.id||''}</strong><span class="badge ${sBadge}">${inv.status||'--'}</span></div><div style="color:var(--text2);font-size:12px">${inv.date||''} · $${(inv.amount||0).toLocaleString()}</div></div>`;
       });
     } else {
-      html += `<div class="list-item" style="color:var(--text3)">No invoices — QuickBooks not connected</div>`;
+      html += `<div class="list-item" style="color:var(--text3)">No invoices — QuickBooks not connected yet. Leakage detection above is powered directly from CRM data.</div>`;
     }
     document.getElementById('p-invoices').innerHTML = html;
   }
@@ -1369,33 +1715,155 @@
   loadReceipts();
 
   // ── FABRICATION PANEL ──
+  let fabFilter = {search:'', facility:'', rep:''};
+
   async function loadFabrication() {
-    const [fab, inv] = await Promise.all([loadJSON('fabrication'), loadJSON('inventory')]);
-    const jobs = fab?.activeJobs || [];
-    const slabs = inv?.slabs || [];
-    const rems = inv?.remnants || [];
-    const sum = inv?.summary || {};
-    let html = `<div class="panel-title">⚙️ Fabrication</div><div class="panel-sub">Drawing → Slab → Remnant → Install</div>`;
+    const [compass, inv] = await Promise.all([loadJSON('compass-crm'), loadJSON('inventory')]);
+    const allLeads = compass?.leads || [];
+    const rems = inv?.remnants?.items || [];
+    const slabItems = inv?.slabs?.items || [];
+
+    // CRM-based fabrication data
+    const inFab = allLeads.filter(l => l.stage === 'fabrication');
+    const readyForFab = allLeads.filter(l => l.stage === 'approved');
+    const inTemplating = allLeads.filter(l => l.stage === 'templating');
+
+    const repColors2 = {Craig:'#3b82f6',Tyler:'#10b981',Shelley:'#8b5cf6',Barry:'#f59e0b',Jane:'#ec4899',Brian:'#6366f1',Sean:'#0ea5e9'};
+    const facilities = [...new Set(allLeads.map(l=>l.facility).filter(Boolean))].sort();
+    const allReps = [...new Set(allLeads.map(l=>l.rep).filter(Boolean))].sort();
+
+    // Product mix in fab
+    const productMix = {};
+    inFab.forEach(l => {
+      const p = (l.product||'Unknown').trim();
+      if (!productMix[p]) productMix[p] = {count:0, sqft:0};
+      productMix[p].count++;
+      productMix[p].sqft += parseFloat(l.sqft)||0;
+    });
+
+    // Sqft totals
+    const fabSqft = inFab.reduce((s,l)=>s+(parseFloat(l.sqft)||0),0);
+    const queuedSqft = readyForFab.reduce((s,l)=>s+(parseFloat(l.sqft)||0),0);
+    const fabValue = inFab.reduce((s,l)=>s+(l.pricing||0),0);
+
+    // By facility
+    const byFacility = {};
+    inFab.forEach(l => {
+      const f = l.facility||'Unknown';
+      if (!byFacility[f]) byFacility[f] = {count:0, sqft:0};
+      byFacility[f].count++;
+      byFacility[f].sqft += parseFloat(l.sqft)||0;
+    });
+
+    // Apply filter
+    let filteredFab = inFab;
+    if (fabFilter.search) {
+      const s = fabFilter.search.toLowerCase();
+      filteredFab = filteredFab.filter(l => (l.customer||'').toLowerCase().includes(s)||(l.product||'').toLowerCase().includes(s)||(l.rep||'').toLowerCase().includes(s));
+    }
+    if (fabFilter.facility) filteredFab = filteredFab.filter(l => l.facility === fabFilter.facility);
+    if (fabFilter.rep) filteredFab = filteredFab.filter(l => l.rep === fabFilter.rep);
+
+    let html = `<div class="panel-title">⚙️ Fabrication</div><div class="panel-sub">Live from CRM — ${inFab.length} jobs currently in fabrication</div>`;
+
     // Workflow steps
-    html += `<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap">`;
-    ['📐 Drawing','🪨 Slab Selection','✂️ Cutting','🔧 Fabrication','📦 Remnant','🏗️ Install'].forEach((s,i) => {
-      html += `<div class="step-box">${s}</div>`;
-      if (i < 5) html += `<div class="step-arrow">→</div>`;
+    html += `<div style="display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap;align-items:center">`;
+    ['📧 Received','📐 Drawing','🪨 Slab + Seam','♻️ Remnant Calc','💰 Cost Calc','✅ Audit','✂️ Fabrication','🚛 Install'].forEach((s,i,arr) => {
+      html += `<div class="step-box" style="font-size:11px;padding:6px 10px">${s}</div>`;
+      if (i < arr.length-1) html += `<div class="step-arrow" style="font-size:12px">→</div>`;
     });
     html += `</div>`;
-    html += `<div class="grid3" style="margin-bottom:20px"><div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalSlabs||0}</div><div style="color:var(--text2);font-size:12px">Slabs in Stock</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalRemnants||0}</div><div style="color:var(--text2);font-size:12px">Usable Remnants</div></div><div class="stat-card"><div style="font-size:24px;font-weight:700">${sum.totalValue ? '$'+(sum.totalValue/1000).toFixed(0)+'K' : '$0'}</div><div style="color:var(--text2);font-size:12px">Inventory Value</div></div></div>`;
-    html += `<div class="section-label">Active Fabrication Jobs</div>`;
-    if (jobs.length) {
-      jobs.forEach(j => { html += `<div class="list-item"><strong>${j.client||'--'}</strong> — ${j.product||''} · Stage: ${j.stage||'--'}</div>`; });
-    } else {
-      html += `<div class="list-item" style="color:var(--text3)">No active fabrication jobs — CRM not connected</div>`;
+
+    // Stats
+    html += `<div class="grid4" style="margin-bottom:20px">`;
+    html += `<div class="stat-card"><div style="font-size:26px;font-weight:700;color:var(--orange)">${inFab.length}</div><div style="color:var(--text2);font-size:12px">In Fabrication</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${Math.round(fabSqft).toLocaleString()} sqft</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:26px;font-weight:700;color:var(--accent)">${readyForFab.length}</div><div style="color:var(--text2);font-size:12px">Ready for Fab</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${Math.round(queuedSqft).toLocaleString()} sqft queued</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:26px;font-weight:700;color:var(--purple)">${inTemplating.length}</div><div style="color:var(--text2);font-size:12px">Templating</div></div>`;
+    html += `<div class="stat-card"><div style="font-size:26px;font-weight:700;color:var(--green)">${fabValue>0?'$'+Math.round(fabValue/1000)+'K':'$0'}</div><div style="color:var(--text2);font-size:12px">Fab Value</div></div>`;
+    html += `</div>`;
+
+    // Product mix & by facility side by side
+    html += `<div class="grid2" style="margin-bottom:16px">`;
+    // Product mix
+    html += `<div class="card"><div class="card-title">🪨 Product Mix in Fab</div>`;
+    const maxProd = Math.max(...Object.values(productMix).map(v=>v.count), 1);
+    Object.entries(productMix).sort((a,b)=>b[1].count-a[1].count).slice(0,8).forEach(([prod, data]) => {
+      const pct = Math.round(data.count/maxProd*100);
+      html += `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>${prod}</span><span style="color:var(--text2)">${data.count} jobs · ${Math.round(data.sqft)} sqft</span></div>`;
+      html += `<div class="progress-bar"><div class="progress-fill orange" style="width:${pct}%"></div></div>`;
+      html += `</div>`;
+    });
+    html += `</div>`;
+    // By facility
+    html += `<div class="card"><div class="card-title">🏭 By Facility</div>`;
+    Object.entries(byFacility).sort((a,b)=>b[1].count-a[1].count).forEach(([fac, data]) => {
+      html += `<div class="list-item" style="padding:8px 0"><div style="display:flex;justify-content:space-between"><strong>${fac}</strong><span style="color:var(--orange);font-weight:600">${data.count} jobs</span></div><div style="font-size:12px;color:var(--text2)">${Math.round(data.sqft)} sqft</div></div>`;
+    });
+    html += `</div></div>`;
+
+    // Filter bar for fab jobs
+    html += `<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
+    html += `<input class="search-input" placeholder="Search customer, product, rep…" value="${fabFilter.search}" oninput="fabFilter.search=this.value;loadFabrication()">`;
+    html += `<select onchange="fabFilter.facility=this.value;loadFabrication()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"><option value="">All Facilities</option>`;
+    facilities.forEach(f => html += `<option value="${f}" ${fabFilter.facility===f?'selected':''}>${f}</option>`);
+    html += `</select>`;
+    html += `<select onchange="fabFilter.rep=this.value;loadFabrication()" style="padding:6px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);color:var(--text);font-size:13px"><option value="">All Reps</option>`;
+    allReps.forEach(r => html += `<option value="${r}" ${fabFilter.rep===r?'selected':''}>${r}</option>`);
+    html += `</select>`;
+    if (fabFilter.search || fabFilter.facility || fabFilter.rep) {
+      html += `<button class="btn btn-sm" onclick="fabFilter={search:'',facility:'',rep:''};loadFabrication()" style="background:var(--red-bg);color:var(--red)">✕ Clear</button>`;
     }
-    html += `<div class="section-label" style="margin-top:16px">Remnant Inventory (≥22" usable)</div>`;
+    html += `</div>`;
+
+    // In Fab jobs list
+    html += `<div class="section-label">✂️ In Fabrication (${filteredFab.length} jobs) — sorted oldest first</div>`;
+    const sortedFab = [...filteredFab].sort((a,b)=>(a.date_added||'')>(b.date_added||'')?1:-1);
+    if (sortedFab.length) {
+      sortedFab.forEach(l => {
+        const rc = repColors2[l.rep] || '#64748b';
+        const isZero = !l.pricing || l.pricing === 0;
+        const daysSince = l.date_added ? Math.floor((Date.now()-new Date(l.date_added))/86400000) : '?';
+        html += `<div class="card" style="margin-bottom:8px;padding:12px">`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:flex-start">`;
+        html += `<div style="flex:1">`;
+        html += `<div style="font-weight:600">${l.customer||'Unknown'}</div>`;
+        html += `<div style="font-size:12px;color:var(--text2);margin-top:2px">${l.project||'--'} · ${l.product||'—'} · ${l.sqft||'?'} sqft</div>`;
+        html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">`;
+        html += `<span style="background:${rc}22;color:${rc};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${l.rep||'—'}</span>`;
+        if (l.facility) html += `<span class="badge badge-accent" style="font-size:10px">🏭 ${l.facility}</span>`;
+        if (l.partner) html += `<span style="font-size:11px;color:var(--text3)">${l.partner}</span>`;
+        html += `<span style="font-size:11px;color:${daysSince>14?'var(--red)':daysSince>7?'var(--orange)':'var(--text3)'}">${daysSince}d in queue</span>`;
+        html += `</div></div>`;
+        html += `<div style="text-align:right;flex-shrink:0">`;
+        html += `<div style="font-weight:700;color:${isZero?'var(--red)':'var(--green)'}">${isZero?'⚠️ $0':('$'+l.pricing.toLocaleString())}</div>`;
+        if (l.phone) html += `<a href="tel:${l.phone}" style="font-size:12px;color:var(--accent);text-decoration:none;margin-top:4px;display:block">📞 ${l.phone}</a>`;
+        html += `</div></div>`;
+        if (l.comments) html += `<div style="margin-top:6px;font-size:11px;color:var(--text3)">💬 ${l.comments.slice(0,100)}${l.comments.length>100?'…':''}</div>`;
+        html += `</div>`;
+      });
+    } else {
+      html += `<div style="color:var(--text3);padding:16px;text-align:center">No jobs match filter</div>`;
+    }
+
+    // Ready for fab
+    html += `<div class="section-label" style="margin-top:16px">✅ Ready for Fab — Approved (${readyForFab.length} jobs)</div>`;
+    readyForFab.slice(0,10).forEach(l => {
+      const rc = repColors2[l.rep] || '#64748b';
+      html += `<div style="padding:8px 12px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">`;
+      html += `<div><span style="font-size:13px;font-weight:500">${l.customer||'--'}</span> <span style="font-size:11px;color:var(--text2)">${l.product||'—'} · ${l.sqft||'?'} sqft</span></div>`;
+      html += `<div style="display:flex;gap:8px;align-items:center"><span style="background:${rc}22;color:${rc};padding:2px 8px;border-radius:10px;font-size:11px">${l.rep||'—'}</span><span style="color:${l.pricing>0?'var(--green)':'var(--red)'};font-weight:600;font-size:13px">${l.pricing>0?'$'+l.pricing.toLocaleString():'$0'}</span></div>`;
+      html += `</div>`;
+    });
+    if (readyForFab.length > 10) html += `<div style="font-size:12px;color:var(--text3);padding:8px">...and ${readyForFab.length-10} more</div>`;
+
+    // Remnant inventory (from inv data)
     if (rems.length) {
-      rems.forEach(r => { html += `<div class="list-item">${r.product||'--'} — ${r.dimensions||''} · Value: $${(r.value||0).toLocaleString()}</div>`; });
-    } else {
-      html += `<div class="list-item" style="color:var(--text3)">No remnants tracked yet</div>`;
+      html += `<div class="section-label" style="margin-top:16px">♻️ Remnant Inventory (≥22" usable)</div>`;
+      rems.forEach(r => {
+        html += `<div class="list-item"><div style="display:flex;justify-content:space-between;width:100%"><div><strong>${r.product||'--'}</strong> <span style="color:var(--text2);font-size:12px">${r.width||'?'}" × ${r.length||'?'}" · ${r.location||''}</span></div><span style="color:var(--green);font-weight:600">$${(r.value||0).toLocaleString()}</span></div></div>`;
+      });
     }
+
     document.getElementById('p-fabrication').innerHTML = html;
   }
   loadFabrication();
