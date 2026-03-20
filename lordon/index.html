@@ -1051,6 +1051,22 @@ input,select{font-family:inherit;font-size:13px}
 .cust-pag-btn:disabled{opacity:.4;cursor:default}
 .cust-pag-info{font-size:12px;color:var(--text-3);min-width:80px;text-align:center}
 
+/* ── TRAFFIC SOURCES CHART ── */
+.traffic-row{display:grid;grid-template-columns:130px 1fr 80px 70px;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-light)}
+.traffic-row:last-child{border-bottom:none}
+.traffic-label{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.traffic-bar-track{height:10px;border-radius:5px;background:var(--bg-deep);overflow:hidden}
+.traffic-bar-fill{height:100%;border-radius:5px;transition:width .6s ease;background:var(--accent)}
+.traffic-revenue{font-size:13px;font-weight:700;color:var(--text);text-align:right}
+.traffic-share{font-size:11px;color:var(--text-3);text-align:right}
+.traffic-header{display:grid;grid-template-columns:130px 1fr 80px 70px;gap:10px;padding:0 0 6px;border-bottom:1px solid var(--border);margin-bottom:2px}
+.traffic-header span{font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--text-3)}
+.traffic-header span:nth-child(3),.traffic-header span:nth-child(4){text-align:right}
+@media(max-width:600px){
+  .traffic-row,.traffic-header{grid-template-columns:100px 1fr 65px}
+  .traffic-row>*:last-child,.traffic-header>*:last-child{display:none}
+}
+
 /* ── SEGMENT TILES — clickable filter ── */
 .seg-tile-filter{cursor:pointer;transition:all var(--t);user-select:none}
 .seg-tile-filter:hover{border-color:var(--accent)!important;box-shadow:0 0 0 2px rgba(196,168,130,.2)}
@@ -1833,6 +1849,18 @@ input,select{font-family:inherit;font-size:13px}
             <div class="section-title"><span class="s-icon">🎯</span> Customer Segments <span style="font-size:11px;font-weight:400;color:var(--text-3);margin-left:6px">Click to filter ↓</span></div>
           </div>
           <div class="g-3 section" id="cust-segments" style="margin-bottom:0"></div>
+        </div>
+        <!-- Online Traffic Sources -->
+        <div class="section" id="cust-traffic-section" style="display:none">
+          <div class="section-header">
+            <div class="section-title"><span class="s-icon">🌐</span> Online Traffic Sources <span style="font-size:11px;font-weight:400;color:var(--text-3);margin-left:6px">Shopify orders only</span></div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div id="cust-traffic-chart"></div>
+              <div id="cust-traffic-stat" style="margin-top:12px;font-size:12px;color:var(--text-3)"></div>
+            </div>
+          </div>
         </div>
         <div class="section">
           <div class="section-header">
@@ -4670,6 +4698,61 @@ function custRenderTable() {
   if (pagEl) pagEl.style.display = totalPages > 1 ? 'flex' : 'none';
 }
 
+function renderTrafficSources() {
+  const section = document.getElementById('cust-traffic-section');
+  if (!section) return;
+  if (!CUST_DETAIL || !CUST_DETAIL.trafficSources || CUST_DETAIL.trafficSources.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+
+  // Source palette — first 6 get distinct colors, rest use muted accent
+  const palette = ['var(--accent)', 'var(--sage)', 'var(--blue)', 'var(--amber)', '#c084fc', '#fb923c'];
+  const sources = CUST_DETAIL.trafficSources;
+  const topRevenue = sources[0]?.revenue || 1;
+  const totalRevenue = sources.reduce((s, v) => s + v.revenue, 0);
+  const totalOrders = CUST_DETAIL.onlineOrderCount || sources.reduce((s, v) => s + v.orders, 0);
+
+  // Render chart
+  const fmt$ = window.fmt$ || (v => '$' + Math.round(v).toLocaleString());
+  const chartEl = document.getElementById('cust-traffic-chart');
+  if (chartEl) {
+    chartEl.innerHTML = `
+      <div class="traffic-header">
+        <span>Source</span><span></span><span>Revenue</span><span>Share</span>
+      </div>
+      ${sources.map((s, i) => {
+        const barWidth = Math.round(s.revenue / topRevenue * 100);
+        const color = palette[i] || 'var(--accent)';
+        return `<div class="traffic-row">
+          <div class="traffic-label" title="${esc(s.source)}">${esc(s.source)}</div>
+          <div class="traffic-bar-track"><div class="traffic-bar-fill" style="width:${barWidth}%;background:${color}"></div></div>
+          <div class="traffic-revenue">${fmt$(s.revenue)}</div>
+          <div class="traffic-share">${s.revenueShare}%</div>
+        </div>`;
+      }).join('')}`;
+  }
+
+  // Stat summary
+  const statEl = document.getElementById('cust-traffic-stat');
+  if (statEl) {
+    const top = sources[0];
+    const organic = sources.find(s => s.source === 'Google Search');
+    const social = ['Instagram', 'Facebook', 'TikTok', 'Pinterest', 'X / Twitter']
+      .map(n => sources.find(s => s.source === n))
+      .filter(Boolean)
+      .reduce((s, v) => ({ revenue: s.revenue + v.revenue, orders: s.orders + v.orders }), { revenue: 0, orders: 0 });
+    const socialShare = totalRevenue > 0 ? Math.round(social.revenue / totalRevenue * 10) / 10 : 0;
+
+    let stats = `<strong>${totalOrders.toLocaleString()}</strong> online orders tracked · `;
+    stats += `Top source: <strong>${top.source}</strong> (${top.revenueShare}% of revenue)`;
+    if (organic) stats += ` · Google: <strong>${organic.revenueShare}%</strong>`;
+    if (socialShare > 0) stats += ` · Social combined: <strong>${socialShare}%</strong>`;
+    statEl.innerHTML = stats;
+  }
+}
+
 function renderCustomers() {
   if (!DB) return;
   const c = DB.customers;
@@ -4740,6 +4823,7 @@ function renderCustomers() {
   custState.page = 0;
   custState.filtered = [...custState.all];
   custRenderTable();
+  renderTrafficSources();
 }
 
 // ═══════════════════════════════════════════════════════
