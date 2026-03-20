@@ -1073,20 +1073,44 @@
   loadInvoices();
 
   // ── RECEIPTS PANEL ──
+  let activeReceiptTab = 'all';
   async function loadReceipts() {
     const data = await loadJSON('receipts');
     const rcpts = data?.receipts || [];
+    const members = ['Craig', 'Lenore', 'Shelley', 'Tyler'];
     let html = `<div class="panel-title">🧾 Receipts</div><div class="panel-sub">Team expense tracking</div>`;
-    html += `<div class="card" style="text-align:center;padding:24px;border:2px dashed var(--border2);margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">📸</div><div style="font-size:14px;font-weight:500">Snap & Upload Receipt</div><div style="color:var(--text3);font-size:12px;margin-top:4px">Take a photo or upload — AI extracts the details</div><button class="btn btn-primary btn-sm" style="margin-top:12px">Upload Receipt</button></div>`;
-    if (rcpts.length) {
-      rcpts.forEach(r => {
+
+    // Member tabs
+    html += `<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">`;
+    html += `<button class="btn btn-sm ${activeReceiptTab==='all'?'btn-primary':''}" onclick="filterReceipts('all')" style="${activeReceiptTab!=='all'?'background:var(--surface2)':''}">All</button>`;
+    members.forEach(m => {
+      const active = activeReceiptTab === m;
+      html += `<button class="btn btn-sm ${active?'btn-primary':''}" onclick="filterReceipts('${m}')" style="${!active?'background:var(--surface2)':''}">${m}</button>`;
+    });
+    html += `</div>`;
+
+    // Upload area
+    html += `<div class="card" style="text-align:center;padding:24px;border:2px dashed var(--border2);margin-bottom:16px"><div style="font-size:28px;margin-bottom:8px">📸</div><div style="font-size:14px;font-weight:500">Snap & Upload Receipt</div><div style="color:var(--text3);font-size:12px;margin-top:4px">Take a photo or upload — AI extracts the details</div><div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">`;
+    members.forEach(m => {
+      html += `<button class="btn btn-sm" style="background:var(--surface2)" onclick="uploadReceiptFor('${m}')">Upload for ${m}</button>`;
+    });
+    html += `</div></div>`;
+
+    // Filtered receipts
+    const filtered = activeReceiptTab === 'all' ? rcpts : rcpts.filter(r => (r.paidBy||'').toLowerCase() === activeReceiptTab.toLowerCase());
+    if (filtered.length) {
+      const total = filtered.reduce((s,r) => s + (r.amount||0), 0);
+      html += `<div style="display:flex;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:13px"><span style="color:var(--text2)">${filtered.length} receipt${filtered.length!==1?'s':''}</span><span style="font-weight:600">Total: $${total.toFixed(2)}</span></div>`;
+      filtered.forEach(r => {
         html += `<div class="list-item"><div style="display:flex;justify-content:space-between"><strong>${r.vendor||'--'}</strong><span style="font-weight:600">$${(r.amount||0).toFixed(2)}</span></div><div style="color:var(--text2);font-size:12px">${r.date||''} · ${r.paidBy||'--'} · ${r.category||''}</div></div>`;
       });
     } else {
-      html += `<div class="list-item" style="color:var(--text3)">No receipts uploaded yet</div>`;
+      html += `<div class="list-item" style="color:var(--text3)">No receipts${activeReceiptTab!=='all'?' for '+activeReceiptTab:''} yet</div>`;
     }
     document.getElementById('p-receipts').innerHTML = html;
   }
+  function filterReceipts(tab) { activeReceiptTab = tab; loadReceipts(); }
+  function uploadReceiptFor(name) { alert('Upload for ' + name + ' \u2014 coming soon'); }
   loadReceipts();
 
   // ── FABRICATION PANEL ──
