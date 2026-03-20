@@ -319,7 +319,7 @@ select.form-input{cursor:pointer;appearance:none}
     </div>
     <div class="nav-item" data-section="briefing" onclick="showSection('briefing')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      Morning Briefing <span class="nav-badge" id="briefing-badge">1</span>
+      Morning Briefing <span class="nav-badge" id="briefing-badge">0</span>
     </div>
 
     <div class="nav-section-label">Sales</div>
@@ -329,7 +329,7 @@ select.form-input{cursor:pointer;appearance:none}
     </div>
     <div class="nav-item" data-section="tenders" onclick="showSection('tenders')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      Tender Alerts <span class="nav-badge" id="tenders-badge" style="background:rgba(62,207,130,.15);color:var(--green)">2</span>
+      Tender Alerts <span class="nav-badge" id="tenders-badge" style="background:rgba(62,207,130,.15);color:var(--green)">0</span>
     </div>
 
     <div class="nav-section-label">Marketing</div>
@@ -374,27 +374,27 @@ select.form-input{cursor:pointer;appearance:none}
     <div class="stats-grid">
       <div class="stat-card">
         <div class="label">Active Deals</div>
-        <div class="value orange" id="dash-deals">6</div>
+        <div class="value orange" id="dash-deals">0</div>
         <div class="sub">in pipeline</div>
       </div>
       <div class="stat-card">
         <div class="label">Email List</div>
-        <div class="value green" id="dash-subscribers">2,200</div>
+        <div class="value green" id="dash-subscribers">0</div>
         <div class="sub">subscribers</div>
       </div>
       <div class="stat-card">
         <div class="label">Tender Alerts</div>
-        <div class="value blue" id="dash-tenders">2</div>
+        <div class="value blue" id="dash-tenders">0</div>
         <div class="sub">new opportunities</div>
       </div>
       <div class="stat-card">
         <div class="label">Social Reach</div>
-        <div class="value purple" id="dash-reach">4.2K</div>
+        <div class="value purple" id="dash-reach">—</div>
         <div class="sub">last 30 days</div>
       </div>
       <div class="stat-card">
         <div class="label">Quoted Value</div>
-        <div class="value teal" id="dash-quoted">$24.6K</div>
+        <div class="value teal" id="dash-quoted">$0</div>
         <div class="sub">pending close</div>
       </div>
     </div>
@@ -1199,8 +1199,14 @@ async function init(){
   updateClock();
   setInterval(updateClock,1000);
   // Load briefing for dashboard preview
-  try{await loadBriefing()}catch(e){console.error(e)}
-  // Load pipeline badge
+  try{
+    await loadBriefing();
+    const bd=await loadJSON('data/briefing.json');
+    if(bd&&bd.briefings&&bd.briefings.length){
+      document.getElementById('briefing-badge').textContent=bd.briefings.length;
+    }
+  }catch(e){console.error(e)}
+  // Load pipeline badge + stats
   try{
     const data=await loadJSON('data/pipeline.json');
     if(data&&data.boards){
@@ -1210,6 +1216,33 @@ async function init(){
       const active=_pipelineData.boards.flatMap(b=>b.leads.filter(l=>!isDeleted(b.id,l.id)&&getCardStage(b.id,l.id,l.stage)!=='Lost'));
       document.getElementById('pipeline-badge').textContent=active.length;
       document.getElementById('dash-deals').textContent=active.length;
+      // Quoted value — sum pricing from Quoted stage
+      const quoted=_pipelineData.boards.flatMap(b=>b.leads.filter(l=>!isDeleted(b.id,l.id)&&getCardStage(b.id,l.id,l.stage)==='Quoted'));
+      const quotedVal=quoted.reduce((s,l)=>s+(parseFloat(l.value||l.pricing||0)),0);
+      document.getElementById('dash-quoted').textContent=quotedVal>=1000?'$'+(quotedVal/1000).toFixed(1)+'K':'$'+quotedVal.toFixed(0);
+    }
+  }catch(e){}
+  // Load email stats
+  try{
+    const em=await loadJSON('data/email-stats.json');
+    if(em&&em.subscribers){
+      document.getElementById('dash-subscribers').textContent=em.subscribers>=1000?(em.subscribers/1000).toFixed(1)+'K':em.subscribers;
+    }
+  }catch(e){}
+  // Load tender stats
+  try{
+    const td=await loadJSON('data/tenders.json');
+    if(td&&td.alerts){
+      document.getElementById('dash-tenders').textContent=td.alerts.length;
+      document.getElementById('tenders-badge').textContent=td.alerts.length;
+    }
+  }catch(e){}
+  // Load social stats
+  try{
+    const so=await loadJSON('data/social.json');
+    if(so&&so.stats&&so.stats.followers){
+      const f=so.stats.followers;
+      document.getElementById('dash-reach').textContent=f>=1000?(f/1000).toFixed(1)+'K':f;
     }
   }catch(e){}
   // Render saved quotes
