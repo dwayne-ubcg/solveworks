@@ -34,7 +34,18 @@ else
     echo "   ⚠️  CRM sync failed or not available — continuing"
 fi
 
-# ── 3. Run sync_messages.py on Craig's machine ──
+# ── 3. Refresh live iMessage databases (sudo copy) ──
+echo ""
+echo "💬 Refreshing live iMessage databases..."
+ssh "$CRAIG_SSH" "echo 'lenore' | sudo -S bash -c '
+cp /Users/craigsmac/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/craigsmac-live.db 2>/dev/null
+cp /Users/tylorlucus/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/tylorlucus-live.db 2>/dev/null
+cp /Users/Shelley/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/shelley-live.db 2>/dev/null
+cp /Users/lenore/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/lenore-live.db 2>/dev/null
+chown craigsmac:staff /Users/craigsmac/clawd/data/messages/*-live.db 2>/dev/null
+'" 2>&1 && echo "   ✅ Live databases refreshed" || echo "   ⚠️  Some databases could not be copied"
+
+# ── 4. Run sync_messages.py on Craig's machine ──
 echo ""
 echo "💬 Running iMessage sync on Craig's machine..."
 if ssh "$CRAIG_SSH" "python3 ~/clawd/scripts/sync_messages.py" 2>&1; then
@@ -43,7 +54,7 @@ else
     echo "   ⚠️  iMessage sync failed — check database permissions"
 fi
 
-# ── 4. SCP all data files to local dashboard ──
+# ── 5. SCP all data files to local dashboard ──
 echo ""
 echo "📥 Pulling data files to local dashboard..."
 mkdir -p "$LOCAL_DATA_DIR"
@@ -58,7 +69,7 @@ for f in dashboard.json schedule.json tasks.json followups.json invoices.json; d
     scp -q "$CRAIG_SSH:$CRAIG_DATA_DIR/$f" "$LOCAL_DATA_DIR/" 2>/dev/null && echo "   ✅ $f" || true
 done
 
-# ── 5. Git commit and push ──
+# ── 6. Git commit and push ──
 echo ""
 echo "🚀 Committing and pushing to GitHub Pages..."
 cd "$SITE_DIR"

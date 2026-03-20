@@ -30,14 +30,33 @@ PHONE_MAP = {
 }
 
 # ── DATABASE PATHS (on Craig's machine) ──
+# sudo-copied snapshots of live iMessage databases (refreshed each sync)
 DB_PATHS = {
-    'Craig': '/Users/craigsmac/clawd/data/messages/craigsmac-chat.db',
-    'Tyler': '/Users/craigsmac/clawd/data/messages/tylorlucus-chat.db',
-    # Shelley's will be added later
+    'Craig':   '/Users/craigsmac/clawd/data/messages/craigsmac-live.db',
+    'Tyler':   '/Users/craigsmac/clawd/data/messages/tylorlucus-live.db',
+    'Shelley': '/Users/craigsmac/clawd/data/messages/shelley-live.db',
+    'Lenore':  '/Users/craigsmac/clawd/data/messages/lenore-live.db',
 }
 
-# Also check the standard macOS iMessage location as fallback
+# Fallback stale copies (only if live snapshot not available)
+FALLBACK_DB_PATHS = {
+    'Craig': '/Users/craigsmac/clawd/data/messages/craigsmac-chat.db',
+    'Tyler': '/Users/craigsmac/clawd/data/messages/tylorlucus-chat.db',
+}
+
 STANDARD_DB = os.path.expanduser('~/Library/Messages/chat.db')
+
+# ── LIVE DB COPY COMMAND ──
+# Run with sudo before reading — copies live iMessage DBs to accessible location
+COPY_SCRIPT = """
+sudo -S bash -c '
+cp /Users/craigsmac/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/craigsmac-live.db 2>/dev/null
+cp /Users/tylorlucus/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/tylorlucus-live.db 2>/dev/null
+cp /Users/Shelley/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/shelley-live.db 2>/dev/null
+cp /Users/lenore/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/lenore-live.db 2>/dev/null
+chown craigsmac:staff /Users/craigsmac/clawd/data/messages/*-live.db 2>/dev/null
+'
+"""
 
 # ── TASK DETECTION PATTERNS ──
 TASK_PATTERNS = [
@@ -143,8 +162,10 @@ def read_chat_db(db_path, account_name):
     print(f"  📖 Reading {account_name} from {db_path}", file=sys.stderr)
     
     try:
-        # Connect read-only
-        conn = sqlite3.connect(f'file:{db_path}?mode=ro', uri=True)
+        # Connect read-only; use immutable for copied DBs (WAL mode won't have -wal file)
+        is_copy = '-live.db' in db_path or '-chat.db' in db_path
+        uri_flag = 'immutable=1' if is_copy else 'mode=ro'
+        conn = sqlite3.connect(f'file:{db_path}?{uri_flag}', uri=True)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
@@ -218,24 +239,21 @@ def main():
     print("🔍 Touchstone iMessage Sync", file=sys.stderr)
     print(f"   Looking back {LOOKBACK_DAYS} days", file=sys.stderr)
     
+    # NOTE: Live DB copies should be refreshed before running this script.
+    # From SSH: echo 'lenore' | sudo -S bash -c 'cp /Users/*/Library/Messages/chat.db ...'
+    # The sync_touchstone.sh wrapper handles this automatically.
+    
     all_messages = []
     account_stats = {}
     
-    # Try configured DB paths
-    found_any = False
+    # Try live DB paths first, fallback to stale copies
     for account_name, db_path in DB_PATHS.items():
         msgs = read_chat_db(db_path, account_name)
-        if msgs:
-            found_any = True
+        if not msgs and account_name in FALLBACK_DB_PATHS:
+            print(f"  🔄 Fallback: trying stale copy for {account_name}", file=sys.stderr)
+            msgs = read_chat_db(FALLBACK_DB_PATHS[account_name], account_name)
         all_messages.extend(msgs)
         account_stats[account_name] = {'messages': len(msgs)}
-    
-    # Fallback: try standard macOS location if nothing found
-    if not found_any and os.path.exists(STANDARD_DB):
-        print(f"  🔄 Fallback: trying standard iMessage DB", file=sys.stderr)
-        msgs = read_chat_db(STANDARD_DB, 'Craig')
-        all_messages.extend(msgs)
-        account_stats['Craig'] = {'messages': len(msgs)}
     
     # Sort all messages by time
     all_messages.sort(key=lambda m: m['time'])
