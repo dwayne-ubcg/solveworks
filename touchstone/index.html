@@ -895,6 +895,111 @@
       ${leakageHtml}
 
       ${(() => {
+        // ── Cash Flow Forecast ──
+        const STAGE_DAYS_TO_PAYMENT = { new: 49, approved: 42, templating: 28, fabrication: 21 };
+        const BUCKETS = ['This Week', 'Next Week', 'Week 3-4', 'Month 2', 'Month 3'];
+        const BUCKET_MAX_DAYS = { 'This Week': 7, 'Next Week': 14, 'Week 3-4': 28, 'Month 2': 60, 'Month 3': 90 };
+        const now = new Date();
+
+        function getBucket(lead) {
+          const stage = lead.stage || '';
+          const pricing = lead.pricing || 0;
+          if (pricing <= 0 || stage === 'complete' || !STAGE_DAYS_TO_PAYMENT[stage]) return null;
+          const totalDays = STAGE_DAYS_TO_PAYMENT[stage];
+          let daysRemaining = totalDays;
+          if (lead.date_added) {
+            try {
+              const added = new Date(lead.date_added.replace(' ', 'T'));
+              const daysInStage = Math.floor((now - added) / 86400000);
+              daysRemaining = Math.max(0, totalDays - daysInStage);
+            } catch(e) {}
+          }
+          if (daysRemaining <= 7) return 'This Week';
+          if (daysRemaining <= 14) return 'Next Week';
+          if (daysRemaining <= 28) return 'Week 3-4';
+          if (daysRemaining <= 60) return 'Month 2';
+          return 'Month 3';
+        }
+
+        function calcBuckets(leads) {
+          const totals = {'This Week':0,'Next Week':0,'Week 3-4':0,'Month 2':0,'Month 3':0};
+          const counts = {'This Week':0,'Next Week':0,'Week 3-4':0,'Month 2':0,'Month 3':0};
+          leads.forEach(l => { const b = getBucket(l); if (b) { totals[b] += l.pricing; counts[b]++; } });
+          return {totals, counts};
+        }
+
+        function renderBars(buckets, barColor, accentColor) {
+          const maxVal = Math.max(...Object.values(buckets.totals), 1);
+          return BUCKETS.map(b => {
+            const val = buckets.totals[b] || 0;
+            const cnt = buckets.counts[b] || 0;
+            const pct = Math.round((val / maxVal) * 100);
+            if (val === 0 && cnt === 0) return '';
+            return `
+              <div style="margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span style="font-size:12px;color:var(--text2);min-width:80px">${b}</span>
+                  <span style="font-size:12px;font-weight:600;color:${accentColor}">${formatCurrency(val)}</span>
+                  <span style="font-size:11px;color:var(--text3);min-width:50px;text-align:right">${cnt} job${cnt!==1?'s':''}</span>
+                </div>
+                <div style="background:var(--surface2);border-radius:4px;height:8px;overflow:hidden">
+                  <div style="height:8px;border-radius:4px;width:${pct}%;background:${barColor};transition:width 0.4s ease"></div>
+                </div>
+              </div>`;
+          }).join('');
+        }
+
+        const compassLeads3 = compassData?.leads || [];
+        const lsLeads3 = lsData?.leads || [];
+        const compassBuckets = calcBuckets(compassLeads3);
+        const lsBuckets = calcBuckets(lsLeads3);
+        const compassTotal90 = Object.values(compassBuckets.totals).reduce((a,b)=>a+b,0);
+        const lsTotal90 = Object.values(lsBuckets.totals).reduce((a,b)=>a+b,0);
+        const combined90 = compassTotal90 + lsTotal90;
+        const compassAtRisk = compassLeads3.filter(l => (l.pricing||0) === 0 && l.stage !== 'complete').length;
+        const lsAtRisk = lsLeads3.filter(l => (l.pricing||0) === 0 && l.stage !== 'complete').length;
+        const totalAtRisk = compassAtRisk + lsAtRisk;
+
+        const compassBars = renderBars(compassBuckets,
+          'linear-gradient(90deg,#10b981,#34d399)',
+          'var(--green)');
+        const lsBars = renderBars(lsBuckets,
+          'linear-gradient(90deg,#8b5cf6,#a78bfa)',
+          'var(--purple)');
+
+        return `<div class="card" style="margin-bottom:16px">
+          <div class="card-title">📈 Cash Flow Forecast — Next 90 Days</div>
+          <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-size:22px;font-weight:700;color:var(--green)">${formatCurrency(combined90)}</div>
+              <div style="font-size:12px;color:var(--text2)">Projected revenue next 90 days</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:16px;font-weight:600;color:var(--red)">${totalAtRisk} jobs</div>
+              <div style="font-size:12px;color:var(--text3)">⚠️ At risk (unbilled $0)</div>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:10px;letter-spacing:0.5px">🏗️ COMPASS / TOUCHSTONE — ${formatCurrency(compassTotal90)}</div>
+              ${compassBars || '<div style="color:var(--text3);font-size:12px">No priced leads</div>'}
+              ${compassAtRisk > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--red)">⚠️ ${compassAtRisk} unbilled jobs not included</div>` : ''}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:10px;letter-spacing:0.5px">🏢 LIVINGSTONE / ECC — ${formatCurrency(lsTotal90)}</div>
+              ${lsBars || '<div style="color:var(--text3);font-size:12px">No priced leads</div>'}
+              ${lsAtRisk > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--red)">⚠️ ${lsAtRisk} unbilled jobs not included</div>` : ''}
+            </div>
+          </div>
+
+          <div style="margin-top:12px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:10px">
+            Estimates based on avg stage durations: new→approved 7d · approved→templating 14d · templating→fab 7d · fab→payment 21d
+          </div>
+        </div>`;
+      })()}
+
+      ${(() => {
         // Today's Priority: leads in templating/fabrication, oldest first
         const compassLeads = compassData?.leads || [];
         const priorityLeads = compassLeads.filter(l=>['templating','fabrication'].includes(l.stage)).sort((a,b)=>(a.date_added||'')>(b.date_added||'')?1:-1).slice(0,8);
