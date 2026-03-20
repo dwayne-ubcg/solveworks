@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to SolveWorks — Touchstone Countertops</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { 950: '#0A1628', 900: '#0D1B2A', 800: '#122340', 700: '#1A2D4A', 600: '#233754' },
+                        accent: { 600: '#0369a1', 500: '#0ea5e9', 400: '#38bdf8', 300: '#7dd3fc' },
+                        success: '#22c55e',
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        html { overflow-x: hidden; scroll-behavior: smooth; }
+        body { background-color: #0A1628 !important; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .hero-gradient { background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(14, 165, 233, 0.15), transparent); }
+        .grid-bg { background-image: linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px); background-size: 60px 60px; }
+        .text-gradient { background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 50%, #38bdf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        .progress-fill { transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .section-card { transition: all 0.3s ease; }
+        .section-header { cursor: pointer; user-select: none; }
+        .section-header:hover { background: rgba(255, 255, 255, 0.02); }
+        .section-chevron { transition: transform 0.3s ease; }
+        .section-chevron.rotated { transform: rotate(180deg); }
+        .section-body { overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; }
+        .section-body.collapsed { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+        .section-body.expanded { max-height: 3000px; opacity: 1; }
+        input[type="text"], input[type="email"], input[type="url"], input[type="password"], textarea {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 12px 16px; color: white; font-size: 14px; width: 100%; transition: all 0.2s;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.15); }
+        input::placeholder, textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
+        .field-label { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; display: block; }
+        .field-hint { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .field-group { margin-bottom: 20px; }
+        .callout-info { background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 12px; padding: 16px; }
+        .callout-warn { background: rgba(250, 204, 21, 0.05); border: 1px solid rgba(250, 204, 21, 0.15); border-radius: 12px; padding: 16px; }
+        .callout-success { background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.15); border-radius: 12px; padding: 16px; }
+        .callout-urgent { background: rgba(239, 68, 68, 0.07); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 16px; }
+        .btn-primary { background: linear-gradient(135deg, #0ea5e9, #0369a1); color: white; font-weight: 700; padding: 14px 32px; border-radius: 12px; border: none; cursor: pointer; font-size: 15px; transition: all 0.2s; width: 100%; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(14,165,233,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .optional-badge { display: inline-block; font-size: 10px; font-weight: 600; color: #64748b; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 10px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .required-dot { color: #f43f5e; margin-left: 2px; }
+        .step-number { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
+        .step-pending { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.25); color: #38bdf8; }
+        .step-done { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #22c55e; }
+        .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 24px 0; }
+        code { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 6px; font-size: 13px; color: #38bdf8; font-family: 'SF Mono', monospace; }
+        .celebration { animation: celebrate 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes celebrate { 0% { transform: scale(0.8); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-dark-950 text-white font-sans antialiased grid-bg">
+
+    <!-- Progress Bar -->
+    <div id="progressBar" class="fixed top-0 left-0 right-0 z-50 bg-dark-950/90 backdrop-blur-lg border-b border-white/5">
+        <div class="max-w-3xl mx-auto px-6 py-3 flex items-center gap-4">
+            <span class="text-sm text-slate-400 whitespace-nowrap"><span id="progressCount">0</span> of <span id="progressTotal">0</span></span>
+            <div class="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                <div id="progressFill" class="progress-fill h-full bg-gradient-to-r from-accent-500 to-accent-400 rounded-full" style="width: 0%"></div>
+            </div>
+            <span id="progressPercent" class="text-sm font-medium text-accent-400 whitespace-nowrap">0%</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed w-full top-[44px] z-40 border-b border-white/5" style="background: rgba(10, 22, 40, 0.85); backdrop-filter: blur(20px);">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+            <a href="https://solveworks.io" class="text-2xl font-bold tracking-tight">
+                <span class="text-white">Solve</span><span class="text-gradient">Works</span>
+            </a>
+            <span class="text-sm text-slate-500">Client Onboarding</span>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero-gradient pt-32 pb-12 px-6">
+        <div class="max-w-3xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/20 mb-8">
+                <span class="w-2 h-2 rounded-full bg-success pulse-dot"></span>
+                <span class="text-sm text-green-300 font-medium">Welcome aboard, Craig &#128588;</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Touchstone Countertops<br><span class="text-gradient">Onboarding</span>
+            </h1>
+            <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-4">
+                Your Mac Mini is configured and ready. We just need a couple things from you to get your AI agent fully online.
+            </p>
+            <p class="text-sm text-slate-500 max-w-xl mx-auto mb-8">
+                Fill in what you can now. Anything marked <span class="text-slate-400 font-medium">optional</span> can wait &#8212; we'll help with those after your agent is live.
+            </p>
+            <div class="flex items-center justify-center gap-4 flex-wrap">
+                <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-lg">&#9201;</span>
+                    <span class="text-sm text-slate-300 font-medium">~10 minutes</span>
+                </div>
+                <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10">
+                    <span class="text-lg">&#128190;</span>
+                    <span class="text-sm text-slate-300 font-medium">Auto-saves as you type</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sections -->
+    <section class="py-8 px-6">
+        <div class="max-w-3xl mx-auto space-y-4" id="formSections">
+
+            <!-- SECTION 1: Claude Max Subscription (THE CRITICAL ONE) -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="1">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(1)">
+                    <div id="sectionNum1" class="step-number step-pending">1</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">&#129504; AI Subscription &#8212; Required to Go Live</h3>
+                        <p class="text-sm text-slate-500 mt-1">The brain that powers your agent &#8212; nothing works without this</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body1">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-urgent">
+                            <p class="text-sm text-red-300/90">&#128680; <strong class="text-red-300">This is the #1 thing we need.</strong> Your agent's Mac Mini is set up, but it can't think without an AI subscription. This takes 5 minutes and everything else depends on it.</p>
+                        </div>
+
+                        <div class="callout-info">
+                            <div class="space-y-3 text-sm text-accent-300/90">
+                                <p><strong>Here's what to do:</strong></p>
+                                <p>1. Go to <a href="https://claude.ai" target="_blank" class="text-accent-400 underline hover:text-accent-300 font-semibold">claude.ai</a></p>
+                                <p>2. Create an account (or sign in if you already have one)</p>
+                                <p>3. Click your name (bottom-left) &#8594; <strong>Settings</strong> &#8594; <strong>Subscription</strong></p>
+                                <p>4. Subscribe to <strong>Claude Max</strong> &#8212; it's ~$100 USD/month</p>
+                                <p>5. Share your login details below so we can connect it to your agent</p>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Claude Account Email <span class="required-dot">*</span></label>
+                            <input type="email" id="anthropic_email" placeholder="e.g. craig@touchstonecountertops.ca" data-required="true">
+                            <p class="field-hint">The email you used to sign up at claude.ai</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Claude Account Password <span class="required-dot">*</span></label>
+                            <input type="password" id="anthropic_password" placeholder="Your Claude password" data-required="true">
+                            <p class="field-hint">We use this once during setup to connect the AI to your machine, then it's stored securely on your Mac Mini only</p>
+                        </div>
+
+                        <div class="callout-success">
+                            <p class="text-sm text-green-300/90">&#128161; <strong>Why your own account?</strong> Full transparency &#8212; you see exactly what you're paying for. No middleman markup. You can check usage anytime at claude.ai. And if you ever cancel SolveWorks, the subscription is yours to keep or cancel.</p>
+                        </div>
+
+                        <div class="callout-warn">
+                            <p class="text-sm text-yellow-200/80">&#9888;&#65039; <strong class="text-yellow-300">Important:</strong> It must be the <strong>Max</strong> plan (~$100/mo), not the free tier or Pro ($20/mo). The Max plan gives your agent unlimited access to the best AI model. Pro runs out too quickly for a business agent.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: Telegram -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="2">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(2)">
+                    <div id="sectionNum2" class="step-number step-pending">2</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">&#128172; Telegram Setup</h3>
+                        <p class="text-sm text-slate-500 mt-1">How you'll talk to your AI agent every day</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body2">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-info">
+                            <div class="space-y-2 text-sm text-accent-300/90">
+                                <p>1. On your <strong>phone</strong>, download <strong>Telegram</strong> if you don't have it</p>
+                                <p>2. Search for <strong>@BotFather</strong> and start a chat</p>
+                                <p>3. Send: <code>/newbot</code></p>
+                                <p>4. Pick a name (e.g. "Touchstone AI" or whatever you want to call your agent)</p>
+                                <p>5. Pick a username ending in <code>bot</code> (e.g. <code>touchstone_ai_bot</code>)</p>
+                                <p>6. BotFather gives you a <strong>token</strong> &#8212; paste it below</p>
+                                <p>7. Then <strong>send any message to your new bot</strong> (just say "hi") &#8212; this activates it</p>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Bot Token <span class="required-dot">*</span></label>
+                            <input type="text" id="bot_token" placeholder="e.g. 1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" data-required="true">
+                            <p class="field-hint">Copy-paste from BotFather. Looks like numbers:letters</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Your Telegram Username <span class="required-dot">*</span></label>
+                            <input type="text" id="telegram_craig" placeholder="e.g. @craiglucas" data-required="true">
+                            <p class="field-hint">So we can lock the agent to only respond to you</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Anyone else who should have access? <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="telegram_others" placeholder="e.g. Tyler's username, Shelley's username">
+                            <p class="field-hint">Team members who should be able to message the agent</p>
+                        </div>
+
+                        <div class="callout-warn">
+                            <p class="text-sm text-yellow-200/80">&#9888;&#65039; <strong class="text-yellow-300">Important:</strong> After creating the bot, open a chat with it on your phone and send any message (even just "hi"). This activates the connection.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: Business Tools & Data -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="3">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(3)">
+                    <div id="sectionNum3" class="step-number step-pending">3</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">&#128736;&#65039; Business Tools & Data</h3>
+                        <p class="text-sm text-slate-500 mt-1">CRM, estimating, and the tools your agent will connect to</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body3">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="callout-info">
+                            <p class="text-sm text-accent-300/90">We're building your dashboard to pull data from your real systems. The more we can connect, the more useful your agent gets from day one.</p>
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Compass / Livingstone CRM</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Compass CRM Login URL</label>
+                            <input type="url" id="compass_url" placeholder="e.g. https://compass.example.com">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Compass Username / Email</label>
+                            <input type="text" id="compass_user" placeholder="Your Compass login">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Compass Password</label>
+                            <input type="password" id="compass_pass" placeholder="Your Compass password">
+                            <p class="field-hint">Stored securely on your machine only &#8212; used to sync job data to your dashboard</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Livingstone Login (if separate)</label>
+                            <input type="text" id="livingstone_user" placeholder="Username or email">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Livingstone Password</label>
+                            <input type="password" id="livingstone_pass" placeholder="Password">
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Slab Inventory & Suppliers</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Where do you track slab inventory? <span class="optional-badge">Optional</span></label>
+                            <textarea id="slab_tracking" rows="2" placeholder="e.g. Spreadsheet, Compass, pen and paper, supplier portal..."></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Main suppliers & their portals <span class="optional-badge">Optional</span></label>
+                            <textarea id="suppliers" rows="2" placeholder="e.g. Cosentino portal, Cambria rep, local stone yard..."></textarea>
+                        </div>
+
+                        <div class="divider"></div>
+                        <h4 class="text-sm font-semibold text-accent-400 uppercase tracking-wider">Flooring Estimator</h4>
+
+                        <div class="field-group">
+                            <label class="field-label">Flooring product types you work with <span class="optional-badge">Optional</span></label>
+                            <textarea id="flooring_types" rows="2" placeholder="e.g. LVP, hardwood, tile, carpet, epoxy..."></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Typical waste factor % <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="waste_factor" placeholder="e.g. 10%">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Typical markup % <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="markup_pct" placeholder="e.g. 40%">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Product pricing sheet <span class="optional-badge">Optional &#8212; can share later</span></label>
+                            <input type="url" id="pricing_sheet" placeholder="Google Drive, Dropbox, or any link to your pricing">
+                            <p class="field-hint">So the estimator uses your real costs, not generic numbers</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 4: Team & Communication -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="4">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(4)">
+                    <div id="sectionNum4" class="step-number step-pending">4</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">&#128101; Team & Communication</h3>
+                        <p class="text-sm text-slate-500 mt-1">So your agent knows who's who and can track commitments</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body4">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+
+                        <div class="field-group">
+                            <label class="field-label">Team members and their roles</label>
+                            <textarea id="team" rows="4" placeholder="e.g.&#10;Tyler - sales, does quotes and follow-ups&#10;Shelley - office, invoicing and scheduling&#10;Jason - fabrication lead&#10;Ben - installs"></textarea>
+                            <p class="field-hint">Your agent will track each person's commitments and follow-ups</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Do you use iMessage for team communication?</label>
+                            <textarea id="imessage_status" rows="2" placeholder="e.g. Yes for everything, mix of text and calls, use WhatsApp..."></textarea>
+                            <p class="field-hint">If you text your team via iMessage, the agent can read those conversations (with permission) to auto-extract tasks and commitments</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Call recording &#8212; do you use Plaud or similar? <span class="optional-badge">Optional</span></label>
+                            <input type="text" id="call_recording" placeholder="e.g. Plaud AI, Otter, no recording">
+                            <p class="field-hint">If you record calls, your agent can transcribe them and pull out action items automatically</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 5: Your Agent -->
+            <div class="section-card glass rounded-2xl overflow-hidden" data-section="5">
+                <div class="section-header flex items-center gap-4 p-6 md:p-8" onclick="toggleSection(5)">
+                    <div id="sectionNum5" class="step-number step-pending">5</div>
+                    <div class="flex-1">
+                        <h3 class="text-lg md:text-xl font-semibold">&#129302; Your Agent</h3>
+                        <p class="text-sm text-slate-500 mt-1">Personalize it &#8212; this is your new operations partner</p>
+                    </div>
+                    <svg class="section-chevron rotated w-5 h-5 text-slate-500" id="chevron5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+                <div class="section-body expanded" id="body5">
+                    <div class="px-6 md:px-8 pb-6 md:pb-8 space-y-5">
+                        <div class="field-group">
+                            <label class="field-label">What do you want to name your agent?</label>
+                            <input type="text" id="agent_name" placeholder="e.g. Stone, Slab, whatever feels right">
+                            <p class="field-hint">This is who you'll be texting every day. Pick something that fits.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">How should your agent talk?</label>
+                            <textarea id="agent_tone" rows="2" placeholder="e.g. Straight to the point, no fluff. Like texting a smart foreman."></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">What's the #1 thing you want working on day one?</label>
+                            <textarea id="day_one_priority" rows="2" placeholder="e.g. Tyler's follow-ups, the pipeline board, flooring estimates, slab inventory..."></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Anything else we should know?</label>
+                            <textarea id="notes" rows="3" placeholder="Other tools you use, things you've tried, pet peeves, ideas &#8212; anything"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Submit Section -->
+    <section class="py-8 px-6">
+        <div class="max-w-3xl mx-auto">
+            <div id="submitSection" class="glass rounded-2xl p-6 md:p-8">
+                <h3 class="text-xl font-bold mb-2">Ready to submit?</h3>
+                <p class="text-sm text-slate-400 mb-6">We'll receive everything securely and get your agent online. Required fields are marked with <span class="text-rose-400">*</span></p>
+                <button id="submitBtn" class="btn-primary" onclick="submitForm()">
+                    &#128640; Send to SolveWorks
+                </button>
+                <p id="submitError" class="text-sm text-rose-400 mt-3 hidden"></p>
+            </div>
+
+            <!-- Success state -->
+            <div id="successSection" class="hidden">
+                <div class="celebration glass rounded-2xl p-8 text-center border-success/20" style="border: 1px solid rgba(34, 197, 94, 0.2);">
+                    <div class="text-5xl mb-4">&#127881;</div>
+                    <h2 class="text-2xl font-bold mb-2 text-white">You're all set!</h2>
+                    <p class="text-slate-400 mb-4">We've received everything. Once your Claude Max subscription is active, we'll connect it and your agent goes live.</p>
+                    <div class="callout-success mt-6">
+                        <p class="text-sm text-green-300/90"><strong>What happens next:</strong> We connect the AI subscription to your machine, wire up your data sources, and your agent starts working. You'll get a message from it on Telegram when it's ready. &#129309;</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-6 border-t border-white/5">
+        <div class="max-w-3xl mx-auto text-center">
+            <p class="text-sm text-slate-500">Questions? Text Dwayne directly or email <a href="mailto:dwayne@solveworks.io" class="text-accent-400 hover:text-accent-300">dwayne@solveworks.io</a></p>
+            <p class="text-xs text-slate-600 mt-2">&copy; 2026 SolveWorks. Your data stays on your machine.</p>
+        </div>
+    </footer>
+
+    <script>
+        // State
+        var TOTAL_SECTIONS = 5;
+        var STORAGE_KEY = 'sw-onboarding-touchstone';
+        var TELEGRAM_BOT_TOKEN = '7832387018:AAFQfqLHV4A7iYdPFCBhKXXvPTqO-OW5bbg';
+        var OPS_CHAT_ID = '-5116168213';
+
+        // Auto-save
+        function saveState() {
+            var data = {};
+            document.querySelectorAll('input, textarea').forEach(function(el) {
+                if (el.id) data[el.id] = el.value;
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            updateProgress();
+        }
+
+        function loadState() {
+            try {
+                var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                Object.entries(data).forEach(function(pair) {
+                    var el = document.getElementById(pair[0]);
+                    if (el) el.value = pair[1];
+                });
+            } catch(e) {}
+            updateProgress();
+        }
+
+        document.addEventListener('input', function() {
+            clearTimeout(window._saveTimer);
+            window._saveTimer = setTimeout(saveState, 500);
+        });
+
+        // Progress
+        function updateProgress() {
+            var required = document.querySelectorAll('[data-required="true"]');
+            var filled = Array.from(required).filter(function(el) { return el.value.trim().length > 0; }).length;
+            var total = required.length;
+            var pct = total ? Math.round((filled / total) * 100) : 0;
+
+            document.getElementById('progressCount').textContent = filled;
+            document.getElementById('progressTotal').textContent = total;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressPercent').textContent = pct + '%';
+
+            for (var s = 1; s <= TOTAL_SECTIONS; s++) {
+                var sectionFields = document.querySelectorAll('[data-section="' + s + '"] [data-required="true"]');
+                var allFilled = sectionFields.length > 0 && Array.from(sectionFields).every(function(el) { return el.value.trim().length > 0; });
+                var numEl = document.getElementById('sectionNum' + s);
+                if (allFilled && sectionFields.length > 0) {
+                    numEl.classList.remove('step-pending');
+                    numEl.classList.add('step-done');
+                    numEl.textContent = '\u2713';
+                } else {
+                    numEl.classList.remove('step-done');
+                    numEl.classList.add('step-pending');
+                    numEl.textContent = s;
+                }
+            }
+        }
+
+        // Section Toggle
+        function toggleSection(n) {
+            var body = document.getElementById('body' + n);
+            var chevron = document.getElementById('chevron' + n);
+            if (body.classList.contains('expanded')) {
+                body.classList.remove('expanded');
+                body.classList.add('collapsed');
+                chevron.classList.remove('rotated');
+            } else {
+                body.classList.remove('collapsed');
+                body.classList.add('expanded');
+                chevron.classList.add('rotated');
+            }
+        }
+
+        // Submit
+        async function submitForm() {
+            var btn = document.getElementById('submitBtn');
+            var errEl = document.getElementById('submitError');
+            errEl.classList.add('hidden');
+
+            var required = document.querySelectorAll('[data-required="true"]');
+            var missing = Array.from(required).filter(function(el) { return !el.value.trim(); });
+            if (missing.length > 0) {
+                missing[0].focus();
+                missing[0].style.borderColor = '#f43f5e';
+                setTimeout(function() { missing[0].style.borderColor = ''; }, 3000);
+                errEl.textContent = 'Please fill in all required fields (' + missing.length + ' remaining)';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+
+            var data = {};
+            document.querySelectorAll('input, textarea').forEach(function(el) {
+                if (el.id && el.value.trim()) data[el.id] = el.value.trim();
+            });
+
+            var msg = '\ud83d\ude80 NEW ONBOARDING: Touchstone Countertops (Craig)\n\n';
+            msg += '\u2500\u2500 AI Subscription \u2500\u2500\n';
+            msg += 'Email: ' + (data.anthropic_email || '\u2014') + '\n';
+            msg += 'Password: ' + (data.anthropic_password || '\u2014') + '\n\n';
+            msg += '\u2500\u2500 Telegram \u2500\u2500\n';
+            msg += 'Bot Token: ' + (data.bot_token || '\u2014') + '\n';
+            msg += 'Craig: ' + (data.telegram_craig || '\u2014') + '\n';
+            if (data.telegram_others) msg += 'Others: ' + data.telegram_others + '\n';
+            msg += '\n';
+            msg += '\u2500\u2500 Business Tools \u2500\u2500\n';
+            if (data.compass_url) msg += 'Compass URL: ' + data.compass_url + '\n';
+            if (data.compass_user) msg += 'Compass User: ' + data.compass_user + '\n';
+            if (data.compass_pass) msg += 'Compass Pass: ' + data.compass_pass + '\n';
+            if (data.livingstone_user) msg += 'Livingstone User: ' + data.livingstone_user + '\n';
+            if (data.livingstone_pass) msg += 'Livingstone Pass: ' + data.livingstone_pass + '\n';
+            if (data.slab_tracking) msg += 'Slab tracking: ' + data.slab_tracking + '\n';
+            if (data.suppliers) msg += 'Suppliers: ' + data.suppliers + '\n';
+            if (data.flooring_types) msg += 'Flooring types: ' + data.flooring_types + '\n';
+            if (data.waste_factor) msg += 'Waste factor: ' + data.waste_factor + '\n';
+            if (data.markup_pct) msg += 'Markup: ' + data.markup_pct + '\n';
+            if (data.pricing_sheet) msg += 'Pricing sheet: ' + data.pricing_sheet + '\n';
+            msg += '\n';
+            msg += '\u2500\u2500 Team \u2500\u2500\n';
+            if (data.team) msg += 'Team: ' + data.team + '\n';
+            if (data.imessage_status) msg += 'iMessage: ' + data.imessage_status + '\n';
+            if (data.call_recording) msg += 'Call recording: ' + data.call_recording + '\n';
+            msg += '\n';
+            msg += '\u2500\u2500 Agent \u2500\u2500\n';
+            if (data.agent_name) msg += 'Name: ' + data.agent_name + '\n';
+            if (data.agent_tone) msg += 'Tone: ' + data.agent_tone + '\n';
+            if (data.day_one_priority) msg += 'Day 1 priority: ' + data.day_one_priority + '\n';
+            if (data.notes) msg += 'Notes: ' + data.notes + '\n';
+
+            try {
+                var resp = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: OPS_CHAT_ID, text: msg })
+                });
+                var result = await resp.json();
+
+                if (result.ok) {
+                    document.getElementById('submitSection').classList.add('hidden');
+                    document.getElementById('successSection').classList.remove('hidden');
+                    document.getElementById('successSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    localStorage.removeItem(STORAGE_KEY);
+                } else {
+                    throw new Error(result.description || 'Send failed');
+                }
+            } catch(e) {
+                errEl.textContent = 'Something went wrong \u2014 please text Dwayne directly with your info. Error: ' + e.message;
+                errEl.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = '\ud83d\ude80 Send to SolveWorks';
+            }
+        }
+
+        loadState();
+    </script>
+</body>
+</html>
