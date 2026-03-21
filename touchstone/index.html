@@ -2798,34 +2798,81 @@ Craig: Make sure we confirm the sink model first."></textarea>
       }
     }
 
-    // This is the core packing logic, simplified. A shelf-based approach.
+    // Maximal Rectangles bin-packing (fast, O(n*m) where m = free rects)
     function placePieceOnSlab(piece, slab, kerf) {
-        // Try both orientations
-        for (let i = 0; i < 2; i++) {
-            const pW = (i === 0 ? piece.w : piece.h) + kerf;
-            const pH = (i === 0 ? piece.h : piece.w) + kerf;
-
-            if (pW > slab.w || pH > slab.h) continue; // Doesn't fit at all
-
-            // Try placing at different positions (simple grid check)
-            for (let y = 0; y <= slab.h - pH; y += kerf) {
-                for (let x = 0; x <= slab.w - pW; x += kerf) {
-                    const newPos = { x, y, w: pW, h: pH };
-                    let canPlace = true;
-                    for (const placed of slab.placed) {
-                        if (rectsOverlap(placed, newPos)) {
-                            canPlace = false;
-                            break;
-                        }
-                    }
-                    if (canPlace) {
-                        slab.placed.push({ ...newPos, name: piece.name, originalW: piece.originalW, originalH: piece.originalH });
-                        return true; // Placed successfully
+        if (!slab.freeRects) slab.freeRects = [{ x: 0, y: 0, w: slab.w, h: slab.h }];
+        
+        // Try both orientations, pick best fit
+        const orientations = [
+            { pw: piece.w + kerf, ph: piece.h + kerf, rotated: false },
+            { pw: piece.h + kerf, ph: piece.w + kerf, rotated: true }
+        ];
+        
+        let bestFit = null;
+        let bestFitIdx = -1;
+        let bestArea = Infinity;
+        
+        for (const ori of orientations) {
+            for (let fi = 0; fi < slab.freeRects.length; fi++) {
+                const fr = slab.freeRects[fi];
+                if (ori.pw <= fr.w && ori.ph <= fr.h) {
+                    // Best short side fit
+                    const leftover = Math.min(fr.w - ori.pw, fr.h - ori.ph);
+                    if (leftover < bestArea) {
+                        bestArea = leftover;
+                        bestFit = { x: fr.x, y: fr.y, w: ori.pw, h: ori.ph, rotated: ori.rotated };
+                        bestFitIdx = fi;
                     }
                 }
             }
         }
-        return false; // Could not place
+        
+        if (!bestFit) return false;
+        
+        slab.placed.push({ ...bestFit, name: piece.name, originalW: piece.originalW, originalH: piece.originalH });
+        
+        // Split free rectangles around the placed piece
+        const newFreeRects = [];
+        for (const fr of slab.freeRects) {
+            if (!rectsOverlap(fr, bestFit)) {
+                newFreeRects.push(fr);
+                continue;
+            }
+            // Generate up to 4 new rects from the remaining space
+            // Right of piece
+            if (bestFit.x + bestFit.w < fr.x + fr.w) {
+                newFreeRects.push({ x: bestFit.x + bestFit.w, y: fr.y, w: (fr.x + fr.w) - (bestFit.x + bestFit.w), h: fr.h });
+            }
+            // Below piece
+            if (bestFit.y + bestFit.h < fr.y + fr.h) {
+                newFreeRects.push({ x: fr.x, y: bestFit.y + bestFit.h, w: fr.w, h: (fr.y + fr.h) - (bestFit.y + bestFit.h) });
+            }
+            // Left of piece
+            if (bestFit.x > fr.x) {
+                newFreeRects.push({ x: fr.x, y: fr.y, w: bestFit.x - fr.x, h: fr.h });
+            }
+            // Above piece
+            if (bestFit.y > fr.y) {
+                newFreeRects.push({ x: fr.x, y: fr.y, w: fr.w, h: bestFit.y - fr.y });
+            }
+        }
+        
+        // Remove redundant rects (contained within another)
+        slab.freeRects = [];
+        for (let i = 0; i < newFreeRects.length; i++) {
+            let contained = false;
+            for (let j = 0; j < newFreeRects.length; j++) {
+                if (i !== j && rectContains(newFreeRects[j], newFreeRects[i])) {
+                    contained = true;
+                    break;
+                }
+            }
+            if (!contained && newFreeRects[i].w > kerf && newFreeRects[i].h > kerf) {
+                slab.freeRects.push(newFreeRects[i]);
+            }
+        }
+        
+        return true;
     }
 
     function rectsOverlap(r1, r2) {
@@ -2833,6 +2880,12 @@ Craig: Make sure we confirm the sink model first."></textarea>
                  r2.x + r2.w <= r1.x ||
                  r2.y >= r1.y + r1.h ||
                  r2.y + r2.h <= r1.y);
+    }
+    
+    function rectContains(outer, inner) {
+        return inner.x >= outer.x && inner.y >= outer.y &&
+               inner.x + inner.w <= outer.x + outer.w &&
+               inner.y + inner.h <= outer.y + outer.h;
     }
     
     // --- Calculations based on packing results ---
