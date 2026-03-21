@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7 Cellars — Quote</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍷</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0D1B2A;--cream:#FAFAF8;--border:#E5E5E5;--gold:#C9A96E;
+  --green:#16A34A;--red:#DC2626;--text:#1A1A1A;--muted:#888;
+}
+body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
+
+/* Header */
+.quote-header{background:var(--navy);color:#fff;text-align:center;padding:32px 20px 28px}
+.quote-header .logo{font-size:28px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.quote-header .subtitle{color:rgba(255,255,255,.6);font-size:13px}
+
+/* Container */
+.container{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+
+/* Status banner */
+.status-banner{padding:16px 20px;border-radius:12px;text-align:center;margin-bottom:20px;font-weight:600;font-size:15px}
+.status-banner.pending{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.status-banner.accepted{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+.status-banner.expired{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.status-banner .status-icon{font-size:24px;display:block;margin-bottom:6px}
+
+/* Quote meta */
+.quote-meta{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:20px;font-size:14px;color:var(--muted)}
+.quote-meta strong{color:var(--text)}
+
+/* Card */
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;color:var(--navy)}
+.card-body{padding:16px 20px}
+
+/* Line items table */
+.items-table{width:100%;border-collapse:collapse}
+.items-table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:8px 0;border-bottom:2px solid var(--border)}
+.items-table td{padding:12px 0;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:top}
+.items-table tr:last-child td{border-bottom:none}
+.items-table .wine-name{font-weight:600;color:var(--navy)}
+.items-table .wine-detail{font-size:12px;color:var(--muted);margin-top:2px}
+.items-table .text-right{text-align:right}
+.items-table .qty{text-align:center;color:var(--muted)}
+
+/* Totals */
+.totals{padding:16px 20px;background:#F8F8F6}
+.total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:14px}
+.total-row.grand{border-top:2px solid var(--navy);margin-top:8px;padding-top:12px;font-size:18px;font-weight:700;color:var(--navy)}
+
+/* Notes */
+.quote-notes{padding:16px 20px;font-size:13px;color:var(--muted);border-top:1px solid var(--border)}
+.quote-notes strong{color:var(--text)}
+
+/* Accept section */
+.accept-section{text-align:center;padding:24px 20px}
+.accept-section p{font-size:13px;color:var(--muted);margin-bottom:16px}
+.btn-accept{display:inline-flex;align-items:center;gap:8px;padding:16px 40px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(22,163,74,.3);transition:transform .1s}
+.btn-accept:active{transform:scale(.97)}
+.btn-decline{display:inline-block;margin-top:12px;padding:10px 24px;background:none;border:1px solid var(--border);border-radius:10px;font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit}
+
+/* Accepted confirmation */
+.accepted-view{text-align:center;padding:32px 20px}
+.accepted-view .check{font-size:56px;margin-bottom:12px}
+.accepted-view h2{color:var(--green);margin-bottom:8px}
+.accepted-view p{color:var(--muted);font-size:14px;max-width:400px;margin:0 auto}
+
+/* Footer */
+.quote-footer{text-align:center;padding:32px 20px;font-size:12px;color:var(--muted)}
+.quote-footer a{color:var(--navy);text-decoration:none;font-weight:600}
+
+/* Loading */
+.loading{text-align:center;padding:80px 20px;color:var(--muted)}
+.loading .spinner{display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Error */
+.error-view{text-align:center;padding:60px 20px}
+.error-view .icon{font-size:48px;margin-bottom:12px}
+.error-view h2{margin-bottom:8px}
+.error-view p{color:var(--muted);font-size:14px}
+
+/* Responsive */
+@media(max-width:480px){
+  .items-table .wine-detail{display:none}
+  .quote-meta{flex-direction:column;gap:4px}
+}
+</style>
+</head>
+<body>
+
+<div class="quote-header">
+  <div class="logo">7 CELLARS</div>
+  <div class="subtitle">Grand Cayman · Fine Wine & Spirits</div>
+</div>
+
+<div class="container" id="app">
+  <div class="loading">
+    <div class="spinner"></div>
+    <p>Loading quote...</p>
+  </div>
+</div>
+
+<div class="quote-footer">
+  <p>Questions? Contact us at <a href="mailto:orders@7cellars.ky">orders@7cellars.ky</a> or <a href="tel:+13453232610">(345) 323-2610</a></p>
+  <p style="margin-top:6px">© 2026 7 Cellars Ltd · Grand Cayman</p>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = ''; // Will be set after deploying Apps Script
+const app = document.getElementById('app');
+
+// Get quote ID from URL
+const params = new URLSearchParams(window.location.search);
+const quoteId = params.get('id');
+
+if (!quoteId) {
+  showError('No quote specified', 'This link appears to be incomplete. Please check with your 7 Cellars representative.');
+} else {
+  loadQuote(quoteId);
+}
+
+async function loadQuote(id) {
+  // Try localStorage first (offline / Apps Script not set up yet)
+  const localQuotes = JSON.parse(localStorage.getItem('7c_quotes') || '{}');
+  let quote = localQuotes[id];
+
+  if (!quote && APPS_SCRIPT_URL) {
+    try {
+      const res = await fetch(`${APPS_SCRIPT_URL}?action=getQuote&id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (data.success) quote = data.quote;
+    } catch (e) {
+      console.error('Failed to fetch from backend:', e);
+    }
+  }
+
+  if (!quote) {
+    // Check if embedded in URL hash (offline mode)
+    try {
+      const hash = window.location.hash.slice(1);
+      if (hash) quote = JSON.parse(decodeURIComponent(atob(hash)));
+    } catch (e) {}
+  }
+
+  if (!quote) {
+    showError('Quote not found', 'This quote may have expired or the link is incorrect. Contact your 7 Cellars rep for a new quote.');
+    return;
+  }
+
+  renderQuote(quote);
+}
+
+function renderQuote(quote) {
+  const isExpired = quote.expiresAt && new Date(quote.expiresAt) < new Date();
+  const status = quote.status || 'pending';
+  const total = (quote.items || []).reduce((sum, item) => sum + (item.quantity * item.price), 0);
+
+  let statusHtml = '';
+  if (status === 'accepted') {
+    statusHtml = `<div class="status-banner accepted"><span class="status-icon">✅</span>Quote accepted${quote.acceptedAt ? ' on ' + new Date(quote.acceptedAt).toLocaleDateString() : ''}</div>`;
+  } else if (isExpired) {
+    statusHtml = `<div class="status-banner expired"><span class="status-icon">⏰</span>This quote has expired. Contact 7 Cellars for a new quote.</div>`;
+  } else {
+    statusHtml = `<div class="status-banner pending"><span class="status-icon">📋</span>Quote ready for your review</div>`;
+  }
+
+  app.innerHTML = `
+    ${statusHtml}
+
+    <div class="quote-meta">
+      <div><span>Quote</span> <strong>${esc(quote.id)}</strong></div>
+      <div><span>Date</span> <strong>${new Date(quote.createdAt).toLocaleDateString()}</strong></div>
+      ${quote.expiresAt ? `<div><span>Valid until</span> <strong>${new Date(quote.expiresAt).toLocaleDateString()}</strong></div>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-header">Prepared for: ${esc(quote.customerName)}</div>
+      <div class="card-body" style="padding:0">
+        <table class="items-table" style="padding:0 20px">
+          <thead>
+            <tr>
+              <th>Wine</th>
+              <th class="qty">Qty</th>
+              <th class="text-right">Price</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(quote.items || []).map(item => `
+              <tr>
+                <td>
+                  <div class="wine-name">${esc(item.title)}</div>
+                  <div class="wine-detail">${esc(item.region || '')}</div>
+                </td>
+                <td class="qty">${item.quantity}</td>
+                <td class="text-right">${currency(item.price)}</td>
+                <td class="text-right"><strong>${currency(item.quantity * item.price)}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="totals">
+        <div class="total-row"><span>Subtotal (${quote.items.length} line${quote.items.length === 1 ? '' : 's'})</span><span>${currency(total)}</span></div>
+        <div class="total-row grand"><span>Total</span><span>${currency(total)}</span></div>
+      </div>
+      ${quote.notes ? `<div class="quote-notes"><strong>Notes:</strong> ${esc(quote.notes)}</div>` : ''}
+    </div>
+
+    ${status === 'accepted' ? `
+      <div class="accepted-view">
+        <div class="check">✅</div>
+        <h2>Order Confirmed</h2>
+        <p>Thank you! Your order is being prepared. We'll be in touch about delivery.</p>
+      </div>
+    ` : (isExpired ? '' : `
+      <div class="accept-section">
+        <p>By accepting this quote, it becomes a confirmed order for delivery.</p>
+        <button class="btn-accept" id="acceptBtn" onclick="acceptQuote('${esc(quote.id)}')">✓ Accept Quote</button>
+        <br>
+        <button class="btn-decline" onclick="declineQuote('${esc(quote.id)}')">Decline</button>
+      </div>
+    `)}
+  `;
+}
+
+async function acceptQuote(id) {
+  const btn = document.getElementById('acceptBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
+
+  // Update localStorage
+  const localQuotes = JSON.parse(localStorage.getItem('7c_quotes') || '{}');
+  if (localQuotes[id]) {
+    localQuotes[id].status = 'accepted';
+    localQuotes[id].acceptedAt = new Date().toISOString();
+    localStorage.setItem('7c_quotes', JSON.stringify(localQuotes));
+  }
+
+  // Try Apps Script backend
+  if (APPS_SCRIPT_URL) {
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'acceptQuote', id, acceptedAt: new Date().toISOString() })
+      });
+    } catch (e) {
+      console.error('Backend update failed:', e);
+    }
+  }
+
+  // Re-render
+  const quote = localQuotes[id];
+  if (quote) {
+    renderQuote(quote);
+  } else {
+    app.innerHTML = `
+      <div class="accepted-view">
+        <div class="check">✅</div>
+        <h2>Quote Accepted!</h2>
+        <p>Your order has been confirmed. The 7 Cellars team will be in touch about delivery.</p>
+      </div>
+    `;
+  }
+}
+
+async function declineQuote(id) {
+  if (!confirm('Are you sure you want to decline this quote?')) return;
+
+  const localQuotes = JSON.parse(localStorage.getItem('7c_quotes') || '{}');
+  if (localQuotes[id]) {
+    localQuotes[id].status = 'declined';
+    localQuotes[id].declinedAt = new Date().toISOString();
+    localStorage.setItem('7c_quotes', JSON.stringify(localQuotes));
+  }
+
+  if (APPS_SCRIPT_URL) {
+    try {
+      await fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'declineQuote', id }) });
+    } catch (e) {}
+  }
+
+  app.innerHTML = `
+    <div class="error-view">
+      <div class="icon">📋</div>
+      <h2>Quote Declined</h2>
+      <p>No worries. Contact your 7 Cellars rep if you'd like a revised quote.</p>
+    </div>
+  `;
+}
+
+function showError(title, message) {
+  app.innerHTML = `<div class="error-view"><div class="icon">🔍</div><h2>${esc(title)}</h2><p>${esc(message)}</p></div>`;
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function currency(n) { return '$' + Number(n || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+</script>
+</body>
+</html>
