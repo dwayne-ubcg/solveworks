@@ -522,6 +522,7 @@
       <li class="nav-item" data-panel="p-invoices"    onclick="showPanel('p-invoices')"><span class="nav-emoji">💰</span> Invoices</li>
       <li class="nav-item" data-panel="p-receipts"    onclick="showPanel('p-receipts')"><span class="nav-emoji">🧾</span> Receipts</li>
       <li class="nav-item" data-panel="p-fabrication" onclick="showPanel('p-fabrication')"><span class="nav-emoji">⚙️</span> Fabrication</li>
+      <li class="nav-item" data-panel="p-slab" onclick="showPanel('p-slab')"><span class="nav-emoji">🪨</span> Slab Calc</li>
       <li class="nav-item" data-panel="p-documents"   onclick="showPanel('p-documents')"><span class="nav-emoji">📁</span> Documents</li>
       <li class="nav-item" data-panel="p-flooring"    onclick="showPanel('p-flooring')"><span class="nav-emoji">🏠</span> Flooring</li>
       <li class="nav-item" data-panel="p-agents"      onclick="showPanel('p-agents')"><span class="nav-emoji">🤖</span> Agents</li>
@@ -554,6 +555,7 @@
     <div class="panel" id="p-invoices"></div>
     <div class="panel" id="p-receipts"></div>
     <div class="panel" id="p-fabrication"></div>
+    <div class="panel" id="p-slab"></div>
     <div class="panel" id="p-documents"></div>
     <div class="panel" id="p-flooring"></div>
     <div class="panel" id="p-agents"></div>
@@ -2701,14 +2703,17 @@ Craig: Make sure we confirm the sink model first."></textarea>
       });
     }
 
-    // ── SLAB CALCULATOR ──
-    html += `<div class="section-label" style="margin-top:24px">🪨 Slab Calculator — Shelley's Estimator</div>`;
-    html += `<div class="card" id="slab-calc-card">` + renderSlabCalculator() + `</div>`;
-
     document.getElementById('p-fabrication').innerHTML = html;
-    // Re-attach slab calc events after DOM update
+  }
+
+  // ─── SLAB PANEL ────────────────────────────────────────────────────────────────
+  function renderSlabPanel() {
+    let html = '';
+    html += `<div class="card" id="slab-calc-card">` + renderSlabCalculator() + `</div>`;
+    document.getElementById('p-slab').innerHTML = html;
     initSlabCalc();
   }
+
   loadFabrication();
 
   // ── SLAB CALCULATOR STATE ──
@@ -2752,98 +2757,187 @@ Craig: Make sure we confirm the sink model first."></textarea>
 
   function slabCalcResults() {
     const { w: slabW, l: slabL } = getSlabDims();
-    const slabSqIn = slabW * slabL;
-    const slabSqFt = slabSqIn / 144;
     const pricePerSlab = getSlabPrice();
     const markup = parseFloat(document.getElementById('sc-markup')?.value) || slabMarkup;
+    const kerf = 0.125; // 1/8" kerf
 
-    // Total piece area in sq inches
+    // Create a copy of pieces to work with, adding kerf for placement
+    const piecesToPack = slabPieces.map(p => ({
+      name: p.name,
+      w: (parseFloat(p.depth) || 0),
+      h: (parseFloat(p.length) || 0),
+      originalW: (parseFloat(p.depth) || 0),
+      originalH: (parseFloat(p.length) || 0),
+      area: (parseFloat(p.depth) || 0) * (parseFloat(p.length) || 0)
+    })).filter(p => p.w > 0 && p.h > 0);
+
+    // Sort pieces by area, descending
+    piecesToPack.sort((a, b) => b.area - a.area);
+
+    const slabs = [];
+    if (piecesToPack.length > 0) {
+      slabs.push({ w: slabL, h: slabW, placed: [] }); // Use L for width, W for height
+    }
+
+    for (const piece of piecesToPack) {
+      let placed = false;
+      for (const slab of slabs) {
+        if (placePieceOnSlab(piece, slab, kerf)) {
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        const newSlab = { w: slabL, h: slabW, placed: [] };
+        if (placePieceOnSlab(piece, newSlab, kerf)) {
+            slabs.push(newSlab);
+        } else {
+            console.error("Piece is too large for a new slab, which shouldn't happen.", piece);
+            // Handle oversized pieces if necessary, e.g., mark them as unplaceable
+        }
+      }
+    }
+
+    // This is the core packing logic, simplified. A shelf-based approach.
+    function placePieceOnSlab(piece, slab, kerf) {
+        // Try both orientations
+        for (let i = 0; i < 2; i++) {
+            const pW = (i === 0 ? piece.w : piece.h) + kerf;
+            const pH = (i === 0 ? piece.h : piece.w) + kerf;
+
+            if (pW > slab.w || pH > slab.h) continue; // Doesn't fit at all
+
+            // Try placing at different positions (simple grid check)
+            for (let y = 0; y <= slab.h - pH; y += kerf) {
+                for (let x = 0; x <= slab.w - pW; x += kerf) {
+                    const newPos = { x, y, w: pW, h: pH };
+                    let canPlace = true;
+                    for (const placed of slab.placed) {
+                        if (rectsOverlap(placed, newPos)) {
+                            canPlace = false;
+                            break;
+                        }
+                    }
+                    if (canPlace) {
+                        slab.placed.push({ ...newPos, name: piece.name, originalW: piece.originalW, originalH: piece.originalH });
+                        return true; // Placed successfully
+                    }
+                }
+            }
+        }
+        return false; // Could not place
+    }
+
+    function rectsOverlap(r1, r2) {
+        return !(r2.x >= r1.x + r1.w ||
+                 r2.x + r2.w <= r1.x ||
+                 r2.y >= r1.y + r1.h ||
+                 r2.y + r2.h <= r1.y);
+    }
+    
+    // --- Calculations based on packing results ---
+    const slabsNeeded = slabs.length;
+    const slabSqFt = (slabW * slabL) / 144;
     let totalPieceSqIn = 0;
     slabPieces.forEach(p => {
       totalPieceSqIn += (parseFloat(p.length) || 0) * (parseFloat(p.depth) || 0);
     });
     const totalPieceSqFt = totalPieceSqIn / 144;
+    
+    const totalSlabSqIn = slabsNeeded * (slabW * slabL);
+    const utilizationPct = totalSlabSqIn > 0 ? (totalPieceSqIn / totalSlabSqIn * 100) : 0;
+    const wasteSqIn = totalSlabSqIn - totalPieceSqIn;
+    const wasteSqFt = wasteSqIn / 144;
 
-    // How many slabs — simple bin approach: fit pieces across slab width
-    // Pieces are laid lengthwise on the slab (width of piece ≤ slab width)
-    // We track remaining length on current slab
-    let slabsNeeded = 0;
-    let remainingLengthIn = 0;
-    let seams = 0;
-    const sorted = [...slabPieces].sort((a, b) => (parseFloat(b.depth) || 0) - (parseFloat(a.depth) || 0));
-    sorted.forEach(piece => {
-      const pLen = parseFloat(piece.length) || 0;
-      const pDep = parseFloat(piece.depth) || 0;
-      if (pLen <= 0 || pDep <= 0) return;
-      // If piece depth > slab width → must seam this piece
-      const pieceSeams = pDep > slabW ? Math.ceil(pDep / slabW) - 1 : 0;
-      seams += pieceSeams;
-      // How many inches of slab length this piece needs
-      const pLenNeeded = pLen; // piece runs along slab length
-      if (remainingLengthIn >= pLenNeeded) {
-        remainingLengthIn -= pLenNeeded;
-      } else {
-        // Need a new slab
-        slabsNeeded++;
-        remainingLengthIn = slabL - pLenNeeded;
-        if (remainingLengthIn < 0) {
-          // piece longer than slab — must join slabs (add slab + seam)
-          const extraSlabs = Math.floor(-remainingLengthIn / slabL) + 1;
-          slabsNeeded += extraSlabs;
-          seams += extraSlabs; // length seams
-          remainingLengthIn = slabL - (pLenNeeded % slabL || pLenNeeded);
-        }
-      }
-    });
-
-    // Remnant = leftover usable portion of last slab
-    const usedLengthOnLastSlab = slabsNeeded > 0 ? (slabL - remainingLengthIn) : 0;
-    const remnantLengthIn = remainingLengthIn;
-    const remnantSqIn = remnantLengthIn * slabW;
-    const remnantSqFt = remnantSqIn / 144;
-
-    // Utilization
-    const totalSlabSqIn = slabsNeeded * slabSqIn;
-    const utilizationPct = totalSlabSqIn > 0 ? Math.min(100, totalPieceSqIn / totalSlabSqIn * 100) : 0;
-
-    // Remnant categories (based on width = shorter dimension of leftover piece)
-    // The remnant width is effectively how wide a piece could be cut from the remnant
-    // We use remnantLengthIn as the remnant "width" (since we're looking at strip left over)
-    const remnantWidthIn = remnantLengthIn; // conservative — width of usable strip
-    let remnantCategory = 'waste';
-    let remnantCreditPct = 0;
-    let remnantCreditLabel = '';
-    if (remnantWidthIn >= 36) {
-      remnantCategory = 'high';
-      remnantCreditPct = 0.60;
-      remnantCreditLabel = '≥36" — HIGH VALUE';
-    } else if (remnantWidthIn >= 26) {
-      remnantCategory = 'medium';
-      remnantCreditPct = 0.40;
-      remnantCreditLabel = '≥26" — MEDIUM';
-    } else if (remnantWidthIn >= 22) {
-      remnantCategory = 'low';
-      remnantCreditPct = 0.20;
-      remnantCreditLabel = '≥22" — LOW VALUE';
-    } else {
-      remnantCategory = 'waste';
-      remnantCreditPct = 0;
-      remnantCreditLabel = '<22" — WASTE';
-    }
+    // Identify usable remnants (simple approach: largest empty rectangle)
+    // This is a complex problem; for now, we'll just report waste.
+    // A future improvement could identify large empty rectangles on each slab.
+    const usableRemnants = []; // Placeholder
 
     const totalSlabCost = slabsNeeded * pricePerSlab;
-    const remnantCredit = remnantWidthIn >= 22 ? (remnantSqFt / slabSqFt) * pricePerSlab * remnantCreditPct : 0;
-    const netMaterialCost = Math.max(0, totalSlabCost - remnantCredit);
-    const quotePrice = netMaterialCost * (1 + markup / 100);
-    const profitMargin = quotePrice > 0 ? ((quotePrice - netMaterialCost) / quotePrice * 100) : 0;
+    const quotePrice = totalSlabCost * (1 + markup / 100);
+    const profitMargin = quotePrice > 0 ? ((quotePrice - totalSlabCost) / quotePrice * 100) : 0;
 
     return {
-      slabsNeeded, seams, slabSqFt, totalPieceSqFt, utilizationPct,
-      remnantSqFt, remnantWidthIn, remnantCategory, remnantCreditLabel,
-      remnantCredit, totalSlabCost, netMaterialCost, quotePrice, profitMargin, markup,
-      pricePerSlab, slabW, slabL
+      slabs, // The layout data for drawing
+      slabsNeeded,
+      totalPieceSqFt,
+      utilizationPct,
+      wasteSqFt,
+      usableRemnants, // For future use
+      totalSlabCost,
+      quotePrice,
+      profitMargin,
+      markup,
+      pricePerSlab,
+      slabW,
+      slabL
     };
   }
+
+  function drawSlabLayout(slabs) {
+    let html = '<div id="slab-layout-container" style="position:relative;width:100%;background:var(--surface2);padding:10px;border-radius:8px;">';
+    const colors = ['#88B04B', '#FF6F61', '#6B5B95', '#F7CAC9', '#92A8D1', '#955251', '#B565A7', '#009B77', '#DD4124', '#45B8AC'];
+    
+    slabs.forEach((slab, i) => {
+      html += `<div style="margin-bottom:15px;"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Slab ${i + 1}</div>`;
+      const containerId = `slab-canvas-container-${i}`;
+      const canvasId = `slab-canvas-${i}`;
+      const aspectRatio = slab.h / slab.w; // h is slabWidth, w is slabLength
+      
+      html += `<div id="${containerId}" style="width:100%;padding-top:${aspectRatio * 100}%;position:relative;">`;
+      html += `<canvas id="${canvasId}" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>`;
+      html += `</div></div>`;
+    });
+
+    html += '</div>';
+
+    // We need a script to run after this HTML is inserted into the DOM
+    setTimeout(() => {
+      slabs.forEach((slab, i) => {
+        const canvas = document.getElementById(`slab-canvas-${i}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById(`slab-canvas-container-${i}`);
+        
+        // Set canvas resolution to match container size
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        
+        const scaleX = canvas.width / slab.w;
+        const scaleY = canvas.height / slab.h;
+
+        // Draw slab outline
+        ctx.strokeStyle = 'var(--border2)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+        // Draw placed pieces
+        slab.placed.forEach((p, pieceIndex) => {
+          ctx.fillStyle = colors[pieceIndex % colors.length];
+          ctx.fillRect(p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY);
+          
+          // Draw border
+          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY);
+
+          // Draw label
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const label = `${p.name} (${p.originalW}"x${p.originalH}")`;
+          const textX = (p.x + p.w / 2) * scaleX;
+          const textY = (p.y + p.h / 2) * scaleY;
+          ctx.fillText(label, textX, textY);
+        });
+      });
+    }, 0);
+
+    return html;
+  }
+
 
   function renderSlabCalculator() {
     const prod = SLAB_PRODUCTS[0]; // default for initial render
@@ -2951,45 +3045,32 @@ Craig: Make sure we confirm the sink model first."></textarea>
     const r = slabCalcResults();
     let h = '';
 
-    // Seam & Slab summary
-    h += `<div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px">`;
-    h += `<div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Slab Planning</div>`;
-    h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">`;
-    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Slabs Needed</div><div style="font-size:28px;font-weight:700;color:var(--accent)">${r.slabsNeeded}</div></div>`;
-    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Est. Seams</div><div style="font-size:28px;font-weight:700;color:var(--orange)">${r.seams}</div></div>`;
-    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Utilization</div><div style="font-size:28px;font-weight:700;color:${r.utilizationPct >= 80 ? 'var(--green)' : r.utilizationPct >= 50 ? 'var(--orange)' : 'var(--red)'}">${r.utilizationPct.toFixed(0)}%</div></div>`;
-    h += `</div>`;
-    // Utilization bar
-    h += `<div style="margin-top:12px">`;
-    h += `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px"><span>Slab utilization</span><span>${r.totalPieceSqFt.toFixed(1)} sqft needed · ${(r.slabsNeeded * r.slabSqFt).toFixed(1)} sqft available</span></div>`;
-    h += `<div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${r.utilizationPct.toFixed(0)}%;background:${r.utilizationPct >= 80 ? 'var(--green)' : r.utilizationPct >= 50 ? 'var(--orange)' : 'var(--red)'}"></div></div>`;
-    h += `</div></div>`;
+    // The visual layout is the main feature now
+    h += drawSlabLayout(r.slabs);
 
-    // Remnant analysis
-    const remnantColor = r.remnantCategory === 'high' ? 'var(--green)' : r.remnantCategory === 'medium' ? 'var(--accent)' : r.remnantCategory === 'low' ? 'var(--orange)' : 'var(--red)';
-    h += `<div style="background:var(--surface2);border-radius:10px;padding:16px;margin-bottom:12px;border-left:3px solid ${remnantColor}">`;
-    h += `<div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Remnant Analysis</div>`;
-    h += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">`;
-    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Remnant Strip</div><div style="font-size:20px;font-weight:700;color:${remnantColor}">${r.remnantWidthIn.toFixed(0)}"</div><div style="font-size:11px;color:var(--text3)">${r.remnantSqFt.toFixed(1)} sqft</div></div>`;
-    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Category</div><div style="font-size:12px;font-weight:700;color:${remnantColor};margin-top:4px">${r.remnantCreditLabel || '—'}</div></div>`;
-    h += `<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Remnant Credit</div><div style="font-size:20px;font-weight:700;color:var(--green)">$${r.remnantCredit.toFixed(0)}</div></div>`;
-    h += `</div>`;
-    h += `<div style="font-size:11px;color:var(--text3);border-top:1px solid var(--border2);padding-top:10px">`;
-    h += `Credit categories: <span style="color:var(--green)">≥36" = 60%</span> · <span style="color:var(--accent)">≥26" = 40%</span> · <span style="color:var(--orange)">≥22" = 20%</span> · <span style="color:var(--red)">&lt;22" = waste (no credit)</span>`;
-    h += `</div></div>`;
+    h += `<div style="padding:12px;background:var(--surface2);border-radius:8px;margin-top:14px;">`;
+    h += `<div style="font-size:11px;color:var(--text3);margin-bottom:8px">ESTIMATE SUMMARY</div>`;
+    h += `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));gap:12px;">`;
+    
+    // Key Metrics
+    h += `<div><div class="stat-label">Slabs Needed</div><div class="stat-value">${r.slabsNeeded}</div></div>`;
+    h += `<div><div class="stat-label">Piece Area</div><div class="stat-value">${r.totalPieceSqFt.toFixed(1)} sqft</div></div>`;
+    h += `<div><div class="stat-label">Utilization</div><div class="stat-value">${r.utilizationPct.toFixed(0)}%</div></div>`;
+    h += `<div><div class="stat-label">Waste</div><div class="stat-value">${r.wasteSqFt.toFixed(1)} sqft</div></div>`;
+    
+    h += `<div><div class="stat-label">Material Cost</div><div class="stat-value">$${r.totalSlabCost.toLocaleString('en',{maximumFractionDigits:0})}</div></div>`;
+    h += `<div><div class="stat-label">Markup (${r.markup}%)</div><div class="stat-value">$${(r.quotePrice - r.totalSlabCost).toLocaleString('en',{maximumFractionDigits:0})}</div></div>`;
+    h += `<div><div class="stat-label">Profit Margin</div><div class="stat-value">${r.profitMargin.toFixed(0)}%</div></div>`;
 
-    // Cost summary
-    h += `<div style="background:var(--surface2);border-radius:10px;padding:16px">`;
-    h += `<div style="font-size:12px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Cost Summary</div>`;
-    h += `<div style="display:flex;flex-direction:column;gap:8px">`;
-    h += `<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">${r.slabsNeeded} slab${r.slabsNeeded !== 1 ? 's' : ''} × $${r.pricePerSlab.toLocaleString()}</span><span style="color:var(--red);font-weight:600">−$${r.totalSlabCost.toLocaleString('en',{maximumFractionDigits:0})}</span></div>`;
-    if (r.remnantCredit > 0) {
-      h += `<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">Remnant credit (${r.remnantCreditLabel})</span><span style="color:var(--green);font-weight:600">+$${r.remnantCredit.toFixed(0)}</span></div>`;
-    }
-    h += `<div style="border-top:1px solid var(--border2);padding-top:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;font-weight:600">Net Material Cost</span><span style="color:var(--red);font-weight:700;font-size:16px">$${r.netMaterialCost.toFixed(0)}</span></div>`;
-    h += `<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--text2)">${r.markup}% markup applied</span><span style="color:var(--green);font-weight:700;font-size:20px">$${r.quotePrice.toFixed(0)}</span></div>`;
-    h += `<div style="background:var(--green-bg);border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span style="font-size:13px;color:var(--green);font-weight:600">Profit Margin</span><span style="color:var(--green);font-weight:700;font-size:18px">${r.profitMargin.toFixed(1)}%</span></div>`;
-    h += `</div></div>`;
+    h += `</div>`; // end grid
+
+    // Final Quote Price
+    h += `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border2);text-align:right">`;
+    h += `<div class="stat-label" style="font-size:14px;">Quote Price</div>`;
+    h += `<div class="stat-value" style="font-size:28px;color:var(--green);">$${r.quotePrice.toLocaleString('en',{maximumFractionDigits:2})}</div>`;
+    h += `</div>`;
+
+    h += `</div>`; // end card
 
     return h;
   }
@@ -4091,6 +4172,8 @@ Craig: Make sure we confirm the sink model first."></textarea>
     document.getElementById('p-audit').innerHTML = html;
   }
   loadAudit();
+
+  renderSlabPanel();
 
   loadMeetings();
 </script>

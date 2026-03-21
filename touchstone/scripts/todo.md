@@ -1,0 +1,22 @@
+# DXF Estimator Prototype - TODO
+
+- [ ] **Environment Setup**:
+  - [x] Create project directory
+  - [x] Install `ezdxf`
+- [ ] **File Creation**:
+  - [x] `todo.md`
+  - [x] `dxf_estimator.py`
+  - [x] `material_prices.json`
+  - [x] `generate_test_dxf.py`
+  - [x] `test_estimator.py`
+- [ ] **Populate `material_prices.json`**
+- [ ] **Create `generate_test_dxf.py`** to generate the sample DXF file.
+- [ ] **Implement `dxf_estimator.py`**:
+  - [ ] DXF parsing function to extract polylines and their dimensions.
+  - [ ] Simple slab nesting/optimization logic.
+  - [ ] Quoting function to generate JSON output.
+- [ ] **Implement `test_estimator.py`** to run the full process.
+- [ ] **Execute and Verify**:
+  - [ ] Run `generate_test_dxf.py` to create `test_countertop.dxf`.
+  - [ ] Run `test_estimator.py` and get a valid JSON quote.
+  - [ ] Post the final JSON output.

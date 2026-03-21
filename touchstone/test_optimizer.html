@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slab Optimizer Test</title>
+    <script src="scripts/slab_optimizer.js"></script>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f0f0; }
+        .slab {
+            border: 2px solid #333;
+            position: relative;
+            margin: 20px;
+            background-color: #fff;
+        }
+        .piece {
+            position: absolute;
+            box-sizing: border-box;
+            border: 1px solid #fff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            text-align: center;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Slab Optimizer Test</h1>
+    <div id="visualization"></div>
+    <pre id="report"></pre>
+
+    <script>
+        // Test Case 1: Simple Kitchen
+        const testKitchen = [
+            { name: 'Counter 1', length: 96, width: 25.5 },
+            { name: 'Counter 2', length: 72, width: 25.5 },
+            { name: 'Island', length: 60, width: 40 },
+            { name: 'Backsplash 1', length: 96, width: 4 },
+            { name: 'Backsplash 2', length: 72, width: 4 },
+        ];
+
+        const SLAB_WIDTH = 126;
+        const SLAB_HEIGHT = 63;
+        const SCALE = 5; // 5px per inch
+
+        function runTest() {
+            const optimizer = new SlabOptimizer(testKitchen, SLAB_WIDTH, SLAB_HEIGHT);
+            const report = optimizer.optimize();
+
+            // Display raw report
+            document.getElementById('report').textContent = JSON.stringify(report, null, 2);
+
+            // Visualize
+            const vizContainer = document.getElementById('visualization');
+            vizContainer.innerHTML = '';
+
+            report.slabs.forEach((slab, index) => {
+                const slabDiv = document.createElement('div');
+                slabDiv.className = 'slab';
+                slabDiv.style.width = (slab.width * SCALE) + 'px';
+                slabDiv.style.height = (slab.height * SCALE) + 'px';
+                slabDiv.innerHTML = `<h3>Slab ${index + 1}</h3>`;
+                
+                slab.pieces.forEach(p => {
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.className = 'piece';
+                    pieceDiv.style.left = (p.x * SCALE) + 'px';
+                    pieceDiv.style.top = (p.y * SCALE) + 'px';
+                    pieceDiv.style.width = (p.width * SCALE) + 'px';
+                    pieceDiv.style.height = (p.height * SCALE) + 'px';
+                    pieceDiv.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                    pieceDiv.textContent = `${p.name} (${p.length}x${p.width})`;
+                    slabDiv.appendChild(pieceDiv);
+                });
+
+                vizContainer.appendChild(slabDiv);
+            });
+        }
+
+        runTest();
+    </script>
+</body>
+</html>
