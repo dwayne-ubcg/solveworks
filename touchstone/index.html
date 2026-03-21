@@ -466,6 +466,24 @@
     .grid4 { grid-template-columns: repeat(2,1fr); }
     .grid3 { grid-template-columns: repeat(2,1fr); }
   }
+  /* ── Task Kanban ── */
+  .task-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;min-height:400px}
+  .task-col{flex:1;min-width:220px;max-width:320px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column}
+  .task-col-header{padding:12px 14px;font-weight:700;font-size:13px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;z-index:1}
+  .task-col-header .col-count{background:var(--bg);padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;color:var(--text2)}
+  .task-col-body{flex:1;padding:8px;overflow-y:auto;min-height:60px}
+  .task-col-body.drag-over{background:var(--accent-bg, rgba(99,102,241,0.06));border-radius:0 0 var(--radius) var(--radius)}
+  .task-card{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:grab;transition:box-shadow 0.15s,opacity 0.15s}
+  .task-card:active{cursor:grabbing}
+  .task-card.dragging{opacity:0.5;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+  .task-card .tc-text{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:6px;color:var(--text)}
+  .task-card .tc-source{font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px;line-height:1.3}
+  .task-card .tc-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .task-card .tc-rep{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+  .task-card .tc-date{font-size:10px;color:var(--text3)}
+  .task-card .tc-phone{font-size:10px;color:var(--accent);text-decoration:none}
+  .task-card .tc-lead{font-size:10px;cursor:pointer}
+  @media(max-width:768px){.task-board{flex-direction:column}.task-col{max-width:none;min-height:auto}}
 </style>
 </head>
 <body>
@@ -1680,97 +1698,116 @@ Craig: Make sure we confirm the sink model first."></textarea>
   let tasksFilter = {search:'', account:'', status:''};
 
   function markTaskDone(taskId) {
-    const done = JSON.parse(localStorage.getItem('touchstone_tasks_done') || '[]');
-    if (!done.includes(taskId)) done.push(taskId);
-    localStorage.setItem('touchstone_tasks_done', JSON.stringify(done));
+    setTaskStatus(taskId, 'done');
     loadTasks();
+  }
+
+  const TASK_COLUMNS = [
+    {id:'new', label:'📥 New', color:'var(--accent)'},
+    {id:'in-progress', label:'🔧 In Progress', color:'var(--orange)'},
+    {id:'waiting', label:'⏳ Waiting', color:'var(--purple)'},
+    {id:'done', label:'✅ Done', color:'var(--green)'}
+  ];
+
+  function getTaskStatuses() {
+    return JSON.parse(localStorage.getItem('touchstone_task_statuses') || '{}');
+  }
+  function setTaskStatus(taskId, status) {
+    const s = getTaskStatuses();
+    s[taskId] = status;
+    localStorage.setItem('touchstone_task_statuses', JSON.stringify(s));
   }
 
   async function loadTasks() {
     const data = await loadJSON('tasks');
     const allTasks = data?.tasks || [];
-    const doneTasks = JSON.parse(localStorage.getItem('touchstone_tasks_done') || '[]');
-
-    const accounts = [...new Set(allTasks.map(t => t.account).filter(Boolean))];
+    const statuses = getTaskStatuses();
     const repColors = {Craig:'var(--accent)',Tyler:'var(--green)',Shelley:'var(--purple)',Jason:'var(--orange)',Lenore:'var(--cyan)'};
+    const accounts = [...new Set(allTasks.map(t => t.account).filter(Boolean))];
 
-    let filtered = allTasks.map(t => ({
+    // Migrate old done list
+    const oldDone = JSON.parse(localStorage.getItem('touchstone_tasks_done') || '[]');
+    if (oldDone.length) {
+      oldDone.forEach(id => { if (!statuses[id]) statuses[id] = 'done'; });
+      localStorage.setItem('touchstone_task_statuses', JSON.stringify(statuses));
+      localStorage.removeItem('touchstone_tasks_done');
+    }
+
+    let tasks = allTasks.map(t => ({
       ...t,
-      status: doneTasks.includes(t.id) ? 'done' : (t.status || 'new')
+      _status: statuses[t.id] || t.status || 'new'
     }));
+
+    // Apply filters
     if (tasksFilter.search) {
       const s = tasksFilter.search.toLowerCase();
-      filtered = filtered.filter(t => (t.text||'').toLowerCase().includes(s) || (t.source||'').toLowerCase().includes(s));
+      tasks = tasks.filter(t => (t.text||'').toLowerCase().includes(s) || (t.source||'').toLowerCase().includes(s) || (t.account||'').toLowerCase().includes(s));
     }
-    if (tasksFilter.account) filtered = filtered.filter(t => t.account === tasksFilter.account);
-    if (tasksFilter.status) {
-      if (tasksFilter.status === 'open') filtered = filtered.filter(t => t.status !== 'done');
-      else if (tasksFilter.status === 'done') filtered = filtered.filter(t => t.status === 'done');
-    }
+    if (tasksFilter.account) tasks = tasks.filter(t => t.account === tasksFilter.account);
 
-    const openCount = allTasks.filter(t => !doneTasks.includes(t.id)).length;
-    const doneCount = doneTasks.length;
+    const counts = {};
+    TASK_COLUMNS.forEach(c => counts[c.id] = tasks.filter(t => t._status === c.id).length);
 
-    let html = `<div class="panel-title">📋 Tasks</div><div class="panel-sub">Auto-extracted from iMessages — ${openCount} open · ${doneCount} done</div>`;
+    let html = `<div class="panel-title">📋 Tasks</div><div class="panel-sub">Auto-extracted from iMessages — drag cards between columns</div>`;
 
-    // Stats
-    html += `<div class="grid3" style="margin-bottom:16px">`;
-    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700">${allTasks.length}</div><div style="color:var(--text2);font-size:12px">Total Tasks</div></div>`;
-    html += `<div class="stat-card" style="${openCount>0?'background:var(--orange-bg);border-color:var(--orange)':''}"><div style="font-size:22px;font-weight:700;color:var(--orange)">${openCount}</div><div style="color:var(--text2);font-size:12px">Open</div></div>`;
-    html += `<div class="stat-card"><div style="font-size:22px;font-weight:700;color:var(--green)">${doneCount}</div><div style="color:var(--text2);font-size:12px">Done</div></div>`;
-    html += `</div>`;
-
-    // Filters
-    html += `<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">`;
-    html += `<input class="search-input" placeholder="Search tasks…" value="${tasksFilter.search}" oninput="tasksFilter.search=this.value;loadTasks()">`;
-    html += `<button class="filter-btn ${!tasksFilter.status?'active':''}" onclick="tasksFilter.status='';loadTasks()">All</button>`;
-    html += `<button class="filter-btn ${tasksFilter.status==='open'?'active':''}" onclick="tasksFilter.status='open';loadTasks()">Open</button>`;
-    html += `<button class="filter-btn ${tasksFilter.status==='done'?'active':''}" onclick="tasksFilter.status='done';loadTasks()">Done</button>`;
-    accounts.forEach(a => html += `<button class="filter-btn ${tasksFilter.account===a?'active':''}" onclick="tasksFilter.account=tasksFilter.account==='${a}'?'':'${a}';loadTasks()">${a}</button>`);
-    if (tasksFilter.search || tasksFilter.account || tasksFilter.status) {
+    // Filter row
+    html += `<div class="filter-row" style="flex-wrap:wrap;gap:8px;margin-bottom:16px">`;
+    html += `<input class="search-input" placeholder="Search tasks…" value="${tasksFilter.search}" oninput="tasksFilter.search=this.value;loadTasks()" style="flex:1;min-width:160px">`;
+    accounts.forEach(a => {
+      const rc = repColors[a] || 'var(--text3)';
+      html += `<button class="filter-btn ${tasksFilter.account===a?'active':''}" onclick="tasksFilter.account=tasksFilter.account==='${a}'?'':'${a}';loadTasks()" style="${tasksFilter.account===a?'':'background:'+rc+'22;color:'+rc}">${a}</button>`;
+    });
+    if (tasksFilter.search || tasksFilter.account) {
       html += `<button class="btn btn-sm" onclick="tasksFilter={search:'',account:'',status:''};loadTasks()" style="background:var(--red-bg);color:var(--red)">✕ Clear</button>`;
     }
     html += `</div>`;
 
-    if (filtered.length) {
-      filtered.forEach(tk => {
-        const isDone = tk.status === 'done';
-        const rc = repColors[tk.account] || 'var(--text3)';
-        const timeStr = tk.time ? new Date(tk.time).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
-        const dateStr = tk.time ? new Date(tk.time).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
-        html += `<div class="card" style="margin-bottom:8px;padding:12px;opacity:${isDone?'0.6':'1'};${isDone?'border-color:var(--green)':''}">`;
-        html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">`;
-        html += `<div style="flex:1">`;
-        html += `<div style="font-weight:600;font-size:13px;margin-bottom:4px;${isDone?'text-decoration:line-through;color:var(--text3)':''}">${escHtml(tk.text||'Task')}</div>`;
-        if (tk.source) html += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-style:italic">"${escHtml(tk.source.slice(0,100))}"</div>`;
-        html += `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">`;
-        if (tk.account) html += `<span style="background:${rc}22;color:${rc};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${tk.account}</span>`;
-        html += `<span style="font-size:11px;color:var(--text3)">${dateStr}${timeStr?' · '+timeStr:''}</span>`;
-        if (tk.phone) html += `<a href="tel:${tk.phone}" style="font-size:11px;color:var(--accent);text-decoration:none">📞 ${tk.phone}</a>`;
-        if (tk.linkedLead) {
-          const ll = tk.linkedLead;
-          html += `<span class="badge badge-accent" style="font-size:10px;cursor:pointer" onclick="showPanel('p-pipeline')">📎 ${escHtml(ll.customer||'')}</span>`;
-        }
-        html += `</div>`;
-        html += `</div>`;
-        html += `<div style="flex-shrink:0">`;
-        if (!isDone) {
-          html += `<button class="btn btn-sm" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green)" onclick="markTaskDone('${tk.id}')">✓ Done</button>`;
-        } else {
-          html += `<span class="badge badge-green">Done</span>`;
-        }
-        html += `</div>`;
-        html += `</div></div>`;
-      });
-    } else {
-      html += `<div class="card" style="text-align:center;padding:40px"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="color:var(--text2)">${allTasks.length ? 'No tasks match filter' : 'No tasks yet'}</div><div style="color:var(--text3);font-size:13px;margin-top:8px">Tasks auto-generate from iMessages with extractable action items</div></div>`;
-    }
+    // Kanban board
+    html += `<div class="task-board">`;
+    TASK_COLUMNS.forEach(col => {
+      const colTasks = tasks.filter(t => t._status === col.id);
+      html += `<div class="task-col">`;
+      html += `<div class="task-col-header" style="border-bottom-color:${col.color}"><span>${col.label}</span><span class="col-count">${colTasks.length}</span></div>`;
+      html += `<div class="task-col-body" id="task-col-${col.id}" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="dropTask(event,'${col.id}')">`;
+
+      if (colTasks.length) {
+        colTasks.forEach(tk => {
+          const rc = repColors[tk.account] || 'var(--text3)';
+          const dateStr = tk.time ? new Date(tk.time).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+          html += `<div class="task-card" draggable="true" ondragstart="dragTask(event,'${tk.id}')" id="tc-${tk.id}">`;
+          html += `<div class="tc-text">${escHtml(tk.text||'Task')}</div>`;
+          if (tk.source) html += `<div class="tc-source">"${escHtml(tk.source.slice(0,80))}${tk.source.length>80?'…':''}"</div>`;
+          html += `<div class="tc-meta">`;
+          if (tk.account) html += `<span class="tc-rep" style="background:${rc}22;color:${rc}">${tk.account}</span>`;
+          if (dateStr) html += `<span class="tc-date">${dateStr}</span>`;
+          if (tk.phone) html += `<a class="tc-phone" href="tel:${tk.phone}" onclick="event.stopPropagation()">📞</a>`;
+          if (tk.linkedLead) html += `<span class="badge badge-accent tc-lead" onclick="event.stopPropagation();showPanel('p-pipeline')">📎 ${escHtml(tk.linkedLead.customer||'')}</span>`;
+          html += `</div></div>`;
+        });
+      } else {
+        html += `<div style="text-align:center;padding:20px 8px;color:var(--text3);font-size:12px">${col.id==='new'?'No new tasks':'Drop tasks here'}</div>`;
+      }
+      html += `</div></div>`;
+    });
+    html += `</div>`;
+
     document.getElementById('p-tasks').innerHTML = html;
   }
 
-  // Scoped escapeHtml for tasks (avoids conflict with overview scope)
   function escHtml(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  let _dragTaskId = null;
+  function dragTask(e, id) { _dragTaskId = id; e.dataTransfer.effectAllowed = 'move'; const el = document.getElementById('tc-'+id); if(el) el.classList.add('dragging'); }
+  function dropTask(e, colId) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (!_dragTaskId) return;
+    const el = document.getElementById('tc-'+_dragTaskId); if(el) el.classList.remove('dragging');
+    setTaskStatus(_dragTaskId, colId);
+    _dragTaskId = null;
+    loadTasks();
   }
 
   loadTasks();
