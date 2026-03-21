@@ -277,6 +277,22 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .badge.blue{background:rgba(102,157,211,.14);color:#a3caef;border:1px solid rgba(102,157,211,.2)}
 .badge.gray{background:rgba(120,130,145,.14);color:#9aabb8;border:1px solid rgba(120,130,145,.2)}
 
+.signature-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;animation:pmFadeIn .18s ease}
+.signature-modal{background:var(--surface-3);border-radius:24px;width:min(100%,700px);max-height:95vh;overflow-y:auto;display:flex;flex-direction:column;animation:pmSlideUp .2s ease}
+.sig-header{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sig-header h3{margin:0;font-size:18px}
+.sig-header p{margin:4px 0 0;color:var(--text-soft);font-size:13px}
+.sig-body{padding:18px 20px 20px;flex:1;display:flex;flex-direction:column;gap:14px}
+.sig-order-summary{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:14px 16px;font-size:13px;color:var(--text-soft)}
+.sig-canvas-wrap{flex:1;min-height:180px;border-radius:18px;background:#fff;border:1px solid rgba(0,0,0,.1);box-shadow:inset 0 2px 8px rgba(0,0,0,.1);cursor:crosshair}
+.signature-canvas{display:block;width:100%;height:100%;touch-action:none}
+.sig-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.sig-actions .btn{flex:1}
+.signature-thumb{width:auto;height:40px;border-radius:4px;background:#fff;border:1px solid rgba(255,255,255,.1);cursor:pointer;margin-top:8px}
+.signature-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9100;display:flex;align-items:center;justify-content:center;padding:24px;animation:pmFadeIn .18s ease}
+.signature-lightbox img{max-width:100%;max-height:100%;border-radius:12px;border:2px solid rgba(255,255,255,.2)}
+
+
 .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .search{flex:1 1 280px;position:relative}
 .search input,.select,.text-input,.number-input,.textarea{
@@ -799,6 +815,9 @@ tr:hover td{background:rgba(201,169,110,.05)}
 
   <nav class="mobile-bottom-nav" id="mobileBottomNav"></nav>
 </div>
+
+<div id="signatureModalContainer"></div>
+<div id="signatureLightboxContainer"></div>
 
 <script>
 const PASSWORD_HASH = '68e5f9dd988d6c20319da2838813f63b3b9f7926231ad1897da400a6d8023923';
@@ -2210,10 +2229,57 @@ function renderQuotesSection(search){
 
 function renderOrders(){
   const search = normalize(state.filters.ordersSearch);
+
+  const statusOrder = { 'PENDING': 1, 'OUT_FOR_DELIVERY': 2, 'DELIVERED': 3 };
+  const sortedPending = [...state.pendingOrders].sort((a,b) => {
+    const orderA = statusOrder[a.status] || 99;
+    const orderB = statusOrder[b.status] || 99;
+    if(orderA !== orderB) return orderA - orderB;
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+
+  const pendingOrders = sortedPending.filter(order => !search || normalize(order.customer).includes(search) || order.lines.some(line => normalize(line.title).includes(search)));
   const liveOrders = state.data.orders.filter(order => !search || normalize(order.Customer).includes(search) || normalize(order.OrderNumber).includes(search) || safeLines(order).some(line => normalize(line.Name).includes(search)));
-  const pendingOrders = state.pendingOrders.filter(order => !search || normalize(order.customer).includes(search) || order.lines.some(line => normalize(line.title).includes(search)));
   const orderedTotal = sum(state.data.orders, order => order.Total);
   const pendingTotal = sum(state.pendingOrders, order => order.total);
+
+  const pendingHtml = pendingOrders.map(order => {
+    let statusBadgeHtml = '<span class="badge gold">Pending</span>';
+    let actionButtonHtml = `<button class="btn btn-soft" type="button" data-out-for-delivery="${order.id}">🚚 Out for Delivery</button>`;
+    let metaItems = [
+      `<span>${shortDateTime(order.createdAt)}</span>`,
+      `<span>${order.lines.length} line${order.lines.length === 1 ? '' : 's'}</span>`,
+      `<span>${order.lines.reduce((acc, line) => acc + line.quantity, 0)} units</span>`
+    ];
+
+    if (order.status === 'OUT_FOR_DELIVERY') {
+      statusBadgeHtml = '<span class="badge blue">Out for Delivery</span>';
+      actionButtonHtml = `<button class="btn btn-soft" type="button" data-collect-signature="${order.id}">✍️ Collect Signature</button>`;
+      if(order.outForDeliveryAt) metaItems.push(`<span>Departed: ${shortDateTime(order.outForDeliveryAt)}</span>`);
+    } else if (order.status === 'DELIVERED') {
+      statusBadgeHtml = '<span class="badge green">Delivered</span>';
+      actionButtonHtml = `<div style="text-align:right"><div class="gold" style="font-weight:700">✅ Delivered</div><div class="small muted">${shortDateTime(order.deliveredAt)}</div></div>`;
+      if(order.signature) actionButtonHtml += `<img src="${order.signature}" class="signature-thumb" data-view-signature="${order.id}">`;
+    }
+
+    return `
+      <div class="pending-card">
+        <div class="pending-head">
+          <div>
+            <h4 class="pending-title">${escapeHtml(order.customer)}</h4>
+            <div class="pending-meta">${metaItems.join('')}</div>
+          </div>
+          <div style="text-align:right;display:grid;gap:8px;justify-items:end;">
+            ${statusBadgeHtml}
+            <strong style="font-size:20px;">${currency(order.total)}</strong>
+          </div>
+        </div>
+        <div class="pending-lines">
+          ${order.lines.map(line => `<div class="pending-line"><span>${line.quantity} × ${escapeHtml(line.title)}</span><strong>${currency(line.subtotal || (line.quantity * line.price))}</strong></div>`).join('')}
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:14px;">${actionButtonHtml}</div>
+      </div>`;
+  }).join('');
 
   els.panels.orders.innerHTML = `
     <div class="kpi-grid">
@@ -2234,27 +2300,7 @@ function renderOrders(){
       <div class="card-body">
         ${renderQuotesSection(search)}
         <div class="pending-wrap">
-          ${pendingOrders.length ? pendingOrders.map(order => `
-            <div class="pending-card">
-              <div class="pending-head">
-                <div>
-                  <h4 class="pending-title">${escapeHtml(order.customer)}</h4>
-                  <div class="pending-meta">
-                    <span>${shortDateTime(order.createdAt)}</span>
-                    <span>${order.lines.length} line${order.lines.length === 1 ? '' : 's'}</span>
-                    <span>${order.lines.reduce((acc, line) => acc + line.quantity, 0)} units</span>
-                  </div>
-                </div>
-                <div style="text-align:right;display:grid;gap:8px;justify-items:end;">
-                  <span class="badge gold">Pending</span>
-                  <strong style="font-size:20px;">${currency(order.total)}</strong>
-                </div>
-              </div>
-              <div class="pending-lines">
-                ${order.lines.map(line => `<div class="pending-line"><span>${line.quantity} × ${escapeHtml(line.title)}</span><strong>${currency(line.subtotal || (line.quantity * line.price))}</strong></div>`).join('')}
-              </div>
-            </div>
-          `).join('') : emptyState('🧾','No pending orders','New quick-sale submissions will appear here with a gold pending badge.')}
+          ${pendingOrders.length ? pendingHtml : emptyState('🧾','No pending orders','New quick-sale submissions will appear here with a gold pending badge.')}
         </div>
       </div>
     </div>
@@ -2338,6 +2384,11 @@ function renderOrders(){
       setTimeout(() => { btn.textContent = orig; }, 1800);
     }).catch(() => {});
   }));
+
+  // Delivery Flow Actions
+  root.querySelectorAll('[data-out-for-delivery]').forEach(btn => btn.addEventListener('click', () => setOutForDelivery(btn.dataset.outForDelivery)));
+  root.querySelectorAll('[data-collect-signature]').forEach(btn => btn.addEventListener('click', () => showSignatureModal(btn.dataset.collectSignature)));
+  root.querySelectorAll('[data-view-signature]').forEach(thumb => thumb.addEventListener('click', () => showSignatureLightbox(thumb.dataset.viewSignature)));
 }
 
 function renderCustomers(){
@@ -2961,6 +3012,154 @@ function statusBadge(status){
   const cls = /complete|fulfilled|paid/.test(value) ? 'green' : /cancel/.test(value) ? 'red' : /order/.test(value) ? 'gold' : 'blue';
   return `<span class="badge ${cls}">${escapeHtml(status || 'Pending')}</span>`;
 }
+
+function setOutForDelivery(orderId){
+  const order = state.pendingOrders.find(o => o.id === orderId);
+  if(!order) return;
+  order.status = 'OUT_FOR_DELIVERY';
+  order.outForDeliveryAt = new Date().toISOString();
+  persistPendingOrders();
+  renderOrders();
+}
+
+function showSignatureLightbox(orderId){
+    const order = state.pendingOrders.find(o => o.id === orderId);
+    if (!order || !order.signature) return;
+    const container = document.getElementById('signatureLightboxContainer');
+    container.innerHTML = `
+        <div class="signature-lightbox" id="signatureLightbox">
+            <img src="${order.signature}" alt="Delivery signature for ${escapeHtml(order.customer)}">
+        </div>
+    `;
+    container.querySelector('#signatureLightbox').addEventListener('click', () => {
+        container.innerHTML = '';
+    });
+}
+
+function showSignatureModal(orderId) {
+    const order = state.pendingOrders.find(o => o.id === orderId);
+    if (!order) return;
+
+    const container = document.getElementById('signatureModalContainer');
+    const itemsSummary = order.lines.map(l => `${l.quantity}× ${l.title}`).join(', ');
+
+    container.innerHTML = `
+        <div class="signature-modal-overlay" id="signatureOverlay">
+            <div class="signature-modal">
+                <div class="sig-header">
+                    <div>
+                        <h3>Delivery Signature</h3>
+                        <p>${escapeHtml(order.customer)} - ${currency(order.total)}</p>
+                    </div>
+                    <button class="pm-close" id="sigCloseBtn" type="button">✕</button>
+                </div>
+                <div class="sig-body">
+                    <div class="sig-order-summary">${itemsSummary}</div>
+                    <div class="sig-canvas-wrap">
+                        <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+                    </div>
+                    <div class="sig-actions">
+                        <button class="btn btn-ghost" id="sigClearBtn" type="button">Clear</button>
+                        <button class="btn btn-gold" id="sigConfirmBtn" type="button" disabled>✅ Confirm Delivery</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const overlay = document.getElementById('signatureOverlay');
+    const canvas = document.getElementById('signatureCanvas');
+    const confirmBtn = document.getElementById('sigConfirmBtn');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let hasDrawn = false;
+
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        ctx.scale(ratio, ratio);
+        ctx.strokeStyle = '#1A1A1A';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : e;
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
+
+    function startDrawing(e) {
+        e.preventDefault();
+        drawing = true;
+        const { x, y } = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function draw(e) {
+        if (!drawing) return;
+        e.preventDefault();
+        const { x, y } = getPos(e);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        if (!hasDrawn) {
+            hasDrawn = true;
+            confirmBtn.disabled = false;
+        }
+    }
+
+    function stopDrawing() {
+        if (!drawing) return;
+        drawing = false;
+        ctx.closePath();
+    }
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    document.getElementById('sigClearBtn').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasDrawn = false;
+        confirmBtn.disabled = true;
+    });
+
+    document.getElementById('sigConfirmBtn').addEventListener('click', () => {
+        if (!hasDrawn) return;
+        order.status = 'DELIVERED';
+        order.deliveredAt = new Date().toISOString();
+        order.signature = canvas.toDataURL('image/png');
+        order.signedBy = 'Customer'; // Placeholder
+        persistPendingOrders();
+        closeModal();
+        renderOrders();
+    });
+    
+    function closeModal() {
+        window.removeEventListener('resize', resizeCanvas);
+        overlay.remove();
+    }
+
+    document.getElementById('sigCloseBtn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+}
+
 
 function bindGlobalPanelActions(root){
   root.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
