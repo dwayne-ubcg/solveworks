@@ -112,6 +112,9 @@ img{max-width:100%;display:block}
 .btn-ghost{background:rgba(255,255,255,.03);color:var(--text);border:1px solid rgba(255,255,255,.08)}
 .btn-ghost:hover{background:rgba(255,255,255,.06)}
 .btn-soft{background:rgba(201,169,110,.12);color:var(--gold);border:1px solid rgba(201,169,110,.25)}
+.btn-quote{background:#0D1B2A;color:#fff;border:1px solid rgba(100,140,200,.35);box-shadow:0 16px 30px rgba(0,0,0,.28)}
+.btn-quote:hover{box-shadow:0 18px 32px rgba(0,0,0,.4);border-color:rgba(100,140,200,.55)}
+.btn-quote:disabled{opacity:.45;cursor:not-allowed}
 .btn-danger{background:rgba(211,102,102,.12);color:#efb1b1;border:1px solid rgba(211,102,102,.24)}
 .login-error{display:none;color:#efb1b1;background:rgba(211,102,102,.12);border:1px solid rgba(211,102,102,.24);padding:12px 14px;border-radius:14px;font-size:13px}
 .login-note{font-size:12px;color:var(--text-faint);text-align:center;margin-top:4px}
@@ -272,6 +275,7 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .badge.yellow{background:rgba(211,172,84,.14);color:#e7cb90;border:1px solid rgba(211,172,84,.2)}
 .badge.red{background:rgba(211,102,102,.14);color:#f0b0b0;border:1px solid rgba(211,102,102,.2)}
 .badge.blue{background:rgba(102,157,211,.14);color:#a3caef;border:1px solid rgba(102,157,211,.2)}
+.badge.gray{background:rgba(120,130,145,.14);color:#9aabb8;border:1px solid rgba(120,130,145,.2)}
 
 .toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 .search{flex:1 1 280px;position:relative}
@@ -433,6 +437,29 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .orders-cards-mobile{display:none}
 .order-card-mobile{padding:16px;border-radius:20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);word-break:break-word}
 .orders-cards-mobile{display:none;grid-template-columns:1fr;gap:12px}
+.quote-link-box{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:14px;padding:12px 14px;
+  word-break:break-all;font-size:13px;
+  color:var(--gold);text-decoration:none;flex:1;
+}
+.quote-link-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.quote-share-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.quote-card{
+  padding:18px;border-radius:22px;
+  border:1px solid rgba(100,140,200,.3);
+  background:linear-gradient(180deg,rgba(13,27,42,.88),rgba(7,13,20,.92));
+  cursor:pointer;
+  transition:border-color .15s;
+}
+.quote-card:hover{border-color:rgba(100,140,200,.6)}
+.quote-card.accepted{border-color:rgba(76,195,138,.4);background:linear-gradient(180deg,rgba(76,195,138,.07),rgba(76,195,138,.03))}
+.quote-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.quote-title{margin:0;font-size:17px}
+.quote-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--text-soft);font-size:13px}
+.quote-section-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.quote-section-header h3{margin:0;font-size:17px}
 .pending-wrap{display:grid;gap:14px;margin-bottom:18px}
 .pending-card{padding:18px;border-radius:22px;border:1px solid rgba(201,169,110,.25);background:linear-gradient(180deg,rgba(201,169,110,.08),rgba(201,169,110,.04))}
 .pending-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
@@ -782,6 +809,9 @@ const DRAFT_SALE_KEY = '7c_sale_draft';
 const RECEIPTS_KEY = '7c_receipts';
 const RECEIPTS_USER_KEY = '7c_receipts_user';
 const CUSTOMER_NOTES_KEY = '7c_customer_notes';
+const QUOTES_KEY = '7c_quotes';
+const QUOTE_COUNTER_KEY = '7c_quote_counter';
+const QUOTE_BASE_URL = 'https://solveworks.io/7cellars/quote/';
 const tabs = [
   { id:'overview', label:'Home', icon:'⌂' },
   { id:'catalog', label:'Wine Catalog', icon:'🍷' },
@@ -811,7 +841,9 @@ const state = {
     customer: null,
     items: [],
     step: 'customer',
-    confirmation: null
+    confirmation: null,
+    quoteConfirmation: null,
+    quoteStep: null
   },
   filters: {
     catalogSearch: '',
@@ -844,7 +876,9 @@ const state = {
   customerNotes: {},
   noteFormOpen: null,
   notesExpanded: {},
-  receiptImagePreview: null
+  receiptImagePreview: null,
+  quotes: {},
+  quoteExpandedId: null
 };
 
 const els = {
@@ -978,13 +1012,41 @@ function hydrateLocalState(){
     customer: savedDraft?.customer || null,
     items: normalizeDraftItems(savedDraft?.items),
     step: savedDraft?.step || 'customer',
-    confirmation: savedDraft?.confirmation || null
+    confirmation: savedDraft?.confirmation || null,
+    quoteConfirmation: savedDraft?.quoteConfirmation || null,
+    quoteStep: savedDraft?.quoteStep || null
   };
   state.receipts = readJsonStorage(RECEIPTS_KEY, []);
   hydrateCustomerNotes();
+  hydrateQuotes();
 }
 function hydrateCustomerNotes(){ state.customerNotes = readJsonStorage(CUSTOMER_NOTES_KEY, {}); }
 function persistCustomerNotes(){ writeJsonStorage(CUSTOMER_NOTES_KEY, state.customerNotes); }
+function hydrateQuotes(){ state.quotes = readJsonStorage(QUOTES_KEY, {}); }
+function persistQuotes(){ writeJsonStorage(QUOTES_KEY, state.quotes); }
+function generateQuoteId(){
+  const year = new Date().getFullYear();
+  const counters = readJsonStorage(QUOTE_COUNTER_KEY, {});
+  const next = (counters[year] || 0) + 1;
+  counters[year] = next;
+  writeJsonStorage(QUOTE_COUNTER_KEY, counters);
+  return `Q-${year}-${String(next).padStart(4, '0')}`;
+}
+function getQuoteStatus(quote){
+  if(quote.status === 'accepted') return 'accepted';
+  if(quote.status === 'declined') return 'declined';
+  if(quote.status === 'expired') return 'expired';
+  // Check if still pending but past expiry
+  if(quote.status === 'pending' && quote.expiresAt && new Date() > new Date(quote.expiresAt)){
+    return 'expired';
+  }
+  return 'pending';
+}
+function quoteStatusBadge(status){
+  const cls = { pending:'gold', accepted:'green', declined:'red', expired:'gray' }[status] || 'gray';
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
+  return `<span class="badge ${cls}">${label}</span>`;
+}
 function persistReceipts(){ writeJsonStorage(RECEIPTS_KEY, state.receipts); }
 function persistPendingOrders(){ writeJsonStorage(PENDING_ORDERS_KEY, state.pendingOrders); bootstrapNav(); }
 function persistExtraCustomers(){ writeJsonStorage(EXTRA_CUSTOMERS_KEY, state.extraCustomers); }
@@ -1661,7 +1723,7 @@ function renderNewSale(){
           <span class="badge gold">${itemCount} units</span>
         </div>
         <div class="card-body">
-          ${draft.confirmation ? confirmationView(draft.confirmation) : `
+          ${draft.quoteConfirmation ? quoteConfirmationView(draft.quoteConfirmation) : draft.quoteStep === 'notes' ? quoteNotesView() : draft.confirmation ? confirmationView(draft.confirmation) : `
             <div class="summary-totals">
               <div class="list-item">
                 <div class="list-item-top">
@@ -1687,7 +1749,10 @@ function renderNewSale(){
               </div>
             </div>
             <div class="summary-actions">
-              <button class="btn btn-gold" id="submitOrderButton" type="button" ${draft.customer && draft.items.length ? '' : 'disabled'}>Submit Order</button>
+              <div style="display:flex;gap:10px;">
+                <button class="btn btn-gold" id="submitOrderButton" type="button" style="flex:1" ${draft.customer && draft.items.length ? '' : 'disabled'}>Submit Order</button>
+                <button class="btn btn-quote" id="sendQuoteButton" type="button" style="flex:1" ${draft.customer && draft.items.length ? '' : 'disabled'}>📄 Send Quote</button>
+              </div>
               <button class="btn btn-ghost" id="clearDraftButton" type="button" ${draft.customer || draft.items.length ? '' : 'disabled'}>Clear Draft</button>
             </div>
           `}
@@ -1728,6 +1793,8 @@ function renderNewSale(){
   root.querySelectorAll('[data-remove-line]').forEach(button => button.addEventListener('click', () => removeDraftLine(button.dataset.removeLine)));
   const submitButton = root.querySelector('#submitOrderButton');
   if(submitButton) submitButton.addEventListener('click', submitDraftOrder);
+  const sendQuoteBtn = root.querySelector('#sendQuoteButton');
+  if(sendQuoteBtn) sendQuoteBtn.addEventListener('click', initSendQuote);
   const clearButton = root.querySelector('#clearDraftButton');
   if(clearButton) clearButton.addEventListener('click', clearDraftSale);
   root.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
@@ -1748,6 +1815,27 @@ function renderNewSale(){
   }));
   const dismissReqConfirm = root.querySelector('#dismissReqConfirm');
   if(dismissReqConfirm) dismissReqConfirm.addEventListener('click', () => { state.lastCustomerRequest = null; renderNewSale(); });
+
+  // Quote flow event listeners
+  const skipNoteBtn = root.querySelector('#quoteSkipNoteBtn');
+  if(skipNoteBtn) skipNoteBtn.addEventListener('click', () => {
+    const notesVal = '';
+    createAndSaveQuote(notesVal);
+  });
+  const confirmQuoteBtn = root.querySelector('#quoteConfirmBtn');
+  if(confirmQuoteBtn) confirmQuoteBtn.addEventListener('click', () => {
+    const textarea = root.querySelector('#quoteNotesInput');
+    createAndSaveQuote(textarea ? textarea.value.trim() : '');
+  });
+  // Copy link button inside quote confirmation
+  root.querySelectorAll('[data-copy-quote-link]').forEach(btn => btn.addEventListener('click', () => {
+    const link = btn.dataset.copyQuoteLink;
+    navigator.clipboard.writeText(link).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+    }).catch(() => {});
+  }));
 }
 
 function selectCustomer(name){
@@ -1882,13 +1970,15 @@ function removeDraftLine(title){
   renderNewSale();
 }
 function clearDraftSale(){
-  state.draftSale = { customer:null, items:[], step:'customer', confirmation:null };
+  state.draftSale = { customer:null, items:[], step:'customer', confirmation:null, quoteConfirmation:null, quoteStep:null };
   persistDraftSale();
   renderNewSale();
 }
 function startFreshSale(){
-  clearDraftSale();
+  state.draftSale = { customer:null, items:[], step:'customer', confirmation:null, quoteConfirmation:null, quoteStep:null };
+  persistDraftSale();
   setActiveTab('new-sale');
+  renderNewSale();
 }
 
 function submitDraftOrder(){
@@ -1951,6 +2041,173 @@ function confirmationView(order){
   `;
 }
 
+function initSendQuote(){
+  if(!state.draftSale.customer || !state.draftSale.items.length) return;
+  // Show notes step in the Review & Submit panel
+  state.draftSale.quoteStep = 'notes';
+  state.draftSale.confirmation = null;
+  state.draftSale.quoteConfirmation = null;
+  persistDraftSale();
+  renderNewSale();
+}
+
+function createAndSaveQuote(notes){
+  if(!state.draftSale.customer || !state.draftSale.items.length) return;
+  const id = generateQuoteId();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  const total = state.draftSale.items.reduce((acc, item) => acc + lineItemTotal(item), 0);
+  const quote = {
+    id,
+    status: 'pending',
+    customerName: state.draftSale.customer.name,
+    customerId: state.draftSale.customer.id || null,
+    createdAt: now.toISOString(),
+    expiresAt,
+    items: state.draftSale.items.map(item => ({
+      title: item.title,
+      price: priceValue(item.price),
+      quantity: Math.max(1, Number(item.quantity || 1)),
+      region: parseRegion(item.title)
+    })),
+    total,
+    notes: notes || '',
+    createdBy: 'Roberto',
+    acceptedAt: null,
+    declinedAt: null
+  };
+  hydrateQuotes();
+  state.quotes[id] = quote;
+  persistQuotes();
+  // Clear draft, show confirmation
+  state.draftSale.quoteConfirmation = quote;
+  state.draftSale.quoteStep = null;
+  state.draftSale.items = [];
+  state.draftSale.customer = null;
+  state.draftSale.step = 'customer';
+  state.draftSale.confirmation = null;
+  persistDraftSale();
+  renderAll();
+}
+
+function quoteConfirmationView(quote){
+  const url = `${QUOTE_BASE_URL}?id=${encodeURIComponent(quote.id)}`;
+  const customerName = escapeHtml(quote.customerName || 'Customer');
+  const waText = encodeURIComponent(`Hi ${quote.customerName || 'there'}, here's your wine quote from 7 Cellars: ${url}`);
+  const emailSubject = encodeURIComponent('Your Wine Quote from 7 Cellars');
+  const emailBody = encodeURIComponent(`Hi ${quote.customerName || 'there'},\n\nPlease find your wine quote from 7 Cellars below:\n\n${url}\n\nThis quote is valid for 14 days.\n\nBest regards,\n7 Cellars Wine`);
+  return `
+    <div class="confirm-card">
+      <div class="confirm-icon">✅</div>
+      <div>
+        <h3 style="margin:0 0 8px;">Quote created</h3>
+        <p class="muted" style="margin:0;">${customerName} · ${escapeHtml(quote.id)} · ${currency(quote.total)}</p>
+      </div>
+      <div class="list-item" style="text-align:left;">
+        <div class="stack">
+          ${quote.items.map(item => `<div class="total-row"><span>${item.quantity} × ${escapeHtml(item.title)}</span><strong>${currency(item.price * item.quantity)}</strong></div>`).join('')}
+          <div class="total-row grand"><span>Total</span><strong>${currency(quote.total)}</strong></div>
+        </div>
+      </div>
+      <div>
+        <div class="small muted" style="margin-bottom:8px;text-align:center;">Quote link — share with customer:</div>
+        <div class="quote-link-row">
+          <a class="quote-link-box" href="${url}" target="_blank" rel="noopener">${url}</a>
+          <button class="btn btn-ghost" type="button" data-copy-quote-link="${url}" style="min-width:90px">📋 Copy</button>
+        </div>
+      </div>
+      <div class="quote-share-buttons">
+        <a class="btn btn-send-wa" href="https://wa.me/?text=${waText}" target="_blank" rel="noopener">💬 WhatsApp</a>
+        <a class="btn btn-send-email" href="mailto:?subject=${emailSubject}&body=${emailBody}" target="_blank" rel="noopener">📧 Email</a>
+      </div>
+      <div class="summary-actions">
+        <button class="btn btn-gold" type="button" data-open-sale>New Order</button>
+      </div>
+    </div>
+  `;
+}
+
+function quoteNotesView(){
+  return `
+    <div class="confirm-card">
+      <div style="font-size:42px;line-height:1">📄</div>
+      <div>
+        <h3 style="margin:0 0 8px;">Add a note (optional)</h3>
+        <p class="muted" style="margin:0;">A note for ${escapeHtml(state.draftSale.customer?.name || 'the customer')} — delivery info, preferences, valid-until reminders.</p>
+      </div>
+      <textarea id="quoteNotesInput" class="textarea" rows="3" placeholder="e.g. Free delivery on orders over KYD 500 · Quote valid 14 days" style="min-height:80px;resize:vertical;border-radius:14px;padding:12px 14px;font:inherit;font-size:14px;"></textarea>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-quote" id="quoteConfirmBtn" type="button" style="flex:1">Create Quote</button>
+        <button class="btn btn-ghost" id="quoteSkipNoteBtn" type="button">Skip</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderQuotesSection(search){
+  hydrateQuotes();
+  const allQuotes = Object.values(state.quotes);
+  const filtered = allQuotes.filter(q => !search || normalize(q.customerName).includes(search) || normalize(q.id).includes(search));
+  // Sort newest first
+  filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if(!filtered.length && !allQuotes.length) return '';
+  return `
+    <div style="margin-bottom:18px;">
+      <div class="quote-section-header">
+        <h3>📄 Quotes</h3>
+        <span class="badge blue">${allQuotes.length}</span>
+      </div>
+      <div style="display:grid;gap:12px;">
+        ${filtered.length ? filtered.map(q => {
+          const status = getQuoteStatus(q);
+          const url = `${QUOTE_BASE_URL}?id=${encodeURIComponent(q.id)}`;
+          const isExpanded = state.quoteExpandedId === q.id;
+          const waText = encodeURIComponent(`Hi ${q.customerName || 'there'}, here's your wine quote from 7 Cellars: ${url}`);
+          const emailSubject = encodeURIComponent('Your Wine Quote from 7 Cellars');
+          const emailBody = encodeURIComponent(`Hi ${q.customerName || 'there'},\n\nHere is your wine quote from 7 Cellars:\n\n${url}\n\nBest regards,\n7 Cellars Wine`);
+          return `
+            <div class="quote-card ${status === 'accepted' ? 'accepted' : ''}" data-quote-id="${escapeHtml(q.id)}">
+              <div class="quote-head">
+                <div>
+                  <h4 class="quote-title">${escapeHtml(q.id)}</h4>
+                  <div class="quote-meta">
+                    <span>${escapeHtml(q.customerName)}</span>
+                    <span>${shortDate(q.createdAt)}</span>
+                    <span>${q.items.length} line${q.items.length === 1 ? '' : 's'}</span>
+                  </div>
+                </div>
+                <div style="text-align:right;display:grid;gap:8px;justify-items:end;">
+                  ${quoteStatusBadge(status)}
+                  <strong style="font-size:18px;">${currency(q.total)}</strong>
+                </div>
+              </div>
+              ${isExpanded ? `
+                <div style="margin-top:12px;display:grid;gap:12px;">
+                  <div class="pending-lines">
+                    ${q.items.map(item => `<div class="pending-line"><span>${item.quantity} × ${escapeHtml(item.title)}</span><strong>${currency(item.price * item.quantity)}</strong></div>`).join('')}
+                  </div>
+                  ${q.notes ? `<p class="muted small" style="margin:0;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06)">${escapeHtml(q.notes)}</p>` : ''}
+                  <div>
+                    <div class="small muted" style="margin-bottom:6px;">Resend quote:</div>
+                    <div class="quote-link-row">
+                      <a class="quote-link-box" href="${url}" target="_blank" rel="noopener" style="font-size:12px">${url}</a>
+                      <button class="btn btn-ghost" type="button" data-copy-quote-link-orders="${url}" style="min-width:80px;font-size:12px">📋 Copy</button>
+                    </div>
+                    <div class="quote-share-buttons" style="margin-top:8px">
+                      <a class="btn btn-send-wa btn-sm" href="https://wa.me/?text=${waText}" target="_blank" rel="noopener">💬 WhatsApp</a>
+                      <a class="btn btn-send-email btn-sm" href="mailto:?subject=${emailSubject}&body=${emailBody}" target="_blank" rel="noopener">📧 Email</a>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('') : emptyState('📄', 'No quotes match', 'Try clearing the search filter.')}
+      </div>
+    </div>
+  `;
+}
+
 function renderOrders(){
   const search = normalize(state.filters.ordersSearch);
   const liveOrders = state.data.orders.filter(order => !search || normalize(order.Customer).includes(search) || normalize(order.OrderNumber).includes(search) || safeLines(order).some(line => normalize(line.Name).includes(search)));
@@ -1975,6 +2232,7 @@ function renderOrders(){
         <div class="search" style="max-width:320px;"><input id="ordersSearchInput" type="search" placeholder="Search customer, order, or wine" value="${escapeHtml(state.filters.ordersSearch)}"></div>
       </div>
       <div class="card-body">
+        ${renderQuotesSection(search)}
         <div class="pending-wrap">
           ${pendingOrders.length ? pendingOrders.map(order => `
             <div class="pending-card">
@@ -2058,6 +2316,28 @@ function renderOrders(){
 
   const root = els.panels.orders;
   root.querySelector('#ordersSearchInput').addEventListener('input', event => { state.filters.ordersSearch = event.target.value; renderOrders(); });
+
+  // Quote card expand/collapse
+  root.querySelectorAll('[data-quote-id]').forEach(card => {
+    const qid = card.dataset.quoteId;
+    // Only toggle on the card itself, not child links/buttons
+    card.addEventListener('click', event => {
+      if(event.target.closest('a') || event.target.closest('button')) return;
+      state.quoteExpandedId = state.quoteExpandedId === qid ? null : qid;
+      renderOrders();
+    });
+  });
+
+  // Copy quote link in orders tab
+  root.querySelectorAll('[data-copy-quote-link-orders]').forEach(btn => btn.addEventListener('click', event => {
+    event.stopPropagation();
+    const link = btn.dataset.copyQuoteLinkOrders;
+    navigator.clipboard.writeText(link).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+    }).catch(() => {});
+  }));
 }
 
 function renderCustomers(){
