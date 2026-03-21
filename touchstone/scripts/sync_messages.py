@@ -81,7 +81,7 @@ TASK_PATTERNS = [
     (r"\bfab(rication)?\b", 'job-task'),
 ]
 
-LOOKBACK_DAYS = 7
+LOOKBACK_DAYS = 90
 
 def normalize_phone(phone_id):
     """Normalize phone number to consistent format."""
