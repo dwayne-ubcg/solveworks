@@ -1458,6 +1458,16 @@
           html += `<span class="badge badge-accent" style="cursor:pointer;font-size:10px" onclick="showPanel('p-pipeline')">📎 ${ll.customer||'Lead'}${ll.project?' — '+ll.project:''}${llPrice} <span style="opacity:0.7">${ll.stage||''}</span></span>`;
           html += `</div>`;
         }
+        // ➕ Create task from message
+        const msgTaskText = (m.autoTask || m.text || '').slice(0,120);
+        const msgSafe = msgTaskText.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        const srcSafe = (m.text||'').slice(0,80).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        const acctSafe = (m.account||fromKey||'').replace(/'/g,"\\'");
+        const phoneSafe = (m.phone||'').replace(/'/g,"\\'");
+        const llJson = m.linkedLead ? JSON.stringify(m.linkedLead).replace(/'/g,"\\'").replace(/</g,'\\x3c') : 'null';
+        html += `<div style="margin-top:6px;${isMe?'text-align:right':''}">`;
+        html += `<button class="btn btn-sm" style="background:var(--surface2);font-size:10px;padding:3px 8px" onclick="event.stopPropagation();addTaskFromMessage('${msgSafe}','${srcSafe}','${acctSafe}','${phoneSafe}',${llJson})">➕ Task</button>`;
+        html += `</div>`;
         html += `</div></div>`;
       });
     } else {
@@ -1476,18 +1486,28 @@
     loadTranscripts();
   }
 
-  function addTaskFromTranscript(text, source) {
+  function addManualTask(text, source, account, phone, linkedLead) {
     const tasks = JSON.parse(localStorage.getItem('tc_manual_tasks') || '[]');
     tasks.push({
-      id: 'tx-task-' + Date.now(),
+      id: 'manual-' + Date.now() + '-' + Math.random().toString(36).slice(2,6),
       text: text,
-      source: 'Transcript: ' + source,
+      source: source || '',
+      account: account || '',
+      phone: phone || '',
+      linkedLead: linkedLead || null,
       status: 'new',
       time: new Date().toISOString(),
     });
     localStorage.setItem('tc_manual_tasks', JSON.stringify(tasks));
-    alert('Task created: ' + text.slice(0,60));
+    // Quick toast
+    const toast = document.createElement('div');
+    toast.textContent = '✅ Task created: ' + text.slice(0,50);
+    toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--green);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;animation:fadeIn 0.2s';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
   }
+  function addTaskFromTranscript(text, source) { addManualTask(text, 'Transcript: ' + source); }
+  function addTaskFromMessage(text, source, account, phone, linkedLead) { addManualTask(text, source, account, phone, linkedLead); }
 
   function saveTranscriptFromPaste(title, text, speakers) {
     const data = JSON.parse(localStorage.getItem('tc_transcripts_local') || '{"transcripts":[]}');
@@ -1720,9 +1740,11 @@ Craig: Make sure we confirm the sink model first."></textarea>
 
   async function loadTasks() {
     const data = await loadJSON('tasks');
-    const allTasks = data?.tasks || [];
+    const syncTasks = data?.tasks || [];
+    const manualTasks = JSON.parse(localStorage.getItem('tc_manual_tasks') || '[]');
+    const allTasks = [...syncTasks, ...manualTasks];
     const statuses = getTaskStatuses();
-    const repColors = {Craig:'var(--accent)',Tyler:'var(--green)',Shelley:'var(--purple)',Jason:'var(--orange)',Lenore:'var(--cyan)'};
+    const repColors = {Craig:'var(--accent)',Tyler:'var(--green)',Shelley:'var(--purple)',Jason:'var(--orange)',Lenore:'var(--cyan)',Sean:'var(--cyan)'};
     const accounts = [...new Set(allTasks.map(t => t.account).filter(Boolean))];
 
     // Migrate old done list
