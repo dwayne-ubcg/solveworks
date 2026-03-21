@@ -413,6 +413,29 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .mini-order-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;font-size:13px;margin-bottom:6px}
 .mini-order-items{color:var(--text-soft);font-size:12px;line-height:1.5}
 
+.customer-notes-section{display:grid;gap:10px}
+.customer-notes-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.customer-notes-header h4{margin:0}
+.btn-add-note{padding:6px 12px;min-height:30px;font-size:12px;border-radius:8px;font-weight:600;background:rgba(201,169,110,.12);border:1px solid rgba(201,169,110,.25);color:var(--gold)}
+.btn-add-note:hover{background:rgba(201,169,110,.2)}
+.note-items{display:grid;gap:8px}
+.note-item{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05)}
+.note-item-text{font-size:13px;line-height:1.5;margin-bottom:4px;word-break:break-word}
+.note-item-meta{display:flex;gap:8px;font-size:11px;align-items:center}
+.note-author{color:var(--gold);font-weight:600}
+.note-timestamp{color:var(--text-faint)}
+.notes-show-all{background:none;border:none;color:var(--gold);font-size:12px;padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.note-form{display:grid;gap:8px;padding:12px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);margin-top:4px}
+.note-form textarea{width:100%;border:1px solid rgba(255,255,255,.1);border-radius:10px;background:rgba(255,255,255,.04);color:var(--text);padding:10px 12px;font-size:13px;resize:vertical;min-height:72px;font-family:inherit;outline:none}
+.note-form textarea::placeholder{color:var(--text-faint)}
+.note-form textarea:focus{border-color:rgba(201,169,110,.35)}
+.note-chips{display:flex;flex-wrap:wrap;gap:6px}
+.note-chip{padding:5px 10px;border-radius:999px;border:1px solid rgba(201,169,110,.2);background:rgba(201,169,110,.07);color:var(--text-soft);font-size:11px;cursor:pointer;transition:background .15s}
+.note-chip:hover{background:rgba(201,169,110,.16);color:var(--gold)}
+.note-form-actions{display:flex;gap:8px}
+.btn-save-note{padding:8px 16px;min-height:34px;font-size:13px;border-radius:10px;font-weight:600;background:var(--gold);color:#0D1B2A;border:none}
+.btn-cancel-note{padding:8px 14px;min-height:34px;font-size:13px;border-radius:10px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text-soft)}
+
 .kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
 .kanban-col{border-radius:26px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);padding:16px;display:grid;gap:12px;align-content:start}
 .kanban-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:6px}
@@ -717,6 +740,7 @@ const EXTRA_CUSTOMERS_KEY = '7c_extra_customers';
 const DRAFT_SALE_KEY = '7c_sale_draft';
 const RECEIPTS_KEY = '7c_receipts';
 const RECEIPTS_USER_KEY = '7c_receipts_user';
+const CUSTOMER_NOTES_KEY = '7c_customer_notes';
 const tabs = [
   { id:'overview', label:'Home', icon:'⌂' },
   { id:'catalog', label:'Wine Catalog', icon:'🍷' },
@@ -776,6 +800,9 @@ const state = {
   receipts: [],
   receiptsMonth: '',
   receiptExpanded: null,
+  customerNotes: {},
+  noteFormOpen: null,
+  notesExpanded: {},
   receiptImagePreview: null
 };
 
@@ -913,7 +940,10 @@ function hydrateLocalState(){
     confirmation: savedDraft?.confirmation || null
   };
   state.receipts = readJsonStorage(RECEIPTS_KEY, []);
+  hydrateCustomerNotes();
 }
+function hydrateCustomerNotes(){ state.customerNotes = readJsonStorage(CUSTOMER_NOTES_KEY, {}); }
+function persistCustomerNotes(){ writeJsonStorage(CUSTOMER_NOTES_KEY, state.customerNotes); }
 function persistReceipts(){ writeJsonStorage(RECEIPTS_KEY, state.receipts); }
 function persistPendingOrders(){ writeJsonStorage(PENDING_ORDERS_KEY, state.pendingOrders); bootstrapNav(); }
 function persistExtraCustomers(){ writeJsonStorage(EXTRA_CUSTOMERS_KEY, state.extraCustomers); }
@@ -964,6 +994,7 @@ async function loadData(){
         category: p.Category || '',
         description: cleanDesc,
         shortDescription: p.ShortDescription || '',
+        costPrice: String(p.AverageCost || 0),
         source: 'cin7'
       };
     });
@@ -1203,6 +1234,8 @@ function renderCatalog(){
     ...product,
     qty: Number(product.inventoryQuantity || product.totalInventory || 0),
     priceNumber: Number(product.price || 0),
+    retailPriceNumber: Number(product.retailPrice || 0),
+    costPriceNumber: Number(product.costPrice || 0),
     type: productType(product.title),
     region: parseRegion(product.title)
   }));
@@ -1259,6 +1292,12 @@ function renderCatalog(){
   root.querySelector('#catalogSortSelect').addEventListener('change', event => { state.filters.catalogSort = event.target.value; renderCatalog(); });
   root.querySelectorAll('[data-type]').forEach(button => button.addEventListener('click', () => { state.filters.catalogType = button.dataset.type; renderCatalog(); }));
   root.querySelectorAll('[data-add-product]').forEach(button => button.addEventListener('click', () => quickAddProduct(button.dataset.addProduct)));
+  root.querySelectorAll('[data-price-detail]').forEach(button => button.addEventListener('click', event => {
+    event.stopPropagation();
+    const sku = button.dataset.priceDetail;
+    const product = products.find(p => p.sku === sku);
+    if(product) showPriceModal(product);
+  }));
   root.querySelectorAll('[data-toggle-notes]').forEach(button => button.addEventListener('click', () => {
     const card = document.getElementById(button.dataset.toggleNotes);
     if(!card) return;
@@ -1300,11 +1339,10 @@ function wineCard(product){
         <span>${product.qty} avail</span>
       </div>
       <div class="stock-meter"><div class="stock-fill ${badge.cls}" style="width:${stockPercent}%"></div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto">
-        <div>
-          <div class="wine-price">${currency(product.priceNumber)}</div>
-          <div class="muted small">Wholesale</div>
-        </div>
+      <div class="wine-price-section" data-price-detail="${escapeHtml(product.sku)}">
+        ${winePriceBlock(product)}
+      </div>
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px">
         <button class="btn btn-sm" type="button" data-add-product="${escapeHtml(product.title)}">+ Order</button>
       </div>
     </article>
@@ -1859,7 +1897,12 @@ function renderOrders(){
 
 function renderCustomers(){
   const search = normalize(state.filters.customerSearch);
-  const customers = state.data.customers.filter(customer => !search || normalize(customer.name).includes(search));
+  const customers = state.data.customers.filter(customer => {
+    if(!search) return true;
+    if(normalize(customer.name).includes(search)) return true;
+    const notes = state.customerNotes[customer.name] || [];
+    return notes.some(note => normalize(note.text).includes(search));
+  });
   els.panels.customers.innerHTML = `
     <div class="card">
       <div class="card-header">
@@ -1931,6 +1974,7 @@ function renderCustomers(){
                   `).join('') || '<div class="mini-order"><div class="mini-order-items">No recorded orders yet for this account.</div></div>'}
                 </div>
               </div>
+              ${renderCustomerNotesSection(customer.name)}
             </article>
           `).join('') : emptyState('👥','No customers found','Try another search term to pull the right account.')}
         </div>
@@ -1974,6 +2018,96 @@ function renderCustomers(){
   }));
   const dismissCustTab = els.panels.customers.querySelector('#dismissCustTabReq');
   if(dismissCustTab) dismissCustTab.addEventListener('click', () => { state.lastCustTabRequest = null; renderCustomers(); });
+
+  // Customer notes event listeners
+  els.panels.customers.querySelectorAll('[data-add-note]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.addNote;
+      state.noteFormOpen = state.noteFormOpen === name ? null : name;
+      renderCustomers();
+    });
+  });
+  els.panels.customers.querySelectorAll('[data-notes-show-all]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.notesShowAll;
+      state.notesExpanded[name] = !state.notesExpanded[name];
+      renderCustomers();
+    });
+  });
+  els.panels.customers.querySelectorAll('[data-note-chip]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const cardName = chip.closest('[data-note-card]').dataset.noteCard;
+      const textarea = els.panels.customers.querySelector(`[data-note-textarea="${CSS.escape(cardName)}"]`);
+      if(!textarea) return;
+      const tag = chip.dataset.noteChip;
+      textarea.value = textarea.value ? `[${tag}] ${textarea.value}` : `[${tag}] `;
+      textarea.focus();
+    });
+  });
+  els.panels.customers.querySelectorAll('[data-note-cancel]').forEach(btn => {
+    btn.addEventListener('click', () => { state.noteFormOpen = null; renderCustomers(); });
+  });
+  els.panels.customers.querySelectorAll('[data-note-save]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cardName = btn.dataset.noteSave;
+      const textarea = els.panels.customers.querySelector(`[data-note-textarea="${CSS.escape(cardName)}"]`);
+      if(!textarea) return;
+      const text = textarea.value.trim();
+      if(!text) return;
+      let author = localStorage.getItem(RECEIPTS_USER_KEY) || '';
+      if(!author){
+        author = prompt('Enter your name for this note:')?.trim() || 'Staff';
+        if(author && author !== 'Staff') localStorage.setItem(RECEIPTS_USER_KEY, author);
+      }
+      if(!state.customerNotes[cardName]) state.customerNotes[cardName] = [];
+      state.customerNotes[cardName].unshift({ id: Date.now().toString(), text, author, createdAt: new Date().toISOString() });
+      persistCustomerNotes();
+      state.noteFormOpen = null;
+      renderCustomers();
+    });
+  });
+}
+
+function renderCustomerNotesSection(customerName){
+  const notes = (state.customerNotes[customerName] || []).slice().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const expanded = !!state.notesExpanded[customerName];
+  const visibleNotes = expanded ? notes : notes.slice(0,2);
+  const formOpen = state.noteFormOpen === customerName;
+  const chips = ['Follow-up needed','Sample requested','Price inquiry','New order interest'];
+  return `
+    <div class="customer-notes-section" data-note-card="${escapeHtml(customerName)}">
+      <div class="customer-notes-header">
+        <h4>Notes</h4>
+        <button class="btn-add-note" type="button" data-add-note="${escapeHtml(customerName)}">＋ Add Note</button>
+      </div>
+      ${formOpen ? `
+        <div class="note-form">
+          <textarea data-note-textarea="${escapeHtml(customerName)}" placeholder="Spoke with chef, wants to try the rosé..."></textarea>
+          <div class="note-chips">
+            ${chips.map(chip => `<button class="note-chip" type="button" data-note-chip="${escapeHtml(chip)}">${escapeHtml(chip)}</button>`).join('')}
+          </div>
+          <div class="note-form-actions">
+            <button class="btn-save-note" type="button" data-note-save="${escapeHtml(customerName)}">Save Note</button>
+            <button class="btn-cancel-note" type="button" data-note-cancel>Cancel</button>
+          </div>
+        </div>
+      ` : ''}
+      ${notes.length ? `
+        <div class="note-items">
+          ${visibleNotes.map(note => `
+            <div class="note-item">
+              <div class="note-item-text">${escapeHtml(note.text)}</div>
+              <div class="note-item-meta">
+                <span class="note-author">${escapeHtml(note.author)}</span>
+                <span class="note-timestamp">${shortDateTime(note.createdAt)}</span>
+              </div>
+            </div>
+          `).join('')}
+          ${notes.length > 2 ? `<button class="notes-show-all" type="button" data-notes-show-all="${escapeHtml(customerName)}">${expanded ? 'Show fewer' : `Show all (${notes.length})`}</button>` : ''}
+        </div>
+      ` : `<div class="mini-order"><div class="mini-order-items" style="color:var(--text-faint)">No notes yet. Tap ＋ Add Note to log a visit.</div></div>`}
+    </div>
+  `;
 }
 
 function renderTaskCards(items, columnKey){
