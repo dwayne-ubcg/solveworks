@@ -39,7 +39,8 @@ echo ""
 echo "💬 Refreshing live iMessage databases..."
 ssh "$CRAIG_SSH" "echo 'lenore' | sudo -S bash -c '
 cp /Users/craigsmac/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/craigsmac-live.db 2>/dev/null
-cp /Users/tylorlucus/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/tylorlucus-live.db 2>/dev/null
+# Tyler is logged in under the Shelley macOS account (tylerlucas1971@icloud.com)
+# tylorlucus account has no iMessage data
 cp /Users/Shelley/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/shelley-live.db 2>/dev/null
 cp /Users/lenore/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/lenore-live.db 2>/dev/null
 chown craigsmac:staff /Users/craigsmac/clawd/data/messages/*-live.db 2>/dev/null

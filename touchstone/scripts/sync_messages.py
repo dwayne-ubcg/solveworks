@@ -33,15 +33,15 @@ PHONE_MAP = {
 # sudo-copied snapshots of live iMessage databases (refreshed each sync)
 DB_PATHS = {
     'Craig':   '/Users/craigsmac/clawd/data/messages/craigsmac-live.db',
-    'Tyler':   '/Users/craigsmac/clawd/data/messages/tylorlucus-live.db',
-    'Shelley': '/Users/craigsmac/clawd/data/messages/shelley-live.db',
+    'Tyler':   '/Users/craigsmac/clawd/data/messages/shelley-live.db',
+    # 'Shelley': not set up yet — macOS 'Shelley' account is actually Tyler (tylerlucas1971@icloud.com)
     'Lenore':  '/Users/craigsmac/clawd/data/messages/lenore-live.db',
 }
 
 # Fallback stale copies (only if live snapshot not available)
 FALLBACK_DB_PATHS = {
     'Craig': '/Users/craigsmac/clawd/data/messages/craigsmac-chat.db',
-    'Tyler': '/Users/craigsmac/clawd/data/messages/tylorlucus-chat.db',
+    'Tyler': '/Users/craigsmac/clawd/data/messages/shelley-chat.db',
 }
 
 STANDARD_DB = os.path.expanduser('~/Library/Messages/chat.db')
@@ -51,7 +51,7 @@ STANDARD_DB = os.path.expanduser('~/Library/Messages/chat.db')
 COPY_SCRIPT = """
 sudo -S bash -c '
 cp /Users/craigsmac/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/craigsmac-live.db 2>/dev/null
-cp /Users/tylorlucus/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/tylorlucus-live.db 2>/dev/null
+# Tyler is under macOS 'Shelley' account — no need to copy tylorlucus (empty)
 cp /Users/Shelley/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/shelley-live.db 2>/dev/null
 cp /Users/lenore/Library/Messages/chat.db /Users/craigsmac/clawd/data/messages/lenore-live.db 2>/dev/null
 chown craigsmac:staff /Users/craigsmac/clawd/data/messages/*-live.db 2>/dev/null
