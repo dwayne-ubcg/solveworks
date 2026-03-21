@@ -3410,24 +3410,118 @@ Craig: Make sure we confirm the sink model first."></textarea>
   async function loadAgents() {
     const data = await loadJSON('agents');
     const agents = data?.agents || [];
-    let html = `<div class="panel-title">🤖 Agents</div><div class="panel-sub">AI agent status and integrations</div>`;
-    const defaultAgents = [
-      {name:'Messenger',desc:'iMessage listener — extracts tasks from texts',icon:'💬',status:'pending'},
-      {name:'Listener',desc:'Call recording transcription & analysis',icon:'🎙️',status:'pending'},
-      {name:'Estimator',desc:'Drawing analysis, slab calc, auto-quoting',icon:'📐',status:'pending'},
-      {name:'Watchdog',desc:'Invoice leakage detection, audit alerts',icon:'🔍',status:'pending'},
-      {name:'Closer',desc:'Follow-up automation, pipeline management',icon:'📈',status:'pending'}
-    ];
-    const display = agents.length ? agents : defaultAgents;
-    display.forEach(a => {
-      const sColor = {active:'var(--green)',pending:'var(--orange)',error:'var(--red)'}[a.status] || 'var(--text3)';
-      const sBadge = {active:'badge-green',pending:'badge-orange',error:'badge-red'}[a.status] || 'badge-accent';
-      html += `<div class="card" style="margin-bottom:10px;display:flex;align-items:center;gap:16px"><div style="font-size:28px;width:40px;text-align:center">${a.icon||'🤖'}</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="color:var(--text2);font-size:12px">${a.desc||a.description||''}</div></div><span class="badge ${sBadge}">${a.status}</span></div>`;
+    let html = `<div class="panel-title">🤖 Agents</div><div class="panel-sub">AI pipeline status — last updated ${data?.generatedAt ? new Date(data.generatedAt).toLocaleString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : 'unknown'}</div>`;
+
+    const statusCfg = {
+      active:  { badge:'badge-green',  dot:'var(--green)',  label:'Active'  },
+      warning: { badge:'badge-orange', dot:'var(--orange)', label:'Warning' },
+      error:   { badge:'badge-red',    dot:'var(--red)',    label:'Error'   },
+      waiting: { badge:'badge-accent', dot:'var(--text3)',  label:'Waiting' },
+      pending: { badge:'badge-orange', dot:'var(--orange)', label:'Pending' },
+    };
+
+    const alertIcon = { leakage:'⚠️', stale:'🕐', expiring:'⏳', task:'📌', commitment:'🤝', action:'✅', outlier:'📊', info:'ℹ️' };
+    const severityColor = { error:'var(--red)', warning:'var(--orange)', info:'var(--text3)' };
+
+    agents.forEach(a => {
+      const cfg = statusCfg[a.status] || statusCfg.pending;
+      const lastRun = a.lastRun ? new Date(a.lastRun).toLocaleString('en-CA',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const metrics = a.metrics || {};
+      const alerts  = a.recentAlerts || [];
+
+      // Build metric mini-cards
+      let metricHtml = '';
+      const metricDefs = {
+        // Watchdog
+        leakageCount:     { label:'Leakage Jobs',     fmt: v => v },
+        leakageValue:     null, // skip
+        auditedJobs:      { label:'Leads Audited',    fmt: v => v },
+        discrepancies:    { label:'Discrepancies',    fmt: v => v },
+        // Closer
+        staleLeads:       { label:'Stale Leads',      fmt: v => v },
+        expiringQuotes:   { label:'Expiring Quotes',  fmt: v => v },
+        pendingActions:   { label:'Pending Actions',  fmt: v => v },
+        avgDaysToClose:   { label:'Avg Days to Close',fmt: v => v+'d' },
+        // Messenger
+        totalMessages:    { label:'Total Messages',   fmt: v => v },
+        todayMessages:    { label:"Today's Messages", fmt: v => v },
+        tasksExtracted:   { label:'Tasks Extracted',  fmt: v => v },
+        crmLinked:        { label:'CRM Linked',        fmt: v => v },
+        // Listener
+        totalTranscripts: { label:'Transcripts',      fmt: v => v },
+        commitments:      { label:'Commitments',      fmt: v => v },
+        actionItems:      { label:'Action Items',     fmt: v => v },
+        decisionsExtracted:{ label:'Decisions',       fmt: v => v },
+        // Estimator
+        avgPricePerSqft:  { label:'Avg $/sqft',       fmt: v => '$'+Number(v).toFixed(0) },
+        quotesAnalyzed:   { label:'Quotes Analyzed',  fmt: v => v },
+        materialBreakdown: null, // rendered separately
+      };
+
+      const metricCards = [];
+      for (const [key, def] of Object.entries(metricDefs)) {
+        if (!def || !(key in metrics)) continue;
+        const val = metrics[key];
+        metricCards.push(`<div style="background:var(--bg2);border-radius:8px;padding:10px 14px;min-width:90px;flex:1"><div style="font-size:20px;font-weight:700;color:var(--text1)">${def.fmt(val)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${def.label}</div></div>`);
+      }
+
+      // Material breakdown special rendering for Estimator
+      if (metrics.materialBreakdown && typeof metrics.materialBreakdown === 'object') {
+        const topMaterials = Object.entries(metrics.materialBreakdown)
+          .filter(([k]) => k !== 'Unknown')
+          .sort((a,b) => b[1]-a[1])
+          .slice(0,4);
+        if (topMaterials.length) {
+          const matHtml = topMaterials.map(([name,count]) => `<span style="background:var(--bg2);border-radius:4px;padding:2px 8px;font-size:11px;margin:2px;display:inline-block">${name} <strong>${count}</strong></span>`).join('');
+          metricCards.push(`<div style="background:var(--bg2);border-radius:8px;padding:10px 14px;flex:2;min-width:160px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Top Materials</div><div>${matHtml}</div></div>`);
+        }
+      }
+
+      metricHtml = metricCards.length
+        ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">${metricCards.join('')}</div>`
+        : '';
+
+      // Build alerts list
+      let alertsHtml = '';
+      if (alerts.length) {
+        const alertItems = alerts.map(al => {
+          const icon = alertIcon[al.type] || '•';
+          const color = severityColor[al.severity] || 'var(--text3)';
+          return `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+            <span style="font-size:13px;flex-shrink:0;margin-top:1px">${icon}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;color:var(--text1);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${al.message||''}</div>
+              <div style="font-size:11px;color:${color};margin-top:1px">${al.detail||''}</div>
+            </div>
+          </div>`;
+        }).join('');
+        alertsHtml = `<div style="margin-top:8px"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Recent Alerts</div>${alertItems}</div>`;
+      } else if (a.status === 'waiting') {
+        alertsHtml = `<div style="margin-top:8px;font-size:12px;color:var(--text3);padding:8px 0">No alerts yet — waiting for first data.</div>`;
+      }
+
+      html += `
+      <div class="card" style="margin-bottom:12px;padding:16px 20px">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:2px">
+          <div style="font-size:26px;width:36px;text-align:center;flex-shrink:0">${a.icon||'🤖'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-weight:700;font-size:16px">${a.name}</span>
+              <span class="badge ${cfg.badge}" style="font-size:11px">${cfg.label}</span>
+            </div>
+            <div style="color:var(--text2);font-size:12px;margin-top:2px">${a.desc||''}</div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);text-align:right;flex-shrink:0;white-space:nowrap">Last run<br><strong>${lastRun}</strong></div>
+        </div>
+        ${metricHtml}
+        ${alertsHtml}
+      </div>`;
     });
+
     // Permissions table
     html += `<div class="section-label" style="margin-top:24px">Agent Permissions</div>`;
     html += `<div class="card"><div style="font-size:12px;overflow-x:auto"><div style="display:grid;grid-template-columns:1fr repeat(4,50px);gap:4px;text-align:center"><div style="text-align:left;font-weight:600;color:var(--text3)">Agent</div><div style="font-weight:600;color:var(--text3)">Read</div><div style="font-weight:600;color:var(--text3)">Write</div><div style="font-weight:600;color:var(--text3)">Send</div><div style="font-weight:600;color:var(--text3)">Delete</div>`;
-    [{n:'Messenger',r:1,w:1,s:0,d:0},{n:'Listener',r:1,w:1,s:0,d:0},{n:'Estimator',r:1,w:1,s:0,d:0},{n:'Watchdog',r:1,w:0,s:1,d:0},{n:'Closer',r:1,w:1,s:1,d:0}].forEach(p => {
+    [{n:'Watchdog',r:1,w:0,s:1,d:0},{n:'Closer',r:1,w:1,s:1,d:0},{n:'Messenger',r:1,w:1,s:0,d:0},{n:'Listener',r:1,w:1,s:0,d:0},{n:'Estimator',r:1,w:1,s:0,d:0}].forEach(p => {
       html += `<div style="text-align:left">${p.n}</div><div>${p.r?'✅':'❌'}</div><div>${p.w?'✅':'❌'}</div><div>${p.s?'✅':'❌'}</div><div>${p.d?'✅':'❌'}</div>`;
     });
     html += `</div></div></div>`;

@@ -603,6 +603,223 @@ print()
 
 
 # ────────────────────────────────────────────────────────
+# 12. agents.json — agent status from real pipeline data
+# ────────────────────────────────────────────────────────
+print("🤖 Building agents.json...")
+
+run_ts = now.isoformat()
+
+# ── Watchdog: Invoice Leakage & Audit ──
+# leakage_alerts already computed above (jobs in fab/complete with $0 pricing)
+watchdog_alerts = []
+for item in leakage_alerts[:5]:
+    pricing_str = fmt_compact(item.get("pricing") or 0)
+    watchdog_alerts.append({
+        "type": "leakage",
+        "message": f"{item.get('customer','Unknown')} — {item.get('project','No project')}",
+        "detail": f"Stage: {item.get('stage','?')} · Pricing: $0",
+        "severity": "warning",
+    })
+
+# Count discrepancies from audit.json (client-side computed, may be 0 — use leakage as proxy)
+audit_data = load("audit.json")
+audit_discrepancies = audit_data.get("summary", {}).get("discrepancies", 0)
+
+watchdog_agent = {
+    "name": "Watchdog",
+    "icon": "🔍",
+    "desc": "Invoice leakage detection and CRM audit. Flags jobs with missing pricing and cross-system discrepancies.",
+    "status": "active",
+    "lastRun": run_ts,
+    "metrics": {
+        "leakageCount": len(leakage_alerts),
+        "leakageValue": sum(0 for _ in leakage_alerts),  # $0 pricing = unquantified leakage
+        "auditedJobs": len(all_leads),
+        "discrepancies": audit_discrepancies,
+    },
+    "recentAlerts": watchdog_alerts[:3],
+}
+
+# ── Closer: Follow-up & Pipeline ──
+stale_list = followups.get("stale", [])
+expiring_list = followups.get("expiringQuotes", [])
+pending_list = followups.get("pending", [])
+
+# avg days to close: use complete leads with date_added
+complete_leads = [l for l in all_leads if l.get("stage") == "complete" and l.get("date_added")]
+avg_days_to_close = 0
+if complete_leads:
+    avg_days_to_close = round(sum(days_ago(l.get("date_added")) for l in complete_leads) / len(complete_leads))
+
+closer_alerts = []
+# Top urgent: oldest stale leads
+for item in stale_list[:2]:
+    closer_alerts.append({
+        "type": "stale",
+        "message": f"{item.get('customer','?')} — {item.get('project','?')}",
+        "detail": f"Stale {item.get('staleDays', 0)} days · {item.get('rep','?')}",
+        "severity": "warning",
+    })
+# About-to-expire quotes
+for item in expiring_list[:2]:
+    days_left = item.get("expiresIn", 0)
+    closer_alerts.append({
+        "type": "expiring",
+        "message": f"{item.get('customer','?')} — {item.get('project','?')}",
+        "detail": f"Quote expires in {days_left}d · {fmt_compact(item.get('pricing') or 0)}",
+        "severity": "error" if days_left <= 3 else "warning",
+    })
+
+closer_agent = {
+    "name": "Closer",
+    "icon": "📈",
+    "desc": "Follow-up automation and pipeline management. Tracks stale leads, expiring quotes, and pending actions.",
+    "status": "active",
+    "lastRun": run_ts,
+    "metrics": {
+        "staleLeads": len(stale_list),
+        "expiringQuotes": len(expiring_list),
+        "pendingActions": len(pending_list),
+        "avgDaysToClose": avg_days_to_close,
+    },
+    "recentAlerts": closer_alerts[:3],
+}
+
+# ── Messenger: iMessage Extraction ──
+crm_linked = sum(1 for m in enriched_messages if m.get("linkedLead"))
+tasks_from_msgs = [m for m in enriched_messages if m.get("autoTask")]
+messenger_alerts = []
+for msg in tasks_from_msgs[:3]:
+    task_text = msg.get("autoTask", "")
+    linked = msg.get("linkedLead")
+    detail = f"Linked to {linked['customer']}" if linked else "No CRM match"
+    messenger_alerts.append({
+        "type": "task",
+        "message": task_text[:80] if task_text else "Task extracted",
+        "detail": detail,
+        "severity": "info",
+    })
+
+messenger_agent = {
+    "name": "Messenger",
+    "icon": "💬",
+    "desc": "iMessage extraction and CRM linking. Pulls action items from texts and connects them to active leads.",
+    "status": "active",
+    "lastRun": run_ts,
+    "metrics": {
+        "totalMessages": len(all_messages),
+        "todayMessages": today_messages,
+        "tasksExtracted": tasks_extracted,
+        "crmLinked": crm_linked,
+    },
+    "recentAlerts": messenger_alerts,
+}
+
+# ── Listener: Call Transcription ──
+total_transcripts = len(all_transcripts)
+all_commitments = []
+all_action_items = []
+all_decisions = []
+for tx in enriched_transcripts:
+    ex = tx.get("extracted", {})
+    all_commitments.extend(ex.get("commitments", []))
+    all_action_items.extend(ex.get("action_items", []))
+    all_decisions.extend(ex.get("key_decisions", []))
+
+listener_alerts = []
+for c in all_commitments[:2]:
+    listener_alerts.append({"type": "commitment", "message": c[:100], "detail": "From transcript", "severity": "info"})
+for a in all_action_items[:1]:
+    listener_alerts.append({"type": "action", "message": a[:100], "detail": "From transcript", "severity": "info"})
+
+listener_agent = {
+    "name": "Listener",
+    "icon": "🎙️",
+    "desc": (
+        "Call transcription and analysis. Extracts commitments, action items, and decisions from Plaud recordings."
+        if total_transcripts > 0 else
+        "Waiting for first Plaud transcript. Once recorded, Listener will extract commitments and action items."
+    ),
+    "status": "active" if total_transcripts > 0 else "waiting",
+    "lastRun": run_ts,
+    "metrics": {
+        "totalTranscripts": total_transcripts,
+        "commitments": len(all_commitments),
+        "actionItems": len(all_action_items),
+        "decisionsExtracted": len(all_decisions),
+    },
+    "recentAlerts": listener_alerts,
+}
+
+# ── Estimator: Material & Pricing Intelligence ──
+# Compute avg $/sqft and material breakdown from CRM
+priced_leads = [
+    (float(l.get("pricing") or 0), float(l.get("sqft") or 0))
+    for l in all_leads
+    if float(l.get("pricing") or 0) > 0 and float(l.get("sqft") or 0) > 0
+]
+avg_price_per_sqft = 0.0
+if priced_leads:
+    avg_price_per_sqft = round(sum(p / s for p, s in priced_leads) / len(priced_leads), 2)
+
+# Material breakdown
+material_breakdown = {}
+for lead in all_leads:
+    product = lead.get("product") or "Unknown"
+    if product and product.strip():
+        material_breakdown[product] = material_breakdown.get(product, 0) + 1
+
+# Outlier quotes: >2x or <0.5x avg
+outlier_alerts = []
+if avg_price_per_sqft > 0:
+    for lead in sorted(all_leads, key=lambda x: x.get("date_added") or "", reverse=True):
+        pricing = float(lead.get("pricing") or 0)
+        sqft = float(lead.get("sqft") or 0)
+        if pricing > 0 and sqft > 0:
+            ppsf = pricing / sqft
+            if ppsf > avg_price_per_sqft * 2 or ppsf < avg_price_per_sqft * 0.5:
+                ratio = round(ppsf / avg_price_per_sqft, 1)
+                direction = "HIGH" if ppsf > avg_price_per_sqft else "LOW"
+                outlier_alerts.append({
+                    "type": "outlier",
+                    "message": f"{lead.get('customer','?')} — {lead.get('project','?')}",
+                    "detail": f"${round(ppsf)}/sqft ({direction} · {ratio}x avg)",
+                    "severity": "warning",
+                })
+        if len(outlier_alerts) >= 3:
+            break
+
+estimator_agent = {
+    "name": "Estimator",
+    "icon": "📐",
+    "desc": "Material and pricing intelligence from CRM data. Tracks avg $/sqft, product mix, and quote outliers.",
+    "status": "active",
+    "lastRun": run_ts,
+    "metrics": {
+        "avgPricePerSqft": avg_price_per_sqft,
+        "quotesAnalyzed": len(priced_leads),
+        "materialBreakdown": material_breakdown,
+    },
+    "recentAlerts": outlier_alerts[:3],
+}
+
+# ── Assemble agents.json ──
+agents_data = {
+    "generatedAt": run_ts,
+    "agents": [
+        watchdog_agent,
+        closer_agent,
+        messenger_agent,
+        listener_agent,
+        estimator_agent,
+    ]
+}
+save("agents.json", agents_data)
+print(f"  5 agents generated · Watchdog:{len(leakage_alerts)} leaks · Closer:{len(stale_list)} stale · Messenger:{len(tasks_from_msgs)} tasks · Listener:{total_transcripts} transcripts · Estimator:${avg_price_per_sqft}/sqft avg")
+print()
+
+
+# ────────────────────────────────────────────────────────
 print("✅ Enrichment complete!")
-print(f"   Generated: dashboard.json, fabrication.json, followups.json, tasks.json, projects.json")
+print(f"   Generated: dashboard.json, fabrication.json, followups.json, tasks.json, projects.json, agents.json")
 print(f"   Enriched: messages.json ({linked_count} CRM links), transcripts.json")
