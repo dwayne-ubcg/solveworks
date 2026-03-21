@@ -2929,65 +2929,44 @@ Craig: Make sure we confirm the sink model first."></textarea>
   }
 
   function drawSlabLayout(slabs) {
-    let html = '<div id="slab-layout-container" style="position:relative;width:100%;background:var(--surface2);padding:10px;border-radius:8px;">';
-    const colors = ['#88B04B', '#FF6F61', '#6B5B95', '#F7CAC9', '#92A8D1', '#955251', '#B565A7', '#009B77', '#DD4124', '#45B8AC'];
+    if (!slabs || slabs.length === 0) return '<div style="text-align:center;padding:20px;color:var(--text3)">No layout to display</div>';
+    const colors = ['#88B04B','#FF6F61','#6B5B95','#92A8D1','#009B77','#F7CAC9','#955251','#B565A7','#DD4124','#45B8AC'];
+    let html = '';
     
-    slabs.forEach((slab, i) => {
-      html += `<div style="margin-bottom:15px;"><div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;">Slab ${i + 1}</div>`;
-      const containerId = `slab-canvas-container-${i}`;
-      const canvasId = `slab-canvas-${i}`;
-      const aspectRatio = slab.h / slab.w; // h is slabWidth, w is slabLength
+    slabs.forEach((slab, si) => {
+      const svgW = 600;
+      const svgH = Math.round(svgW * (slab.h / slab.w));
+      const sx = svgW / slab.w;
+      const sy = svgH / slab.h;
       
-      html += `<div id="${containerId}" style="width:100%;padding-top:${aspectRatio * 100}%;position:relative;">`;
-      html += `<canvas id="${canvasId}" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>`;
-      html += `</div></div>`;
-    });
-
-    html += '</div>';
-
-    // We need a script to run after this HTML is inserted into the DOM
-    setTimeout(() => {
-      slabs.forEach((slab, i) => {
-        const canvas = document.getElementById(`slab-canvas-${i}`);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const container = document.getElementById(`slab-canvas-container-${i}`);
-        
-        // Set canvas resolution to match container size
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
-        
-        const scaleX = canvas.width / slab.w;
-        const scaleY = canvas.height / slab.h;
-
-        // Draw slab outline
-        ctx.strokeStyle = 'var(--border2)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-        // Draw placed pieces
-        slab.placed.forEach((p, pieceIndex) => {
-          ctx.fillStyle = colors[pieceIndex % colors.length];
-          ctx.fillRect(p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY);
-          
-          // Draw border
-          ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY);
-
-          // Draw label
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 12px Arial';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          const label = `${p.name} (${p.originalW}"x${p.originalH}")`;
-          const textX = (p.x + p.w / 2) * scaleX;
-          const textY = (p.y + p.h / 2) * scaleY;
-          ctx.fillText(label, textX, textY);
-        });
+      html += `<div style="margin-bottom:16px;">`;
+      html += `<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">Slab ${si + 1} <span style="font-weight:400;color:var(--text3)">(${slab.w}" × ${slab.h}")</span></div>`;
+      html += `<svg viewBox="0 0 ${svgW} ${svgH}" style="width:100%;height:auto;background:#2a2a2a;border-radius:8px;border:2px solid #444;">`;
+      
+      // Draw placed pieces
+      slab.placed.forEach((p, pi) => {
+        const px = p.x * sx, py = p.y * sy, pw = p.w * sx, ph = p.h * sy;
+        const col = colors[pi % colors.length];
+        html += `<rect x="${px}" y="${py}" width="${pw}" height="${ph}" fill="${col}" fill-opacity="0.75" stroke="#fff" stroke-width="1.5"/>`;
+        // Label — only if piece is big enough
+        if (pw > 40 && ph > 20) {
+          const fontSize = Math.min(14, pw / 8, ph / 3);
+          html += `<text x="${px + pw/2}" y="${py + ph/2 - fontSize*0.3}" text-anchor="middle" fill="#fff" font-size="${fontSize}px" font-weight="bold">${p.name}</text>`;
+          html += `<text x="${px + pw/2}" y="${py + ph/2 + fontSize*0.8}" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-size="${fontSize*0.75}px">${p.originalW}" × ${p.originalH}"</text>`;
+        }
       });
-    }, 0);
-
+      
+      // Draw grid lines for reference (every 12 inches)
+      for (let x = 12; x < slab.w; x += 12) {
+        html += `<line x1="${x*sx}" y1="0" x2="${x*sx}" y2="${svgH}" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
+      }
+      for (let y = 12; y < slab.h; y += 12) {
+        html += `<line x1="0" y1="${y*sy}" x2="${svgW}" y2="${y*sy}" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`;
+      }
+      
+      html += `</svg></div>`;
+    });
+    
     return html;
   }
 
