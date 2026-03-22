@@ -633,6 +633,14 @@
     document.getElementById('sb-overlay').classList.remove('open');
   }
 
+  // ── CRM LINK HELPER ──
+  function crmLink(item, displayText, style) {
+    const id = item.crm_id || (item.id || '').toString().replace(/^touchstone-/, '');
+    if (!id) return `<span${style ? ` style="${style}"` : ''}>${escapeHtml(displayText || item.customer || 'Unknown')}</span>`;
+    const url = `https://crm.touchstoneconcrete.ca/edit.php?id=${id}`;
+    return `<a href="${url}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.2);${style || ''}" title="Open in CRM">${escapeHtml(displayText || item.customer || 'Unknown')}</a>`;
+  }
+
   // ── DATA HELPER ──
   async function loadJSON(file) {
     try {
@@ -792,7 +800,7 @@
             <div class="list-item">
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.customer || 'Unknown')}</div>
+                  <div style="font-weight:600; color:var(--text);">${crmLink(item, item.customer || 'Unknown')}</div>
                   <span class="badge ${staleClass}">${escapeHtml(item.staleDays || 0)}d stale</span>
                 </div>
                 <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.project || '')}</div>
@@ -812,7 +820,7 @@
           <div class="list-item">
             <div style="flex:1; min-width:0;">
               <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                <div style="font-weight:600; color:var(--text);">${escapeHtml(item.customer || 'Unknown')}</div>
+                <div style="font-weight:600; color:var(--text);">${crmLink(item, item.customer || 'Unknown')}</div>
                 <span class="badge badge-blue">${escapeHtml(item.stage || 'Pending')}</span>
               </div>
               <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.action || item.project || '')}</div>
@@ -833,7 +841,7 @@
             <div class="list-item">
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                  <div style="font-weight:600; color:var(--text);">${escapeHtml(item.customer || 'Quote')}</div>
+                  <div style="font-weight:600; color:var(--text);">${crmLink(item, item.customer || 'Quote')}</div>
                   <span class="badge ${expiresClass}">${Number(item.expiresIn) <= 0 ? 'Expired' : item.expiresIn + 'd left'}</span>
                 </div>
                 <div style="font-size:13px; color:var(--text2);">${escapeHtml(item.project || '')} · ${formatCurrency(item.pricing || 0)}</div>
@@ -1004,7 +1012,7 @@
         }).join('');
         return `<div class="fuq-item" data-rep="${escapeHtml(item.rep || '')}" style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
-            <div style="font-weight:600;font-size:13px;color:var(--text);flex:1;min-width:0">${escapeHtml((item.customer||'').replace(/\s+WO#\S+/,'').trim())}${item.project && item.project !== item.customer ? `<span style="color:var(--text3);font-weight:400;font-size:12px"> · ${escapeHtml(item.project)}</span>` : ''}</div>
+            <div style="font-weight:600;font-size:13px;color:var(--text);flex:1;min-width:0">${crmLink(item, (item.customer||'').replace(/\s+WO#\S+/,'').trim())}${item.project && item.project !== item.customer ? `<span style="color:var(--text3);font-weight:400;font-size:12px"> · ${escapeHtml(item.project)}</span>` : ''}</div>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
               <span style="background:${rc}22;color:${rc};border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600">${escapeHtml(item.rep||'?')}</span>
               <span style="${pricingStyle};font-size:12px">${pricingDisplay}</span>
@@ -1273,7 +1281,7 @@
             </div>
           </div>
           ${lsActive.slice(0,5).map(l=>`<div style="padding:8px 0;border-bottom:1px solid rgba(139,92,246,0.2);font-size:13px;display:flex;justify-content:space-between">
-            <span style="color:var(--text)">${l.customer||'--'}</span>
+            <span style="color:var(--text)">${crmLink(l, l.customer||'--')}</span>
             <span><span style="color:var(--text2);font-size:12px">${l.stage}</span> <span style="color:var(--purple);font-weight:600">${l.pricing>0?'$'+l.pricing.toLocaleString():'$0'}</span></span>
           </div>`).join('')}
           ${lsActive.length>5?`<div style="font-size:12px;color:var(--text3);padding:8px 0">...and ${lsActive.length-5} more → see Pipeline panel</div>`:''}
@@ -1308,7 +1316,7 @@
           ${staleItems.length ? `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Stale Leads (&gt;14 days stuck)</div>
           ${staleItems.map(item => `<div class="list-item" style="padding:8px 0">
             <div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-              <strong style="font-size:13px">${escapeHtml(item.customer||'?')}</strong>
+              <strong style="font-size:13px">${crmLink(item, item.customer||'?')}</strong>
               <span class="badge badge-orange">${item.staleDays}d stale</span>
             </div>
             <div style="font-size:12px;color:var(--text2)">${escapeHtml(item.stage||'')} · ${escapeHtml(item.rep||'—')}</div>
@@ -1317,7 +1325,7 @@
           ${expiringItems.length ? `<div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px">Expiring Quotes</div>
           ${expiringItems.map(item => `<div class="list-item" style="padding:8px 0">
             <div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-              <strong style="font-size:13px">${escapeHtml(item.customer||'?')}</strong>
+              <strong style="font-size:13px">${crmLink(item, item.customer||'?')}</strong>
               <span class="badge ${item.expiresIn <= 3 ? 'badge-red' : 'badge-orange'}">${item.expiresIn}d left</span>
             </div>
             <div style="font-size:12px;color:var(--text2)">${item.pricing > 0 ? '$'+item.pricing.toLocaleString() : '$0'} · ${escapeHtml(item.rep||'—')}</div>
@@ -1682,7 +1690,7 @@ Craig: Make sure we confirm the sink model first."></textarea>
             html += `<div class="section-label" style="margin-top:8px">🏗️ CRM Matches</div>`;
             mentioned.forEach(m => {
               html += `<div style="padding:4px 8px;border-radius:6px;background:var(--surface2);margin-bottom:4px;font-size:12px">`;
-              html += `<span style="color:var(--accent)">${escT(m.customer||'')}</span> <span style="color:var(--text3)">· ${escT(m.stage||'')} · ${m.pricing>0?'$'+m.pricing.toLocaleString():'$0'}</span>`;
+              html += `${m.crm_id ? `<a href="https://crm.touchstoneconcrete.ca/edit.php?id=${m.crm_id}" target="_blank" style="color:var(--accent);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.2)" onclick="event.stopPropagation()">${escT(m.customer||'')}</a>` : `<span style="color:var(--accent)">${escT(m.customer||'')}</span>`} <span style="color:var(--text3)">· ${escT(m.stage||'')} · ${m.pricing>0?'$'+m.pricing.toLocaleString():'$0'}</span>`;
               html += `</div>`;
             });
           }
@@ -1935,7 +1943,7 @@ Craig: Make sure we confirm the sink model first."></textarea>
         // Header row
         html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">`;
         html += `<div style="flex:1;min-width:0">`;
-        html += `<div style="font-weight:600;font-size:14px;margin-bottom:2px">${lead.customer||'Unknown'}</div>`;
+        html += `<div style="font-weight:600;font-size:14px;margin-bottom:2px">${crmLink(lead, lead.customer||'Unknown')}</div>`;
         html += `<div style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lead.project||'--'}</div>`;
         html += `</div>`;
         html += `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">`;
@@ -2115,7 +2123,7 @@ Craig: Make sure we confirm the sink model first."></textarea>
           h += `<span style="background:${rc}22;color:${rc};padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">${c.rep||'—'}</span>`;
           h += `<span style="font-weight:700;font-size:12px;color:${isZero?'var(--red)':'var(--green)'}">${isZero?'⚠️$0':('$'+c.pricing.toLocaleString())}</span>`;
           h += `</div>`;
-          h += `<div style="font-weight:600;font-size:12px;line-height:1.3">${c.customer||'TBD'}</div>`;
+          h += `<div style="font-weight:600;font-size:12px;line-height:1.3">${crmLink(c, c.customer||'TBD')}</div>`;
           if (c._inferredProduct) h += `<div style="color:var(--text2);font-size:10px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c._inferredProduct}</div>`;
           h += `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">`;
           h += `<span style="font-size:10px;color:var(--text3)">${c.sqft||'?'} sqft</span>`;
