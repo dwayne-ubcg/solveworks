@@ -1690,7 +1690,10 @@ Craig: Make sure we confirm the sink model first."></textarea>
             html += `<div class="section-label" style="margin-top:8px">🏗️ CRM Matches</div>`;
             mentioned.forEach(m => {
               html += `<div style="padding:4px 8px;border-radius:6px;background:var(--surface2);margin-bottom:4px;font-size:12px">`;
-              html += `${m.crm_id ? `<a href="https://crm.touchstoneconcrete.ca/edit.php?id=${m.crm_id}" target="_blank" style="color:var(--accent);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.2)" onclick="event.stopPropagation()">${escT(m.customer||'')}</a>` : `<span style="color:var(--accent)">${escT(m.customer||'')}</span>`} <span style="color:var(--text3)">· ${escT(m.stage||'')} · ${m.pricing>0?'$'+m.pricing.toLocaleString():'$0'}</span>`;
+              const mId = m.crm_id || (m.id || '').toString().replace(/^touchstone-/, '');
+              const mName = escT(m.customer||'');
+              const mLink = mId ? '<a href="https://crm.touchstoneconcrete.ca/edit.php?id=' + mId + '" target="_blank" style="color:var(--accent);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.2)" onclick="event.stopPropagation()">' + mName + '</a>' : '<span style="color:var(--accent)">' + mName + '</span>';
+              html += mLink + ` <span style="color:var(--text3)">· ${escT(m.stage||'')} · ${m.pricing>0?'$'+m.pricing.toLocaleString():'$0'}</span>`;
               html += `</div>`;
             });
           }
