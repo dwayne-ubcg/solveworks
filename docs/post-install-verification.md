@@ -181,6 +181,39 @@ If the client has API endpoints:
 
 ---
 
+## 9. Pre-Client Testing (BEFORE client gets access)
+
+**Do NOT introduce the client to their agent until this passes.**
+
+### a) Internal Test Chat
+- [ ] Create a private Telegram chat with the agent bot (just us, no client)
+- [ ] Send 10+ messages covering: greetings, business questions, data requests, dashboard questions
+- [ ] Verify agent responds correctly, uses right tone, has right context
+- [ ] Ask agent to pull a report or data — confirm it works end-to-end
+- [ ] Ask agent something it shouldn't know yet — confirm it handles gracefully (not hallucinating)
+
+### b) Dashboard Test
+- [ ] Ask the agent to update a dashboard data file and deploy
+- [ ] Verify the change appears on solveworks.io within 2 minutes
+- [ ] Ask the agent to build a simple new report — confirm it can do it independently
+
+### c) Cron / Scheduled Tasks Test
+- [ ] Trigger morning briefing manually — confirm it delivers and content is relevant
+- [ ] Check any recurring data sync crons — confirm they run and produce valid output
+
+### d) Edge Cases
+- [ ] Send the agent a message, wait 5+ minutes, send another — verify session continuity
+- [ ] Ask the agent about its memory/context — it should reference AGENTS.md, daily logs, etc.
+- [ ] Try a request that needs escalation — agent should flag it, not wing it
+
+### e) Sign-Off
+- [ ] Mika or Dwayne confirms: "This agent is ready for the client"
+- [ ] Only THEN create the client-facing group chat or DM
+
+**Rule: The client's first impression of their agent must be flawless. All bugs get caught in our test chat, not theirs.**
+
+---
+
 ## Lessons from Craig/Abbey Install (Mar 22, 2026)
 Things that made this install smooth — replicate every time:
 1. **Infra first** — SSH keys, deploy access, data connections set up before agent starts building
