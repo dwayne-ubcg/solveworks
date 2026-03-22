@@ -635,7 +635,9 @@
 
   // ── CRM LINK HELPER ──
   function crmLink(item, displayText, style) {
-    const id = item.crm_id || (item.id || '').toString().replace(/^touchstone-/, '');
+    const rawId = (item.id || '').toString();
+    const isTouchstone = rawId.startsWith('touchstone-');
+    const id = item.crm_id || (isTouchstone ? rawId.replace(/^touchstone-/, '') : '');
     const name = escapeHtml(displayText || item.customer || 'Unknown');
     const badge = id ? `<span style="opacity:0.5;font-size:0.85em;font-weight:400"> #${id}</span>` : '';
     if (!id) return `<span${style ? ` style="${style}"` : ''}>${name}</span>`;
@@ -1967,7 +1969,9 @@ Craig: Make sure we confirm the sink model first."></textarea>
         html += `<div id="${cardId}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">`;
         // Quick action buttons
         html += `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">`;
-        if (lead.crm_url) html += `<a href="${lead.crm_url}" target="_blank" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">🔗 Open in CRM</a>`;
+        const leadCrmId = lead.crm_id || (lead.id || '').toString().replace(/^touchstone-/, '');
+        const leadCrmUrl = lead.crm_url || (leadCrmId && lead.id && lead.id.startsWith('touchstone-') ? 'https://crm.touchstoneconcrete.ca/edit.php?id=' + leadCrmId : '');
+        if (leadCrmUrl) html += `<a href="${leadCrmUrl}" target="_blank" class="btn btn-primary btn-sm" onclick="event.stopPropagation()">🔗 Open in CRM</a>`;
         if (lead.phone) html += `<a href="tel:${lead.phone}" class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation()">📞 ${lead.phone}</a>`;
         if (lead.email) html += `<a href="mailto:${lead.email}" class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation()">✉️ Email</a>`;
         if (mapUrl) html += `<a href="${mapUrl}" target="_blank" class="btn btn-sm" style="background:var(--surface2)" onclick="event.stopPropagation()">🗺️ Navigate</a>`;
