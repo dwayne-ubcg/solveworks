@@ -78,3 +78,114 @@ These were missing on Brit and Freedom installs. Every agent must have these set
 6. Ask about something from "yesterday" — agent should reference memory files
 
 **If any of these fail, DO NOT hand off to client.**
+
+---
+
+## 7. Dashboard Autonomy Setup (MANDATORY)
+
+The agent must be able to deploy dashboard updates independently. No dependency on Mika/Sunday.
+
+### a) SSH Key
+```bash
+ssh <user>@<ip> "cat ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519 -C '<agent>@solveworks-client' -f ~/.ssh/id_ed25519 -N ''"
+```
+- [ ] SSH key exists (or generated)
+- [ ] Key added as deploy key to `dwayne-ubcg/solveworks` repo with **write access**:
+```bash
+gh repo deploy-key add - --repo dwayne-ubcg/solveworks --title "<agent>-agent" --allow-write <<< "$(ssh <user>@<ip> 'cat ~/.ssh/id_ed25519.pub')"
+```
+
+### b) Clone Solveworks Repo
+```bash
+ssh <user>@<ip> "ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null && git clone git@github.com:dwayne-ubcg/solveworks.git ~/clawd/solveworks-site"
+```
+- [ ] Repo cloned successfully
+- [ ] Git config set:
+```bash
+ssh <user>@<ip> "cd ~/clawd/solveworks-site && git config user.name '<AgentName> Agent' && git config user.email '<agent>@solveworks.io'"
+```
+
+### c) Deploy Script
+Create `~/clawd/scripts/deploy-dashboard.sh` with the agent's dashboard path:
+```bash
+#!/bin/bash
+set -e
+SITE_DIR="$HOME/clawd/solveworks-site"
+DATA_DIR="$HOME/clawd/dashboard/data"
+DEST_DIR="$SITE_DIR/<CLIENT_DASHBOARD>/data"
+MSG="${1:-auto: update dashboard data}"
+
+cd $SITE_DIR && git pull --rebase 2>/dev/null || true
+
+if [ -d "$DATA_DIR" ] && [ "$(ls -A $DATA_DIR 2>/dev/null)" ]; then
+    mkdir -p "$DEST_DIR"
+    cp $DATA_DIR/*.json $DEST_DIR/ 2>/dev/null && echo "Copied data files" || true
+fi
+
+cd $SITE_DIR
+git add <CLIENT_DASHBOARD>/
+CHANGES=$(git diff --cached --stat)
+if [ -z "$CHANGES" ]; then
+    echo "No changes to deploy."
+    exit 0
+fi
+git commit -m "$MSG"
+git push origin main
+echo "Deployed to solveworks.io/<CLIENT_DASHBOARD>/"
+```
+- [ ] Script uses `$HOME` (NOT hardcoded paths like `/Users/macmini/`)
+- [ ] `chmod +x ~/clawd/scripts/deploy-dashboard.sh`
+- [ ] `mkdir -p ~/clawd/dashboard/data`
+
+### d) Documentation
+- [ ] Copy `DASHBOARD-AUTONOMY.md` to `~/clawd/`
+- [ ] Copy `DASHBOARD-DATA-FORMAT.md` to `~/clawd/` (customize data schemas for this client)
+
+### e) Verify Deploy Works
+```bash
+ssh <user>@<ip> "cd ~/clawd/solveworks-site && git pull && echo 'GIT PULL OK'"
+ssh <user>@<ip> "ssh -T git@github.com 2>&1"
+```
+- [ ] `git pull` succeeds
+- [ ] GitHub auth shows: `Hi dwayne-ubcg/solveworks! You've successfully authenticated`
+
+### f) Data Source Access
+- [ ] Agent has access to client's data (API keys, database credentials, SSH tunnels — whatever applies)
+- [ ] Agent knows where to query data from (documented in a guide on their machine)
+- [ ] Agent can generate at least one report JSON and deploy it independently
+
+**The agent should be able to answer: "Build me a new report" without calling us.**
+
+---
+
+## 8. Client Data Pipeline (if applicable)
+
+### Database Access (learned from Craig/Touchstone)
+If the client has a web-hosted CRM or database:
+- [ ] SSH key added to hosting provider (SiteGround, cPanel, etc.)
+- [ ] SSH config shortcut created (`~/.ssh/config` with Host alias)
+- [ ] MySQL credentials documented in `~/clawd/.env`
+- [ ] Connection tested: `ssh <host-alias> 'mysql -u USER -pPASS DB -e "SELECT 1"'`
+- [ ] Agent has a reference doc explaining how to query the data
+
+### API Access
+If the client has API endpoints:
+- [ ] API keys stored in `~/clawd/.env`
+- [ ] Sync scripts created in `~/clawd/scripts/`
+- [ ] Test pull executed and data verified
+
+### Google Suite (if client provides agent an email)
+- [ ] `gcalcli` installed (`pip3 install gcalcli`)
+- [ ] Chrome available for browser-based Google access
+- [ ] Agent knows to run `gcalcli init` once email credentials are provided
+
+---
+
+## Lessons from Craig/Abbey Install (Mar 22, 2026)
+Things that made this install smooth — replicate every time:
+1. **Infra first** — SSH keys, deploy access, data connections set up before agent starts building
+2. **Data format guide on machine** — Agent knows exactly what JSON to produce from day one
+3. **Deploy autonomy from day one** — Agent never waits on us to ship
+4. **Agent reads docs proactively** — Drop guides, agent picks them up and runs
+5. **Full database access** — Don't rely on limited APIs when direct DB access is possible
+6. **Test the full loop** — Query data → build JSON → deploy → verify on solveworks.io
