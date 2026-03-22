@@ -727,14 +727,16 @@
           severity: 'high',
           title: `⚠️ ${l.customer} — ${l.project}`,
           detail: `[${l._src}] Stage: ${l.stage} — $0 pricing${hasInvoiceComment?' (invoice mentioned in comments)':''}`,
-          amount: est
+          amount: est,
+          id: l.id, customer: l.customer, _src: l._src
         });
       } else if (l.stage === 'complete' && !l.date_install) {
         crmLeakageAlerts.push({
           severity: 'medium',
           title: `⚠️ ${l.customer} — ${l.project}`,
           detail: `[${l._src}] Complete but no install date recorded`,
-          amount: 0
+          amount: 0,
+          id: l.id, customer: l.customer, _src: l._src
         });
       }
     });
@@ -761,10 +763,11 @@
           const title = alert?.title || alert?.label || alert?.name || 'Leakage alert';
           const detail = alert?.detail || alert?.message || alert?.context || alert?.description || '';
           const amount = alert?.amount ? ` · ${formatCurrency(alert.amount)}` : '';
+          const alertLink = alert.id ? crmLink(alert, title.replace(/^⚠️\s*/, ''), 'font-weight:600') : escapeHtml(title);
           return `
             <div class="alert-row ${rowClass}">
               <div>
-                <div style="font-weight:600; margin-bottom:4px;">${escapeHtml(title)}${escapeHtml(amount)}</div>
+                <div style="font-weight:600; margin-bottom:4px;">⚠️ ${alertLink}${escapeHtml(amount)}</div>
                 <div style="color: var(--text2);">${escapeHtml(detail || 'Review this issue today.')}</div>
               </div>
             </div>
@@ -784,7 +787,7 @@
               <div style="min-width:72px;"><span class="badge badge-accent">${escapeHtml(install.time || 'TBD')}</span></div>
               <div style="flex:1; min-width:0;">
                 <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:4px;">
-                  <div style="font-weight:600; color:var(--text);">${escapeHtml(install.client || 'Install')}${company}</div>
+                  <div style="font-weight:600; color:var(--text);">${install.id ? crmLink(install, install.client || 'Install') : escapeHtml(install.client || 'Install')}${company}</div>
                   <span class="badge ${statusClass}">${escapeHtml(status)}</span>
                 </div>
                 <div style="font-size:13px; color:var(--text2);">${escapeHtml(install.location || 'Location TBD')} · ${escapeHtml(install.type || 'Install')}</div>
