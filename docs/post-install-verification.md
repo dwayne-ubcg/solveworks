@@ -14,9 +14,13 @@ ssh <user>@<ip> "openclaw gateway status"
 
 ## 2. Cron Verification (must show next run times)
 ```bash
-ssh <user>@<ip> "cat ~/.openclaw/cron/jobs.json | python3 -c 'import sys,json; [print(j.get(\"name\",\"?\"), \"| next:\", j.get(\"state\",{}).get(\"nextRunAtMs\",\"NONE\")) for j in json.load(sys.stdin).get(\"jobs\",json.load(open(sys.argv[1])) if len(sys.argv)>1 else [])]'"
+# Primary (python3):
+ssh <user>@<ip> "cat ~/.openclaw/cron/jobs.json | python3 -c 'import sys,json; [print(j.get(\"name\",\"?\"), \"| next:\", j.get(\"state\",{}).get(\"nextRunAtMs\",\"NONE\")) for j in json.load(sys.stdin).get(\"jobs\",[]))]'"
+
+# Fallback (no python3):
+ssh <user>@<ip> "cat ~/.openclaw/cron/jobs.json | grep -E '\"name\"|\"nextRunAtMs\"'"
 ```
-- [ ] All jobs show nextRunAtMs (not "NONE")
+- [ ] All jobs show nextRunAtMs (not "NONE" or missing)
 - [ ] Morning briefing scheduled for correct time
 
 ## 3. Telegram Bot Test
@@ -206,9 +210,11 @@ If the client has API endpoints:
 - [ ] Ask the agent about its memory/context — it should reference AGENTS.md, daily logs, etc.
 - [ ] Try a request that needs escalation — agent should flag it, not wing it
 
-### e) Sign-Off
-- [ ] Mika or Dwayne confirms: "This agent is ready for the client"
+### e) Sign-Off (Async)
+- [ ] Brody/Sunday complete steps 9a-9d and send a pass/fail summary to Solveworks Ops
+- [ ] Mika or Dwayne reviews the summary and confirms: "Good to go"
 - [ ] Only THEN create the client-facing group chat or DM
+- [ ] If any step failed: fix it, re-test, send updated summary — don't wait for a live call
 
 **Rule: The client's first impression of their agent must be flawless. All bugs get caught in our test chat, not theirs.**
 
