@@ -831,6 +831,31 @@ const CUSTOMER_NOTES_KEY = '7c_customer_notes';
 const QUOTES_KEY = '7c_quotes';
 const QUOTE_COUNTER_KEY = '7c_quote_counter';
 const QUOTE_BASE_URL = 'https://orders.7cellars.ky/';
+const DELIVER_BASE_URL = 'https://orders.7cellars.ky/deliver.html';
+
+function generateQuoteURL(quote){
+  const payload = {
+    id: quote.id,
+    customerName: quote.customerName,
+    items: (quote.items||[]).map(i => ({ title:i.title, sku:i.sku||'', quantity:i.quantity, price:i.price, region:i.region||'' })),
+    notes: quote.notes||'',
+    createdAt: quote.createdAt,
+    expiresAt: quote.expiresAt,
+    createdBy: quote.createdBy||'Roberto'
+  };
+  return QUOTE_BASE_URL + '#' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
+
+function generateDeliverURL(order){
+  const payload = {
+    id: order.id,
+    customerName: order.customer || order.customerName,
+    items: (order.lines||order.items||[]).map(i => ({ title:i.title||i.Name, quantity:i.quantity||i.Quantity })),
+    deliveryAddress: order.deliveryAddress||'',
+    notes: order.notes||''
+  };
+  return DELIVER_BASE_URL + '#' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+}
 const tabs = [
   { id:'overview', label:'Home', icon:'⌂' },
   { id:'catalog', label:'Wine Catalog', icon:'🍷' },
@@ -2110,7 +2135,7 @@ function createAndSaveQuote(notes){
 }
 
 function quoteConfirmationView(quote){
-  const url = `${QUOTE_BASE_URL}?id=${encodeURIComponent(quote.id)}`;
+  const url = generateQuoteURL(quote);
   const customerName = escapeHtml(quote.customerName || 'Customer');
   const waText = encodeURIComponent(`Hi ${quote.customerName || 'there'}, here's your wine quote from 7 Cellars: ${url}`);
   const emailSubject = encodeURIComponent('Your Wine Quote from 7 Cellars');
@@ -2131,7 +2156,7 @@ function quoteConfirmationView(quote){
       <div>
         <div class="small muted" style="margin-bottom:8px;text-align:center;">Quote link — share with customer:</div>
         <div class="quote-link-row">
-          <a class="quote-link-box" href="${url}" target="_blank" rel="noopener">${url}</a>
+          <a class="quote-link-box" href="${url}" target="_blank" rel="noopener">orders.7cellars.ky/#${escapeHtml(quote.id)}</a>
           <button class="btn btn-ghost" type="button" data-copy-quote-link="${url}" style="min-width:90px">📋 Copy</button>
         </div>
       </div>
@@ -2179,7 +2204,7 @@ function renderQuotesSection(search){
       <div style="display:grid;gap:12px;">
         ${filtered.length ? filtered.map(q => {
           const status = getQuoteStatus(q);
-          const url = `${QUOTE_BASE_URL}?id=${encodeURIComponent(q.id)}`;
+          const url = generateQuoteURL(q);
           const isExpanded = state.quoteExpandedId === q.id;
           const waText = encodeURIComponent(`Hi ${q.customerName || 'there'}, here's your wine quote from 7 Cellars: ${url}`);
           const emailSubject = encodeURIComponent('Your Wine Quote from 7 Cellars');
@@ -2209,7 +2234,7 @@ function renderQuotesSection(search){
                   <div>
                     <div class="small muted" style="margin-bottom:6px;">Resend quote:</div>
                     <div class="quote-link-row">
-                      <a class="quote-link-box" href="${url}" target="_blank" rel="noopener" style="font-size:12px">${url}</a>
+                      <a class="quote-link-box" href="${url}" target="_blank" rel="noopener" style="font-size:12px">orders.7cellars.ky/#${escapeHtml(q.id)}</a>
                       <button class="btn btn-ghost" type="button" data-copy-quote-link-orders="${url}" style="min-width:80px;font-size:12px">📋 Copy</button>
                     </div>
                     <div class="quote-share-buttons" style="margin-top:8px">
@@ -2254,7 +2279,8 @@ function renderOrders(){
 
     if (order.status === 'OUT_FOR_DELIVERY') {
       statusBadgeHtml = '<span class="badge blue">Out for Delivery</span>';
-      actionButtonHtml = `<button class="btn btn-soft" type="button" data-collect-signature="${order.id}">✍️ Collect Signature</button>`;
+      const deliverUrl = generateDeliverURL(order);
+      actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-soft" type="button" data-collect-signature="${order.id}">✍️ Sign Here</button><a class="btn btn-soft" href="${deliverUrl}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">📱 Open Delivery Page</a></div>`;
       if(order.outForDeliveryAt) metaItems.push(`<span>Departed: ${shortDateTime(order.outForDeliveryAt)}</span>`);
     } else if (order.status === 'DELIVERED') {
       statusBadgeHtml = '<span class="badge green">Delivered</span>';
