@@ -1061,6 +1061,8 @@ function isDeleted(boardId,cardId){return _deletedCards.includes(boardId+'::'+ca
 async function loadPipeline(){
   try{
     const data=await loadJSON('data/pipeline.json');
+    // Auto-convert pipelines/deals to boards/leads format
+    if(data&&data.pipelines&&!data.boards){const sm={'Watching':'New Leads','New Lead':'New Leads','First Outreach':'Contacted','Responded':'Contacted','Sampling':'Quoted','Proposal Sent':'Quoted','Negotiating':'Quoted'};data.boards=data.pipelines.map(p=>({id:p.id,name:p.name,color:p.color||'#FF6B00',leads:(p.deals||p.leads||[]).map(l=>({...l,stage:sm[l.stage]||l.stage}))}));delete data.pipelines}
     if(data&&data.boards){
       _pipelineData=data;
       // Inject local cards
@@ -1535,6 +1537,7 @@ async function init(){
   // Load pipeline badge + stats
   try{
     const data=await loadJSON('data/pipeline.json');
+    if(data&&data.pipelines&&!data.boards){const sm={'Watching':'New Leads','New Lead':'New Leads','First Outreach':'Contacted','Responded':'Contacted','Sampling':'Quoted','Proposal Sent':'Quoted','Negotiating':'Quoted'};data.boards=data.pipelines.map(p=>({id:p.id,name:p.name,color:p.color||'#FF6B00',leads:(p.deals||p.leads||[]).map(l=>({...l,stage:sm[l.stage]||l.stage}))}));delete data.pipelines}
     if(data&&data.boards){
       _pipelineData=data;
       _pipelineData.boards.forEach(b=>b.leads.forEach(l=>{l._boardId=b.id;_cardMap[b.id+'::'+l.id]=l}));
