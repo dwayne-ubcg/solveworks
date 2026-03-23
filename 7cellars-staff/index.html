@@ -1975,10 +1975,24 @@ function sendToTallyn(type, text){
   const TALLYN_EMAIL = 'tallyn@7cellars.ky';
   if(type === 'whatsapp'){
     window.open(`https://wa.me/${TALLYN_PHONE}?text=${encodeURIComponent(text)}`, '_blank');
+  } else if(type === 'telegram'){
+    sendTelegramToTallyn(text);
   } else {
     const subject = text.includes('Order') ? '7 Cellars — New Wholesale Order' : '7 Cellars — New Account Request';
     window.open(`mailto:${TALLYN_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, '_blank');
   }
+}
+
+function sendTelegramToTallyn(text){
+  const BOT_TOKEN = '8161566394:AAGYrUOqd8JpL4cJrGGi4L7I_phbvGVW4QM';
+  const TALLYN_CHAT_ID = '-5036963456';
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: TALLYN_CHAT_ID, text, parse_mode: 'HTML' })
+  }).then(r => r.json()).then(res => {
+    if(!res.ok) console.error('Telegram send failed:', res);
+  }).catch(err => console.error('Telegram send error:', err));
 }
 
 function submitCustomerRequest(){
@@ -2103,6 +2117,8 @@ function submitDraftOrder(){
   };
   state.pendingOrders.unshift(pending);
   persistPendingOrders();
+  // Auto-notify Tallyn via Telegram
+  sendTelegramToTallyn(formatOrderText(pending));
   state.draftSale.confirmation = pending;
   state.draftSale.items = [];
   state.draftSale.customer = null;
@@ -2136,10 +2152,10 @@ function confirmationView(order){
           <div class="total-row grand"><span>Total</span><strong>${currency(order.total)}</strong></div>
         </div>
       </div>
-      <p class="muted small" style="margin:8px 0 0;text-align:center;">Send this order to Tallyn for processing:</p>
+      <p class="muted small" style="margin:8px 0 0;text-align:center;">✅ Tallyn notified automatically via Telegram</p>
       <div class="send-buttons">
-        <button class="btn btn-send-wa" type="button" data-send-order-wa="${escapeHtml(order.id)}">💬 WhatsApp</button>
-        <button class="btn btn-send-email" type="button" data-send-order-email="${escapeHtml(order.id)}">📧 Email</button>
+        <button class="btn btn-send-wa" type="button" data-send-order-wa="${escapeHtml(order.id)}">💬 Also WhatsApp</button>
+        <button class="btn btn-send-email" type="button" data-send-order-email="${escapeHtml(order.id)}">📧 Also Email</button>
       </div>
       <div class="summary-actions">
         <button class="btn btn-gold" type="button" data-open-sale>New Order</button>
