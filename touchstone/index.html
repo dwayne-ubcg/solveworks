@@ -527,7 +527,8 @@
       <li class="nav-item" data-panel="p-flooring"    onclick="showPanel('p-flooring')"><span class="nav-emoji">🏠</span> Flooring</li>
       <li class="nav-item" data-panel="p-agents"      onclick="showPanel('p-agents')"><span class="nav-emoji">🤖</span> Agents</li>
       <li class="nav-item" data-panel="p-security"    onclick="showPanel('p-security')"><span class="nav-emoji">🔒</span> Security</li>
-      <li class="nav-item" data-panel="p-meetings"    onclick="showPanel('p-meetings')"><span class="nav-emoji">📅</span> Meetings</li>
+      <li class="nav-item" data-panel="p-calendar"    onclick="showPanel('p-calendar')"><span class="nav-emoji">📅</span> Calendar</li>
+      <li class="nav-item" data-panel="p-meetings"    onclick="showPanel('p-meetings')"><span class="nav-emoji">🎥</span> Meetings</li>
     </ul>
     <div class="sidebar-footer">
       <div class="ai-status"><span class="ai-dot"></span> AI Active</div>
@@ -560,6 +561,7 @@
     <div class="panel" id="p-flooring"></div>
     <div class="panel" id="p-agents"></div>
     <div class="panel" id="p-security"></div>
+    <div class="panel" id="p-calendar"></div>
     <div class="panel" id="p-meetings"></div>
 
   </main>
@@ -3258,6 +3260,98 @@ Craig: Make sure we confirm the sink model first."></textarea>
     document.getElementById('p-documents').innerHTML = html;
   }
   loadDocuments();
+
+  // ── CALENDAR PANEL ──
+  let calendarData = [];
+  let calendarMonth = new Date().getMonth();
+  let calendarYear = new Date().getFullYear();
+  const calNames = ['TouchStone Shared','COMPASS CAPITAL','INSTALLATIONS & SITE VISITS','Steve Armstrong'];
+  const calColors = {'TouchStone Shared':'var(--accent)','COMPASS CAPITAL':'var(--purple)','INSTALLATIONS & SITE VISITS':'var(--green)','Steve Armstrong':'var(--orange)'};
+
+  async function loadCalendar() {
+    const data = await loadJSON('calendar');
+    calendarData = data || [];
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const today = new Date();
+    const todayStr = today.getFullYear().toString() + String(today.getMonth()+1).padStart(2,'0') + String(today.getDate()).padStart(2,'0');
+
+    let html = `<div class="panel-title">📅 Calendar</div>`;
+    html += `<div class="panel-sub">Installation & scheduling overview</div>`;
+
+    // Month nav
+    html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">`;
+    html += `<button class="btn btn-sm" onclick="calendarMonth--;if(calendarMonth<0){calendarMonth=11;calendarYear--;}renderCalendar()" style="background:var(--surface2)">◀</button>`;
+    html += `<span style="font-size:18px;font-weight:600;min-width:180px;text-align:center">${months[calendarMonth]} ${calendarYear}</span>`;
+    html += `<button class="btn btn-sm" onclick="calendarMonth++;if(calendarMonth>11){calendarMonth=0;calendarYear++;}renderCalendar()" style="background:var(--surface2)">▶</button>`;
+    html += `<button class="btn btn-sm btn-primary" onclick="calendarMonth=${today.getMonth()};calendarYear=${today.getFullYear()};renderCalendar()">Today</button>`;
+    html += `</div>`;
+
+    // Legend
+    html += `<div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">`;
+    for (const [name, color] of Object.entries(calColors)) {
+      html += `<span style="font-size:12px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:${color};display:inline-block"></span> ${name}</span>`;
+    }
+    html += `</div>`;
+
+    // Calendar grid
+    const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+    html += `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">`;
+    days.forEach(d => html += `<div style="text-align:center;font-size:12px;font-weight:600;color:var(--text3);padding:8px 0">${d}</div>`);
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) html += `<div style="min-height:100px"></div>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = calendarYear.toString() + String(calendarMonth+1).padStart(2,'0') + String(d).padStart(2,'0');
+      const isToday = dateStr === todayStr;
+      const dayEvents = calendarData.filter(e => e.start === dateStr);
+
+      html += `<div style="min-height:100px;background:var(${isToday?'--bg3':'--surface'});border-radius:6px;padding:4px;border:${isToday?'2px solid var(--accent)':'1px solid var(--border)'}">`;
+      html += `<div style="font-size:13px;font-weight:${isToday?'700':'500'};color:${isToday?'var(--accent)':'var(--text)'};margin-bottom:4px;padding:2px 4px">${d}</div>`;
+
+      const maxShow = 3;
+      dayEvents.slice(0, maxShow).forEach(ev => {
+        const color = calColors[ev.calendar] || 'var(--text2)';
+        const title = ev.title.length > 40 ? ev.title.substring(0,37)+'...' : ev.title;
+        html += `<div style="font-size:10px;padding:2px 4px;margin-bottom:1px;border-radius:3px;background:${color}22;border-left:2px solid ${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer" title="${escapeHtml(ev.title)}${ev.location?' — '+escapeHtml(ev.location):''}">${escapeHtml(title)}</div>`;
+      });
+      if (dayEvents.length > maxShow) {
+        html += `<div style="font-size:10px;color:var(--text3);padding:2px 4px">+${dayEvents.length - maxShow} more</div>`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+
+    // Upcoming events list
+    html += `<div class="section-label" style="margin-top:24px">📋 Upcoming Events</div>`;
+    const upcoming = calendarData.filter(e => e.start >= todayStr).slice(0, 30);
+    if (upcoming.length) {
+      upcoming.forEach(ev => {
+        const color = calColors[ev.calendar] || 'var(--text2)';
+        const dateDisplay = ev.start ? ev.start.substring(0,4)+'-'+ev.start.substring(4,6)+'-'+ev.start.substring(6,8) : '';
+        html += `<div class="list-item" style="border-left:3px solid ${color}">`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:flex-start">`;
+        html += `<strong style="font-size:13px">${escapeHtml(ev.title)}</strong>`;
+        html += `<span class="badge" style="background:${color}22;color:${color}">${dateDisplay}</span>`;
+        html += `</div>`;
+        if (ev.location) html += `<div style="color:var(--text2);font-size:12px;margin-top:2px">📍 ${escapeHtml(ev.location)}</div>`;
+        html += `<div style="color:var(--text3);font-size:11px;margin-top:2px">${escapeHtml(ev.calendar)}</div>`;
+        html += `</div>`;
+      });
+    } else {
+      html += `<div class="list-item" style="color:var(--text3)">No upcoming events</div>`;
+    }
+
+    document.getElementById('p-calendar').innerHTML = html;
+  }
+  loadCalendar();
 
   // ── FLOORING PANEL ──
   let floorEstRooms = [];
