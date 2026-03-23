@@ -588,6 +588,31 @@ tr:hover td{background:rgba(201,169,110,.05)}
 .mobile-nav-btn .icon{font-size:22px;line-height:1}
 .mobile-nav-btn.active{background:rgba(201,169,110,.12);color:var(--gold)}
 
+.mobile-sale-bar{
+  position:fixed;
+  left:0;right:0;bottom:0;
+  z-index:60;
+  background:rgba(7,13,20,.97);
+  border-top:1px solid var(--line);
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  display:none;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+.mobile-sale-bar .sale-bar-inner{
+  display:flex;align-items:center;gap:12px;
+}
+.mobile-sale-bar .sale-bar-summary{flex:1;min-width:0}
+.mobile-sale-bar .sale-bar-summary .sale-bar-customer{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mobile-sale-bar .sale-bar-summary .sale-bar-detail{font-size:12px;color:var(--text-soft)}
+.mobile-sale-bar .sale-bar-actions{display:flex;gap:8px;flex-shrink:0}
+.mobile-sale-bar .sale-bar-actions button{
+  padding:10px 18px;border-radius:14px;border:none;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;
+}
+.mobile-sale-bar .btn-bar-submit{background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#23190a}
+.mobile-sale-bar .btn-bar-quote{background:var(--surface-3);color:var(--text);border:1px solid var(--line) !important}
+@media (min-width:981px){.mobile-sale-bar{display:none !important}}
+
 .fab{
   position:fixed;
   right:18px;
@@ -814,6 +839,18 @@ tr:hover td{background:rgba(201,169,110,.05)}
   <button class="fab" type="button" aria-label="Create new sale" data-open-sale>+</button>
 
   <nav class="mobile-bottom-nav" id="mobileBottomNav"></nav>
+  <div class="mobile-sale-bar" id="mobileSaleBar">
+    <div class="sale-bar-inner">
+      <div class="sale-bar-summary">
+        <div class="sale-bar-customer" id="saleBarCustomer"></div>
+        <div class="sale-bar-detail" id="saleBarDetail"></div>
+      </div>
+      <div class="sale-bar-actions">
+        <button class="btn-bar-quote" type="button" id="saleBarQuote">📄 Quote</button>
+        <button class="btn-bar-submit" type="button" id="saleBarSubmit">Submit Order</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="signatureModalContainer"></div>
@@ -1190,6 +1227,26 @@ function renderAll(){
   renderCustomers();
   renderTasks();
   renderReceipts();
+  updateMobileSaleBar();
+}
+
+function updateMobileSaleBar(){
+  const bar = document.getElementById('mobileSaleBar');
+  if(!bar) return;
+  const draft = state.draftSale;
+  const onSaleTab = state.activeTab === 'new-sale';
+  const hasItems = draft.customer && draft.items.length > 0;
+  const noConfirmation = !draft.confirmation && !draft.quoteConfirmation;
+  const isMobile = window.innerWidth <= 980;
+  if(onSaleTab && hasItems && noConfirmation && isMobile){
+    bar.style.display = 'block';
+    const total = draft.items.reduce((acc, item) => acc + lineItemTotal(item), 0);
+    const units = draft.items.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
+    document.getElementById('saleBarCustomer').textContent = draft.customer.name;
+    document.getElementById('saleBarDetail').textContent = `${draft.items.length} wine${draft.items.length === 1 ? '' : 's'} · ${units} units · ${currency(total)}`;
+  } else {
+    bar.style.display = 'none';
+  }
 }
 
 function renderOverview(){
@@ -3231,6 +3288,12 @@ function setupInteractions(){
   els.passwordInput.addEventListener('keydown', event => { if(event.key === 'Enter') tryLogin(); });
   document.querySelectorAll('[data-open-sale]').forEach(button => button.addEventListener('click', startFreshSale));
   setupPullToRefresh();
+  // Mobile sale bar buttons
+  const saleBarSubmit = document.getElementById('saleBarSubmit');
+  const saleBarQuote = document.getElementById('saleBarQuote');
+  if(saleBarSubmit) saleBarSubmit.addEventListener('click', () => { submitDraftOrder(); window.scrollTo({top:0,behavior:'smooth'}); });
+  if(saleBarQuote) saleBarQuote.addEventListener('click', () => { initSendQuote(); window.scrollTo({top:0,behavior:'smooth'}); });
+  window.addEventListener('resize', updateMobileSaleBar);
 }
 
 function setupStaticButtons(){
