@@ -13,6 +13,23 @@ for f in pipeline.json social.json tenders.json email-stats.json briefing.json; 
   scp -q $REMOTE:~/clawd/dashboard/data/$f "$LOCAL_DATA/$f" 2>/dev/null
 done
 
+# Convert pipeline.json from pipelines/deals to boards/leads format if needed
+python3 -c "
+import json
+p='$LOCAL_DATA/pipeline.json'
+try:
+    with open(p) as f: d=json.load(f)
+    if 'pipelines' in d and 'boards' not in d:
+        d['boards']=[{'id':x['id'],'name':x['name'],'color':x.get('color','#FF6B00'),'leads':x.get('deals',x.get('leads',[]))} for x in d['pipelines']]
+        del d['pipelines']
+        sm={'Watching':'New Leads','New Lead':'New Leads','First Outreach':'Contacted','Responded':'Contacted','Sampling':'Quoted','Proposal Sent':'Quoted','Negotiating':'Quoted'}
+        for b in d['boards']:
+            for l in b['leads']:
+                if l.get('stage') in sm: l['stage']=sm[l['stage']]
+        with open(p,'w') as f: json.dump(d,f,indent=2)
+except: pass
+" 2>/dev/null
+
 # Update dashboard.json with sync timestamp
 python3 -c "
 import json, os
