@@ -1061,8 +1061,9 @@ let _deletedCards=JSON.parse(localStorage.getItem('apollo-deleted')||'[]');
 let _localCards=JSON.parse(localStorage.getItem('apollo-cards')||'[]');
 let _cardMap={};
 
-let _starRatings=JSON.parse(localStorage.getItem('apollo-stars')||'{}');
-function saveStars(){localStorage.setItem('apollo-stars',JSON.stringify(_starRatings))}
+let _starRatings=(function(){try{let d=localStorage.getItem('apollo-stars');if(d)return JSON.parse(d);let c=document.cookie.split(';').find(c=>c.trim().startsWith('apollo-stars='));if(c)return JSON.parse(decodeURIComponent(c.split('=')[1]));return{}}catch(e){return{}}})();
+function saveStars(){localStorage.setItem('apollo-stars',JSON.stringify(_starRatings));try{document.cookie='apollo-stars='+encodeURIComponent(JSON.stringify(_starRatings))+';max-age=31536000;path=/'}catch(e){}if(_pipelineData){const key='boards' in _pipelineData?'boards':'pipelines';(_pipelineData[key]||[]).forEach(b=>{(b.leads||b.deals||[]).forEach(l=>{const k=b.id+'::'+l.id;if(_starRatings[k])l.stars=_starRatings[k]})})}}
+function loadStarsFromData(){if(_pipelineData){const key='boards' in _pipelineData?'boards':'pipelines';(_pipelineData[key]||[]).forEach(b=>{(b.leads||b.deals||[]).forEach(l=>{if(l.stars){_starRatings[b.id+'::'+l.id]=l.stars}})});localStorage.setItem('apollo-stars',JSON.stringify(_starRatings))}}
 function getStars(boardId,cardId){return _starRatings[boardId+'::'+cardId]||0}
 function setStars(boardId,cardId,n){_starRatings[boardId+'::'+cardId]=n;saveStars()}
 function starsHtml(boardId,cardId,cls){const r=getStars(boardId,cardId);return `<div class="${cls}">${[1,2,3,4,5].map(n=>`<span class="star${n<=r?' on':''}" onclick="event.stopPropagation();setStars('${boardId}','${cardId}',${n});renderKanban()">★</span>`).join('')}</div>`}
@@ -1087,6 +1088,7 @@ async function loadPipeline(){
       // Build card map
       _cardMap={};
       _pipelineData.boards.forEach(b=>b.leads.forEach(l=>{l._boardId=b.id;_cardMap[b.id+'::'+l.id]=l}));
+      loadStarsFromData();
     }
     renderBoardTabs();
     renderKanban();
