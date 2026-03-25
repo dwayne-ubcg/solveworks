@@ -2443,12 +2443,13 @@ function renderOrders(){
 
   const pendingHtml = pendingOrders.map(order => {
     let statusBadgeHtml = '<span class="badge gold">Pending</span>';
-    let actionButtonHtml = `<button class="btn btn-soft" type="button" data-out-for-delivery="${order.id}">🚚 Out for Delivery</button>`;
+    let actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-soft" type="button" data-out-for-delivery="${order.id}">🚚 Out for Delivery</button><button class="btn btn-soft" type="button" data-delete-pending="${order.id}" style="opacity:0.6;font-size:13px;">🗑️</button></div>`;
     let metaItems = [
       `<span>${shortDateTime(order.createdAt)}</span>`,
       `<span>${order.lines.length} line${order.lines.length === 1 ? '' : 's'}</span>`,
       `<span>${order.lines.reduce((acc, line) => acc + line.quantity, 0)} units</span>`
     ];
+    if(order.cin7OrderNumber) metaItems.unshift(`<span style="color:var(--gold);font-weight:600">${escapeHtml(order.cin7OrderNumber)}</span>`);
 
     if (order.status === 'OUT_FOR_DELIVERY') {
       statusBadgeHtml = '<span class="badge blue">Out for Delivery</span>';
@@ -2588,6 +2589,14 @@ function renderOrders(){
   root.querySelectorAll('[data-out-for-delivery]').forEach(btn => btn.addEventListener('click', () => setOutForDelivery(btn.dataset.outForDelivery)));
   root.querySelectorAll('[data-collect-signature]').forEach(btn => btn.addEventListener('click', () => showSignatureModal(btn.dataset.collectSignature)));
   root.querySelectorAll('[data-view-signature]').forEach(thumb => thumb.addEventListener('click', () => showSignatureLightbox(thumb.dataset.viewSignature)));
+  // Delete pending order
+  root.querySelectorAll('[data-delete-pending]').forEach(btn => btn.addEventListener('click', () => {
+    const id = btn.dataset.deletePending;
+    if(!confirm('Delete this pending order?')) return;
+    state.pendingOrders = state.pendingOrders.filter(o => o.id !== id);
+    persistPendingOrders();
+    renderOrders();
+  }));
 }
 
 function renderCustomers(){
