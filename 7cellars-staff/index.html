@@ -2108,7 +2108,14 @@ function startFreshSale(){
 }
 
 async function createCin7DraftSale(pending){
-  const body = {
+  const cin7Headers = {
+    'Content-Type': 'application/json',
+    'api-auth-accountid': CIN7_ACCOUNT_ID,
+    'api-auth-applicationkey': CIN7_API_KEY
+  };
+
+  // Step 1: Create sale header (no lines — DEAR API ignores them on POST)
+  const saleBody = {
     Customer: pending.customer,
     CustomerID: pending.customerId,
     Status: 'DRAFT',
@@ -2118,35 +2125,47 @@ async function createCin7DraftSale(pending){
     CustomerCurrency: 'KYD',
     TaxRule: 'Tax Exempt',
     TaxCalculation: 'Exclusive',
-    SkipQuote: false,
-    Quote: {
-      Status: 'AUTHORISED',
-      Lines: pending.lines.map(line => ({
-        ProductID: line.productId || '',
-        SKU: line.sku || '',
-        Name: line.title,
-        Quantity: line.quantity,
-        Price: priceValue(line.price),
-        Discount: 0,
-        Tax: 0,
-        TaxRule: 'Tax Exempt'
-      }))
-    }
+    SkipQuote: false
   };
-  const response = await fetch(`${CIN7_API_URL}/sale`, {
+  const saleResp = await fetch(`${CIN7_API_URL}/sale`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'api-auth-accountid': CIN7_ACCOUNT_ID,
-      'api-auth-applicationkey': CIN7_API_KEY
-    },
-    body: JSON.stringify(body)
+    headers: cin7Headers,
+    body: JSON.stringify(saleBody)
   });
-  if(!response.ok){
-    const errText = await response.text().catch(() => response.statusText);
-    throw new Error(`Cin7 API error ${response.status}: ${errText}`);
+  if(!saleResp.ok){
+    const errText = await saleResp.text().catch(() => saleResp.statusText);
+    throw new Error(`Cin7 create sale error ${saleResp.status}: ${errText}`);
   }
-  return response.json();
+  const sale = await saleResp.json();
+  const saleID = sale.ID || sale.SaleID;
+
+  // Step 2: PUT quote lines onto the created sale
+  const quoteBody = {
+    SaleID: saleID,
+    Status: 'AUTHORISED',
+    Lines: pending.lines.map(line => ({
+      ProductID: line.productId || '',
+      SKU: line.sku || '',
+      Name: line.title,
+      Quantity: line.quantity,
+      Price: priceValue(line.price),
+      Discount: 0,
+      Tax: 0,
+      TaxRule: 'Tax Exempt'
+    }))
+  };
+  const quoteResp = await fetch(`${CIN7_API_URL}/sale/quote`, {
+    method: 'PUT',
+    headers: cin7Headers,
+    body: JSON.stringify(quoteBody)
+  });
+  if(!quoteResp.ok){
+    const errText = await quoteResp.text().catch(() => quoteResp.statusText);
+    console.error(`Cin7 quote lines failed: ${errText}`);
+    // Sale was created but lines failed — still return the sale so we have the ID
+    sale._quoteError = errText;
+  }
+  return sale;
 }
 
 async function submitDraftOrder(){
