@@ -1232,6 +1232,10 @@ async function loadData(){
         description: cleanDesc,
         shortDescription: p.ShortDescription || '',
         costPrice: String(p.AverageCost || 0),
+        landedCost: String(p.AdditionalAttribute5 || ''),
+        fobCost: String(p.AdditionalAttribute1 || ''),
+        freightCost: String(p.AdditionalAttribute2 || ''),
+        dutyCost: String(p.AdditionalAttribute3 || ''),
         source: 'cin7'
       };
     });
@@ -1493,6 +1497,7 @@ function renderCatalog(){
     priceNumber: Number(product.price || 0),
     retailPriceNumber: Number(product.retailPrice || 0),
     costPriceNumber: Number(product.costPrice || 0),
+    landedCostNumber: Number(product.landedCost || 0),
     type: productType(product.title),
     region: parseRegion(product.title)
   }));
@@ -1615,16 +1620,15 @@ function marginColor(margin){
 function winePriceBlock(product){
   const wholesale = product.priceNumber;
   // Only show cost/margin if cost is genuinely lower than wholesale (not the fallback same value)
-  const hasCost = product.costPriceNumber > 0 && product.costPriceNumber < wholesale;
+  const hasLanded = product.landedCostNumber > 0 && product.landedCostNumber < wholesale;
   const hasRetail = product.retailPriceNumber > 0;
-  // If no wholesale price, show nothing meaningful
   if(!wholesale) return `<div class="wine-price">${currency(0)}</div><div class="muted small">Wholesale</div>`;
 
   const retail = hasRetail ? product.retailPriceNumber : wholesale * 1.4;
   const retailLabel = hasRetail ? 'Retail' : 'Est. Retail';
 
-  const marginHtml = hasCost ? (() => {
-    const margin = ((wholesale - product.costPriceNumber) / wholesale) * 100;
+  const marginHtml = hasLanded ? (() => {
+    const margin = ((wholesale - product.landedCostNumber) / wholesale) * 100;
     const cls = marginColor(margin);
     return `<span class="margin-badge ${cls}">${margin.toFixed(0)}% margin</span>`;
   })() : '';
@@ -1649,14 +1653,14 @@ function winePriceBlock(product){
 function showPriceModal(product){
   const wholesale = product.priceNumber;
   if(!wholesale){ return; }
-  const hasCost = product.costPriceNumber > 0 && product.costPriceNumber < wholesale;
+  const hasLanded = product.landedCostNumber > 0 && product.landedCostNumber < wholesale;
   const hasRetail = product.retailPriceNumber > 0;
   const retail = hasRetail ? product.retailPriceNumber : wholesale * 1.4;
   const retailLabel = hasRetail ? 'Retail' : 'Est. Retail';
-  const landedCost = product.costPriceNumber;
+  const landedCost = product.landedCostNumber;
 
-  const marginWholesale = hasCost ? ((wholesale - landedCost) / wholesale * 100) : null;
-  const marginRetail = hasCost ? ((retail - landedCost) / retail * 100) : null;
+  const marginWholesale = hasLanded ? ((wholesale - landedCost) / wholesale * 100) : null;
+  const marginRetail = hasLanded ? ((retail - landedCost) / retail * 100) : null;
 
   const html = `
     <div class="price-modal-overlay" id="priceModalOverlay">
@@ -1681,9 +1685,9 @@ function showPriceModal(product){
             </div>
             <div class="pm-row" style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;margin-top:6px">
               <span class="pm-label">Total Landed Cost</span>
-              <span class="pm-value">${hasCost ? currency(landedCost) : '<span class="muted small">Not set</span>'}</span>
+              <span class="pm-value">${hasLanded ? currency(landedCost) : '<span class="muted small">Not set</span>'}</span>
             </div>
-            ${hasCost ? `
+            ${hasLanded ? `
             <div class="pm-row">
               <span class="pm-label">Margin (wholesale)</span>
               <span class="pm-value"><span class="margin-badge ${marginColor(marginWholesale)}">${marginWholesale.toFixed(1)}%</span></span>
