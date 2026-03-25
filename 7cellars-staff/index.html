@@ -869,6 +869,9 @@ const QUOTES_KEY = '7c_quotes';
 const QUOTE_COUNTER_KEY = '7c_quote_counter';
 const QUOTE_BASE_URL = 'https://orders.7cellars.ky/';
 const DELIVER_BASE_URL = 'https://orders.7cellars.ky/deliver.html';
+const CIN7_API_URL = 'https://inventory.dearsystems.com/ExternalApi/v2';
+const CIN7_ACCOUNT_ID = '96136ab9-4bf7-45a8-ad3a-af815c7fb371';
+const CIN7_API_KEY = '473c05c1-5a05-69a6-33c7-a4232eea7e99';
 
 function generateQuoteURL(quote){
   const payload = {
@@ -1175,6 +1178,7 @@ async function loadData(){
         available: soh ? soh.available : 0,
         allocated: soh ? soh.allocated : 0,
         sku: sku,
+        productId: p.ID || '',
         brand: p.Brand || '',
         category: p.Category || '',
         description: cleanDesc,
@@ -2046,7 +2050,7 @@ function addProductToDraft(title){
     if(!Number.isFinite(Number(existing.price))) existing.price = price;
     if(!Number.isFinite(Number(existing.basePrice))) existing.basePrice = price;
   }else{
-    state.draftSale.items.push({ title, price, basePrice: price, stock, quantity:12 });
+    state.draftSale.items.push({ title, price, basePrice: price, stock, quantity:12, sku: product.sku || '', productId: product.productId || '' });
   }
   state.draftSale.step = 'review';
   state.draftSale.confirmation = null;
@@ -2103,7 +2107,49 @@ function startFreshSale(){
   updateMobileSaleBar();
 }
 
-function submitDraftOrder(){
+async function createCin7DraftSale(pending){
+  const body = {
+    Customer: pending.customer,
+    CustomerID: pending.customerId,
+    Status: 'DRAFT',
+    Location: 'Main Warehouse',
+    PriceTier: 'Tier 2',
+    BaseCurrency: 'KYD',
+    CustomerCurrency: 'KYD',
+    TaxRule: 'Tax Exempt',
+    TaxCalculation: 'Exclusive',
+    SkipQuote: true,
+    Quote: {
+      Status: 'AUTHORISED',
+      Lines: pending.lines.map(line => ({
+        ProductID: line.productId || '',
+        SKU: line.sku || '',
+        Name: line.title,
+        Quantity: line.quantity,
+        Price: priceValue(line.price),
+        Discount: 0,
+        Tax: 0,
+        TaxRule: 'Tax Exempt'
+      }))
+    }
+  };
+  const response = await fetch(`${CIN7_API_URL}/sale`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-auth-accountid': CIN7_ACCOUNT_ID,
+      'api-auth-applicationkey': CIN7_API_KEY
+    },
+    body: JSON.stringify(body)
+  });
+  if(!response.ok){
+    const errText = await response.text().catch(() => response.statusText);
+    throw new Error(`Cin7 API error ${response.status}: ${errText}`);
+  }
+  return response.json();
+}
+
+async function submitDraftOrder(){
   if(!state.draftSale.customer || !state.draftSale.items.length) return;
   const total = state.draftSale.items.reduce((acc, item) => acc + lineItemTotal(item), 0);
   const pending = {
@@ -2115,6 +2161,19 @@ function submitDraftOrder(){
     total,
     lines: state.draftSale.items.map(item => ({ ...item, subtotal: lineItemTotal(item) }))
   };
+
+  // Attempt Cin7 draft sale creation
+  try {
+    const cin7Response = await createCin7DraftSale(pending);
+    pending.cin7SaleId = cin7Response.ID || cin7Response.SaleID || null;
+    pending.cin7OrderNumber = cin7Response.OrderNumber || cin7Response.SaleOrderNumber || null;
+  } catch(err){
+    console.error('Cin7 draft sale failed:', err);
+    pending.cin7Failed = true;
+    // Notify Tallyn about the failure (non-blocking)
+    sendTelegramToTallyn(`⚠️ Cin7 sync failed for order ${pending.id} (${pending.customer}): ${err.message}`);
+  }
+
   state.pendingOrders.unshift(pending);
   persistPendingOrders();
   // Auto-notify Tallyn via Telegram
@@ -2135,6 +2194,7 @@ function formatOrderText(order){
   order.lines.forEach(line => { msg += `  ${line.quantity} × ${line.title} — $${line.subtotal.toFixed(2)}\n`; });
   msg += `\nTotal: $${order.total.toFixed(2)}\n`;
   msg += `\nOrder ID: ${order.id}`;
+  if(order.cin7OrderNumber) msg += `\nCin7 Draft Sale: ${order.cin7OrderNumber}`;
   return msg;
 }
 
@@ -2153,6 +2213,12 @@ function confirmationView(order){
         </div>
       </div>
       <p class="muted small" style="margin:8px 0 0;text-align:center;">✅ Tallyn notified automatically via Telegram</p>
+      ${order.cin7OrderNumber
+        ? `<p class="muted small" style="margin:4px 0 0;text-align:center;">✅ Cin7 Draft Sale: ${escapeHtml(order.cin7OrderNumber)}</p>`
+        : order.cin7Failed
+          ? `<p class="muted small" style="margin:4px 0 0;text-align:center;color:#b45309;">⚠️ Cin7 sync failed — order saved locally, Tallyn notified</p>`
+          : ''
+      }
       <div class="send-buttons">
         <button class="btn btn-send-wa" type="button" data-send-order-wa="${escapeHtml(order.id)}">💬 Also WhatsApp</button>
         <button class="btn btn-send-email" type="button" data-send-order-email="${escapeHtml(order.id)}">📧 Also Email</button>
