@@ -2139,23 +2139,28 @@ async function createCin7DraftSale(pending){
   const sale = await saleResp.json();
   const saleID = sale.ID || sale.SaleID;
 
-  // Step 2: PUT quote lines onto the created sale
+  // Step 2: POST quote lines onto the created sale
   const quoteBody = {
     SaleID: saleID,
     Status: 'AUTHORISED',
-    Lines: pending.lines.map(line => ({
-      ProductID: line.productId || '',
-      SKU: line.sku || '',
-      Name: line.title,
-      Quantity: line.quantity,
-      Price: priceValue(line.price),
-      Discount: 0,
-      Tax: 0,
-      TaxRule: 'Tax Exempt'
-    }))
+    Lines: pending.lines.map(line => {
+      const qty = Number(line.quantity) || 0;
+      const price = priceValue(line.price);
+      return {
+        ProductID: line.productId || '',
+        SKU: line.sku || '',
+        Name: line.title,
+        Quantity: qty,
+        Price: price,
+        Discount: 0,
+        Tax: 0,
+        Total: Math.round(qty * price * 100) / 100,
+        TaxRule: 'Tax Exempt'
+      };
+    })
   };
-  const quoteResp = await fetch(`${CIN7_API_URL}/sale/quote`, {
-    method: 'PUT',
+  const quoteResp = await fetch(`${CIN7_API_URL}/sale/quote?SaleID=${saleID}`, {
+    method: 'POST',
     headers: cin7Headers,
     body: JSON.stringify(quoteBody)
   });
