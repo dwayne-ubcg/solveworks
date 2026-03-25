@@ -1007,7 +1007,7 @@ function readJsonStorage(key, fallback){
 function writeJsonStorage(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
 function getStockBadge(quantity){
   if(quantity <= 0) return { label:'Out', cls:'red' };
-  if(quantity <= 24) return { label:'Low', cls:'yellow' };
+  if(quantity <= LOW_STOCK_THRESHOLD) return { label:'Low', cls:'yellow' };
   return { label:'In Stock', cls:'green' };
 }
 function productType(title){
@@ -1026,7 +1026,8 @@ function parseRegion(title){
 }
 function safeLines(order){ return Array.isArray(order?.Lines) ? order.Lines : []; }
 function orderItemCount(order){ return sum(safeLines(order), line => line.Quantity); }
-function lowStockCount(){ return state.data.products.filter(product => Number(product.inventoryQuantity || product.totalInventory || 0) > 0 && Number(product.inventoryQuantity || product.totalInventory || 0) <= 24).length; }
+const LOW_STOCK_THRESHOLD = 60;
+function lowStockCount(){ return state.data.products.filter(product => Number(product.available || product.totalInventory || 0) > 0 && Number(product.available || product.totalInventory || 0) <= LOW_STOCK_THRESHOLD).length; }
 function totalRevenue(){ return sum(state.data.orders, order => order.Total); }
 function todayIso(){ return new Date().toISOString(); }
 function priceValue(value){
@@ -1183,7 +1184,20 @@ async function loadData(){
     fetch('../7cellars/data/customers.json').then(r => r.json()).catch(() => []),
     fetch('../7cellars/data/tasks.json').then(r => r.json()).catch(() => []),
     fetch('../7cellars/data/activity.json').then(r => r.json()).catch(() => []),
-    fetch('../7cellars/data/cin7-stock.json').then(r => r.json()).catch(() => ({ stock:{} }))
+    fetch(`${CIN7_API_URL}/ref/stock?limit=1000`, {
+      headers: { 'api-auth-accountid': CIN7_ACCOUNT_ID, 'api-auth-applicationkey': CIN7_API_KEY }
+    }).then(r => r.json()).then(data => {
+      // Build stock lookup from live Cin7 stock-on-hand endpoint
+      const lookup = {};
+      (data.StockOnHand || []).forEach(item => {
+        const sku = item.SKU || '';
+        if(!lookup[sku]) lookup[sku] = { onHand: 0, available: 0, allocated: 0 };
+        lookup[sku].onHand += Number(item.OnHand || 0);
+        lookup[sku].available += Number(item.Available || 0);
+        lookup[sku].allocated += Number(item.Allocated || 0);
+      });
+      return { stock: lookup };
+    }).catch(() => fetch('../7cellars/data/cin7-stock.json').then(r => r.json()).catch(() => ({ stock:{} })))
   ]);
   const stockLookup = cin7StockRaw?.stock || {};
 
@@ -1353,7 +1367,7 @@ function renderOverview(){
       <div class="kpi-card alert">
         <div class="label">Low Stock</div>
         <div class="value">${lowStock}</div>
-        <div class="sub">Wines at 24 units or fewer.</div>
+        <div class="sub">Wines at ${LOW_STOCK_THRESHOLD} bottles or fewer.</div>
       </div>
     </div>
 
@@ -1447,7 +1461,7 @@ function renderOverview(){
           </div>
         </div>
         <div class="card-body list-clean">
-          ${state.data.products.filter(p => Number(p.inventoryQuantity) <= 24 && Number(p.inventoryQuantity) >= 0).slice(0,6).map(product => {
+          ${state.data.products.filter(p => Number(p.available || p.totalInventory || 0) > 0 && Number(p.available || p.totalInventory || 0) <= LOW_STOCK_THRESHOLD).slice(0,6).map(product => {
             const qty = Number(product.inventoryQuantity || 0);
             const badge = getStockBadge(qty);
             return `
