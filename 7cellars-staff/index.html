@@ -1653,36 +1653,10 @@ function showPriceModal(product){
   const hasRetail = product.retailPriceNumber > 0;
   const retail = hasRetail ? product.retailPriceNumber : wholesale * 1.4;
   const retailLabel = hasRetail ? 'Retail' : 'Est. Retail';
-  const casePrice = wholesale * 12;
+  const landedCost = product.costPriceNumber;
 
-  const marginSection = hasCost ? (() => {
-    const margin = ((wholesale - product.costPriceNumber) / wholesale) * 100;
-    const cls = marginColor(margin);
-    return `
-      <div class="pm-row">
-        <span class="pm-label">Cost / bottle</span>
-        <span class="pm-value">${currency(product.costPriceNumber)}</span>
-      </div>
-      <div class="pm-row">
-        <span class="pm-label">Margin</span>
-        <span class="pm-value"><span class="margin-badge ${cls}">${margin.toFixed(1)}%</span></span>
-      </div>`;
-  })() : '';
-
-  const markupTiers = [
-    { label: 'Restaurant', mult: 2.5 },
-    { label: 'Bar', mult: 3.0 },
-    { label: 'Premium', mult: 3.5 }
-  ].map(tier => {
-    const price = wholesale * tier.mult;
-    const profit = hasCost ? price - product.costPriceNumber : null;
-    return `
-      <div class="pm-tier">
-        <div class="pm-tier-name">${tier.label} <span class="pm-tier-mult">${tier.mult}×</span></div>
-        <div class="pm-tier-price">${currency(price)}<span class="pm-tier-label">/bottle</span></div>
-        ${profit !== null ? `<div class="pm-tier-profit">+${currency(profit)} profit</div>` : ''}
-      </div>`;
-  }).join('');
+  const marginWholesale = hasCost ? ((wholesale - landedCost) / wholesale * 100) : null;
+  const marginRetail = hasCost ? ((retail - landedCost) / retail * 100) : null;
 
   const html = `
     <div class="price-modal-overlay" id="priceModalOverlay">
@@ -1697,24 +1671,27 @@ function showPriceModal(product){
         <div class="pm-body">
           <div class="pm-section">
             <div class="pm-section-title">Pricing</div>
-            ${marginSection}
+            <div class="pm-row">
+              <span class="pm-label">Retail</span>
+              <span class="pm-value">${currency(retail)}${!hasRetail ? ' <span class="muted small">(est.)</span>' : ''}</span>
+            </div>
             <div class="pm-row">
               <span class="pm-label">Wholesale</span>
               <span class="pm-value gold">${currency(wholesale)}</span>
             </div>
+            <div class="pm-row" style="border-top:1px solid rgba(255,255,255,.08);padding-top:10px;margin-top:6px">
+              <span class="pm-label">Total Landed Cost</span>
+              <span class="pm-value">${hasCost ? currency(landedCost) : '<span class="muted small">Not set</span>'}</span>
+            </div>
+            ${hasCost ? `
             <div class="pm-row">
-              <span class="pm-label">${retailLabel}</span>
-              <span class="pm-value">${currency(retail)}</span>
+              <span class="pm-label">Margin (wholesale)</span>
+              <span class="pm-value"><span class="margin-badge ${marginColor(marginWholesale)}">${marginWholesale.toFixed(1)}%</span></span>
             </div>
             <div class="pm-row">
-              <span class="pm-label">Case price (×12)</span>
-              <span class="pm-value">${currency(casePrice)}</span>
-            </div>
-          </div>
-          <div class="pm-section">
-            <div class="pm-section-title">Suggested Markup Tiers</div>
-            <div class="pm-tiers">${markupTiers}</div>
-            <p class="pm-hint">At 3× markup, charge this per bottle to restaurants. Profit column shows gross per bottle after cost.</p>
+              <span class="pm-label">Margin (retail)</span>
+              <span class="pm-value"><span class="margin-badge ${marginColor(marginRetail)}">${marginRetail.toFixed(1)}%</span></span>
+            </div>` : ''}
           </div>
         </div>
       </div>
