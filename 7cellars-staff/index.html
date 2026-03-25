@@ -2150,7 +2150,9 @@ async function createCin7DraftSale(pending){
 }
 
 async function submitDraftOrder(){
+  if(submitDraftOrder._busy) return;
   if(!state.draftSale.customer || !state.draftSale.items.length) return;
+  submitDraftOrder._busy = true;
   const total = state.draftSale.items.reduce((acc, item) => acc + lineItemTotal(item), 0);
   const pending = {
     id: `pending-${Date.now()}`,
@@ -2183,6 +2185,7 @@ async function submitDraftOrder(){
   state.draftSale.customer = null;
   state.draftSale.step = 'customer';
   persistDraftSale();
+  submitDraftOrder._busy = false;
   renderAll();
 }
 
