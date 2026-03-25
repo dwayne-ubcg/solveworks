@@ -3428,6 +3428,14 @@ function showApp(){
   els.loginScreen.classList.add('hidden');
   els.appShell.classList.remove('hidden');
   if(!state.data.products.length) loadData().catch(handleLoadError);
+  // Auto-poll Cin7 every 30s for order status changes (Tallyn approvals)
+  if(!window._cin7PollTimer){
+    window._cin7PollTimer = setInterval(async () => {
+      if(state.pendingOrders.some(o => o.cin7SaleId && o.status === 'PENDING')){
+        await syncCin7OrderStatuses();
+      }
+    }, 30000);
+  }
 }
 function logout(){
   localStorage.removeItem(AUTH_KEY);
