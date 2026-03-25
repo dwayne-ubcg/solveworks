@@ -1084,7 +1084,7 @@ function setActiveTab(tabId){
   Object.entries(els.panels).forEach(([id, panel]) => panel.classList.toggle('active', id === tabId));
   bootstrapNav();
   if(tabId === 'new-sale') renderNewSale();
-  if(tabId === 'orders') renderOrders();
+  if(tabId === 'orders'){ renderOrders(); syncCin7OrderStatuses(); }
   if(tabId === 'receipts') renderReceipts();
   updateMobileSaleBar();
 }
@@ -1134,6 +1134,40 @@ function quoteStatusBadge(status){
 }
 function persistReceipts(){ writeJsonStorage(RECEIPTS_KEY, state.receipts); }
 function persistPendingOrders(){ writeJsonStorage(PENDING_ORDERS_KEY, state.pendingOrders); bootstrapNav(); }
+
+// Sync pending orders with Cin7 to detect Tallyn's approvals
+async function syncCin7OrderStatuses(){
+  const ordersWithCin7 = state.pendingOrders.filter(o => o.cin7SaleId && o.status !== 'DELIVERED');
+  if(!ordersWithCin7.length) return;
+  let changed = false;
+  for(const order of ordersWithCin7){
+    try {
+      const resp = await fetch(`${CIN7_API_URL}/sale?ID=${order.cin7SaleId}`, {
+        headers: { 'api-auth-accountid': CIN7_ACCOUNT_ID, 'api-auth-applicationkey': CIN7_API_KEY }
+      });
+      if(!resp.ok) continue;
+      const sale = await resp.json();
+      const quoteStatus = (sale.Quote && sale.Quote.Status) || '';
+      const orderStatus = (sale.Order && sale.Order.Status) || '';
+      const prev = order.cin7QuoteStatus;
+      order.cin7QuoteStatus = quoteStatus;
+      order.cin7OrderStatus = orderStatus;
+      // If Tallyn authorised the quote and order is placed, mark ready
+      if(quoteStatus === 'AUTHORISED' && order.status === 'PENDING'){
+        order.status = 'APPROVED';
+        order.approvedAt = new Date().toISOString();
+        changed = true;
+      }
+      // If Cin7 shows ORDERED (fully processed), reflect that
+      if(orderStatus === 'AUTHORISED' && order.status === 'APPROVED'){
+        order.status = 'READY_FOR_DELIVERY';
+        changed = true;
+      }
+      if(prev !== quoteStatus) changed = true;
+    } catch(e){ console.error('Cin7 sync error:', e); }
+  }
+  if(changed){ persistPendingOrders(); renderOrders(); }
+}
 function persistExtraCustomers(){ writeJsonStorage(EXTRA_CUSTOMERS_KEY, state.extraCustomers); }
 function persistDraftSale(){
   state.draftSale.items = normalizeDraftItems(state.draftSale.items);
@@ -2428,7 +2462,7 @@ function renderQuotesSection(search){
 function renderOrders(){
   const search = normalize(state.filters.ordersSearch);
 
-  const statusOrder = { 'PENDING': 1, 'OUT_FOR_DELIVERY': 2, 'DELIVERED': 3 };
+  const statusOrder = { 'PENDING': 1, 'APPROVED': 2, 'READY_FOR_DELIVERY': 3, 'OUT_FOR_DELIVERY': 4, 'DELIVERED': 5 };
   const sortedPending = [...state.pendingOrders].sort((a,b) => {
     const orderA = statusOrder[a.status] || 99;
     const orderB = statusOrder[b.status] || 99;
@@ -2442,8 +2476,13 @@ function renderOrders(){
   const pendingTotal = sum(state.pendingOrders, order => order.total);
 
   const pendingHtml = pendingOrders.map(order => {
-    let statusBadgeHtml = '<span class="badge gold">Pending</span>';
-    let actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-soft" type="button" data-out-for-delivery="${order.id}">🚚 Out for Delivery</button><button class="btn btn-soft" type="button" data-delete-pending="${order.id}" style="opacity:0.6;font-size:13px;">🗑️</button></div>`;
+    let statusBadgeHtml = '<span class="badge gold">⏳ Pending Approval</span>';
+    let actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center"><span class="small muted">Waiting for Tallyn</span><button class="btn btn-soft" type="button" data-delete-pending="${order.id}" style="opacity:0.6;font-size:13px;">🗑️</button></div>`;
+
+    if(order.status === 'APPROVED' || order.status === 'READY_FOR_DELIVERY'){
+      statusBadgeHtml = '<span class="badge green">✅ Approved — Ready to Pack</span>';
+      actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-soft" type="button" data-out-for-delivery="${order.id}">📦 Pack & Deliver</button><button class="btn btn-soft" type="button" data-delete-pending="${order.id}" style="opacity:0.6;font-size:13px;">🗑️</button></div>`;
+    }
     let metaItems = [
       `<span>${shortDateTime(order.createdAt)}</span>`,
       `<span>${order.lines.length} line${order.lines.length === 1 ? '' : 's'}</span>`,
