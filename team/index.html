@@ -210,6 +210,39 @@ a:hover{text-decoration:underline}
 .verify-score .score-label{font-size:14px;color:var(--text2)}
 .verify-timestamp{font-size:12px;color:var(--text2);margin-bottom:20px}
 
+/* ─── Documents ─── */
+.docs-toolbar{display:flex;flex-direction:column;gap:14px;margin-bottom:20px}
+.docs-search{width:100%;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:all .2s}
+.docs-search:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(14,165,233,.15)}
+.docs-filters{display:flex;flex-wrap:wrap;gap:8px}
+.docs-filter{padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;letter-spacing:.3px;cursor:pointer;font-family:inherit;transition:all .2s}
+.docs-filter:hover{background:var(--surface2);color:var(--text)}
+.docs-filter.active{background:var(--accent-light);border-color:var(--blue);color:#fff}
+.docs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.doc-card{cursor:pointer;margin-bottom:0;padding:18px;display:flex;flex-direction:column;gap:10px}
+.doc-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.doc-card .card-title{margin-bottom:0;line-height:1.4}
+.doc-date{font-size:12px;color:var(--text2);white-space:nowrap;flex-shrink:0}
+.doc-summary{font-size:13px;color:var(--text2);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-tags{display:flex;flex-wrap:wrap;gap:6px}
+.doc-tag{font-size:11px;color:var(--text2);background:var(--surface2);border-radius:999px;padding:3px 8px}
+.badge.briefing{background:rgba(14,165,233,.15);color:var(--blue)}
+.badge.report{background:rgba(64,192,128,.15);color:var(--green)}
+.badge.research{background:rgba(160,96,240,.15);color:var(--purple)}
+.badge.scorecard{background:rgba(240,192,64,.15);color:var(--yellow)}
+.badge.proposal{background:rgba(14,165,233,.15);color:var(--accent)}
+.badge.other{background:rgba(152,152,176,.15);color:var(--text2)}
+.doc-modal-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 18px}
+.doc-modal-body{font-size:14px;line-height:1.7;color:var(--text)}
+.doc-modal-body h3{font-size:18px;font-weight:700;margin:22px 0 10px}
+.doc-modal-body h4{font-size:15px;font-weight:700;margin:18px 0 8px}
+.doc-modal-body p{margin:0 0 12px}
+.doc-modal-body ul{margin:0 0 12px 18px}
+.doc-modal-body li{margin-bottom:6px}
+.doc-modal-body pre{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;overflow:auto;margin:0 0 14px;font-size:12px;line-height:1.6}
+.doc-modal-body code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.doc-empty{color:var(--text2);font-size:14px}
+
 /* ─── Mobile ─── */
 .menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
 .mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:40;padding:4px 0;padding-bottom:env(safe-area-inset-bottom,4px)}
@@ -278,6 +311,10 @@ a:hover{text-decoration:underline}
     <div class="nav-item" data-section="tasks" onclick="showSection('tasks')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Tasks <span class="nav-badge" id="tasks-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="documents" onclick="showSection('documents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/><path d="M9 9h1"/></svg>
+      Documents <span class="nav-badge" id="docs-badge">0</span>
     </div>
     <div class="nav-item" data-section="costs" onclick="showSection('costs')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -350,6 +387,28 @@ a:hover{text-decoration:underline}
     <div id="tasks-list"><div class="skeleton"></div></div>
   </div>
 
+  <!-- Documents -->
+  <div class="section" id="sec-documents">
+    <h1 class="page-title">Documents</h1>
+    <p class="page-sub">Agent-generated reports, briefings, and deliverables</p>
+    <div class="docs-toolbar">
+      <input class="docs-search" id="docs-search" type="search" placeholder="Search documents by title, content, tags, or summary" oninput="handleDocsSearch(event)">
+      <div class="docs-filters" id="docs-filters">
+        <button class="docs-filter active" data-category="all" onclick="setDocsCategory('all')">All</button>
+        <button class="docs-filter" data-category="briefing" onclick="setDocsCategory('briefing')">Briefings</button>
+        <button class="docs-filter" data-category="report" onclick="setDocsCategory('report')">Reports</button>
+        <button class="docs-filter" data-category="research" onclick="setDocsCategory('research')">Research</button>
+        <button class="docs-filter" data-category="scorecard" onclick="setDocsCategory('scorecard')">Scorecards</button>
+        <button class="docs-filter" data-category="proposal" onclick="setDocsCategory('proposal')">Proposals</button>
+        <button class="docs-filter" data-category="other" onclick="setDocsCategory('other')">Other</button>
+      </div>
+    </div>
+    <div id="documents-grid"><div class="skeleton"></div></div>
+    <div id="documents-modal" class="kanban-modal" onclick="if(event.target===this)closeDocumentModal()">
+      <div class="kanban-modal-content" id="documents-modal-body"></div>
+    </div>
+  </div>
+
   <!-- Verification -->
   <div class="section" id="sec-verification">
     <h1 class="page-title">System Verification</h1>
@@ -389,6 +448,10 @@ a:hover{text-decoration:underline}
     <button class="mobile-tab" data-section="tasks" onclick="showSection('tasks')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       Tasks
+    </button>
+    <button class="mobile-tab" data-section="documents" onclick="showSection('documents')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/><path d="M9 9h1"/></svg>
+      Docs
     </button>
     <button class="mobile-tab" data-section="costs" onclick="showSection('costs')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -434,6 +497,32 @@ function fmtDate(d){if(!d)return'—';const dt=new Date(d);return dt.toLocaleDat
 function fmtTime(d){if(!d)return'';const dt=new Date(d);return dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/Halifax'})}
 function fmtDateTime(d){return fmtDate(d)+' '+fmtTime(d)}
 function timeAgo(d){const now=Date.now();const ms=now-new Date(d).getTime();const m=Math.floor(ms/60000);if(m<1)return'just now';if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';const days=Math.floor(h/24);return days+'d ago'}
+function labelCase(s){return String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1)}
+function docsSearchBlob(doc){return [doc.title,doc.content,doc.summary,(doc.tags||[]).join(' ')].join(' ').toLowerCase()}
+function renderDocMarkdown(md){
+  const blocks=[];
+  let html=esc(md||'');
+  html=html.replace(/```([\s\S]*?)```/g,(_,code)=>{
+    const token=`%%CODE${blocks.length}%%`;
+    blocks.push(`<pre><code>${code.replace(/^\n+|\n+$/g,'')}</code></pre>`);
+    return token;
+  });
+  html=html.replace(/^###\s+(.+)$/gm,'<h4>$1</h4>');
+  html=html.replace(/^##\s+(.+)$/gm,'<h3>$1</h3>');
+  html=html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  html=html.replace(/(?:^|\n)((?:- .+(?:\n|$))+)/g,(match,list)=>{
+    const items=list.trim().split(/\n/).map(line=>`<li>${line.replace(/^-\s+/, '')}</li>`).join('');
+    return `\n<ul>${items}</ul>`;
+  });
+  html=html.split(/\n{2,}/).map(part=>{
+    const trimmed=part.trim();
+    if(!trimmed)return'';
+    if(/^<(h3|h4|ul|pre)/.test(trimmed))return trimmed;
+    return `<p>${trimmed.replace(/\n/g,'<br>')}</p>`;
+  }).join('');
+  blocks.forEach((block,i)=>{html=html.replace(`%%CODE${i}%%`,block)});
+  return html||'<p>No content</p>';
+}
 
 /* ─── Navigation ─── */
 function showSection(id){
@@ -459,7 +548,8 @@ function updateClock(){
 }
 
 /* ─── Data Stores ─── */
-let fleetData=null, clientHealth=null, pipelineData=null, calendlyData=null, emailsData=null, tasksData=null, tokenData=null, agentsData=null;
+let fleetData=null, clientHealth=null, pipelineData=null, calendlyData=null, emailsData=null, tasksData=null, documentsData=null, tokenData=null, agentsData=null;
+let docsState={query:'',category:'all',activeDocId:null};
 
 /* ─── Pipeline localStorage ─── */
 function loadPipelineState(){
@@ -476,11 +566,11 @@ async function init(){
   const results=await Promise.all([
     loadJSON('fleet'),loadJSON('client-health'),loadJSON('pipeline'),
     loadJSON('calendly'),loadJSON('emails'),loadJSON('tasks'),
-    loadJSON('token-tracker'),loadJSON('agents')
+    loadJSON('documents'),loadJSON('token-tracker'),loadJSON('agents')
   ]);
   fleetData=results[0];clientHealth=results[1];pipelineData=results[2];
-  calendlyData=results[3];emailsData=results[4];tasksData=results[5];
-  tokenData=results[6];agentsData=results[7];
+  calendlyData=results[3];emailsData=results[4];tasksData=results[5];documentsData=results[6];
+  tokenData=results[7];agentsData=results[8];
 
   // Apply localStorage pipeline state
   if(pipelineData&&pipelineData.boards&&pipelineData.boards[0]){
@@ -500,6 +590,7 @@ async function init(){
   renderClients();
   renderInbox();
   renderTasks();
+  renderDocuments();
   renderCosts();
   renderVerification();
   document.getElementById('sync-text').textContent='Synced · '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
@@ -806,6 +897,103 @@ function toggleTask(id){
   renderTasks();
 }
 
+/* ─── DOCUMENTS ─── */
+function filteredDocuments(){
+  const docs=documentsData||[];
+  const query=docsState.query.trim().toLowerCase();
+  return docs.filter(doc=>{
+    const categoryOk=docsState.category==='all'||(doc.category||'other')===docsState.category;
+    const queryOk=!query||docsSearchBlob(doc).includes(query);
+    return categoryOk&&queryOk;
+  }).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+}
+
+function renderDocuments(){try{
+  const docs=documentsData||[];
+  document.getElementById('docs-badge').textContent=docs.length||'';
+  document.querySelectorAll('.docs-filter').forEach(btn=>btn.classList.toggle('active',btn.dataset.category===docsState.category));
+
+  const grid=document.getElementById('documents-grid');
+  if(!docs.length){
+    grid.innerHTML='<div class="card"><div class="card-body doc-empty">No documents available</div></div>';
+    return;
+  }
+
+  const filtered=filteredDocuments();
+  if(!filtered.length){
+    grid.innerHTML='<div class="card"><div class="card-body doc-empty">No documents match the current search</div></div>';
+    return;
+  }
+
+  grid.innerHTML=`<div class="docs-grid">${filtered.map((doc,i)=>`
+    <div class="card doc-card" style="animation-delay:${i*.05}s" onclick="openDocument('${doc.id}')">
+      <div class="doc-card-top">
+        <div style="min-width:0;flex:1">
+          <div class="card-title">${esc(doc.title)}</div>
+        </div>
+        <div class="doc-date">${timeAgo(doc.createdAt)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="badge ${(doc.category||'other')}">${esc(labelCase(doc.category||'other'))}</span>
+      </div>
+      <div class="doc-summary">${esc(doc.summary||'No summary')}</div>
+      ${(doc.tags||[]).length?`<div class="doc-tags">${doc.tags.slice(0,4).map(tag=>`<span class="doc-tag">#${esc(tag)}</span>`).join('')}</div>`:''}
+    </div>
+  `).join('')}</div>`;
+
+}catch(e){console.error('renderDocuments error:',e)}}
+
+function handleDocsSearch(event){
+  docsState.query=event.target.value||'';
+  renderDocuments();
+}
+
+function setDocsCategory(category){
+  docsState.category=category;
+  renderDocuments();
+}
+
+function openDocument(id){
+  const doc=(documentsData||[]).find(item=>item.id===id);
+  if(!doc)return;
+  docsState.activeDocId=id;
+  const body=document.getElementById('documents-modal-body');
+  body.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:4px">${esc(doc.title)}</h2>
+        <div class="doc-modal-meta">
+          <span class="badge ${(doc.category||'other')}">${esc(labelCase(doc.category||'other'))}</span>
+          <span style="font-size:12px;color:var(--text2)">${timeAgo(doc.createdAt)} · ${fmtDateTime(doc.createdAt)}</span>
+        </div>
+      </div>
+    </div>
+    ${(doc.tags||[]).length?`<div class="doc-tags" style="margin:-4px 0 18px">${doc.tags.map(tag=>`<span class="doc-tag">#${esc(tag)}</span>`).join('')}</div>`:''}
+    <div class="doc-modal-body">${renderDocMarkdown(doc.content||'')}</div>
+    <div class="km-actions">
+      <button class="km-btn primary" onclick="copyDocumentContent()">Copy</button>
+      <button class="km-btn" onclick="closeDocumentModal()">Close</button>
+    </div>
+  `;
+  document.getElementById('documents-modal').classList.add('open');
+}
+
+async function copyDocumentContent(){
+  const doc=(documentsData||[]).find(item=>item.id===docsState.activeDocId);
+  if(!doc)return;
+  try{
+    await navigator.clipboard.writeText(doc.content||'');
+    toast('Document copied');
+  }catch(e){
+    console.error('copyDocumentContent error:',e);
+    toast('Copy failed');
+  }
+}
+
+function closeDocumentModal(){
+  document.getElementById('documents-modal').classList.remove('open');
+}
+
 /* ─── COSTS ─── */
 function renderCosts(){try{
   const summary=tokenData?.summary;
@@ -942,6 +1130,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     document.querySelectorAll('.kanban-modal.open').forEach(m=>m.classList.remove('open'));
+    closeDocumentModal();
   }
 });
 </script>
