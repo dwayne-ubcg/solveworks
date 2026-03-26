@@ -243,6 +243,32 @@ a:hover{text-decoration:underline}
 .doc-modal-body code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .doc-empty{color:var(--text2);font-size:14px}
 
+/* ─── Proposals ─── */
+.proposals-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.proposals-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.proposals-filter{padding:8px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;letter-spacing:.3px;cursor:pointer;font-family:inherit;transition:all .2s}
+.proposals-filter:hover{background:var(--surface2);color:var(--text)}
+.proposals-filter.active{background:var(--accent-light);border-color:var(--blue);color:#fff}
+.proposals-filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.proposals-filter-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text2);padding-right:4px}
+.proposals-table{width:100%;border-collapse:collapse;font-size:13px}
+.proposals-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text2);border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:1}
+.proposals-table td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+.proposals-table tr:last-child td{border-bottom:none}
+.proposals-table tr:hover td{background:var(--surface2)}
+.proposals-table .prop-title{font-weight:600;margin-bottom:3px}
+.proposals-table .prop-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.pbadge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;display:inline-block;white-space:nowrap}
+.pbadge.approved{background:rgba(64,192,128,.15);color:var(--green)}
+.pbadge.pending{background:rgba(240,192,64,.15);color:var(--yellow)}
+.pbadge.rejected{background:rgba(240,64,96,.15);color:var(--red)}
+.pbadge.deferred{background:rgba(100,130,200,.15);color:#8ab4e0}
+.pbadge.dashboard{background:rgba(14,165,233,.12);color:var(--blue)}
+.pbadge.automation{background:rgba(160,96,240,.12);color:var(--purple)}
+.pbadge.integration{background:rgba(64,192,128,.12);color:var(--green)}
+.pbadge.fix{background:rgba(240,64,96,.12);color:var(--red)}
+.pbadge.insight{background:rgba(240,192,64,.12);color:var(--yellow)}
+
 /* ─── Mobile ─── */
 .menu-toggle{display:none;position:fixed;top:12px;left:12px;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);cursor:pointer;font-size:18px}
 .mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:40;padding:4px 0;padding-bottom:env(safe-area-inset-bottom,4px)}
@@ -315,6 +341,10 @@ a:hover{text-decoration:underline}
     <div class="nav-item" data-section="documents" onclick="showSection('documents')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V7z"/><path d="M14 2v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/><path d="M9 9h1"/></svg>
       Documents <span class="nav-badge" id="docs-badge">0</span>
+    </div>
+    <div class="nav-item" data-section="proposals" onclick="showSection('proposals')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6"/><path d="M9 16h6"/><path d="M9 8h2"/><path d="M14 2H7a2 2 0 00-2 2v16a2 2 0 002 2h10a2 2 0 002-2V7z"/><path d="M14 2v5h5"/><circle cx="18" cy="18" r="4"/><path d="M16.5 18h3"/><path d="M18 16.5v3"/></svg>
+      Proposals <span class="nav-badge" id="proposals-badge">0</span>
     </div>
     <div class="nav-item" data-section="costs" onclick="showSection('costs')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -407,6 +437,62 @@ a:hover{text-decoration:underline}
     <div id="documents-modal" class="kanban-modal" onclick="if(event.target===this)closeDocumentModal()">
       <div class="kanban-modal-content" id="documents-modal-body"></div>
     </div>
+  </div>
+
+  <!-- Proposals -->
+  <div class="section" id="sec-proposals">
+    <h1 class="page-title">Proposals</h1>
+    <p class="page-sub">Agent-initiated proposals across all client deployments</p>
+    <div class="proposals-summary" id="proposals-stats">
+      <div class="stat-card"><div class="label">Total Sent</div><div class="value" style="color:var(--blue)" id="prop-stat-total">—</div></div>
+      <div class="stat-card"><div class="label">Approval Rate</div><div class="value" style="color:var(--green)" id="prop-stat-rate">—</div></div>
+      <div class="stat-card"><div class="label">Pending</div><div class="value" style="color:var(--yellow)" id="prop-stat-pending">—</div></div>
+      <div class="stat-card"><div class="label">Deferred</div><div class="value" style="color:#8ab4e0" id="prop-stat-deferred">—</div></div>
+    </div>
+    <div class="proposals-toolbar">
+      <div class="proposals-filter-group">
+        <span class="proposals-filter-label">Agent</span>
+        <div id="proposals-agent-filters"></div>
+      </div>
+    </div>
+    <div class="proposals-toolbar" style="margin-top:-8px">
+      <div class="proposals-filter-group">
+        <span class="proposals-filter-label">Status</span>
+        <button class="proposals-filter active" data-prop-status="all" onclick="setPropFilter('status','all')">All</button>
+        <button class="proposals-filter" data-prop-status="pending" onclick="setPropFilter('status','pending')">Pending</button>
+        <button class="proposals-filter" data-prop-status="approved" onclick="setPropFilter('status','approved')">Approved</button>
+        <button class="proposals-filter" data-prop-status="rejected" onclick="setPropFilter('status','rejected')">Rejected</button>
+        <button class="proposals-filter" data-prop-status="deferred" onclick="setPropFilter('status','deferred')">Deferred</button>
+      </div>
+    </div>
+    <div class="proposals-toolbar" style="margin-top:-8px">
+      <div class="proposals-filter-group">
+        <span class="proposals-filter-label">Category</span>
+        <button class="proposals-filter active" data-prop-category="all" onclick="setPropFilter('category','all')">All</button>
+        <button class="proposals-filter" data-prop-category="dashboard" onclick="setPropFilter('category','dashboard')">Dashboard</button>
+        <button class="proposals-filter" data-prop-category="automation" onclick="setPropFilter('category','automation')">Automation</button>
+        <button class="proposals-filter" data-prop-category="integration" onclick="setPropFilter('category','integration')">Integration</button>
+        <button class="proposals-filter" data-prop-category="fix" onclick="setPropFilter('category','fix')">Fix</button>
+        <button class="proposals-filter" data-prop-category="insight" onclick="setPropFilter('category','insight')">Insight</button>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow-x:auto;margin-top:4px">
+      <table class="proposals-table">
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Client</th>
+            <th>Proposal</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Proposed</th>
+            <th>Resolved</th>
+          </tr>
+        </thead>
+        <tbody id="proposals-tbody"></tbody>
+      </table>
+    </div>
+    <div id="proposals-empty" style="display:none" class="card"><div class="card-body" style="color:var(--text2)">No proposals match the current filters.</div></div>
   </div>
 
   <!-- Verification -->
@@ -550,6 +636,8 @@ function updateClock(){
 /* ─── Data Stores ─── */
 let fleetData=null, clientHealth=null, pipelineData=null, calendlyData=null, emailsData=null, tasksData=null, documentsData=null, tokenData=null, agentsData=null;
 let docsState={query:'',category:'all',activeDocId:null};
+let proposalsData=null;
+let propFilters={agent:'all',status:'all',category:'all'};
 
 /* ─── Pipeline localStorage ─── */
 function loadPipelineState(){
@@ -566,11 +654,12 @@ async function init(){
   const results=await Promise.all([
     loadJSON('fleet'),loadJSON('client-health'),loadJSON('pipeline'),
     loadJSON('calendly'),loadJSON('emails'),loadJSON('tasks'),
-    loadJSON('documents'),loadJSON('token-tracker'),loadJSON('agents')
+    loadJSON('documents'),loadJSON('token-tracker'),loadJSON('agents'),
+    loadJSON('proposals')
   ]);
   fleetData=results[0];clientHealth=results[1];pipelineData=results[2];
   calendlyData=results[3];emailsData=results[4];tasksData=results[5];documentsData=results[6];
-  tokenData=results[7];agentsData=results[8];
+  tokenData=results[7];agentsData=results[8];proposalsData=results[9]||[];
 
   // Apply localStorage pipeline state
   if(pipelineData&&pipelineData.boards&&pipelineData.boards[0]){
@@ -591,6 +680,7 @@ async function init(){
   renderInbox();
   renderTasks();
   renderDocuments();
+  renderProposals();
   renderCosts();
   renderVerification();
   document.getElementById('sync-text').textContent='Synced · '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
@@ -992,6 +1082,76 @@ async function copyDocumentContent(){
 
 function closeDocumentModal(){
   document.getElementById('documents-modal').classList.remove('open');
+}
+
+/* ─── PROPOSALS ─── */
+function renderProposals(){try{
+  const all=proposalsData||[];
+  const pending=all.filter(p=>p.status==='pending').length;
+  const approved=all.filter(p=>p.status==='approved').length;
+  const deferred=all.filter(p=>p.status==='deferred').length;
+  const rate=all.length?Math.round((approved/all.length)*100):0;
+
+  document.getElementById('prop-stat-total').textContent=all.length;
+  document.getElementById('prop-stat-rate').textContent=rate+'%';
+  document.getElementById('prop-stat-pending').textContent=pending;
+  document.getElementById('prop-stat-deferred').textContent=deferred;
+
+  // Badge count = pending
+  document.getElementById('proposals-badge').textContent=pending||'';
+
+  // Build agent filter buttons
+  const agents=[...new Set(all.map(p=>p.agent))].sort();
+  const agentFilterEl=document.getElementById('proposals-agent-filters');
+  if(agentFilterEl){
+    agentFilterEl.innerHTML=[
+      `<button class="proposals-filter ${propFilters.agent==='all'?'active':''}" data-prop-agent="all" onclick="setPropFilter('agent','all')">All</button>`,
+      ...agents.map(a=>`<button class="proposals-filter ${propFilters.agent===a?'active':''}" data-prop-agent="${esc(a)}" onclick="setPropFilter('agent','${esc(a)}')">${esc(a)}</button>`)
+    ].join('');
+  }
+
+  // Filter
+  const filtered=all.filter(p=>{
+    if(propFilters.agent!=='all'&&p.agent!==propFilters.agent)return false;
+    if(propFilters.status!=='all'&&p.status!==propFilters.status)return false;
+    if(propFilters.category!=='all'&&p.category!==propFilters.category)return false;
+    return true;
+  }).sort((a,b)=>new Date(b.proposedAt)-new Date(a.proposedAt));
+
+  const tbody=document.getElementById('proposals-tbody');
+  const empty=document.getElementById('proposals-empty');
+  const tableCard=tbody?.closest('.card');
+
+  if(!filtered.length){
+    if(tableCard)tableCard.style.display='none';
+    if(empty)empty.style.display='';
+  } else {
+    if(tableCard)tableCard.style.display='';
+    if(empty)empty.style.display='none';
+    tbody.innerHTML=filtered.map((p,i)=>`
+      <tr style="animation:cardIn .4s cubic-bezier(.4,0,.2,1) ${i*.04}s both">
+        <td><strong>${esc(p.agent)}</strong></td>
+        <td style="color:var(--text2)">${esc(p.client)}</td>
+        <td>
+          <div class="prop-title">${esc(p.title)}</div>
+          <div class="prop-desc">${esc(p.description)}</div>
+        </td>
+        <td><span class="pbadge ${esc(p.category)}">${esc(p.category)}</span></td>
+        <td><span class="pbadge ${esc(p.status)}">${esc(p.status)}</span></td>
+        <td style="color:var(--text2);white-space:nowrap">${fmtDate(p.proposedAt)}</td>
+        <td style="color:var(--text2);white-space:nowrap">${p.resolvedAt?fmtDate(p.resolvedAt):'—'}</td>
+      </tr>
+    `).join('');
+  }
+}catch(e){console.error('renderProposals error:',e)}}
+
+function setPropFilter(type,value){
+  propFilters[type]=value;
+  // Update button active states
+  document.querySelectorAll(`[data-prop-${type}]`).forEach(btn=>{
+    btn.classList.toggle('active',btn.dataset[`prop${type.charAt(0).toUpperCase()+type.slice(1)}`]===value);
+  });
+  renderProposals();
 }
 
 /* ─── COSTS ─── */
