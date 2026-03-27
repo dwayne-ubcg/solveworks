@@ -869,9 +869,52 @@ const QUOTES_KEY = '7c_quotes';
 const QUOTE_COUNTER_KEY = '7c_quote_counter';
 const QUOTE_BASE_URL = 'https://orders.7cellars.ky/';
 const DELIVER_BASE_URL = 'https://orders.7cellars.ky/deliver.html';
+const SHEETS_API_URL = 'https://script.google.com/macros/s/AKfycbzh4oTMzlnV6JeiuowN07HnOQOFqlTzm3E3Ds19neRRM3mQYC6AZ6FkdB0dRZMSRlVpEQ/exec';
 const CIN7_API_URL = 'https://inventory.dearsystems.com/ExternalApi/v2';
 const CIN7_ACCOUNT_ID = '96136ab9-4bf7-45a8-ad3a-af815c7fb371';
 const CIN7_API_KEY = '473c05c1-5a05-69a6-33c7-a4232eea7e99';
+
+// ── Google Sheets shared backend ─────────────────────────────────────────────
+const sheetsSync = {
+  async fetchAll() {
+    if (!SHEETS_API_URL) return null;
+    try {
+      const resp = await fetch(`${SHEETS_API_URL}?action=getOrders`);
+      const data = await resp.json();
+      return data.orders || null;
+    } catch(e) {
+      console.warn('Sheets fetchAll failed:', e);
+      return null;
+    }
+  },
+  async upsert(order) {
+    if (!SHEETS_API_URL) return;
+    try {
+      // Omit signature blob to keep payload small (stored in localStorage)
+      const payload = Object.assign({}, order, { signature: order.signature ? '[stored_locally]' : null });
+      await fetch(SHEETS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'upsertOrder', order: payload })
+      });
+    } catch(e) {
+      console.warn('Sheets upsert failed:', e);
+    }
+  },
+  async updateStatus(id, status, deliveredAt, signedBy) {
+    if (!SHEETS_API_URL) return;
+    try {
+      await fetch(SHEETS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'updateStatus', id, status, deliveredAt, signedBy })
+      });
+    } catch(e) {
+      console.warn('Sheets updateStatus failed:', e);
+    }
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 function generateQuoteURL(quote){
   const payload = {
@@ -1092,6 +1135,30 @@ function setActiveTab(tabId){
 
 function hydrateLocalState(){
   state.pendingOrders = readJsonStorage(PENDING_ORDERS_KEY, []);
+  // Async: sync from Google Sheets (cross-device orders)
+  sheetsSync.fetchAll().then(remoteOrders => {
+    if (!remoteOrders || !remoteOrders.length) return;
+    let changed = false;
+    remoteOrders.forEach(ro => {
+      if (!ro.id) return;
+      const local = state.pendingOrders.find(o => o.id === ro.id);
+      if (local) {
+        if (ro.status && ro.status !== local.status) { local.status = ro.status; changed = true; }
+        if (ro.deliveredAt && !local.deliveredAt) { local.deliveredAt = ro.deliveredAt; changed = true; }
+        if (ro.signedBy && !local.signedBy) { local.signedBy = ro.signedBy; changed = true; }
+      } else {
+        state.pendingOrders.unshift({
+          id: ro.id, createdAt: ro.createdAt, status: ro.status || 'PENDING',
+          customer: ro.customer, customerId: ro.customerId || null,
+          total: parseFloat(ro.total) || 0, lines: ro.lines || [],
+          cin7SaleId: ro.cin7SaleId || null, cin7OrderNumber: ro.cin7OrderNumber || null,
+          deliveredAt: ro.deliveredAt || null, signedBy: ro.signedBy || null, signature: null
+        });
+        changed = true;
+      }
+    });
+    if (changed) { persistPendingOrders(); renderAll(); }
+  });
   state.extraCustomers = readJsonStorage(EXTRA_CUSTOMERS_KEY, []);
   const savedDraft = readJsonStorage(DRAFT_SALE_KEY, state.draftSale);
   state.draftSale = {
@@ -2231,6 +2298,7 @@ async function submitDraftOrder(){
 
   state.pendingOrders.unshift(pending);
   persistPendingOrders();
+  sheetsSync.upsert(pending); // sync to shared backend (non-blocking)
   // Auto-notify Tallyn via Telegram
   sendTelegramToTallyn(formatOrderText(pending));
   state.draftSale.confirmation = pending;
@@ -3261,6 +3329,7 @@ function setOutForDelivery(orderId){
   order.status = 'OUT_FOR_DELIVERY';
   order.outForDeliveryAt = new Date().toISOString();
   persistPendingOrders();
+  sheetsSync.updateStatus(order.id, 'OUT_FOR_DELIVERY', null, null); // sync status
   renderOrders();
 }
 
@@ -3270,7 +3339,10 @@ function showSignatureLightbox(orderId){
     const container = document.getElementById('signatureLightboxContainer');
     container.innerHTML = `
         <div class="signature-lightbox" id="signatureLightbox">
-            <img src="${order.signature}" alt="Delivery signature for ${escapeHtml(order.customer)}">
+            <div style="text-align:center">
+                <img src="${order.signature}" alt="Delivery signature for ${escapeHtml(order.customer)}">
+                ${order.signedBy && order.signedBy !== 'Customer' ? `<p style="color:#fff;margin-top:10px;font-size:13px;opacity:.8">Signed by: <strong>${escapeHtml(order.signedBy)}</strong></p>` : ''}
+            </div>
         </div>
     `;
     container.querySelector('#signatureLightbox').addEventListener('click', () => {
@@ -3299,6 +3371,10 @@ function showSignatureModal(orderId) {
                     <div class="sig-order-summary">${itemsSummary}</div>
                     <div class="sig-canvas-wrap">
                         <canvas id="signatureCanvas" class="signature-canvas"></canvas>
+                    </div>
+                    <div style="margin-top:12px">
+                        <label style="display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Recipient Name (printed)</label>
+                        <input id="sigRecipientName" type="text" placeholder="Full name of person receiving delivery" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:var(--surface-2);color:var(--text1);font-size:14px;box-sizing:border-box">
                     </div>
                     <div class="sig-actions">
                         <button class="btn btn-ghost" id="sigClearBtn" type="button">Clear</button>
@@ -3385,8 +3461,10 @@ function showSignatureModal(orderId) {
         order.status = 'DELIVERED';
         order.deliveredAt = new Date().toISOString();
         order.signature = canvas.toDataURL('image/png');
-        order.signedBy = 'Customer'; // Placeholder
+        const nameInput = document.getElementById('sigRecipientName');
+        order.signedBy = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'Customer';
         persistPendingOrders();
+        sheetsSync.updateStatus(order.id, 'DELIVERED', order.deliveredAt, order.signedBy); // sync delivery
         closeModal();
         renderOrders();
     });
