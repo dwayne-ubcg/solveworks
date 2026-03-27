@@ -2568,7 +2568,7 @@ function renderOrders(){
     if (order.status === 'OUT_FOR_DELIVERY') {
       statusBadgeHtml = '<span class="badge blue">Out for Delivery</span>';
       const deliverUrl = generateDeliverURL(order);
-      actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-soft" type="button" data-collect-signature="${order.id}">✍️ Sign Here</button><a class="btn btn-soft" href="${deliverUrl}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">📱 Open Delivery Page</a></div>`;
+      actionButtonHtml = `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-soft" type="button" data-collect-signature="${order.id}">✍️ Sign Here</button><a class="btn btn-soft" href="${deliverUrl}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">📱 Open Delivery Page</a><button class="btn btn-soft" type="button" data-force-delete="${order.id}" style="opacity:0.5;font-size:13px;" title="Force delete this order">🗑️</button></div>`;
       if(order.outForDeliveryAt) metaItems.push(`<span>Departed: ${shortDateTime(order.outForDeliveryAt)}</span>`);
     } else if (order.status === 'DELIVERED') {
       statusBadgeHtml = '<span class="badge green">Delivered</span>';
@@ -2718,6 +2718,21 @@ function renderOrders(){
       }
     } catch(e) {
       console.warn('Sheets delete failed (order may not have been synced):', e);
+    }
+  }));
+
+  root.querySelectorAll('[data-force-delete]').forEach(btn => btn.addEventListener('click', async () => {
+    const id = btn.dataset.forceDelete;
+    if(!confirm('Force delete this order? Use only for test/error orders.')) return;
+    state.pendingOrders = state.pendingOrders.filter(o => o.id !== id);
+    persistPendingOrders();
+    renderOrders();
+    try {
+      if(sheetsSync && sheetsSync.deleteOrder) {
+        await sheetsSync.deleteOrder(id);
+      }
+    } catch(e) {
+      console.warn('Sheets delete failed:', e);
     }
   }));
 }
