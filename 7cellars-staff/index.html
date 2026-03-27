@@ -3520,8 +3520,41 @@ function logout(){
 async function refreshData(){
   if(state.refreshing) return;
   state.refreshing = true;
-  flashPull('Reloading…');
-  location.reload();
+  flashPull('Syncing…');
+  try {
+    // Pull latest order statuses from Sheets (catches DELIVERED from external delivery page)
+    const remoteOrders = await sheetsSync.fetchAll();
+    if(remoteOrders && remoteOrders.length) {
+      // Merge: update local pending orders with remote status changes
+      let changed = false;
+      remoteOrders.forEach(remote => {
+        if(!remote.id) return;
+        // Update matching pending order if status changed
+        const idx = state.pendingOrders.findIndex(o => o.id === remote.id);
+        if(idx !== -1) {
+          const local = state.pendingOrders[idx];
+          if(local.status !== remote.status) {
+            state.pendingOrders[idx] = { ...local, status: remote.status, deliveredAt: remote.deliveredAt || local.deliveredAt, signedBy: remote.signedBy || local.signedBy };
+            changed = true;
+          }
+        }
+      });
+      if(changed) {
+        persistPendingOrders();
+        renderOrders();
+        flashPull('Updated ✓');
+      } else {
+        flashPull('Up to date ✓');
+      }
+    } else {
+      flashPull('Up to date ✓');
+    }
+  } catch(e) {
+    console.warn('Soft refresh failed, falling back to reload:', e);
+    location.reload();
+    return;
+  }
+  state.refreshing = false;
 }
 function handleLoadError(error){
   console.error(error);
